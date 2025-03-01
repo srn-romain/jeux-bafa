@@ -78,6 +78,35 @@ p {
   margin-top: 15px;
 }
 
+.categories {
+  padding-left: 20px;
+}
+
+.categories ul {
+  padding-left: 0;
+  list-style-position: inside;
+}
+
+.back-button {
+  display: block;
+  text-align: center;
+  margin: 20px auto;
+  padding: 10px 20px;
+  background-color: #a6d866;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  font-weight: bold;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  width: fit-content;
+}
+
+.back-button:hover {
+  background-color: #f39c12;
+  color: #F5F5DC;
+  cursor: pointer;
+}
+
 /*--------------------------------------------------------------
 # Back to top button
 --------------------------------------------------------------*/
