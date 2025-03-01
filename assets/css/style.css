@@ -1,4 +1,6 @@
-/* essentiel */
+/*--------------------------------------------------------------
+# Essentiels
+--------------------------------------------------------------*/
 * {
   margin: 0;
   padding: 0;
@@ -32,7 +34,9 @@ body {
   padding: 20px;
 }
 
-/* principal */
+/*--------------------------------------------------------------
+# Principale
+--------------------------------------------------------------*/
 div {
   max-width: 1200px;
   margin: 0 auto;
@@ -69,80 +73,9 @@ p {
   margin-right: auto;
 }
 
-
-#mobile-message {
-  color: #e74c3c;
-  font-size: 0.9rem;
-  margin-bottom: 15px;
-}
-
 .table-container {
   overflow-x: auto;
   margin-top: 15px;
-}
-
-/*filtre*/
-.tabs {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  width: 100%;
-  flex-wrap: wrap;
-}
-
-.tab {
-  flex: 1;
-  text-align: center;
-  padding: 10px 0;
-  margin: 0 5px;
-  background: #a6d866;
-  color: #fff;
-  border-radius: 5px;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  transition: background 0.3s, box-shadow 0.3s;
-}
-
-.tab:hover {
-  background: #8ecf4e;
-}
-
-.tab.active {
-  background: #f39c12;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-/* Tableaux */
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 20px;
-}
-
-table th, table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: center;
-}
-
-table th {
-  background-color: #a6d866;
-  color: #fff;
-  font-weight: bold;
-}
-
-/* Lignes alternées */
-table tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-.image-carrée {
-  width: 60px;
-  height: 60px;
-  object-fit: cover;
-  margin: 10px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 5px;
 }
 
 /*--------------------------------------------------------------
@@ -186,48 +119,5 @@ table tr:nth-child(even) {
 
   .logos-container {
     justify-content: space-between;
-  }
-}
-
-/* Responsivité */
-@media (max-width: 768px) {
-  h2 {
-    font-size: 1.5rem;
-  }
-
-  p {
-    font-size: 0.95rem;
-  }
-
-  table th, table td {
-    font-size: 0.85rem;
-    padding: 6px;
-  }
-}
-
-@media (max-width: 1040px) {
-  .tabs {
-    flex-direction: column;
-    align-items: center;
-    overflow-x: auto;
-  }
-
-  .tab {
-    width: 100%;
-    margin: 5px 0;
-    overflow-x: auto;
-  }
-}
-
-@media only screen and (max-width: 1040px) {
-  #mobile-message {
-    display: block;
-    background-color: #f8d7da;
-    color: #721c24;
-    padding: 10px;
-    margin: 20px 0;
-    border: 1px solid #f5c6cb;
-    border-radius: 5px;
-    text-align: center;
   }
 }
