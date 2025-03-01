@@ -67,7 +67,7 @@ h2 {
   color: #2c3e50;
 }
 
-p {
+p:not(.no-p-style) {
   margin-bottom: 10px;
   text-align: center;
   color: #555;
