@@ -33,20 +33,45 @@ modalCloseBtn.addEventListener("click", closeModalspe);
 
 
 
-// Fonction pour copier le texte dans le presse-papiers
-document.getElementById('copyMessage').addEventListener('click', function() {
-    // Sélectionner tout le texte dans la modal
-    var textToCopy = document.querySelector('.modal__contentspe').innerText;
+// Exécuter le script uniquement quand le DOM est chargé
+document.addEventListener("DOMContentLoaded", function () {
 
-    // Créer un champ de texte temporaire pour copier le texte
-    var textarea = document.createElement('textarea');
-    textarea.value = textToCopy;
-    document.body.appendChild(textarea);
+    // Fonction pour copier le texte d'un élément spécifique
+    function copyText(elementId) {
+        var textElement = document.getElementById(elementId);
 
-    // Sélectionner et copier le texte
-    textarea.select();
-    document.execCommand('copy');
+        if (!textElement) {
+            console.error("L'élément à copier n'existe pas :", elementId);
+            return;
+        }
 
-    // Retirer le champ de texte temporaire
-    document.body.removeChild(textarea);
+        var textToCopy = textElement.innerText; // Récupère uniquement le texte du bon élément
+
+        var textarea = document.createElement('textarea');
+        textarea.value = textToCopy;
+        document.body.appendChild(textarea);
+
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+
+    }
+
+    // Vérifier si les boutons existent avant d'ajouter un event listener
+    var copySongButton = document.getElementById('copyMessageSong');
+    var copyDayButton = document.getElementById('copyMessageDay');
+
+    if (copySongButton) {
+        copySongButton.addEventListener('click', function () {
+            copyText('copyContent'); // Copie uniquement la chanson
+        });
+    }
+
+    if (copyDayButton) {
+        copyDayButton.addEventListener('click', function () {
+            copyText('copyContentDay'); // Copie uniquement la journée type
+        });
+    }
 });
+
+
