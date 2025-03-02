@@ -1,3 +1,6 @@
+/*--------------------------------------------------------------
+# Back to top button
+--------------------------------------------------------------*/
 document.addEventListener("DOMContentLoaded", function () {
     let backToTopButton = document.querySelector(".back-to-top");
 
@@ -16,6 +19,9 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+/*--------------------------------------------------------------
+# Modale
+--------------------------------------------------------------*/
 var modalBtn = document.getElementById("open-modalspe");
 var modal = document.getElementById("modal-locspe");
 var modalCloseBtn = modal.querySelector(".modal__closespe");
@@ -31,7 +37,15 @@ function closeModalspe() {
 modalBtn.addEventListener("click", openModalspe);
 modalCloseBtn.addEventListener("click", closeModalspe);
 
+window.addEventListener("click", function(event) {
+    if (event.target === modal) { // Si l'utilisateur clique sur l'arrière-plan (modale elle-même)
+        closeModalspe();
+    }
+});
 
+/*--------------------------------------------------------------
+# Copier le texte
+--------------------------------------------------------------*/
 
 // Exécuter le script uniquement quand le DOM est chargé
 document.addEventListener("DOMContentLoaded", function () {
