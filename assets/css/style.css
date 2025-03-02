@@ -91,6 +91,10 @@ p:not(.no-p-style) {
   list-style-position: inside;
 }
 
+.category {
+  margin-bottom: 20px;
+}
+
 .back-button {
   display: block;
   text-align: center;
@@ -160,7 +164,7 @@ p:not(.no-p-style) {
 --------------------------------------------------------------*/
 
 .modalspe, .modal__closespe {
-  max-width: none !important; /* Ignore la règle max-width de div */
+  max-width: none !important;
 }
 
 .modalspe {
