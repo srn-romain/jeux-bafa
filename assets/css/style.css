@@ -196,3 +196,8 @@ p:not(.no-p-style) {
   border: none;
   background-color: transparent;
 }
+
+.button-group {
+  display: flex;
+  gap: 10px;
+}
