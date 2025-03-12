@@ -22,25 +22,32 @@ document.addEventListener("DOMContentLoaded", function () {
 /*--------------------------------------------------------------
 # Modale
 --------------------------------------------------------------*/
-var modalBtn = document.getElementById("open-modalspe");
-var modal = document.getElementById("modal-locspe");
-var modalCloseBtn = modal.querySelector(".modal__closespe");
+const openModalBtns = document.querySelectorAll('.openModalBtn');
+const closeModalBtns = document.querySelectorAll('.modal__closespe');
+const modals = document.querySelectorAll('.modalspe');
 
-function openModalspe() {
-    modal.style.display = "block";
-}
+// Ouvrir la bonne modale
+openModalBtns.forEach(button => {
+    button.addEventListener('click', () => {
+        const modalId = button.getAttribute('data-modal');
+        document.getElementById(modalId).style.display = 'block';
+    });
+});
 
-function closeModalspe() {
-    modal.style.display = "none";
-}
+// Fermer la modale en cliquant sur la croix
+closeModalBtns.forEach(button => {
+    button.addEventListener('click', () => {
+        button.closest('.modalspe').style.display = 'none';
+    });
+});
 
-modalBtn.addEventListener("click", openModalspe);
-modalCloseBtn.addEventListener("click", closeModalspe);
-
-window.addEventListener("click", function(event) {
-    if (event.target === modal) { // Si l'utilisateur clique sur l'arrière-plan (modale elle-même)
-        closeModalspe();
-    }
+// Fermer la modale en cliquant en dehors du contenu
+window.addEventListener('click', (event) => {
+    modals.forEach(modal => {
+        if (event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
 });
 
 /*--------------------------------------------------------------
@@ -73,19 +80,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Vérifier si les boutons existent avant d'ajouter un event listener
     var copySongButton = document.getElementById('copyMessageSong');
+    var copySongButton2 = document.getElementById('copyMessageSong2');
+    var copySongButton3 = document.getElementById('copyMessageSong3');
     var copyDayButton = document.getElementById('copyMessageDay');
 
     if (copySongButton) {
         copySongButton.addEventListener('click', function () {
-            copyText('copyContent'); // Copie uniquement la chanson
+            copyText('copyContent');
+        });
+    }
+
+    if (copySongButton2) {
+        copySongButton2.addEventListener('click', function () {
+            copyText('copyContent2');
+        });
+    }
+
+    if (copySongButton3) {
+        copySongButton3.addEventListener('click', function () {
+            copyText('copyContent3');
         });
     }
 
     if (copyDayButton) {
         copyDayButton.addEventListener('click', function () {
-            copyText('copyContentDay'); // Copie uniquement la journée type
+            copyText('copyContentDay');
         });
     }
+
 });
 
 

@@ -26,10 +26,14 @@
       <li><b>Boîte à clous, pot de peinture écossaise, marteau à bomber le verre :</b> Pièges classiques pour envoyer un nouveau sur une fausse mission.</li>
     </ul>
 
-    <a href="javascript:void(0)" class="back-button" id="open-modalspe">Voir message journée type</a>
-    <div class="modalspe" id="modal-locspe">
+    <button class="openModalBtn back-button" data-modal="modal1">Voir message journée type</button>
+
+  </div>
+
+    <!-- Modale 1 -->
+    <div id="modal1" class="modalspe">
       <div class="modal__contentspe">
-        <button class="modal__closespe" id="closeButtonDay">&times;</button>
+        <button class="modal__closespe">&times;</button>
         <p id="modalTitleDay"><strong>Journée type :</strong></p>
         <div id="copyContentDay">
 
@@ -65,12 +69,9 @@
 
         </div>
 
-        <button class="back-button" id="copyMessageDay">Copier le message</button>
-
+        <button class="back-button" id="copyMessageSong3">Copier le message</button>
       </div>
     </div>
-
-  </div>
 
   <button class="back-button" onclick="history.back()">Retour</button>
 </div>
