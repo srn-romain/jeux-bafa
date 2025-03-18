@@ -83,6 +83,8 @@ document.addEventListener("DOMContentLoaded", function () {
     var copySongButton2 = document.getElementById('copyMessageSong2');
     var copySongButton3 = document.getElementById('copyMessageSong3');
     var copyDayButton = document.getElementById('copyMessageDay');
+    var copyButton1 = document.getElementById('copyMessageChaussette');
+    var copyButton2 = document.getElementById('copyMessageVaisselle');
 
     if (copySongButton) {
         copySongButton.addEventListener('click', function () {
@@ -99,6 +101,18 @@ document.addEventListener("DOMContentLoaded", function () {
     if (copySongButton3) {
         copySongButton3.addEventListener('click', function () {
             copyText('copyContent3');
+        });
+    }
+
+    if (copyButton1) {
+        copyButton1.addEventListener('click', function () {
+            copyText('copyContentChaussette');
+        });
+    }
+
+    if (copyButton2) {
+        copyButton2.addEventListener('click', function () {
+            copyText('copyContentVaisselle');
         });
     }
 
