@@ -85,6 +85,8 @@ document.addEventListener("DOMContentLoaded", function () {
     var copyDayButton = document.getElementById('copyMessageDay');
     var copyButton1 = document.getElementById('copyMessageChaussette');
     var copyButton2 = document.getElementById('copyMessageVaisselle');
+    var copyRallyePhoto1 = document.getElementById('RallyePhoto1');
+    var copyRallyePhoto2 = document.getElementById('RallyePhoto2');
 
     if (copySongButton) {
         copySongButton.addEventListener('click', function () {
@@ -104,6 +106,12 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    if (copyDayButton) {
+        copyDayButton.addEventListener('click', function () {
+            copyText('copyContentDay');
+        });
+    }
+
     if (copyButton1) {
         copyButton1.addEventListener('click', function () {
             copyText('copyContentChaussette');
@@ -116,12 +124,19 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    if (copyDayButton) {
-        copyDayButton.addEventListener('click', function () {
-            copyText('copyContentDay');
+    if (copyRallyePhoto1) {
+        copyRallyePhoto1.addEventListener('click', function () {
+            copyText('copyContentPhoto1');
+        });
+    }
+
+    if (copyRallyePhoto2) {
+        copyRallyePhoto2.addEventListener('click', function () {
+            copyText('copyContentPhoto2');
         });
     }
 
 });
+
 
 
