@@ -87,6 +87,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var copyButton2 = document.getElementById('copyMessageVaisselle');
     var copyRallyePhoto1 = document.getElementById('RallyePhoto1');
     var copyRallyePhoto2 = document.getElementById('RallyePhoto2');
+    var dirlo = document.getElementById('recrutement');
 
     if (copySongButton) {
         copySongButton.addEventListener('click', function () {
@@ -133,6 +134,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (copyRallyePhoto2) {
         copyRallyePhoto2.addEventListener('click', function () {
             copyText('copyContentPhoto2');
+        });
+    }
+
+    if (dirlo) {
+        dirlo.addEventListener('click', function () {
+            copyText('dirloContent');
         });
     }
 
