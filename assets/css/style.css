@@ -38,10 +38,6 @@ body {
   padding: 20px;
 }
 
-input[type="checkbox"] {
-  margin-right: 10px;
-}
-
 /*--------------------------------------------------------------
 # Principale
 --------------------------------------------------------------*/
@@ -216,4 +212,15 @@ p:not(.no-p-style) {
 .button-group {
   display: flex;
   gap: 10px;
+}
+
+input[type="checkbox"] {
+  margin-right: 10px;
+}
+
+.section-divider {
+  border: none;
+  border-top: 2px solid #f39c12;
+  margin: 2rem 0;
+  width: 100%;
 }
