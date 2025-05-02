@@ -172,7 +172,7 @@ p:not(.no-p-style) {
 }
 
 /*--------------------------------------------------------------
-# Modale
+# Modale diverses
 --------------------------------------------------------------*/
 
 .modalspe, .modal__closespe {
@@ -214,6 +214,10 @@ p:not(.no-p-style) {
   gap: 10px;
 }
 
+/*--------------------------------------------------------------
+# Directeur
+--------------------------------------------------------------*/
+
 input[type="checkbox"] {
   margin-right: 10px;
 }
@@ -223,4 +227,40 @@ input[type="checkbox"] {
   border-top: 2px solid #f39c12;
   margin: 2rem 0;
   width: 100%;
+}
+
+/*--------------------------------------------------------------
+# Reglementation
+--------------------------------------------------------------*/
+
+table {
+  border-collapse: collapse;
+  width: 70%;
+  max-width: 800px;
+  margin: 20px;
+  text-align: center;
+  border: 1px solid #ccc;
+  background-color: #fff;
+}
+
+th, td {
+  padding: 12px;
+  border: 1px solid #ddd;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+td {
+  font-size: 1rem;
+}
+
+em {
+  font-size: 0.9rem;
+  color: #555;
+  display: block;
+  text-align: center;
+  margin-top: 10px;
 }
