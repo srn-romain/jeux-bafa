@@ -235,12 +235,17 @@ input[type="checkbox"] {
 
 table {
   border-collapse: collapse;
-  width: 70%;
   max-width: 800px;
   margin: 20px;
   text-align: center;
   border: 1px solid #ccc;
   background-color: #fff;
+  width: 100%;
+}
+
+.table-container {
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 th, td {
