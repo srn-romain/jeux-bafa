@@ -38,6 +38,19 @@ body {
   padding: 20px;
 }
 
+@media only screen and (max-width: 1040px) {
+  #mobile-message {
+    display: block;
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 10px;
+    margin: 20px 0;
+    border: 1px solid #f5c6cb;
+    border-radius: 5px;
+    text-align: center;
+  }
+}
+
 /*--------------------------------------------------------------
 # Principale
 --------------------------------------------------------------*/
