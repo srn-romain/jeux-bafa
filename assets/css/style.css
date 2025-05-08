@@ -38,7 +38,11 @@ body {
   padding: 20px;
 }
 
-@media only screen and (max-width: 1040px) {
+#mobile-message {
+  display: none;
+}
+
+@media only screen and (max-width: 1011px) {
   #mobile-message {
     display: block;
     background-color: #f8d7da;
