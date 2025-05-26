@@ -13,12 +13,16 @@
   <h2>BAFA & BAFD</h2>
   <p><b>REGLEMENTATION</b></p>
 
-  <a href="https://acm-cvl.fr/memento/?thematique=reglementation">
-    <button class="back-button">Voir la documentation officielle sur tous les profils</button>
-  </a>
-  <button class="back-button" onclick="history.back()">Retour</button>
+    <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 15px;">
+      <a href="#anim-bafa" class="back-button">Anim BAFA</a>
+      <a href="#anim-sb" class="back-button">Anim SB</a>
+      <a href="#anim-as" class="back-button">Anim AS</a>
+      <a href="#recap-encadrement" class="back-button">Ratio encadrement</a>
+      <a href="https://acm-cvl.fr/memento/?thematique=reglementation" class="back-button">Doc officielle</a>
+      <button class="back-button" onclick="history.back()">Retour</button>
+    </div>
 
-  <h1>Pour un animateur BAFA</h1>
+  <h1 id="anim-bafa">Pour un animateur BAFA</h1>
   <div class="categories">
     <h1>Encadrements</h1>
 
@@ -111,7 +115,7 @@
 
   </div>
   <br><br>
-  <h1>Pour un animateur SB</h1>
+  <h1 id="anim-sb">Pour un animateur SB</h1>
   <div class="categories">
     <section>
       <h4>Lieux Surveillés :</h4>
@@ -183,7 +187,7 @@
   </div>
 
   <br><br>
-  <h1>Pour un animateur AS</h1>
+  <h1 id="anim-as">Pour un animateur AS</h1>
   <div class="categories">
     <section>
       <h1>Principes généraux</h1>
@@ -282,14 +286,14 @@
   </div>
 
   <br><br>
-  <h1>Récapitulatif encadrement</h1>
-    <div class="categories">
+  <h1 id="recap-encadrement">Récapitulatif encadrement</h1>
+  <div class="categories">
     <section>
       <div id="mobile-message" class="mobile-notification">
         Le tableau est réduit. Faites défiler horizontalement pour voir l'intégralité du contenu.
       </div>
-      <div class="table-container">
-        <table style="border-collapse: collapse;">
+      <div class="table-container" style="display: flex; justify-content: center;">
+        <table>
           <thead>
           <tr>
             <th><strong>Type d'accueil / Activité</strong></th>
@@ -320,10 +324,7 @@
         </table>
       </div>
 
-      <contain class="button-group">
         <button class="openModalBtn back-button" data-modal="modal1">Vocabulaire scout</button>
-      </contain>
-
     </section>
   </div>
 
