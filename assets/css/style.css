@@ -77,6 +77,16 @@ a:hover {
   text-decoration: none;
 }
 
+.anone {
+  color: #f39c12;
+  text-decoration: none;
+}
+
+.anone:hover {
+  color: #f39c12;
+  text-decoration: underline;
+}
+
 h2 {
   font-size: 1.8rem;
   margin-bottom: 15px;
