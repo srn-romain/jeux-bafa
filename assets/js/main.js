@@ -92,6 +92,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var whatsapp = document.getElementById('copyMessageWhatsapp');
     var GD = document.getElementById('copyMessageJeuGD');
     var PI = document.getElementById('copyMessageJeuPI');
+    var annonce = document.getElementById('copyMessageAnnonce');
 
     if (copySongButton) {
         copySongButton.addEventListener('click', function () {
@@ -168,6 +169,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (PI) {
         PI.addEventListener('click', function () {
             copyText('copyContent3');
+        });
+    }
+
+    if (annonce) {
+        annonce.addEventListener('click', function () {
+            copyText('');
         });
     }
 
