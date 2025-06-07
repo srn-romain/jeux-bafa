@@ -89,6 +89,9 @@ document.addEventListener("DOMContentLoaded", function () {
     var copyRallyePhoto2 = document.getElementById('RallyePhoto2');
     var dirlo = document.getElementById('recrutement');
     var scoutisme = document.getElementById('scout');
+    var whatsapp = document.getElementById('copyMessageWhatsapp');
+    var GD = document.getElementById('copyMessageJeuGD');
+    var PI = document.getElementById('copyMessageJeuPI');
 
     if (copySongButton) {
         copySongButton.addEventListener('click', function () {
@@ -147,6 +150,24 @@ document.addEventListener("DOMContentLoaded", function () {
     if (scoutisme) {
         scoutisme.addEventListener('click', function () {
             copyText('scoutismeContent');
+        });
+    }
+
+    if (whatsapp) {
+        whatsapp.addEventListener('click', function () {
+            copyText('copyContent1');
+        });
+    }
+
+    if (GD) {
+        GD.addEventListener('click', function () {
+            copyText('copyContent2');
+        });
+    }
+
+    if (PI) {
+        PI.addEventListener('click', function () {
+            copyText('copyContent3');
         });
     }
 

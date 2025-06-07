@@ -1,39 +1,145 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jeux BAFA</title>
-  <link href="assets/img/favicon.png" rel="icon">
-  <link rel="stylesheet" href="assets/css/style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeux BAFA</title>
+    <link href="assets/img/favicon.png" rel="icon">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
 <div class="container">
-  <h2>BAFA & BAFD</h2>
-  <p><b>JEUX SUR LA SEMAINE</b></p>
+    <h2>BAFA & BAFD</h2>
+    <p><b>JEUX SUR LA SEMAINE</b></p>
 
-  <div class="categories">
-    <ul>
-      <li><b>Secret Anim :</b> Les participants forment des groupes de 8 ou 9. Ils ont 5 minutes pour écrire leurs réponses sur une feuille. Le chef d’équipe apporte la feuille, puis chaque équipe reçoit seulement le nombre de bonnes réponses sans savoir lesquelles (comme un mastermind). La première équipe à tout trouver gagne, sinon, celle avec le plus de bonnes réponses à la fin du séjour remporte la partie.</li>
-      <li><b>Gorille Cacahuète / Ange Démon :</b> Jeu d’opposition et de rôle.</li>
-      <li><b>Plait-il ? :</b> Jeu de bouteille avec des gages à l’intérieur. Voir thème sanctions pour les gages. Si un joueur ne répond pas "plait-il ?", il reçoit un gage.</li>
-      <li><b>Secret Story :</b> Chaque participant a un secret à protéger. Un système de points permet de "buzzer" une personne en misant 1500 points. Si le buzz est faux, la personne concernée gagne 100 points. Le maximum de points atteignable est de 6000.</li>
-      <li><b>Jeu de la pince à linge 1 :</b> Jeu du ni oui ni non. Les pinces à linge représentent les vies.</li>
-      <li><b>Jeu de la Pince à Linge 2 :</b> Chaque participant doit discrètement accrocher une pince à linge sur quelqu’un d’autre.</li>
-      <li><b>Le Killer :</b> Chaque participant pioche une action et un prénom. L’objectif est de réaliser l’action sur la personne désignée dans la semaine sans se faire repérer. Si la personne ciblée découvre l’action, elle peut "contrer" et éliminer l’attaquant.</li>
-      <li><b>Passeport</b> : Activités à tamponnées & personaliser tout au long su séjour.</li>
-      <li><b>Cacher 100 canards miniatures</b> partout dans le centre</li>
-      <li><b>Fil rouge par thèmes </b> : Émargement + Présentation de la journée + Passeport + Canard + Carnet jeunes </li>
-    </ul>
-  </div>
+    <div class="categories">
+        <ul>
+            <li><b>Secret Anim :</b> Les participants forment des groupes de 8 ou 9. Ils ont 5 minutes pour écrire leurs
+                réponses sur une feuille. Le chef d’équipe apporte la feuille, puis chaque équipe reçoit seulement le
+                nombre de bonnes réponses sans savoir lesquelles (comme un mastermind). La première équipe à tout
+                trouver gagne, sinon, celle avec le plus de bonnes réponses à la fin du séjour remporte la partie.
+            </li>
+            <li><b>Gorille Cacahuète / Ange Démon :</b> Jeu d’opposition et de rôle.</li>
+            <li><b>Plait-il ? :</b> Jeu de bouteille avec des gages à l’intérieur. Voir thème sanctions pour les gages.
+                Si un joueur ne répond pas "plait-il ?", il reçoit un gage.
+            </li>
+            <li><b>Secret Story :</b> Chaque participant a un secret à protéger. Un système de points permet de "buzzer"
+                une personne en misant 1500 points. Si le buzz est faux, la personne concernée gagne 100 points. Le
+                maximum de points atteignable est de 6000.
+            </li>
+            <li><b>Jeu de la pince à linge 1 :</b> Jeu du ni oui ni non. Les pinces à linge représentent les vies.</li>
+            <li><b>Jeu de la Pince à Linge 2 :</b> Chaque participant doit discrètement accrocher une pince à linge sur
+                quelqu’un d’autre.
+            </li>
+            <li><b>Le Killer :</b> Chaque participant pioche une action et un prénom. L’objectif est de réaliser
+                l’action sur la personne désignée dans la semaine sans se faire repérer. Si la personne ciblée découvre
+                l’action, elle peut "contrer" et éliminer l’attaquant.
+            </li>
+            <li><b>Passeport</b> : Activités à tamponnées & personaliser tout au long su séjour.</li>
+            <li><b>Cacher 100 canards miniatures</b> partout dans le centre</li>
+            <li><b>Fil rouge par thèmes </b> : Émargement + Présentation de la journée + Passeport + Canard + Carnet
+                jeunes
+            </li>
+        </ul>
 
-  <button class="back-button" onclick="history.back()">Retour</button>
+        <contain class="button-group">
+            <button class="openModalBtn back-button" data-modal="modal1">Règle Grosse Dinde</button>
+            <button class="openModalBtn back-button" data-modal="modal2">Message WhatsApp type</button>
+            <button class="openModalBtn back-button" data-modal="modal3">Règle Plaît-il ?</button>
+        </contain>
+
+    </div>
+
+    <!-- Modale 1 -->
+    <div id="modal1" class="modalspe">
+        <div class="modal__contentspe">
+            <button class="modal__closespe">&times;</button>
+            <p><strong>Message WhatsApp :</strong></p>
+            <div id="copyContent2">
+                <p class="no-p-style">🦃 <strong>GROSSE DINDE TIME !</strong><br>
+                    Un jeu qui revient fort dans la colo !<br><br>
+
+                    À <strong>chaque heure miroir</strong> (ex : 11h11, 14h14...), c'est Grosse Dinde pendant <strong>1
+                        minute</strong> ⏱️<br>
+                    Le principe est simple :<br>
+                    👉 Une personne touche quelqu’un en disant <strong>“Grosse Dinde !”</strong><br>
+                    👉 La personne touchée devient alors la dinde, et doit en toucher une autre à son tour<br>
+                    👉 Et ça tourne comme ça jusqu’à la fin de la minute<br><br>
+
+                    😬 Celui ou celle qui est la <strong>dernière Grosse Dinde</strong> quand la minute est écoulée...
+                    prend un <strong>gage le soir</strong> !<br><br>
+
+                    ⏰ Le jeu est actif tous les jours entre <strong>9h et 19h</strong> – alors restez sur vos gardes
+                    !<br><br>
+
+                    Bonne chance les dindons ! 🦃🔥
+                </p>
+            </div>
+
+            <button class="back-button" id="copyMessageJeuGD">Copier le message</button>
+        </div>
+    </div>
+
+    <!-- Modale 2 -->
+    <div id="modal2" class="modalspe">
+        <div class="modal__contentspe">
+            <button class="modal__closespe">&times;</button>
+            <p><strong>Message WhatsApp :</strong></p>
+            <div id="copyContent1">
+                <p class="no-p-style">👋 Yo la team !<br>
+                    Bienvenue dans <strong>LE groupe WhatsApp officiel de la colo !</strong> ☀️🏕️
+                    Ici, vous aurez toutes les <strong>infos importantes (et cool)</strong> pour que la colo se passe au
+                    mieux.
+                    (changements de planning, annonces de jeux, rappels des horaires etc...)<br>
+                    <strong>📸 N'hésitez pas aussi à envoyer vos meilleures photos</strong> à la fin de la journée !<br>
+                    <strong>⚠️ Petit rappel :</strong><br>
+                    🚫 Pas de spam inutile<br>
+                    💬 Respect et bienveillance dans tous vos messages<br>
+                    🔔 Les infos peuvent tomber à tout moment, donc gardez une oreille ouverte !<br>
+                    <strong>📩 Des infos arrivent très vite... restez connectés !</strong></p>
+            </div>
+
+            <button class="back-button" id="copyMessageWhatsapp">Copier le message</button>
+        </div>
+    </div>
+
+    <!-- Modale 3 -->
+    <div id="modal3" class="modalspe">
+        <div class="modal__contentspe">
+            <button class="modal__closespe">&times;</button>
+            <p><strong>Message WhatsApp :</strong></p>
+            <div id="copyContent3">
+                <p class="no-p-style">🎭 <strong>LE JEU DU PLAÎT-IL ?</strong><br>
+                    Un classique qui va vous rendre fous ! 😵‍💫<br><br>
+
+                    📣 La règle est simple :<br>
+                    👉 Dès qu’on t’appelle par ton <strong>prénom</strong>, tu dois répondre par <strong>“Plaît-il
+                        ?”</strong><br>
+                    👉 Si tu réponds autre chose (“oui ?”, “quoi ?”…) → tu te prends le <strong>Plaît-il</strong>
+                    😬<br><br>
+
+                    🎒 Le Plaît-il, c’est un <strong>objet relou</strong> à trimballer toute la journée (pour cette colo,
+                    c’est : <strong>le Todo anim*</strong>)<br><br>
+
+                    🎯 Le but : <strong>t’en débarrasser</strong> en piégeant quelqu’un d’autre !
+                    Mais attention :<br>
+                    ⏰ Si tu l’as encore sur toi à <strong>19h</strong> → c’est <strong>gage le soir</strong> 😈<br><br>
+
+                    À vous de jouer... et surtout, ouvrez l’oreille ! 👂😉
+                </p>
+            </div>
+
+            <button class="back-button" id="copyMessageJeuPI">Copier le message</button>
+        </div>
+    </div>
+
+    <button class="back-button" onclick="history.back()">Retour</button>
 </div>
 
 <footer id="footer">
-  <br>
-  <p style="color: white; text-align: center"> &copy; By Romain SIEURIN</p>
+    <br>
+    <p style="color: white; text-align: center"> &copy; By Romain SIEURIN</p>
 </footer>
 
 <a href="#" class="back-to-top">⭡</a>
