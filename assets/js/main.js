@@ -93,6 +93,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var GD = document.getElementById('copyMessageJeuGD');
     var PI = document.getElementById('copyMessageJeuPI');
     var annonce = document.getElementById('copyMessageAnnonce');
+    var questions = document.getElementById('copyMessageQuestion');
 
     if (copySongButton) {
         copySongButton.addEventListener('click', function () {
@@ -174,7 +175,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     if (annonce) {
         annonce.addEventListener('click', function () {
-            copyText('');
+            copyText('copyContent2');
+        });
+    }
+
+    if (questions) {
+        questions.addEventListener('click', function () {
+            copyText('copyContent3');
         });
     }
 
