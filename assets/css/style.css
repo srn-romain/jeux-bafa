@@ -241,7 +241,24 @@ p:not(.no-p-style) {
 
 .button-group {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0;
+}
+
+.button-group button {
+  padding: 10px 15px;
+  font-size: 14px;
+  width: auto;
+  max-width: 100%;
+}
+
+@media (max-width: 768px) {
+  .button-group button {
+    font-size: 12px;
+    width: 100%;
+    margin: 5px;
+  }
 }
 
 /*--------------------------------------------------------------
