@@ -94,6 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var PI = document.getElementById('copyMessageJeuPI');
     var annonce = document.getElementById('copyMessageAnnonce');
     var questions = document.getElementById('copyMessageQuestion');
+    var tante = document.getElementById('tante');
 
     if (copySongButton) {
         copySongButton.addEventListener('click', function () {
@@ -182,6 +183,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (questions) {
         questions.addEventListener('click', function () {
             copyText('copyContent3');
+        });
+    }
+
+    if (tante) {
+        tante.addEventListener('click', function () {
+            copyText('copyContent4');
         });
     }
 
