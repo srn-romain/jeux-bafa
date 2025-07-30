@@ -14,6 +14,9 @@
   <p><b>DIRECTION</b></p>
 
   <div class="categories">
+
+    <button class="back-button" onclick="history.back()">Retour</button>
+
     <h1>➡️ Avant le séjour</h1>
     <h3>🎯 Faire avant toute chose ces 3 tâches :</h3>
     <ul>
@@ -72,7 +75,6 @@
       <li>Faire signer aux anims contrats de travail</li>
       <li>Réaliser entretien début de séjour avec anim (+ prévoir date entretien mi-séjour)</li>
       <li>Gestion de l'affichage qui restera tout le séjour (Voir rubrique dédiée en dessous) + affichage journalier dans la rubrique dédié <a href="https://srn-romain.github.io/jeux-bafa/quotidien.html"><i>ici</i></a></li>
-      <li>Récupérer auprès des jeunes (si -12 ans): Médicament, argent de poche, téléphone, bouffe (si grosse quantité)</li>
       <li>Faire les inventaires (⚠️Vérifier casquette/bob, gourde (ou de quoi en acheter), et crème solaire)</li>
       <li>Définir un coin fumeur : Interdiction de fumer pour les enfants et les majeurs dans tout ce qui appartient au centre, intérieur comme extérieur donc coin fumeur sur la voie publique. (sauf si zone dédiée dans le centre)</li>
       <li>Se renseigner sur le point de rassemblement en cas d'incendie</li>
@@ -87,6 +89,7 @@
       <li>S’assurer que le local de l’infirmerie peut être fermé à clé et que celle-ci reste inaccessible aux enfants afin d’empêcher tout accès non autorisé.</li>
       <li>Vérifier que chaque enfant possède un sac de linge sale & sac de couchage/drap</li>
       <li>Si il y a des issues de secours à coté de chambre, mettre des adultes si possible ou pas loin. (Interdiction aux enfants de moins de 6 ans de dormir sur un lit superposé + Interdiction de rajouter un lit dans une chambre conformément au rapport de la commission de sécurité + Mixité autorisée avant 6 ans, doit le permettre après (mais pas obligation).)</li>
+      <li>A récupérer auprès des jeunes : <u><a href="#ramasser">voir tableau</a></u> ci dessous</li>
     </ul><br>
 
     <h3>🕒 Quotidien</h3>
@@ -261,7 +264,40 @@
       <li>Affiche "je suis momentanément indispo"</li>
       <li>Liste des jeunes classiques + feuille émargement</li>
       <li>Prévoir enveloppe & imprimer fiche suivi pour argent de poche des jeunes</li>
-    </ul>
+    </ul><br>
+
+    <h3>🧩 Ce qu'il faut ramasser à l'arrivée</h3>
+    <div id="mobile-message" class="mobile-notification">
+      Le tableau est réduit. Faites défiler horizontalement pour voir l'intégralité du contenu.
+    </div>
+    <div id="ramasser" class="table-container" style="display: flex; justify-content: center;">
+      <table>
+        <thead>
+        <tr>
+          <th><strong>Enfance</strong></th>
+          <th><strong>Ados</strong></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>Nourriture (si grosse quantité)</td>
+          <td>Nourriture (si grosse quantité)</td>
+        </tr>
+        <tr>
+          <td>Téléphone/Console de jeu</td>
+          <td>Téléphone</td>
+        </tr>
+        <tr>
+          <td>Médicamments (géré par l'as)</td>
+          <td>Médicamments (géré par l'as)</td>
+        </tr>
+        <tr>
+          <td>Argent de poche</td>
+          <td>/</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
 
     <contain class="button-group">
       <button class="openModalBtn back-button" data-modal="modal1">Questions Recrutement</button>
