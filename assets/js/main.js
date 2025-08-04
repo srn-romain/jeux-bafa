@@ -95,6 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
     var annonce = document.getElementById('copyMessageAnnonce');
     var questions = document.getElementById('copyMessageQuestion');
     var tante = document.getElementById('tante');
+    var hibou = document.getElementById('hibou');
 
     if (copySongButton) {
         copySongButton.addEventListener('click', function () {
@@ -189,6 +190,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (tante) {
         tante.addEventListener('click', function () {
             copyText('copyContent4');
+        });
+    }
+
+    if (hibou) {
+        hibou.addEventListener('click', function () {
+            copyText('copyContenthibou');
         });
     }
 
