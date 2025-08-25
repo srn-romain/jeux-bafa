@@ -293,31 +293,10 @@ document.addEventListener('DOMContentLoaded', function() {
 --------------------------------------------------------------*/
 
 const participants = [
-    {nom: "GOSSART", prenom: "Luc Francis", age: 11, genre: "masculin"},
-    {nom: "FAZENDA", prenom: "Simao", age: 12, genre: "masculin"},
-    {nom: "MARGUET BONTEMS", prenom: "Eliot", age: 13, genre: "masculin"},
-    {nom: "BOTTEY", prenom: "Sarah", age: 12, genre: "feminin"},
-    {nom: "DULIAN", prenom: "Callie", age: 12, genre: "feminin"},
-    {nom: "COURTINE", prenom: "Anouk", age: 11, genre: "feminin"},
-    {nom: "CREMOUX", prenom: "Romain", age: 12, genre: "masculin"},
-    {nom: "DA CUNHA", prenom: "Fernando", age: 13, genre: "masculin"},
-    {nom: "DEBIEVE", prenom: "Leo", age: 12, genre: "masculin"},
-    {nom: "DEFRESNE", prenom: "Alyssa", age: 12, genre: "feminin"},
-    {nom: "BRIDOUX", prenom: "Zelie", age: 11, genre: "feminin"},
-    {nom: "GARACHON", prenom: "Isild", age: 12, genre: "feminin"},
-    {nom: "GUERMONPREZ", prenom: "Garance", age: 11, genre: "feminin"},
-    {nom: "HAGER", prenom: "Mathilde", age: 12, genre: "feminin"},
-    {nom: "HAOUAM", prenom: "Neyla", age: 13, genre: "feminin"},
-    {nom: "KERVRANBERTRAND", prenom: "Apolline", age: 13, genre: "feminin"},
-    {nom: "MEYNIER", prenom: "Lucas", age: 12, genre: "masculin"},
-    {nom: "MONTET", prenom: "Andrea", age: 13, genre: "masculin"},
-    {nom: "BOUILLIN", prenom: "Aaron", age: 13, genre: "masculin"},
-    {nom: "ORIOLA", prenom: "Nolan", age: 13, genre: "masculin"},
-    {nom: "PIPPONIAU", prenom: "Faustine", age: 13, genre: "feminin"},
-    {nom: "TUFFERY", prenom: "Adrien", age: 12, genre: "masculin"},
-    {nom: "THEZARD", prenom: "Gaël", age: 11, genre: "masculin"},
-    {nom: "ANTONUCCI", prenom: "Talia", age: 11, genre: "feminin"},
-    {nom: "ADJEROUD", prenom: "Liam", age: 12, genre: "masculin"}
+    {nom: "DUPPONT", prenom: "Louisa", age: 11, genre: "feminin"},
+    {nom: "DUPPONT", prenom: "Romain", age: 12, genre: "masculin"},
+    {nom: "DUPPONT", prenom: "Eliot", age: 13, genre: "masculin"},
+    {nom: "DUPPONT", prenom: "Sarah", age: 12, genre: "feminin"},
 ];
 
 function shuffleArray(array) {
