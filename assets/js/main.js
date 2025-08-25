@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const closeBtn = document.getElementById('closePasswordModal');
     const pageContent = document.getElementById('pageContent');
     
-    const correctPasswordHash = 'f85f34cbcd29708830587b85e7d4b8675e62f68712e0c78d778041680867203a';
+    const correctPasswordHash = '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08';
 
     // Vérifier si l'utilisateur a déjà saisi le mot de passe
     const isAuthenticated = sessionStorage.getItem('authenticated');
