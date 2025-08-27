@@ -257,7 +257,7 @@ p:not(.no-p-style) {
   max-width: 100%;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1000px) {
   .button-group button {
     font-size: 12px;
     width: 100%;
