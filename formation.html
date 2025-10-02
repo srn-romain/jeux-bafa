@@ -28,6 +28,7 @@
         <button class="back-button" onclick="location.href='#room'">Plan des chambres</button>
         <button class="back-button" onclick="location.href='#blog'">Le blog</button>
         <button class="back-button" onclick="location.href='#veillee'">La Veillée</button>
+        <button class="back-button" onclick="location.href='#reu'">Les Réunions</button>
         <button class="back-button" onclick="location.href='#sigle'">Rappel des sigles utiles</button>
         <button class="back-button" onclick="location.href='#acm'">Différents types d’ACM</button>
         <button class="back-button" onclick="location.href='index.html'">Retour</button>
@@ -40,7 +41,7 @@
         <li><label><input type="checkbox"> Réalisation d'un petit passeport avec nom/prénom/hobbie/lieu d'habitation/étude/sport pratiqué/stage pratique colo ou ALSH ?</label></li>
         <li><label><input type="checkbox"> Exemple de planning d'organisation d'une semaine appro</label></li>
         <li><label><input type="checkbox"> Travail à faire : PPA perso + 2 jeux en équipe</label></li>
-        <li><label><input type="checkbox"> Temps théorique sous forme de débat 4 coins ou de saynète (voir photo dans le dossier en exemple)</label></li>
+        <li><label><input type="checkbox"> Temps théorique sous forme de débat 4 coins ou de saynète</label></li>
         <li><label><input type="checkbox"> Ne pas tenir de propos hyper mensongé devant les ados </label><a href="assets/img/messageDana.jpg"><u>(Dana message corse)</u></a></li>
         <li><label><input type="checkbox"> Ne pas se laisser manquer de respect (Un ados qui vous répond, qui se moque de vos propos...)</label></li>
         <li><label><input type="checkbox"> Utiliser des méthodes pour que tout le monde ait la parole (baton de parole ou autre...)</label></li>
@@ -322,9 +323,60 @@
         </ul>
       </li>
     </ul>
+      <button class="openModalBtn back-button" data-modal="modal2">Débats 4 coins</button>
 
+      <!-- Modale 2 -->
+      <div id="modal2" class="modalspe">
+          <div class="modal__contentspe">
+              <button class="modal__closespe">&times;</button>
+              <p><strong>DÉBATS 4 COINS :</strong></p>
+              <div>
+                  <p>Option avec 4 coins : rouge, bleu, jaune et verts : Tout à fait d’accord / Plutôt d’accord / Pas d’accord / Dépend de l'âge</p>
+                 <h5>🏠 Vie quotidienne / règles</h5>
+                 <ol class="questions">
+                     <li>Les règles devraient être décidées uniquement par les animateurs.</li>
+                     <li>On devrait pouvoir choisir librement à quelle heure on se couche en colo.</li>
+                     <li>Les chambres devraient être mixtes si tout le monde est d'accord.</li>
+                     <li>Il faudrait que chacun range seulement ses affaires et pas les espaces communs.</li>
+                 </ol><br>
 
-    <br>
+                 <h5>🍽️ Repas / alimentation</h5>
+                 <ol class="questions">
+                     <li>Tout le monde devrait pouvoir choisir son menu à chaque repas.</li>
+                     <li>Il est normal qu'il y ait des repas “découverte” pour goûter de nouveaux plats.</li>
+                     <li>Il faudrait pouvoir manger quand on veut et pas à des horaires fixes.</li>
+                     <li>Le gaspillage alimentaire devrait entraîner des sanctions.</li>
+                 </ol><br>
+
+                 <h5>🎨 Activités et liberté</h5>
+                 <ol class="questions">
+                     <li>Les enfants devraient décider eux-mêmes du programme de la journée.</li>
+                     <li>Il devrait toujours y avoir des activités obligatoires.</li>
+                     <li>Il est normal d'avoir des temps calmes même si on préfère jouer.</li>
+                     <li>Les sorties à l'extérieur devraient être limitées pour la sécurité.</li>
+                 </ol><br>
+
+                 <h5>📱 Objets personnels / vie numérique</h5>
+                 <ol class="questions">
+                     <li>Les téléphones portables devraient être autorisés tout le temps.</li>
+                     <li>Il est normal d'interdire certains objets personnels dans un centre.</li>
+                     <li>On devrait pouvoir prendre et publier des photos librement.</li>
+                     <li>Les animateurs devraient vérifier ce qu'on fait sur les réseaux sociaux.</li>
+                 </ol><br>
+
+                 <h5>👥 Vie en groupe / respect</h5>
+                 <ol class="questions">
+                     <li>Il est normal de faire des corvées collectives même si on n'aime pas ça.</li>
+                     <li>Les plus âgés devraient avoir plus de responsabilités que les plus jeunes.</li>
+                     <li>Tout le monde devrait participer aux animations, même s'il est timide.</li>
+                     <li>Il faudrait toujours voter pour prendre les décisions du groupe.</li>
+                 </ol>
+              </div>
+
+          </div>
+      </div>
+
+      <br>
 
     <h1 id="entre">Entretien individuels</h1>
     <h5>En début de séjour</h5>
@@ -521,7 +573,112 @@
       </li>
     </ul>
 
-    <br>
+      <button class="openModalBtn back-button" data-modal="modal3">Débats 4 coins avec réponses</button>
+
+      <!-- Modale 3 -->
+      <div id="modal3" class="modalspe">
+          <div class="modal__contentspe">
+              <button class="modal__closespe">&times;</button>
+              <p><strong>DÉBATS 4 COINS QCM :</strong></p>
+              <div>
+
+                  <h5>🏕️ Situations sensibles en camp itinérant 15–17 ans</h5>
+                  <ol class="questions">
+                      <li>
+                          Le soir dans un camp itinérant 15–17 ans, tu entends des ados copuler dans la tente :
+                          <ul>
+                              <li><span style="color:red">Rouge :</span> J'appelle les parents le lendemain</li>
+                              <li><span style="color:green">Vert :</span> J'en parle à l'équipe et aux ados concernés</li>
+                              <li><span style="color:blue">Bleu :</span> J'en parle à l'organisme</li>
+                              <li><span style="color:gold">Jaune :</span> Je vais les voir discrètement et leur demande s'ils se sont protégés</li>
+                          </ul>
+                      </li><br>
+
+                      <li>
+                          Un animateur casse par erreur un médicament d’un jeune pour une allergie :
+                          <ul>
+                              <li><span style="color:red">Rouge :</span> J'appelle les parents pour prévenir</li>
+                              <li><span style="color:green">Vert :</span> Je demande au jeune si c’est urgent et on en rachète ensemble</li>
+                              <li><span style="color:blue">Bleu :</span> Je vais directement à la pharmacie pour ne pas que le jeune loupe son traitement</li>
+                              <li><span style="color:gold">Jaune :</span> J’en parle à l’organisme pour trouver une solution</li>
+                          </ul>
+                      </li><br>
+
+                      <li>
+                          Un adolescent semble triste et isolé pendant l'activité :
+                          <ul>
+                              <li><span style="color:red">Rouge :</span> J'appelle ses parents pour en parler</li>
+                              <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour organiser un suivi</li>
+                              <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour intervention spécialisée</li>
+                              <li><span style="color:gold">Jaune :</span> Je discute discrètement avec le jeune pour comprendre son ressenti</li>
+                          </ul>
+                      </li><br>
+
+                      <li>
+                          Un adolescent arrive en retard à toutes les activités :
+                          <ul>
+                              <li><span style="color:red">Rouge :</span> J'appelle les parents pour sanction</li>
+                              <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour trouver une stratégie éducative</li>
+                              <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour information</li>
+                              <li><span style="color:gold">Jaune :</span> Je lui parle discrètement pour comprendre ses raisons</li>
+                          </ul>
+                      </li><br>
+
+                      <li>
+                          Un adolescent se dispute avec un animateur :
+                          <ul>
+                              <li><span style="color:red">Rouge :</span> J'appelle les parents pour intervenir</li>
+                              <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour calmer la situation</li>
+                              <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour avis</li>
+                              <li><span style="color:gold">Jaune :</span> Je discute discrètement avec l'adolescent pour apaiser les tensions</li>
+                          </ul>
+                      </li><br>
+
+                      <li>
+                          Un adolescent se plaint d'une activité physique trop difficile :
+                          <ul>
+                              <li><span style="color:red">Rouge :</span> J'appelle les parents pour décision</li>
+                              <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour adapter l'activité</li>
+                              <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour conseil</li>
+                              <li><span style="color:gold">Jaune :</span> Je propose discrètement un rythme adapté au jeune</li>
+                          </ul>
+                      </li><br>
+
+                      <li>
+                          Un adolescent oublie régulièrement ses affaires :
+                          <ul>
+                              <li><span style="color:red">Rouge :</span> J'appelle les parents pour qu'ils interviennent</li>
+                              <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour trouver des solutions</li>
+                              <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour suivi</li>
+                              <li><span style="color:gold">Jaune :</span> Je l'aide discrètement à organiser ses affaires</li>
+                          </ul>
+                      </li><br>
+
+                      <li>
+                          Un adolescent ne respecte pas le règlement des sanitaires :
+                          <ul>
+                              <li><span style="color:red">Rouge :</span> J'appelle les parents</li>
+                              <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour instaurer une sanction</li>
+                              <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour avis</li>
+                              <li><span style="color:gold">Jaune :</span> Je parle discrètement avec le jeune pour expliquer le règlement</li>
+                          </ul>
+                      </li><br>
+
+                      <li>
+                          Un adolescent consomme un médicament non-prescrit :
+                          <ul>
+                              <li><span style="color:red">Rouge :</span> J'appelle les parents pour prévenir</li>
+                              <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour décider de la suite</li>
+                              <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour avis médical</li>
+                              <li><span style="color:gold">Jaune :</span> Je questionne discrètement l'adolescent sur le médicament pris</li>
+                          </ul>
+                      </li>
+                  </ol>
+              </div>
+          </div>
+      </div>
+
+      <br>
 
     <h1 id="room">Plan des chambres</h1>
     <ul>
@@ -732,6 +889,72 @@
 
       <br>
 
+      <h1 id="reu">Réunions du soir</h1>
+      <ul>
+          <li>Chaque soir, APRES le coucher des enfants, les animateurs se réunissent pour faire le point sur la journée. (L'heure dépend donc de la tranche d'âge)</li>
+          <li style="list-style-type: none;"><strong>Objectifs</strong>
+              <ul>
+                  <li>Analyser ce qui s'est bien passé et les difficultés rencontrées.</li>
+                  <li>Préparer les activités et l'organisation du lendemain.</li>
+                  <li>Partager les observations sur les enfants (fatigue, conflits, besoins particuliers).</li>
+                  <li>Répartir les rôles et responsabilités pour la suite du séjour.</li>
+              </ul>
+          </li>
+          <li style="list-style-type: none;"><strong>Déroulement</strong>
+              <ul>
+                  <li>Le directeur anime la réunion et veille au respect.</li>
+                  <li>Chacun peut s'exprimer sur son ressenti, ses idées ou ses besoins.</li>
+                  <li>Les décisions sont prises collectivement, en tenant compte des contraintes et des avis de tous.</li>
+                  <li>Un temps est prévu pour aborder les points urgents ou sensibles (santé, sécurité, organisation).</li>
+                  <li>La réunion doit rester constructive et éviter de s'éterniser pour permettre à chacun de se reposer.</li>
+              </ul>
+          </li>
+          <li style="list-style-type: none;"><strong>Conseils</strong>
+              <ul>
+                  <li>Noter les points importants pour garder une trace et suivre les actions décidées.</li>
+                  <li>Terminer sur une note positive ou une astuce pour améliorer le travail d'équipe.</li>
+              </ul>
+          </li>
+      </ul><br>
+      <p>
+          <i>Astuce : Varier les formats (débat, tour de table, brainstorming) et prévoir parfois un temps informel pour renforcer la cohésion de l'équipe.</i>
+      </p>
+
+      <button class="openModalBtn back-button" data-modal="modal1">Petit jeu simulation réunion</button>
+
+      <!-- Modale 1 -->
+      <div id="modal1" class="modalspe">
+          <div class="modal__contentspe">
+              <button class="modal__closespe">&times;</button>
+              <p><strong>JEU - SIMULATION D'UNE RÉUNION :</strong></p>
+              <div>
+                  <p>
+                      <b>Objectif :</b> Simuler une réunion du soir entre animateurs pour expérimenter les dynamiques de groupe et la prise de décision.<br>
+                      Chaque participant reçoit un rôle à jouer pour rendre la réunion vivante et pédagogique.
+                  </p><br>
+                  <ul>
+                      <li><b>Le bavard :</b> Parle beaucoup, coupe la parole, discute avec ses voisins.</li>
+                      <li><b>Le suiveur :</b> Toujours d'accord avec tout le monde, ne propose rien.</li>
+                      <li><b>L'imposant :</b> Veut imposer ses idées, ne laisse pas les autres s'exprimer.</li>
+                      <li><b>Le fatigué :</b> Veut écourter la réunion, propose d'improvisé le lendemain.</li>
+                      <li><b>Le perdu :</b> Ne comprend rien, pose des questions hors sujet.</li>
+                      <li><b>Le répétitif :</b> Revient sans cesse sur un point déjà traité.</li>
+                      <li><b>Le participant classique :</b> S'exprime normalement, propose des idées, écoute les autres.</li>
+                      <li><b>Le maître de réunion :</b> Anime, distribue la parole, recentre le débat, veille au respect du temps.</li>
+                  </ul><br>
+                  <b>Déroulement :</b> Chacun tire un rôle au hasard. Le maître de réunion lance un sujet à discuter (ex : organisation d'une activité, gestion d'un problème du jour).<br>
+                  <b>L'objectif</b> est d'observer les interactions, de repérer les difficultés et de réfléchir ensemble à des solutions pour améliorer la communication et la prise de décision en équipe.
+                  <br><br>
+                  <p>
+                  <i>Astuce : À la fin, faire un petit bilan sur le ressenti de chacun et les points à améliorer pour les vraies réunions !</i>
+                  </p>
+              </div>
+
+          </div>
+      </div>
+
+      <br>
+
     <h1 id="sigle">Rappel des sigles utiles</h1>
     <ul>
         <li><b>DRAJES</b> : Délégation Régionale Académique à la Jeunesse, à l’Engagement et aux Sports</li>
@@ -756,6 +979,8 @@
           Il existe <b>trois grandes catégories d’accueils</b> :
           avec hébergement, sans hébergement et scoutisme.
       </p>
+
+      <br><br>
 
       <h5>1. Les Accueils avec hébergement</h5>
       <ul>
@@ -788,7 +1013,7 @@
               </ul>
           </li>
       </ul>
-
+        <br><br>
       <h5>2. Les Accueils sans hébergement</h5>
       <ul>
           <li><b>Accueil de loisirs extrascolaire</b> :
@@ -819,11 +1044,15 @@
           </li>
       </ul>
 
+      <br><br>
+
       <h5>3. Les Accueils de scoutisme</h5>
       <p>
           Tout accueil de scoutisme, à partir de 7 mineurs, avec ou sans hébergement,
           organisé par une association agréée par le ministre chargé de la jeunesse.
       </p>
+
+      <br><br>
 
       <h5>4. Exceptions au régime des ACM</h5>
       <ul>
@@ -848,36 +1077,6 @@
           <a href="https://www.jeunes.gouv.fr/les-accueils-collectifs-de-mineurs-208" target="_blank">Jeunes.gouv.fr</a> |
           <a href="https://www.guyane.gouv.fr/Actions-de-l-Etat/Jeunesse-sports-cohesion-sociale/Jeunesse/Loisirs-educatifs-des-jeunes/Accueils-collectifs-de-mineurs/Differents-types-d-ACM" target="_blank">Guyane.gouv.fr</a>
       </p>
-  </div>
-
-    <!-- Modale 1 -->
-  <div id="modal1" class="modalspe">
-    <div class="modal__contentspe">
-      <button class="modal__closespe">&times;</button>
-      <p><strong>Exemples sujet de saynètes :</strong></p>
-      <div id="saynète">
-          <p style="list-style-type: none; padding-left: 0; text-align: center"><img src="assets/img/saynete/1.png" alt="Bus"
-                                                                                      style="max-width:500px;height:auto;">
-          </p>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- Modale 2 -->
-  <div id="modal2" class="modalspe">
-    <div class="modal__contentspe">
-      <button class="modal__closespe">&times;</button>
-      <p><strong>Exemples sujets débat 4 coins :</strong></p>
-      <div id="debat">
-        <p>
-          <li style="list-style-type: none; padding-left: 0; text-align: center"><img src="assets/img/bus.png" alt="Bus"
-                                                                                      style="max-width:560px;height:auto;">
-          </li>
-        </p>
-      </div>
-
-    </div>
   </div>
 
   <button class="back-button" onclick="history.back()">Retour</button>
