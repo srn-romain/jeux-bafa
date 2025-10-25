@@ -16,7 +16,6 @@
 
   <div class="categories">
     <ul>
-      <li><b>Réunion match quand ça va plus</b> : match animateurs vs enfants avec public = parents, entraîneur = organisme, ballon = ambiance</li>
       <li><b>Contact :</b> Une personne pense à un mot et donne la première lettre. Les autres joueurs proposent des mots dans le thème. Si deux joueurs pensent au même mot, ils disent "contact" et gagnent une lettre supplémentaire. Le jeu continue jusqu'à ce que le mot soit trouvé.</li>
       <li><b>Jeu de la pince à linge :</b> Un joueur doit discrètement accrocher une pince à linge à un autre. À la fin de la journée, celui qui l'a reçoit un gage.</li>
       <li><b>Grosse dinde :</b> À certaines heures précises (ex : 1h01, 13h13, 20h20), dire "Grosse dinde" à un animateur. Le dernier à le dire a un gage.</li>
@@ -27,7 +26,10 @@
       <li><b>Devine le gateau :</b> Chaque anim reçoit un papier avec le nom d'un autre anim et le décrit sous forme de gâteau à faire deviner au groupe. (Jeu bafd)</li>
     </ul><br>
 
-    <button class="openModalBtn back-button" data-modal="modal1">Voir message journée type</button>
+      <contain class="button-group">
+          <button class="openModalBtn back-button" data-modal="modal2">Règle Grosse Dinde</button>
+          <button class="openModalBtn back-button" data-modal="modal1">Voir message journée type</button>
+      </contain>
 
   </div>
 
@@ -72,6 +74,36 @@
 
         <button class="back-button" id="copyMessageDay">Copier le message</button>
       </div>
+    </div>
+
+    <!-- Modale 2 -->
+    <div id="modal2" class="modalspe">
+        <div class="modal__contentspe">
+            <button class="modal__closespe">&times;</button>
+            <p><strong>GROSSE DINDE</strong></p>
+            <div id="copyContent2">
+                <p class="no-p-style">🦃 <strong>GROSSE DINDE TIME !</strong><br>
+                    Un jeu qui revient fort dans la colo !<br><br>
+
+                    À <strong>chaque heure miroir</strong> (ex : 11h11, 14h14...), c'est Grosse Dinde pendant <strong>1
+                        minute</strong> ⏱️<br>
+                    Le principe est simple :<br>
+                    👉 Une personne touche quelqu’un en disant <strong>“Grosse Dinde !”</strong><br>
+                    👉 La personne touchée devient alors la dinde, et doit en toucher une autre à son tour<br>
+                    👉 Et ça tourne comme ça jusqu’à la fin de la minute<br><br>
+
+                    😬 Celui ou celle qui est la <strong>dernière Grosse Dinde</strong> quand la minute est écoulée...
+                    prend un <strong>gage le soir</strong> !<br><br>
+
+                    ⏰ Le jeu est actif tous les jours entre <strong>9h et 19h</strong> – alors restez sur vos gardes
+                    !<br><br>
+
+                    Bonne chance les dindons ! 🦃🔥
+                </p>
+            </div>
+
+            <button class="back-button" id="copyMessageJeuGD">Copier le message</button>
+        </div>
     </div>
 
   <button class="back-button" onclick="history.back()">Retour</button>
