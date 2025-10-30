@@ -439,6 +439,20 @@
 
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Récupère l'identifiant de la modale dans l'URL
+        const modalId = window.location.hash.substring(1);
+        if(modalId) {
+            const modal = document.getElementById(modalId);
+            if(modal) {
+                modal.style.display = "block"; // ou la fonction qui ouvre ta modale
+            }
+        }
+    });
+</script>
+
+
 <script src="../assets/js/main.js"></script>
 </body>
 
