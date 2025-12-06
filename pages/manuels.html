@@ -40,6 +40,7 @@
         <li><b>Land Art</b> : Créer des œuvres avec des matériaux naturels collectés dans l’environnement (feuilles, pierres, bois…).</li>
         <li><b>Maquillage</b> : Réaliser des maquillages créatifs pour personnages ou thèmes divers.</li>
         <li><b>Origami</b> : Plier des feuilles pour créer des formes et animaux en papier.</li>
+        <li><b>P'tit bac</b> : Trouver des mots commençant par une lettre donnée dans différentes catégories. <a href="#" class="openModalBtn" data-modal="modalPetitBac"><u>Voir les thèmes et générer une lettre</u></a>.</li>
         <li><b>Petit chevaux grandeur nature</b> : Réaliser une version géante du jeu avec cases au sol et questions culture générale à chaque étape.</li>
         <li><b>Pâtes à modeler</b> : Façonner des formes, personnages ou objets en pâte à modeler.</li>
         <li><b>Plâtre</b> : Réaliser un moulage ou forme en plâtre, puis décorer ou dessiner dessus le lendemain.</li>
@@ -51,6 +52,82 @@
         <li><b>Voiture en carton pour Mille Bornes</b> : Fabriquer une petite voiture en carton à utiliser dans un jeu type Mille Bornes, éventuellement en veillée.</li>
         <li><b>Chanson karaoke</b> : Chanter une chanson au micro ou en groupe pour s’amuser et développer la confiance en soi.</li>
     </ul>
+  </div>
+
+  <!-- Modale - Le p'tit bac -->
+  <div id="modalPetitBac" class="modalspe">
+    <div class="modal__contentspe">
+      <button class="modal__closespe">&times;</button>
+      <p><strong>LE P'TIT BAC :</strong></p>
+      <div id="copyContentPetitBac">
+        <p>
+          <strong>Règles :</strong> Les participants doivent trouver un mot commençant par une lettre donnée pour chaque catégorie. Le premier à compléter toutes les catégories crie "P'tit bac !"<br><br>
+          
+          <strong>Thèmes originaux :</strong><br>
+          <ul style="text-align: left; max-width: 600px; margin: 0 auto;">
+            <li>🏙️ Ville française</li>
+            <li>🎬 Film ou série</li>
+            <li>🎵 Chanteur ou groupe</li>
+            <li>🍕 Plat ou aliment</li>
+            <li>🐾 Animal</li>
+            <li>🌍 Pays</li>
+            <li>👤 Prénom</li>
+            <li>📚 Livre ou BD</li>
+            <li>🎮 Jeu vidéo</li>
+            <li>🌳 Plante ou fleur</li>
+            <li>🚗 Marque de voiture</li>
+            <li>👕 Vêtement</li>
+            <li>🏠 Objet de la maison</li>
+            <li>🎨 Couleur</li>
+            <li>⚽ Sport</li>
+            <li>🏛️ Monument</li>
+            <li>🌊 Rivière ou océan</li>
+            <li>🍎 Fruit ou légume</li>
+            <li>🎭 Métier</li>
+            <li>📺 Émission TV</li>
+            <li>🎪 Attraction de parc</li>
+            <li>🧸 Jouet</li>
+            <li>🍫 Bonbon ou gâteau</li>
+            <li>🌿 Herbe aromatique</li>
+            <li>🦋 Insecte</li>
+            <li>🏔️ Montagne</li>
+            <li>🌙 Étoile ou planète</li>
+            <li>🎪 Cirque</li>
+            <li>🏰 Château</li>
+            <li>🎨 Artiste peintre</li>
+            <li>📱 Application mobile</li>
+            <li>🌮 Spécialité culinaire</li>
+            <li>🎬 Réalisateur</li>
+            <li>📖 Auteur</li>
+            <li>🎵 Instrument de musique</li>
+            <li>🏖️ Lieu de vacances</li>
+            <li>🎯 Jeu de société</li>
+            <li>🌳 Arbre</li>
+            <li>🦁 Animal sauvage</li>
+            <li>🐠 Animal marin</li>
+            <li>🌺 Fleur</li>
+            <li>🍰 Dessert</li>
+            <li>🥤 Boisson</li>
+            <li>🏆 Trophée ou récompense</li>
+            <li>🎪 Fête foraine</li>
+            <li>🎨 Matériel d'artiste</li>
+            <li>📱 Objet technologique</li>
+            <li>🏕️ Objet de camping</li>
+            <li>🎒 Objet d'école</li>
+            <li>🧴 Produit de beauté</li>
+            <li>🎁 Cadeau</li>
+            <li>🎪 Accessoire de fête</li>
+          </ul>
+          
+          <div style="text-align: center; margin-top: 30px;">
+            <button class="back-button" id="generateLetter" style="font-size: 18px; padding: 15px 30px;">🎲 Générer une lettre</button>
+            <div id="letterDisplay" style="font-size: 48px; font-weight: bold; color: #f39c12; margin-top: 20px; min-height: 60px;"></div>
+          </div>
+        </p>
+      </div>
+
+      <button class="back-button" id="copyMessagePetitBac">Copier le message</button>
+    </div>
   </div>
 
   <button class="back-button" onclick="location.href='../index.html'">Retour</button>
@@ -65,6 +142,65 @@
 
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/navigation.js"></script>
+<script>
+  // Générateur de lettre pour le p'tit bac
+  document.addEventListener('DOMContentLoaded', function() {
+    const generateLetterBtn = document.getElementById('generateLetter');
+    const letterDisplay = document.getElementById('letterDisplay');
+    
+    if (generateLetterBtn && letterDisplay) {
+      generateLetterBtn.addEventListener('click', function() {
+        // Lettres faciles (probabilité élevée - 80%)
+        const easyLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'V'];
+        // Lettres moyennes (probabilité moyenne - 15%)
+        const mediumLetters = ['K', 'Q'];
+        // Lettres difficiles (probabilité faible - 5%)
+        const hardLetters = ['W', 'X', 'Y', 'Z'];
+        
+        // Générer un nombre aléatoire entre 0 et 100
+        const random = Math.random() * 100;
+        
+        let selectedLetter;
+        if (random < 80) {
+          // 80% de chance : lettre facile
+          selectedLetter = easyLetters[Math.floor(Math.random() * easyLetters.length)];
+        } else if (random < 95) {
+          // 15% de chance : lettre moyenne
+          selectedLetter = mediumLetters[Math.floor(Math.random() * mediumLetters.length)];
+        } else {
+          // 5% de chance : lettre difficile
+          selectedLetter = hardLetters[Math.floor(Math.random() * hardLetters.length)];
+        }
+        
+        // Animation de la lettre
+        letterDisplay.style.opacity = '0';
+        letterDisplay.style.transform = 'scale(0.5)';
+        
+        setTimeout(() => {
+          letterDisplay.textContent = selectedLetter;
+          letterDisplay.style.opacity = '1';
+          letterDisplay.style.transform = 'scale(1)';
+          letterDisplay.style.transition = 'all 0.3s ease';
+        }, 150);
+      });
+    }
+    
+    // Bouton copier pour le p'tit bac
+    const copyPetitBacBtn = document.getElementById('copyMessagePetitBac');
+    if (copyPetitBacBtn) {
+      copyPetitBacBtn.addEventListener('click', function() {
+        const content = document.getElementById('copyContentPetitBac');
+        const text = content.innerText || content.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          copyPetitBacBtn.textContent = '✓ Copié !';
+          setTimeout(() => {
+            copyPetitBacBtn.textContent = 'Copier le message';
+          }, 2000);
+        });
+      });
+    }
+  });
+</script>
 </body>
 
 </html>
