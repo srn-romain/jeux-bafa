@@ -118,7 +118,10 @@
             plausible. On lit ensuite la vraie définition et on vote ; le but est de choisir la définition la plus proche
             de ma vérité ou la plus drôle etc... Voir un exemple <a href="../assets/img/JeuDuDico.pdf"><u>ici</u></a>.
         </li>
-        <li><b>Jeux dde vente d'un produit</b> : Chaque joueur ou équipe choisit (ou se voit assigner) un produit (inutile
+        <li><b>Jeu des 5 secondes</b> : Jeu où en 5 secondes le joueur doit donner 3 réponses à une question posée.
+            <a href="#" class="openModalBtn" data-modal="modal5secondes"><u>Voir le contenu du jeu</u></a>.
+        </li>
+        <li><b>Jeux de vente d'un produit</b> : Chaque joueur ou équipe choisit (ou se voit assigner) un produit (inutile
             ou originale et doit le « vendre » de façon amusante en respectant un thème donné ou un mot à prononcé qui
             sort du contexte.
         </li>
@@ -452,7 +455,182 @@
     </div>
   </div>
 
-  <button class="back-button" onclick="history.back()">Retour</button>
+  <!-- Modale 3 - Le jeu des 5 secondes -->
+  <div id="modal5secondes" class="modalspe">
+    <div class="modal__contentspe">
+      <button class="modal__closespe">&times;</button>
+      <p><strong>LE JEU DES 5 SECONDES :</strong></p>
+      <div id="copyContent5secondes">
+        <p>
+          <strong>Règles :</strong> En 5 secondes, le joueur doit donner 3 réponses à la situation proposée.<br><br>
+          
+          <strong>Liste des situations :</strong><br>
+          <ul style="text-align: left; max-width: 600px; margin: 0 auto;">
+            <li>Tu voulais aller te doucher mais ton pote y va à ta place</li>
+            <li>On t'offre un voyage de 5 jours en vacances aux États-Unis</li>
+            <li>On te dit de venir manger</li>
+            <li>On te demande de faire tes devoirs</li>
+            <li>Ta prof veut te prévenir d'une punition</li>
+            <li>Tu es convoqué chez le directeur</li>
+            <li>On t'a rasé la tête alors que tu voulais une frange</li>
+            <li>On te casse ton téléphone</li>
+            <li>On te pousse dans la piscine alors que tu viens de te doucher</li>
+            <li>On te force à finir ton assiette</li>
+            <li>On te masse trop fort et tu as mal mais tu n'oses pas le dire</li>
+            <li>Fais une demande en mariage à X</li>
+            <li>Réponse</li>
+            <li>On te dit que l'avion va crasher</li>
+            <li>Ça fait deux heures que tu es dans la voiture et tes parents te disent qu'il reste encore 3h de route</li>
+            <li>Les sensations d'une chute libre</li>
+            <li>Une blague pas drôle</li>
+            <li>On te pose une question tu ignores la réponse</li>
+            <li>On t'insulte en chinois mais tu ne sais pas ce que cela veut dire</li>
+            <li>Après un premier baiser</li>
+            <li>Tu es en balade depuis le début de la journée et tu apprends que tu es arrivé</li>
+            <li>Encore 3h de bus</li>
+            <li>Ton train déraille</li>
+            <li>Ta fête entre potes est annulée</li>
+            <li>À Noël tu n'auras pas de cadeau</li>
+            <li>Tu es malade et c'est ton anniversaire</li>
+            <li>Tu n'as plus que 10 ans à vivre</li>
+            <li>On t'apprend que tu ne pourras plus jamais marcher</li>
+            <li>On te casse ton jouet préféré</li>
+            <li>On t'a tapé et tu n'y es pour rien</li>
+            <li>Tu vois un éléphant pour la première fois</li>
+            <li>C'est la rentrée !!!</li>
+            <li>Shopping pendant deux heures</li>
+            <li>Tu auras des lunettes</li>
+            <li>Tu rates ton examen</li>
+            <li>Soupe à la place des crêpes</li>
+            <li>Tu viens de casser le dernier œuf à côté du plat pour la pâte à crêpes tu ne peux plus la finir</li>
+            <li>Tu meurs d'envie d'aller aux toilettes et c'est occupé</li>
+            <li>Ton plat de restaurant que tu attends depuis 1h est dégueulasse</li>
+            <li>Il n'y a pas de vent depuis 1 semaine</li>
+            <li>Ton jean préféré est troué</li>
+            <li>Ton t-shirt est tout décoloré</li>
+            <li>Il pleut toute la semaine les jours de ton voyage à Londres</li>
+            <li>Demain on visite 3 musées demain</li>
+            <li>Tu n'as pas d'eau chaude pour ta douche</li>
+            <li>On lit ton journal intime</li>
+            <li>Tu as eu 1 sur 20 au contrôle de maths</li>
+            <li>Tu loupes ton avion, le prochain est dans 6 heures</li>
+            <li>Ton voyage aux Bahamas est annulé</li>
+            <li>Tu croules sous les dettes</li>
+            <li>Tu te fais cambrioler</li>
+            <li>Tu apprends que tu vas être semi-généraliste</li>
+            <li>Il faisait beau temps, tu arrives et il pleut</li>
+            <li>Plus que 2 jours de vacances</li>
+            <li>Dans 3 heures c'est la fin des cours</li>
+            <li>Ton petit déjeuner est tout froid</li>
+            <li>Pour ton petit déjeuner omelette et saucisse</li>
+            <li>Tu te casses le poignet</li>
+            <li>Tu vas faire de la plongée pour la première fois</li>
+            <li>Tu n'as plus d'électricité</li>
+            <li>Dans 29 min je change de matière</li>
+            <li>Tu n'as plus d'eau et tu es sous la douche</li>
+            <li>Tu gagnes au loto</li>
+            <li>Un serpent droit devant</li>
+            <li>Shopping pendant 2 heures budget illimité</li>
+            <li>Tu n'as plus sommeil il est 5h du matin</li>
+            <li>Ton colloc quitte le logement pour une nouvelle relation</li>
+            <li>Ton meilleur pote déménage très loin</li>
+            <li>Ton entretien pour un stage est réussi</li>
+            <li>Tu apprends un décès d'une personne que tu n'aimes pas</li>
+            <li>Un attentat la rue à côté de chez toi</li>
+            <li>Tu as frôlé la mort</li>
+            <li>2 crocodiles autour de toi</li>
+            <li>1 million de mouches te suivent</li>
+            <li>Tu pètes en classe</li>
+            <li>2 ans de prison ferme</li>
+            <li>Tu te pisses dessus en plein cours de SVT</li>
+            <li>Prévu : balade à la journée</li>
+            <li>Des bouquetins au loin</li>
+            <li>Ton plateau cantine se renverse sur toi</li>
+            <li>Ce midi : Mc do</li>
+            <li>Nouvelle paire de chaussures</li>
+            <li>3 heures de sport</li>
+            <li>Tu pèses 100 kilos</li>
+            <li>Une araignée est dans ton lit</li>
+            <li>Tu as perdu 1 heure de ta journée</li>
+            <li>Tu es en panne sur l'autoroute</li>
+            <li>Tu es champion du monde de golf</li>
+            <li>École terminée 2 mois de vacances</li>
+            <li>Pour les vacances maman t'offre un cahier de vacances à finir pour la rentrée</li>
+            <li>Tu as perdu doudou</li>
+            <li>Tes cheveux sont tous verts</li>
+            <li>Tu as la varicelle</li>
+            <li>Ta maison prend feu</li>
+            <li>Le bateau coule</li>
+            <li>Bataille d'eau pour l'après-midi</li>
+            <li>Demain petit déjeuner à 6 heures</li>
+            <li>Tu te convertis en massothérapeute</li>
+            <li>Tu as perdu ton portable</li>
+            <li>Tu as perdu ton portefeuille</li>
+            <li>Tu t'es fait arnaquer</li>
+            <li>Tu demandes un prêt à X</li>
+            <li>Réponse</li>
+            <li>Tu tombes dans l'escalier</li>
+            <li>Encore deux heures d'attente</li>
+            <li>Ce soir boîte de nuit</li>
+            <li>Une guêpe te tourne autour</li>
+            <li>Demain c'est ton anniversaire</li>
+            <li>Tu as faim et y'a plus de gâteau</li>
+            <li>Tu viens de faire les courses et tu as oublié le beurre</li>
+            <li>Le tabac est fermé</li>
+            <li>Tu as oublié le code de ton cadenas</li>
+            <li>Sans faire exprès tu viens de donner ton code de carte bleue</li>
+            <li>Cet après-midi c'est repos</li>
+            <li>Tu es milliardaire</li>
+            <li>Tu as envie de vomir</li>
+            <li>Tu as perdu ton téléphone</li>
+            <li>Tu as perdu toutes les données de ton jeu</li>
+            <li>Le stockage de ton iPhone est encore plein</li>
+            <li>Tu es qualifié pour les JO</li>
+            <li>Après-midi sur la plage</li>
+            <li>Ce soir y'a le feu d'artifice</li>
+            <li>On t'offre un tableau d'art très cher</li>
+            <li>Tu dois manger le pire piment du monde</li>
+            <li>On t'invite à Fort Boyard</li>
+            <li>Tu dois mettre un serpent autour du cou</li>
+            <li>Tu passes sur scène devant 50 000 personnes</li>
+            <li>Tu vas au cachot pendant 20 jours</li>
+            <li>3 bêtises que tu as faites cette année</li>
+            <li>Tu as pris une dizaine de coups de soleil</li>
+            <li>Ton crush te regarde en cours</li>
+            <li>Tu as oublié de faire ton DM de maths</li>
+            <li>Ton téléphone n'a plus de batterie et tu es en sortie</li>
+            <li>Tu viens de publier une story embarrassante</li>
+            <li>Ton meilleur pote te ghoste depuis 3 jours</li>
+            <li>Tu dois présenter un exposé devant toute la classe</li>
+            <li>Tu as été tagué dans une photo horrible sur Instagram</li>
+            <li>Ton groupe de pote organise une soirée sans t'inviter</li>
+            <li>Tu as raté le dernier épisode de ta série et tout le monde en parle</li>
+            <li>Ton prof te demande de lire à voix haute devant toute la classe</li>
+            <li>Tu as oublié ton chargeur de portable en colo</li>
+            <li>Tu dois choisir entre deux groupes d'amis pour une sortie</li>
+            <li>Ton crush vient te parler pour la première fois</li>
+            <li>Tu as été exclu du groupe WhatsApp de ta classe</li>
+            <li>Tu dois expliquer à tes parents pourquoi tu as eu une mauvaise note</li>
+            <li>Ton téléphone sonne en plein cours et c'est ton parent</li>
+            <li>Tu as oublié ton maillot de bain pour la piscine</li>
+            <li>Ton meilleur pote sort avec ton crush</li>
+            <li>Tu dois faire un exposé avec quelqu'un que tu n'aimes pas</li>
+            <li>Tu as été surpris en train de tricher à un contrôle</li>
+            <li>Ton compte TikTok a été hacké</li>
+            <li>Tu dois participer à un tournoi de sport et tu es nul</li>
+            <li>Ton groupe de musique préféré annule son concert</li>
+            <li>Tu as oublié de rendre un devoir important</li>
+            <li>Tu dois faire un exposé sur un sujet que tu détestes</li>
+            <li>Ton téléphone tombe dans les toilettes de l'école</li>
+          </ul>
+        </p>
+      </div>
+
+      <button class="back-button" id="copyMessage5secondes">Copier le message</button>
+    </div>
+  </div>
+
+  <button class="back-button" onclick="location.href='../index.html'">Retour</button>
 </div>
 
 <footer id="footer">
@@ -463,6 +641,7 @@
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
 <script src="../assets/js/main.js"></script>
+<script src="../assets/js/navigation.js"></script>
 </body>
 
 </html>

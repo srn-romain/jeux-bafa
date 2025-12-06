@@ -691,3 +691,103 @@ em {
     font-size: 1.3em;
   }
 }
+
+/*--------------------------------------------------------------
+# Navigation chevrons (desktop uniquement)
+--------------------------------------------------------------*/
+.page-navigation {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .page-navigation {
+    display: flex;
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 997;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    background-color: rgba(166, 216, 102, 0.9);
+    border-radius: 10px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: #fff;
+    min-width: 50px;
+  }
+
+  .page-navigation:hover {
+    background-color: rgba(243, 156, 18, 0.95);
+    transform: translateY(-50%) scale(1.1);
+  }
+
+  .page-navigation.left {
+    left: 20px;
+  }
+
+  .page-navigation.right {
+    right: 20px;
+  }
+
+  .page-navigation i {
+    font-size: 32px;
+  }
+
+  .page-navigation .page-name {
+    display: none;
+  }
+
+  .page-navigation::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background-color: rgba(44, 62, 80, 0.95);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: bold;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 999;
+    margin-bottom: 8px;
+    max-width: 200px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .page-navigation::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-2px);
+    border: 6px solid transparent;
+    border-top-color: rgba(44, 62, 80, 0.95);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 999;
+    margin-bottom: 2px;
+  }
+
+  .page-navigation:hover::after,
+  .page-navigation:hover::before {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .page-navigation.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
