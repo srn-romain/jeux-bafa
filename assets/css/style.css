@@ -806,3 +806,25 @@ em {
     pointer-events: none;
   }
 }
+
+/*--------------------------------------------------------------
+# Formation Grid Alignment
+--------------------------------------------------------------*/
+.formation-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  justify-content: center;
+}
+
+.formation-grid .back-button {
+  width: 100%;
+  margin: 0;
+  flex: none;
+}
+
+@media (max-width: 600px) {
+  .formation-grid {
+    grid-template-columns: 1fr;
+  }
+}
