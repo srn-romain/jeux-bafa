@@ -250,6 +250,12 @@ p:not(.no-p-style) {
   gap: 0;
 }
 
+@media (min-width: 1001px) {
+  .button-group {
+    gap: 5px;
+  }
+}
+
 .button-group button {
   padding: 10px 15px;
   font-size: 14px;
@@ -257,11 +263,20 @@ p:not(.no-p-style) {
   max-width: 100%;
 }
 
+@media (min-width: 1001px) {
+  .button-group button {
+    flex: 1;
+    min-width: 0;
+    max-width: none;
+  }
+}
+
 @media (max-width: 1000px) {
   .button-group button {
     font-size: 12px;
     width: 100%;
     margin: 5px;
+    flex: none;
   }
 }
 
