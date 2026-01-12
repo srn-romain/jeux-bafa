@@ -381,6 +381,28 @@ em {
   cursor: pointer;
 }
 
+@media (max-width: 1270px) {
+    .close {
+        background: transparent;
+        color: transparent;
+        width: 40px;
+        height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        right: 16px;
+        top: 16px;
+        font-size: 0;
+    }
+
+    .close::before {
+        content: '\2190';
+        font-size: 20px;
+        color: #000;
+        line-height: 1;
+    }
+}
+
 .error {
   color: red;
   font-size: 0.9em;
