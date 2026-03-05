@@ -4,87 +4,415 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ressources BAFA & BAFD</title>
+  <title>Ressources BAFA &amp; BAFD</title>
   <meta name="description"
-    content="Découvrez une multitude de ressources BAFA et BAFD classées par thèmes : activités, veillées, vie quotidienne, manuels, musique, réglementation, formation et plus ! Téléchargez & partagez !">
+    content="Découvrez une multitude de ressources BAFA et BAFD classées par thèmes : activités, veillées, vie quotidienne, manuels, musique, réglementation, formation et plus !">
   <link href="https://srn-romain.github.io/jeux-bafa/favicon.webp" rel="icon">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================
+       PANNEAU BLANC PRINCIPAL
+       ========================================================= */
+    .home-wrapper {
+      background: #fff;
+      max-width: 1060px;
+      margin: 0 auto;
+      border-radius: 0 0 18px 18px;
+      box-shadow: 0 4px 28px rgba(0, 0, 0, 0.1);
+      padding-bottom: 28px;
+    }
+
+    /* =========================================================
+       EN-TÊTE
+       ========================================================= */
+    .home-hero {
+      text-align: center;
+      padding: 34px 20px 20px;
+    }
+
+    .home-hero h1 {
+      font-size: clamp(1.5rem, 5vw, 2.4rem);
+      font-weight: 700;
+      color: #2c3e2d;
+      margin-bottom: 8px;
+      letter-spacing: -0.2px;
+    }
+
+    .home-hero p {
+      font-size: 0.94rem;
+      color: #6b7c6d;
+      max-width: 540px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* =========================================================
+       GRILLE 16 CARDS
+       ========================================================= */
+    .categories-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 12px;
+      padding: 16px 20px 8px;
+    }
+
+    .cat-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 22px 12px 18px;
+      border-radius: 13px;
+      text-decoration: none;
+      color: #fff;
+      background: var(--bg);
+      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
+      transition: transform 0.17s ease, box-shadow 0.17s ease, filter 0.17s ease;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .cat-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+      filter: brightness(1.08);
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .cat-card__num {
+      position: absolute;
+      top: 9px;
+      right: 11px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+      background: rgba(255, 255, 255, 0.22);
+      padding: 1px 6px;
+      border-radius: 20px;
+    }
+
+    .cat-card__emoji {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .cat-card__title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    /* Couleurs de fond par card */
+    .c1 {
+      --bg: #e05252;
+    }
+
+    .c2 {
+      --bg: #2980b9;
+    }
+
+    .c3 {
+      --bg: #8e44ad;
+    }
+
+    .c4 {
+      --bg: #d4820a;
+    }
+
+    .c5 {
+      --bg: #27ae60;
+    }
+
+    .c6 {
+      --bg: #17a589;
+    }
+
+    .c7 {
+      --bg: #1a5276;
+    }
+
+    .c8 {
+      --bg: #a04000;
+    }
+
+    .c9 {
+      --bg: #148f77;
+    }
+
+    .c10 {
+      --bg: #c0392b;
+    }
+
+    .c11 {
+      --bg: #7d6608;
+    }
+
+    .c12 {
+      --bg: #1a6e8a;
+    }
+
+    .c13 {
+      --bg: #884ea0;
+    }
+
+    .c14 {
+      --bg: #1f618d;
+    }
+
+    .c15 {
+      --bg: #6e2f1a;
+    }
+
+    .c16 {
+      --bg: #1e6b35;
+    }
+
+    /* =========================================================
+       BOUTON ESPACE ANIMATEUR (séparé, en dessous)
+       ========================================================= */
+    .espace-anim-btn-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 28px 20px 8px;
+    }
+
+    .espace-anim-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 32px;
+      border-radius: 50px;
+      background: linear-gradient(135deg, #1a1a4e, #0d3b6e);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+      border: 1.5px solid rgba(255, 255, 255, 0.12);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+      letter-spacing: 0.2px;
+    }
+
+    .espace-anim-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      filter: brightness(1.1);
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .espace-anim-btn .lock-icon {
+      font-size: 1.15rem;
+      opacity: 0.85;
+    }
+
+    .espace-anim-btn .badge-private {
+      background: rgba(255, 255, 255, 0.15);
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    /* =========================================================
+       NOTE FORMULAIRE
+       ========================================================= */
+    .home-footer-note {
+      text-align: center;
+      color: #6b7c6d;
+      font-size: 0.88rem;
+      margin: 18px auto 16px;
+      max-width: 600px;
+      padding: 0 16px;
+    }
+
+    .home-footer-note a {
+      color: #c2783f;
+      text-decoration: underline;
+    }
+
+    /* =========================================================
+       RESPONSIVE
+       ========================================================= */
+    @media (max-width: 480px) {
+      .categories-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        padding: 12px 14px 4px;
+      }
+
+      .cat-card {
+        padding: 18px 10px 14px;
+      }
+
+      .cat-card__emoji {
+        font-size: 1.7rem;
+      }
+
+      .cat-card__title {
+        font-size: 0.77rem;
+      }
+
+      .espace-anim-btn {
+        font-size: 0.87rem;
+        padding: 12px 22px;
+      }
+    }
+  </style>
 </head>
 
 <body>
-  <div>
-    <h2>BAFA & BAFD</h2>
-    <h6>Ce site vous propose de nombreuses ressources BAFA et BAFD, classées selon plusieurs catégories présentées sur
-      cette page ; cliquez sur celles qui vous intéressent pour en savoir plus !</h6>
 
-    <main class="container">
-      <div class="category">
-        <h2><a href="pages/presentation.html">1️⃣ 🤝 Jeux présentation</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/semaine.html">2️⃣ 📅 Jeux fil rouge</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/conversation.html">3️⃣ 🗣️ Conversations & débats</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/animateur.html">4️⃣ 🧢 Jeux entre animateurs</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/quotidien.html">5️⃣ 🏠 Vie quotidienne</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/activites.html">6️⃣ ⚽ Activités</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/veillees.html">7️⃣ 🌙 Veillées</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/manuels.html">8️⃣ ✂️ Activités manuels</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/calme.html">9️⃣ 🧘 Idées de retour au calme</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/gage.html">🔟 🚫 Idées de gages</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/regles.html">1️⃣1️⃣ 📜 Exemple règles de vie</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/musique.html">1️⃣2️⃣ 🎶 Musiques de colo</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/bouffe.html">1️⃣3️⃣ 🍽️ Nourriture en camp</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/direction.html">1️⃣4️⃣ 💼 Mémo direction</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/reglementation.html">1️⃣5️⃣ ⚖️ Mémo réglementation</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/formation.html">1️⃣6️⃣ 🎓 Mémo formation</a></h2>
-      </div>
-      <div class="category">
-        <h2><a href="pages/espace/index.html">1️⃣7️⃣ 🔒 Espace Animateur Privée</a></h2>
-      </div>
+  <!-- =============================================
+       PANNEAU BLANC — titre + 16 cards
+       ============================================= -->
+  <div class="home-wrapper">
+
+    <test class="home-hero">
+      <h1>🏕️ BAFA &amp; BAFD</h1>
+      <p>Toutes vos ressources d'animation classées par thèmes — cliquez sur une catégorie !</p>
+    </test>
+
+    <main class="categories-grid">
+
+      <a href="pages/presentation.html" class="cat-card c1">
+        <span class="cat-card__num">01</span>
+        <span class="cat-card__emoji">🤝</span>
+        <span class="cat-card__title">Jeux présentation</span>
+      </a>
+
+      <a href="pages/semaine.html" class="cat-card c2">
+        <span class="cat-card__num">02</span>
+        <span class="cat-card__emoji">📅</span>
+        <span class="cat-card__title">Jeux fil rouge</span>
+      </a>
+
+      <a href="pages/conversation.html" class="cat-card c3">
+        <span class="cat-card__num">03</span>
+        <span class="cat-card__emoji">🗣️</span>
+        <span class="cat-card__title">Conversations &amp; débats</span>
+      </a>
+
+      <a href="pages/animateur.html" class="cat-card c4">
+        <span class="cat-card__num">04</span>
+        <span class="cat-card__emoji">🧢</span>
+        <span class="cat-card__title">Jeux entre animateurs</span>
+      </a>
+
+      <a href="pages/quotidien.html" class="cat-card c5">
+        <span class="cat-card__num">05</span>
+        <span class="cat-card__emoji">🏠</span>
+        <span class="cat-card__title">Vie quotidienne</span>
+      </a>
+
+      <a href="pages/activites.html" class="cat-card c6">
+        <span class="cat-card__num">06</span>
+        <span class="cat-card__emoji">⚽</span>
+        <span class="cat-card__title">Activités</span>
+      </a>
+
+      <a href="pages/veillees.html" class="cat-card c7">
+        <span class="cat-card__num">07</span>
+        <span class="cat-card__emoji">🌙</span>
+        <span class="cat-card__title">Veillées</span>
+      </a>
+
+      <a href="pages/manuels.html" class="cat-card c8">
+        <span class="cat-card__num">08</span>
+        <span class="cat-card__emoji">✂️</span>
+        <span class="cat-card__title">Activités manuelles</span>
+      </a>
+
+      <a href="pages/calme.html" class="cat-card c9">
+        <span class="cat-card__num">09</span>
+        <span class="cat-card__emoji">🧘</span>
+        <span class="cat-card__title">Retour au calme</span>
+      </a>
+
+      <a href="pages/gage.html" class="cat-card c10">
+        <span class="cat-card__num">10</span>
+        <span class="cat-card__emoji">🚫</span>
+        <span class="cat-card__title">Idées de gages</span>
+      </a>
+
+      <a href="pages/regles.html" class="cat-card c11">
+        <span class="cat-card__num">11</span>
+        <span class="cat-card__emoji">📜</span>
+        <span class="cat-card__title">Règles de vie</span>
+      </a>
+
+      <a href="pages/musique.html" class="cat-card c12">
+        <span class="cat-card__num">12</span>
+        <span class="cat-card__emoji">🎶</span>
+        <span class="cat-card__title">Musiques de colo</span>
+      </a>
+
+      <a href="pages/bouffe.html" class="cat-card c13">
+        <span class="cat-card__num">13</span>
+        <span class="cat-card__emoji">🍽️</span>
+        <span class="cat-card__title">Nourriture en camp</span>
+      </a>
+
+      <a href="pages/direction.html" class="cat-card c14">
+        <span class="cat-card__num">14</span>
+        <span class="cat-card__emoji">💼</span>
+        <span class="cat-card__title">Mémo direction</span>
+      </a>
+
+      <a href="pages/reglementation.html" class="cat-card c15">
+        <span class="cat-card__num">15</span>
+        <span class="cat-card__emoji">⚖️</span>
+        <span class="cat-card__title">Mémo réglementation</span>
+      </a>
+
+      <a href="pages/formation.html" class="cat-card c16">
+        <span class="cat-card__num">16</span>
+        <span class="cat-card__emoji">🎓</span>
+        <span class="cat-card__title">Mémo formation</span>
+      </a>
+
     </main>
 
-    <p>Vous repérez une erreur ? Vous avez une question/suggestion ? Remplissez ce formulaire dédié :<a
-        href="https://docs.google.com/forms/d/e/1FAIpQLSfwn-_yuDIcpBQPzOjowHK_m_dh_No04GOvwDK99KgduHTwCA/viewform"
-        class="orange"><u>ici</u></a>.</p>
+  <!-- =============================================
+       BOUTON ESPACE ANIMATEUR — séparé
+       ============================================= -->
+    <test class="espace-anim-btn-wrap">
+      <a href="pages/espace/index.html" class="espace-anim-btn">
+        <i class="bi bi-lock-fill lock-icon"></i>
+        1️⃣7️⃣ Espace Animateur Privée
+        <span class="badge-private">ACCÈS RESTREINT</span>
+      </a>
+    </test>
 
-  </div>
+  </div><!-- /.home-wrapper -->
 
+
+  <!-- =============================================
+       NOTE FORMULAIRE
+       ============================================= -->
+  <p class="home-footer-note">
+    Vous repérez une erreur ? Vous avez une question ou suggestion ?
+    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfwn-_yuDIcpBQPzOjowHK_m_dh_No04GOvwDK99KgduHTwCA/viewform"
+      target="_blank">Remplissez ce formulaire</a>.
+  </p>
+
+
+  <!-- =============================================
+       FOOTER
+       ============================================= -->
   <footer id="footer">
     <br>
-      <p style="color: white; text-align: center"> &copy; Ressources BAFA/BAFD - By <a
-              href="https://www.instagram.com/romain_colo/" target="_blank"
-              style="color:#f39c12; font-weight:bold;">@romain_colo</a>
-      </p>
+    <p style="color: white; text-align: center"> &copy; Ressources BAFA/BAFD - By <a
+        href="https://www.instagram.com/romain_colo/" target="_blank"
+        style="color:#f39c12; font-weight:bold;">@romain_colo</a>
+    </p>
     <p style="text-align: center; margin-top: 8px; margin-bottom: 4px;">
       <a href="https://srn-romain.github.io/recap-bafa/" target="_blank" class="other-site-link">
         <i class="bi bi-controller"></i> Découvrir le RECAP BAFA/BAFD
@@ -92,8 +420,9 @@
     </p>
   </footer>
 
-  <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i
-      class="bi bi-arrow-up-short"></i></a>
+  <a href="#" class="back-to-top d-flex align-items-center justify-content-center">
+    <i class="bi bi-arrow-up-short"></i>
+  </a>
 
   <script src="assets/js/main.js"></script>
 </body>
