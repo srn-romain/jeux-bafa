@@ -13,50 +13,47 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 
   <style>
-    /* =========================================================
-       PANNEAU BLANC PRINCIPAL
-       ========================================================= */
+    /* =====================================================
+       PANNEAU BLANC — titre + grille + bouton anim
+       ===================================================== */
     .home-wrapper {
       background: #fff;
-      max-width: 1060px;
+      max-width: 980px;
       margin: 0 auto;
-      border-radius: 0 0 18px 18px;
-      box-shadow: 0 4px 28px rgba(0, 0, 0, 0.1);
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.10);
       padding-bottom: 28px;
     }
 
-    /* =========================================================
-       EN-TÊTE
-       ========================================================= */
+    /* Titre */
     .home-hero {
       text-align: center;
-      padding: 34px 20px 20px;
+      padding: 32px 20px 18px;
     }
 
     .home-hero h1 {
-      font-size: clamp(1.5rem, 5vw, 2.4rem);
+      font-size: clamp(1.4rem, 4.5vw, 2.2rem);
       font-weight: 700;
       color: #2c3e2d;
-      margin-bottom: 8px;
-      letter-spacing: -0.2px;
+      margin-bottom: 6px;
     }
 
     .home-hero p {
-      font-size: 0.94rem;
+      font-size: 0.92rem;
       color: #6b7c6d;
-      max-width: 540px;
+      max-width: 500px;
       margin: 0 auto;
-      line-height: 1.6;
+      line-height: 1.55;
     }
 
-    /* =========================================================
-       GRILLE 16 CARDS
-       ========================================================= */
+    /* =====================================================
+       GRILLE — 4 colonnes fixes
+       ===================================================== */
     .categories-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-      gap: 12px;
-      padding: 16px 20px 8px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 11px;
+      padding: 14px 20px 4px;
     }
 
     .cat-card {
@@ -64,173 +61,114 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      padding: 22px 12px 18px;
-      border-radius: 13px;
+      gap: 7px;
+      padding: 20px 10px 16px;
+      border-radius: 12px;
       text-decoration: none;
       color: #fff;
       background: var(--bg);
-      box-shadow: 0 3px 12px rgba(0, 0, 0, 0.15);
-      transition: transform 0.17s ease, box-shadow 0.17s ease, filter 0.17s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+      transition: transform .17s, box-shadow .17s, filter .17s;
       position: relative;
       cursor: pointer;
     }
 
     .cat-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
-      filter: brightness(1.08);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.20);
+      filter: brightness(1.07);
       text-decoration: none;
       color: #fff;
     }
 
     .cat-card__num {
       position: absolute;
-      top: 9px;
-      right: 11px;
-      font-size: 0.65rem;
+      top: 7px;
+      right: 9px;
+      font-size: 0.62rem;
       font-weight: 700;
-      letter-spacing: 0.8px;
-      background: rgba(255, 255, 255, 0.22);
+      letter-spacing: .8px;
+      background: rgba(255, 255, 255, 0.18);
       padding: 1px 6px;
       border-radius: 20px;
     }
 
     .cat-card__emoji {
-      font-size: 2rem;
+      font-size: 1.85rem;
       line-height: 1;
     }
 
     .cat-card__title {
-      font-size: 0.82rem;
+      font-size: 0.79rem;
       font-weight: 700;
       text-align: center;
-      line-height: 1.35;
+      line-height: 1.3;
     }
 
-    /* Couleurs de fond par card */
-    .c1 {
-      --bg: #e05252;
-    }
+    /* Couleurs de fond par card (Optimisées pour texte BLANC) */
+    .c01 { --bg: #c0392b; } /* Rouge Corail profond */
+    .c02 { --bg: #2980b9; } /* Bleu Bel-Air */
+    .c03 { --bg: #8e44ad; } /* Améthyste */
+    .c04 { --bg: #d35400; } /* Orange Citrouille (plus sombre que le jaune) */
+    .c05 { --bg: #27ae60; } /* Vert Néphrite */
+    .c06 { --bg: #16a085; } /* Turquoise sombre */
+    .c07 { --bg: #2c3e50; } /* Bleu Nuit / Ardoise */
+    .c08 { --bg: #795548; } /* Terre d'ombre (Brun) */
+    .c09 { --bg: #065f46; } /* Vert Forêt */
+    .c10 { --bg: #a93226; } /* Rouge Brique */
+    .c11 { --bg: #927b12; } /* Moutarde sombre (lisible en blanc) */
+    .c12 { --bg: #0e7490; } /* Bleu Océan */
+    .c13 { --bg: #6c3483; } /* Prune */
+    .c14 { --bg: #1f618d; } /* Bleu Cobalt */
+    .c15 { --bg: #873600; } /* Sienne brûlée */
+    .c16 { --bg: #145a32; } /* Vert Sapin */
 
-    .c2 {
-      --bg: #2980b9;
-    }
-
-    .c3 {
-      --bg: #8e44ad;
-    }
-
-    .c4 {
-      --bg: #d4820a;
-    }
-
-    .c5 {
-      --bg: #27ae60;
-    }
-
-    .c6 {
-      --bg: #17a589;
-    }
-
-    .c7 {
-      --bg: #1a5276;
-    }
-
-    .c8 {
-      --bg: #a04000;
-    }
-
-    .c9 {
-      --bg: #148f77;
-    }
-
-    .c10 {
-      --bg: #c0392b;
-    }
-
-    .c11 {
-      --bg: #7d6608;
-    }
-
-    .c12 {
-      --bg: #1a6e8a;
-    }
-
-    .c13 {
-      --bg: #884ea0;
-    }
-
-    .c14 {
-      --bg: #1f618d;
-    }
-
-    .c15 {
-      --bg: #6e2f1a;
-    }
-
-    .c16 {
-      --bg: #1e6b35;
-    }
-
-    /* =========================================================
-       BOUTON ESPACE ANIMATEUR (séparé, en dessous)
-       ========================================================= */
-    .espace-anim-btn-wrap {
+    /* =====================================================
+       BOUTON ESPACE ANIMATEUR — discret, dans le panneau
+       ===================================================== */
+    .espace-anim-wrap {
       display: flex;
       justify-content: center;
-      padding: 28px 20px 8px;
+      padding: 22px 20px 4px;
     }
 
     .espace-anim-btn {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
-      padding: 14px 32px;
-      border-radius: 50px;
-      background: linear-gradient(135deg, #1a1a4e, #0d3b6e);
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.95rem;
+      gap: 8px;
+      padding: 9px 22px;
+      border-radius: 8px;
+      background: #f2f2f5;
+      border: 1.5px solid #d0d0da;
+      color: #4a4a5a;
+      font-size: 0.82rem;
+      font-weight: 600;
       text-decoration: none;
-      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
-      border: 1.5px solid rgba(255, 255, 255, 0.12);
-      transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
-      letter-spacing: 0.2px;
+      transition: background .17s, border-color .17s, color .17s;
+    }
+
+    .espace-anim-btn i {
+      font-size: 0.9rem;
+      color: #8a8a9a;
     }
 
     .espace-anim-btn:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-      filter: brightness(1.1);
+      background: #e8e8ef;
+      border-color: #b0b0be;
+      color: #2c2c3e;
       text-decoration: none;
-      color: #fff;
     }
 
-    .espace-anim-btn .lock-icon {
-      font-size: 1.15rem;
-      opacity: 0.85;
-    }
-
-    .espace-anim-btn .badge-private {
-      background: rgba(255, 255, 255, 0.15);
-      font-size: 0.68rem;
-      padding: 2px 8px;
-      border-radius: 20px;
-      letter-spacing: 0.5px;
-      font-weight: 600;
-    }
-
-    /* =========================================================
+    /* =====================================================
        NOTE FORMULAIRE
-       ========================================================= */
+       ===================================================== */
     .home-footer-note {
       text-align: center;
       color: #6b7c6d;
-      font-size: 0.88rem;
-      margin: 18px auto 16px;
-      max-width: 600px;
+      font-size: 0.87rem;
+      margin: 20px auto 16px;
       padding: 0 16px;
+      max-width: 580px;
     }
 
     .home-footer-note a {
@@ -238,31 +176,26 @@
       text-decoration: underline;
     }
 
-    /* =========================================================
+    /* =====================================================
        RESPONSIVE
-       ========================================================= */
-    @media (max-width: 480px) {
+       ===================================================== */
+    @media (max-width: 700px) {
       .categories-grid {
         grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        padding: 12px 14px 4px;
+        gap: 9px;
+        padding: 12px 12px 4px;
       }
 
       .cat-card {
-        padding: 18px 10px 14px;
+        padding: 16px 8px 12px;
       }
 
       .cat-card__emoji {
-        font-size: 1.7rem;
+        font-size: 1.6rem;
       }
 
       .cat-card__title {
-        font-size: 0.77rem;
-      }
-
-      .espace-anim-btn {
-        font-size: 0.87rem;
-        padding: 12px 22px;
+        font-size: 0.74rem;
       }
     }
   </style>
@@ -270,9 +203,9 @@
 
 <body>
 
-  <!-- =============================================
-       PANNEAU BLANC — titre + 16 cards
-       ============================================= -->
+  <!-- ============================================
+       PANNEAU BLANC
+       ============================================ -->
   <div class="home-wrapper">
 
     <test class="home-hero">
@@ -282,55 +215,55 @@
 
     <main class="categories-grid">
 
-      <a href="pages/presentation.html" class="cat-card c1">
+      <a href="pages/presentation.html" class="cat-card c01">
         <span class="cat-card__num">01</span>
         <span class="cat-card__emoji">🤝</span>
         <span class="cat-card__title">Jeux présentation</span>
       </a>
 
-      <a href="pages/semaine.html" class="cat-card c2">
+      <a href="pages/semaine.html" class="cat-card c02">
         <span class="cat-card__num">02</span>
         <span class="cat-card__emoji">📅</span>
         <span class="cat-card__title">Jeux fil rouge</span>
       </a>
 
-      <a href="pages/conversation.html" class="cat-card c3">
+      <a href="pages/conversation.html" class="cat-card c03">
         <span class="cat-card__num">03</span>
         <span class="cat-card__emoji">🗣️</span>
         <span class="cat-card__title">Conversations &amp; débats</span>
       </a>
 
-      <a href="pages/animateur.html" class="cat-card c4">
+      <a href="pages/animateur.html" class="cat-card c04">
         <span class="cat-card__num">04</span>
         <span class="cat-card__emoji">🧢</span>
         <span class="cat-card__title">Jeux entre animateurs</span>
       </a>
 
-      <a href="pages/quotidien.html" class="cat-card c5">
+      <a href="pages/quotidien.html" class="cat-card c05">
         <span class="cat-card__num">05</span>
         <span class="cat-card__emoji">🏠</span>
         <span class="cat-card__title">Vie quotidienne</span>
       </a>
 
-      <a href="pages/activites.html" class="cat-card c6">
+      <a href="pages/activites.html" class="cat-card c06">
         <span class="cat-card__num">06</span>
         <span class="cat-card__emoji">⚽</span>
         <span class="cat-card__title">Activités</span>
       </a>
 
-      <a href="pages/veillees.html" class="cat-card c7">
+      <a href="pages/veillees.html" class="cat-card c07">
         <span class="cat-card__num">07</span>
         <span class="cat-card__emoji">🌙</span>
         <span class="cat-card__title">Veillées</span>
       </a>
 
-      <a href="pages/manuels.html" class="cat-card c8">
+      <a href="pages/manuels.html" class="cat-card c08">
         <span class="cat-card__num">08</span>
         <span class="cat-card__emoji">✂️</span>
         <span class="cat-card__title">Activités manuelles</span>
       </a>
 
-      <a href="pages/calme.html" class="cat-card c9">
+      <a href="pages/calme.html" class="cat-card c09">
         <span class="cat-card__num">09</span>
         <span class="cat-card__emoji">🧘</span>
         <span class="cat-card__title">Retour au calme</span>
@@ -380,33 +313,23 @@
 
     </main>
 
-  <!-- =============================================
-       BOUTON ESPACE ANIMATEUR — séparé
-       ============================================= -->
-    <test class="espace-anim-btn-wrap">
+    <!-- Bouton espace animateur — discret -->
+    <test class="espace-anim-wrap">
       <a href="pages/espace/index.html" class="espace-anim-btn">
-        <i class="bi bi-lock-fill lock-icon"></i>
-        1️⃣7️⃣ Espace Animateur Privée
-        <span class="badge-private">ACCÈS RESTREINT</span>
+        <i class="bi bi-lock"></i>
+        Espace Animateur Privée
       </a>
     </test>
 
+     <!-- Note formulaire -->
+     <p class="home-footer-note">
+       Vous repérez une erreur ? Une question ou suggestion ?
+       <a href="https://docs.google.com/forms/d/e/1FAIpQLSfwn-_yuDIcpBQPzOjowHK_m_dh_No04GOvwDK99KgduHTwCA/viewform"
+         target="_blank">Remplissez ce formulaire</a>.
+     </p>
+
   </div><!-- /.home-wrapper -->
 
-
-  <!-- =============================================
-       NOTE FORMULAIRE
-       ============================================= -->
-  <p class="home-footer-note">
-    Vous repérez une erreur ? Vous avez une question ou suggestion ?
-    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfwn-_yuDIcpBQPzOjowHK_m_dh_No04GOvwDK99KgduHTwCA/viewform"
-      target="_blank">Remplissez ce formulaire</a>.
-  </p>
-
-
-  <!-- =============================================
-       FOOTER
-       ============================================= -->
   <footer id="footer">
     <br>
     <p style="color: white; text-align: center"> &copy; Ressources BAFA/BAFD - By <a
