@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administration – Espace Anim</title>
+    <meta name="description" content="Panneau d'administration des espaces colo.">
+    <link href="../../public/images/favicon.webp" rel="icon">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../assets/css/styleEspace.css">
+</head>
+
+<body class="espace-body">
+
+    <!-- Topbar -->
+    <header class="es-topbar">
+        <div class="es-topbar__inner">
+            <div class="es-topbar__brand">
+                <div class="es-topbar__brand-icon">⚙️</div>
+                <span class="brand-label">Administration</span>
+            </div>
+            <div class="es-topbar__actions">
+                <a href="index.html" class="es-btn es-btn--sm es-btn--ghost"
+                    style="color:rgba(255,255,255,0.7);border-color:rgba(255,255,255,0.15);">
+                    <i class="bi bi-grid"></i> Dashboard
+                </a>
+                <div class="es-user-chip">
+                    <span class="es-user-chip__name" id="userDisplayName">…</span>
+                    <span class="es-badge es-badge--admin" id="userBadge">Admin</span>
+                </div>
+                <button class="es-btn es-btn--logout" id="btnLogout">
+                    <i class="bi bi-box-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loader initial (contrôle accès admin) -->
+    <div class="es-loader" id="adminLoader">
+        <div class="es-spinner"></div>
+        <span>Vérification des droits…</span>
+    </div>
+
+    <!-- Accès refusé -->
+    <div class="hidden" id="accessDenied"
+        style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px;">
+        <div class="es-access-notice">
+            <div class="es-access-notice__icon">🚫</div>
+            <h2 class="es-access-notice__title">Accès réservé</h2>
+            <p class="es-access-notice__text">Cette page est réservée aux administrateurs.</p>
+            <a href="index.html" class="es-btn es-btn--primary mt-3">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Contenu admin -->
+    <main id="adminContent" class="es-page hidden">
+        <div class="es-container">
+
+            <div class="es-page__header">
+                <h1 class="es-page__title">Panneau Admin</h1>
+                <p class="es-page__subtitle">Gérez les espaces, participants et demandes d'accès.</p>
+            </div>
+
+            <!-- Onglets principaux -->
+            <div class="es-nav-tabs" id="adminTabs" role="tablist">
+                <button class="es-nav-tab active" data-tab="colos" role="tab">
+                    <i class="bi bi-house"></i> Colonies
+                </button>
+                <button class="es-nav-tab" data-tab="demandes" role="tab">
+                    <i class="bi bi-bell"></i> Demandes
+                    <span class="es-badge es-badge--pending hidden" id="badgePending"
+                        style="margin-left:4px;font-size:0.7rem;"></span>
+                </button>
+                <button class="es-nav-tab" data-tab="utilisateurs" role="tab">
+                    <i class="bi bi-people"></i> Utilisateurs
+                </button>
+            </div>
+
+
+            <!-- ===================================================
+         ONGLET COLONIES
+         =================================================== -->
+            <div id="tab-colos">
+                <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+                    <button class="es-btn es-btn--primary" id="btnNewColo">
+                        <i class="bi bi-plus-lg"></i> Nouvelle colonie
+                    </button>
+                </div>
+
+                <div class="es-loader hidden" id="colosLoader2">
+                    <div class="es-spinner"></div>
+                </div>
+
+                <div id="colosAdminList"></div>
+
+                <div class="es-empty hidden" id="colosAdminEmpty">
+                    <div class="es-empty__icon">🏕️</div>
+                    <div class="es-empty__title">Aucune colonie</div>
+                    <p class="es-empty__text">Crée la première colonie pour commencer.</p>
+                </div>
+            </div>
+
+
+            <!-- ===================================================
+         ONGLET DEMANDES D'ACCÈS
+         =================================================== -->
+            <div id="tab-demandes" class="hidden">
+                <div class="es-loader" id="demandesLoader">
+                    <div class="es-spinner"></div>
+                    <span>Chargement…</span>
+                </div>
+
+                <div class="es-card hidden" id="demandesContent">
+                    <div class="es-table-wrap">
+                        <table class="es-table">
+                            <thead>
+                                <tr>
+                                    <th>Animateur</th>
+                                    <th>Colonie</th>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="demandesTbody">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted" style="padding:24px;">Chargement…
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="es-empty hidden" id="demandesEmpty">
+                    <div class="es-empty__icon">✅</div>
+                    <div class="es-empty__title">Aucune demande en attente</div>
+                    <p class="es-empty__text">Toutes les demandes ont été traitées.</p>
+                </div>
+            </div>
+
+
+            <!-- ===================================================
+         ONGLET UTILISATEURS
+         =================================================== -->
+            <div id="tab-utilisateurs" class="hidden">
+                <div class="es-loader" id="usersLoader">
+                    <div class="es-spinner"></div>
+                    <span>Chargement…</span>
+                </div>
+
+                <div class="es-card hidden" id="usersContent">
+                    <div class="es-table-wrap">
+                        <table class="es-table">
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Nom</th>
+                                    <th>Rôle</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTbody">
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted" style="padding:24px;">Chargement…
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+
+    <!-- ===================================================
+     MODAL : Créer / Modifier une colonie
+     =================================================== -->
+    <div class="es-overlay hidden" id="overlayColoForm" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:560px;">
+            <div class="es-modal__header">
+                <h2 class="es-modal__title" id="coloFormTitle">Nouvelle colonie</h2>
+                <button class="es-modal__close" id="btnCloseColoForm"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body">
+                <form id="coloForm" novalidate>
+                    <input type="hidden" id="coloId">
+                    <div class="es-field">
+                        <label class="es-field__label" for="coloNom">Nom de la colonie *</label>
+                        <input class="es-input" type="text" id="coloNom" required placeholder="Colo des Loups">
+                    </div>
+                    <div class="es-field">
+                        <label class="es-field__label" for="coloDesc">Description</label>
+                        <textarea class="es-input" id="coloDesc" rows="2" placeholder="Courte description de la colo…"
+                            style="resize:vertical;"></textarea>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div class="es-field">
+                            <label class="es-field__label" for="coloDateDebut">Date de début</label>
+                            <input class="es-input" type="date" id="coloDateDebut">
+                        </div>
+                        <div class="es-field">
+                            <label class="es-field__label" for="coloDateFin">Date de fin</label>
+                            <input class="es-input" type="date" id="coloDateFin">
+                        </div>
+                    </div>
+                    <div class="es-field">
+                        <label class="es-field__label" for="coloDriveId">ID Dossier Google Drive (optionnel)</label>
+                        <div class="es-input-wrap">
+                            <i class="bi bi-google es-input-icon" style="color:#4285F4;"></i>
+                            <input class="es-input es-input--icon" type="text" id="coloDriveId"
+                                placeholder="1BxiM...dPNv">
+                        </div>
+                        <p style="font-size:0.77rem;color:var(--clr-text-light);margin-top:4px;">
+                            L'ID se trouve dans l'URL du dossier Drive :
+                            drive.google.com/drive/folders/<strong>ID</strong>
+                        </p>
+                    </div>
+                    <div class="es-field">
+                        <label class="es-field__label" for="coloEmoji">Emoji (optionnel)</label>
+                        <input class="es-input" type="text" id="coloEmoji" placeholder="🏕️" maxlength="4"
+                            style="width:80px;">
+                    </div>
+                </form>
+                <div class="es-alert es-alert--error hidden mt-3" id="coloFormError">
+                    <i class="bi bi-exclamation-circle"></i><span id="coloFormErrorMsg"></span>
+                </div>
+            </div>
+            <div class="es-modal__footer">
+                <button class="es-btn es-btn--ghost" id="btnCancelColoForm">Annuler</button>
+                <button class="es-btn es-btn--primary" id="btnSaveColoForm">
+                    <i class="bi bi-check-lg"></i>
+                    <span class="es-btn__text">Enregistrer</span>
+                    <span class="es-btn__spinner"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===================================================
+     MODAL : Gestion des participants d'une colo (admin)
+     =================================================== -->
+    <div class="es-overlay hidden" id="overlayParticipantsAdmin" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:640px;">
+            <div class="es-modal__header">
+                <h2 class="es-modal__title" id="participantsAdminTitle">Participants</h2>
+                <button class="es-modal__close" id="btnCloseParticipantsAdmin"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body">
+                <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+                    <button class="es-btn es-btn--primary es-btn--sm" id="btnAddParticipantAdmin">
+                        <i class="bi bi-plus-lg"></i> Ajouter
+                    </button>
+                </div>
+                <div class="es-table-wrap">
+                    <table class="es-table">
+                        <thead>
+                            <tr>
+                                <th>Prénom</th>
+                                <th>Nom</th>
+                                <th>Âge</th>
+                                <th>Genre</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="participantsAdminTbody">
+                            <tr>
+                                <td colspan="5" class="text-center text-muted" style="padding:20px;">Chargement…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="es-modal__footer">
+                <button class="es-btn es-btn--ghost" id="btnCloseParticipantsAdmin2">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===================================================
+     MODAL : Ajouter/Modifier un participant (admin)
+     =================================================== -->
+    <div class="es-overlay hidden" id="overlayParticipantForm" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:440px;">
+            <div class="es-modal__header">
+                <h2 class="es-modal__title" id="participantFormTitle">Ajouter un participant</h2>
+                <button class="es-modal__close" id="btnCloseParticipantForm"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body">
+                <form id="participantFormAdmin" novalidate>
+                    <input type="hidden" id="pAdminId">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        <div class="es-field">
+                            <label class="es-field__label" for="pAdminPrenom">Prénom *</label>
+                            <input class="es-input" type="text" id="pAdminPrenom" required placeholder="Louisa">
+                        </div>
+                        <div class="es-field">
+                            <label class="es-field__label" for="pAdminNom">Nom *</label>
+                            <input class="es-input" type="text" id="pAdminNom" required placeholder="DUPONT">
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+                        <div class="es-field">
+                            <label class="es-field__label" for="pAdminAge">Âge *</label>
+                            <input class="es-input" type="number" id="pAdminAge" min="6" max="18" required
+                                placeholder="11">
+                        </div>
+                        <div class="es-field">
+                            <label class="es-field__label" for="pAdminGenre">Genre</label>
+                            <select class="es-select" id="pAdminGenre">
+                                <option value="feminin">Fille ♀</option>
+                                <option value="masculin">Garçon ♂</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+                <div class="es-alert es-alert--error hidden mt-3" id="pAdminError">
+                    <i class="bi bi-exclamation-circle"></i><span id="pAdminErrorMsg"></span>
+                </div>
+            </div>
+            <div class="es-modal__footer">
+                <button class="es-btn es-btn--ghost" id="btnCancelParticipantForm">Annuler</button>
+                <button class="es-btn es-btn--primary" id="btnSaveParticipantForm">
+                    <span class="es-btn__text">Enregistrer</span>
+                    <span class="es-btn__spinner"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ===================================================
+     MODAL : Confirmer suppression
+     =================================================== -->
+    <div class="es-overlay hidden" id="overlayConfirmDelete" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:400px;">
+            <div class="es-modal__header">
+                <h2 class="es-modal__title">Confirmer la suppression</h2>
+                <button class="es-modal__close" id="btnCloseConfirmDelete"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body">
+                <div class="es-alert es-alert--error">
+                    <i class="bi bi-trash3"></i>
+                    <span id="confirmDeleteText">Cette action est irréversible. Confirmes-tu la suppression ?</span>
+                </div>
+            </div>
+            <div class="es-modal__footer">
+                <button class="es-btn es-btn--ghost" id="btnCancelDelete">Annuler</button>
+                <button class="es-btn es-btn--danger" id="btnConfirmDelete">
+                    <i class="bi bi-trash3"></i>
+                    <span class="es-btn__text">Supprimer</span>
+                    <span class="es-btn__spinner"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================
+     PANEL : Gérer les droits d'un utilisateur
+     =================================================== -->
+    <div class="es-overlay hidden" id="overlayUserRights" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:620px;">
+            <div class="es-modal__header">
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <h2 class="es-modal__title" id="userRightsTitle">Droits d'accès</h2>
+                    <p id="userRightsEmail" style="font-size:0.8rem;color:var(--clr-text-muted);"></p>
+                </div>
+                <button class="es-modal__close" id="btnCloseUserRights"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body" style="padding-bottom:8px;">
+
+                <!-- Loader -->
+                <div class="es-loader" id="userRightsLoader" style="padding:28px;">
+                    <div class="es-spinner"></div>
+                    <span>Chargement des espaces…</span>
+                </div>
+
+                <!-- Liste des espaces avec droits -->
+                <div id="userRightsList" class="hidden"></div>
+
+                <!-- État vide -->
+                <div id="userRightsEmpty" class="es-empty hidden" style="padding:28px;">
+                    <div class="es-empty__icon">🏕️</div>
+                    <div class="es-empty__title">Aucune colonie créée</div>
+                    <p class="es-empty__text">Crée d'abord des espaces depuis l'onglet Colonies.</p>
+                </div>
+
+            </div>
+            <div class="es-modal__footer">
+                <button class="es-btn es-btn--ghost" id="btnCloseUserRights2">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="es-toast-container" id="toastContainer"></div>
+
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="../../assets/js/firebase-config.js"></script>
+    <script src="../../assets/js/espace-auth.js"></script>
+    <script src="../../assets/js/espace-admin.js"></script>
+</body>
+
+</html>

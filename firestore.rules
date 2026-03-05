@@ -1,0 +1,129 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // FONCTIONS UTILITAIRES
+    // ============================================================
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isAuth() && userDoc().role == 'admin';
+    }
+
+    function isAnim() {
+      return isAuth() && (userDoc().role == 'anim' || userDoc().role == 'admin');
+    }
+
+    // Vérifie qu'un animateur a un accès approuvé à un espace
+    function hasApprovedAccess(espaceId) {
+      return exists(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId))
+        ? get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)).data.status == 'approved'
+        : false;
+    }
+
+    // Vérifie l'accès via une requête par espaceId + userId
+    function hasAccessToEspace(espaceId) {
+      return isAdmin()
+        || ( isAuth() &&
+             exists(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)) &&
+             get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)).data.status == 'approved'
+           );
+    }
+
+
+    // ============================================================
+    // COLLECTION : users
+    // ============================================================
+    match /users/{userId} {
+
+      // Lecture : son propre profil ou admin
+      allow read: if isAuth() && (request.auth.uid == userId || isAdmin());
+
+      // Création : uniquement par soi-même, rôle forcé à 'anim'
+      allow create: if isAuth()
+                    && request.auth.uid == userId
+                    && request.resource.data.role == 'anim';
+
+      // Mise à jour : soi-même (sans toucher au rôle) ou admin
+      allow update: if isAuth() && (
+        (request.auth.uid == userId && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']))
+        || isAdmin()
+      );
+
+      // Suppression : admin uniquement
+      allow delete: if isAdmin();
+    }
+
+
+    // ============================================================
+    // COLLECTION : espaces
+    // ============================================================
+    match /espaces/{espaceId} {
+
+      // Lecture : tout utilisateur connecté (pour voir la liste des colos)
+      allow read: if isAuth();
+
+      // Création / Modification / Suppression : admin uniquement
+      allow create, update, delete: if isAdmin();
+
+
+      // ---- Sous-collection : participants ----
+      match /participants/{participantId} {
+
+        // Lecture : admin OU animateur avec accès approuvé
+        allow read: if isAdmin()
+                    || (isAuth() &&
+                        get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)) != null &&
+                        get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)).data.status == 'approved'
+                       );
+
+        // Écriture (CRUD) : admin uniquement
+        allow create, update, delete: if isAdmin();
+      }
+    }
+
+
+    // ============================================================
+    // COLLECTION : accessRequests
+    // ============================================================
+    // Clé recommandée : {userId}_{espaceId} pour unicité
+    // Mais nous utilisons aussi auto-ID — les deux approches co-existent
+
+    match /accessRequests/{requestId} {
+
+      // Lecture : l'animateur peut voir ses propres demandes, l'admin voit tout
+      allow read: if isAuth()
+                  && (resource.data.userId == request.auth.uid || isAdmin());
+
+      // Création : par l'animateur lui-même, status forcé à 'pending'
+      allow create: if isAuth()
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.keys().hasAll(['userId', 'espaceId', 'status']);
+
+      // Mise à jour du statut : admin uniquement
+      // L'animateur ne peut pas se valider lui-même
+      allow update: if isAdmin();
+
+      // Suppression : admin uniquement
+      allow delete: if isAdmin();
+    }
+
+
+    // ============================================================
+    // REFUS PAR DÉFAUT
+    // ============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

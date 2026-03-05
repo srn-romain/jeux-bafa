@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Espace Colo – Espace Anim</title>
+  <meta name="description" content="Ressources et gestion des participants de la colonie.">
+  <link href="../../public/images/favicon.webp" rel="icon">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="../../assets/css/styleEspace.css">
+</head>
+
+<body class="espace-body">
+
+  <!-- Topbar -->
+  <header class="es-topbar">
+    <div class="es-topbar__inner">
+      <div class="es-topbar__brand">
+        <div class="es-topbar__brand-icon">🏕️</div>
+        <span class="brand-label" id="coloNameTopbar">Colo</span>
+      </div>
+      <div class="es-topbar__actions">
+        <div class="es-user-chip">
+          <i class="bi bi-person-circle" style="color:rgba(255,255,255,0.6);font-size:16px;"></i>
+          <span class="es-user-chip__name" id="userDisplayName">…</span>
+          <span class="es-badge" id="userBadge">…</span>
+        </div>
+        <button class="es-btn es-btn--logout" id="btnLogout">
+          <i class="bi bi-box-arrow-right"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Contenu principal (loader par défaut) -->
+  <main class="es-page">
+    <div class="es-container">
+
+      <!-- Loader initial -->
+      <div class="es-loader" id="pageLoader">
+        <div class="es-spinner"></div>
+        <span>Chargement de l'espace…</span>
+      </div>
+
+      <!-- Accès refusé / en attente -->
+      <div id="accessDenied" class="hidden">
+        <div class="es-access-notice">
+          <div class="es-access-notice__icon" id="deniedIcon">🔒</div>
+          <h2 class="es-access-notice__title" id="deniedTitle">Accès non autorisé</h2>
+          <p class="es-access-notice__text" id="deniedText">Tu n'as pas encore accès à cet espace.</p>
+          <a href="index.html" class="es-btn es-btn--primary mt-3">
+            <i class="bi bi-arrow-left"></i> Retour aux colos
+          </a>
+        </div>
+      </div>
+
+      <!-- Contenu réel (visible uniquement si accès validé) -->
+      <div id="coloContent" class="hidden">
+
+        <!-- Breadcrumb + titre -->
+        <div class="es-page__header">
+          <nav class="es-breadcrumb">
+            <a href="index.html"><i class="bi bi-house"></i> Tableau de bord</a>
+            <span class="es-breadcrumb__sep">/</span>
+            <span id="coloBreadcrumb">Colo</span>
+          </nav>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h1 class="es-page__title" id="coloTitle">Chargement…</h1>
+              <p class="es-page__subtitle" id="coloDates"></p>
+            </div>
+            <a href="#" target="_blank" id="driveLinkBtn" class="es-drive-btn hidden">
+              <i class="bi bi-google" style="font-size:18px;"></i> Dossier Drive
+            </a>
+          </div>
+        </div>
+
+        <!-- Onglets internes -->
+        <div class="es-nav-tabs" role="tablist">
+          <button class="es-nav-tab active" data-tab="groupes" role="tab">
+            <i class="bi bi-grid-3x3-gap"></i> Groupes
+          </button>
+          <button class="es-nav-tab" data-tab="participants" role="tab">
+            <i class="bi bi-people"></i> Participants
+          </button>
+        </div>
+
+        <!-- === ONGLET GROUPES === -->
+        <div id="tab-groupes">
+
+          <!-- Stats bar -->
+          <div class="es-card es-stats-bar" id="statsBar" style="margin-bottom:14px;">
+            <div class="es-stat-chip"><i class="bi bi-people" style="color:var(--clr-primary)"></i> <strong
+                id="statTotal">0</strong> participants</div>
+            <div class="es-stat-chip">♂ <strong id="statBoys">0</strong> garçons</div>
+            <div class="es-stat-chip">♀ <strong id="statGirls">0</strong> filles</div>
+            <div class="es-stat-chip"><i class="bi bi-calendar3" style="color:var(--clr-accent)"></i> Moy. <strong
+                id="statAge">–</strong> ans</div>
+          </div>
+
+          <!-- Options -->
+          <div class="es-options-panel">
+            <div class="es-options-panel__title">
+              <i class="bi bi-sliders" style="color:var(--clr-primary)"></i> Options de répartition
+            </div>
+            <div class="es-options-row">
+              <div class="es-field">
+                <label class="es-field__label" for="groupCount">Nombre de groupes</label>
+                <select class="es-select" id="groupCount">
+                  <option value="2">2 groupes</option>
+                  <option value="3" selected>3 groupes</option>
+                  <option value="4">4 groupes</option>
+                  <option value="5">5 groupes</option>
+                </select>
+              </div>
+              <div class="es-field">
+                <label class="es-field__label" for="balanceMode">Mode d'équilibrage</label>
+                <select class="es-select" id="balanceMode">
+                  <option value="gender">Par genre</option>
+                  <option value="age">Par âge</option>
+                  <option value="both" selected>Genre + âge</option>
+                  <option value="random">Aléatoire</option>
+                </select>
+              </div>
+            </div>
+            <div class="es-options-row" style="margin-top:10px;">
+              <div class="es-field">
+                <label class="es-field__label">Âges</label>
+                <div class="es-checkbox-group" id="ageGroupsWrap"></div>
+              </div>
+              <div class="es-field">
+                <label class="es-field__label">Genre</label>
+                <div class="es-checkbox-group">
+                  <label class="es-checkbox-label">
+                    <input type="checkbox" name="genderSelection" value="masculin" checked> Garçons
+                  </label>
+                  <label class="es-checkbox-label">
+                    <input type="checkbox" name="genderSelection" value="feminin" checked> Filles
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style="text-align:center;margin-bottom:16px;">
+            <button class="es-btn es-btn--primary es-btn--lg" onclick="regenerateGroups()">
+              <i class="bi bi-shuffle"></i> Générer les groupes
+            </button>
+          </div>
+
+          <div class="es-groups-grid" id="groupsContainer"></div>
+        </div>
+
+        <!-- === ONGLET PARTICIPANTS === -->
+        <div id="tab-participants" class="hidden">
+          <div class="es-card">
+            <div
+              style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+              <h3 style="font-weight:700;font-size:1rem;color:var(--clr-text);">
+                <i class="bi bi-people" style="color:var(--clr-primary)"></i> Liste des participants
+              </h3>
+              <!-- Visible uniquement admin -->
+              <button class="es-btn es-btn--primary es-btn--sm hidden" id="btnAddParticipant">
+                <i class="bi bi-plus-lg"></i> Ajouter
+              </button>
+            </div>
+            <div class="es-table-wrap">
+              <table class="es-table" id="participantsTable">
+                <thead>
+                  <tr>
+                    <th>Prénom</th>
+                    <th>Nom</th>
+                    <th>Âge</th>
+                    <th>Genre</th>
+                    <th class="hidden admin-only">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="participantsTbody">
+                  <tr>
+                    <td colspan="5" class="text-center text-muted" style="padding:24px;">Chargement…</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /#coloContent -->
+
+    </div>
+  </main>
+
+  <!-- Modal ajout/édition participant (admin) -->
+  <div class="es-overlay hidden" id="overlayParticipant" role="dialog" aria-modal="true">
+    <div class="es-modal">
+      <div class="es-modal__header">
+        <h2 class="es-modal__title" id="participantModalTitle">Ajouter un participant</h2>
+        <button class="es-modal__close" id="btnCloseParticipant"><i class="bi bi-x"></i></button>
+      </div>
+      <div class="es-modal__body">
+        <form id="participantForm" novalidate>
+          <input type="hidden" id="participantId">
+          <div class="es-fields-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="es-field">
+              <label class="es-field__label" for="pPrenom">Prénom</label>
+              <input class="es-input" type="text" id="pPrenom" required placeholder="Louisa">
+            </div>
+            <div class="es-field">
+              <label class="es-field__label" for="pNom">Nom</label>
+              <input class="es-input" type="text" id="pNom" required placeholder="DUPONT">
+            </div>
+          </div>
+          <div class="es-fields-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
+            <div class="es-field">
+              <label class="es-field__label" for="pAge">Âge</label>
+              <input class="es-input" type="number" id="pAge" min="6" max="18" required placeholder="11">
+            </div>
+            <div class="es-field">
+              <label class="es-field__label" for="pGenre">Genre</label>
+              <select class="es-select" id="pGenre">
+                <option value="feminin">Fille</option>
+                <option value="masculin">Garçon</option>
+              </select>
+            </div>
+          </div>
+        </form>
+        <div class="es-alert es-alert--error hidden mt-3" id="participantError">
+          <i class="bi bi-exclamation-circle"></i><span id="participantErrorMsg"></span>
+        </div>
+      </div>
+      <div class="es-modal__footer">
+        <button class="es-btn es-btn--ghost" id="btnCancelParticipant">Annuler</button>
+        <button class="es-btn es-btn--primary" id="btnSaveParticipant">
+          <i class="bi bi-check-lg"></i>
+          <span class="es-btn__text">Enregistrer</span>
+          <span class="es-btn__spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="es-toast-container" id="toastContainer"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="../../assets/js/firebase-config.js"></script>
+  <script src="../../assets/js/espace-auth.js"></script>
+  <script src="../../assets/js/espace-colo.js"></script>
+</body>
+
+</html>
