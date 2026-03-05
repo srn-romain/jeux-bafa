@@ -508,9 +508,11 @@ async function loadUsers() {
                 </td>
                 <td class="es-table__actions">
                     ${u.id !== currentAdminUser?.uid ? `
-                        <button class="es-btn es-btn--sm es-btn--ghost" onclick="toggleUserRole('${u.id}', '${u.role}')">
-                            <i class="bi bi-arrow-left-right"></i>
-                            Passer ${u.role === 'admin' ? 'Anim' : 'Admin'}
+                        <button class="es-btn es-btn--sm"
+                                style="color:var(--clr-info);border:1.5px solid rgba(41,128,185,0.3);background:rgba(41,128,185,0.08);"
+                                onclick="openUserRightsPanel('${u.id}', '${escapeHtml(u.email || '')}', '${escapeHtml(u.displayName || u.email || '')}')"
+                        >
+                            <i class="bi bi-shield-check"></i> Gérer droits
                         </button>
                     ` : '<span style="font-size:0.78rem;color:var(--clr-text-light)">Vous</span>'}
                 </td>
@@ -525,16 +527,182 @@ async function loadUsers() {
     }
 }
 
-async function toggleUserRole(uid, currentRole) {
-    const newRole = currentRole === 'admin' ? 'anim' : 'admin';
-    if (!confirm(`Changer ce compte en "${newRole}" ?`)) return;
+// ================================================================
+// PANEL DROITS UTILISATEUR
+// ================================================================
+
+let rightsUserId = null;
+let rightsUserName = null;
+
+document.getElementById('btnCloseUserRights')?.addEventListener('click', () => closeModal('overlayUserRights'));
+document.getElementById('btnCloseUserRights2')?.addEventListener('click', () => closeModal('overlayUserRights'));
+
+async function openUserRightsPanel(uid, email, displayName) {
+    rightsUserId = uid;
+    rightsUserName = displayName || email;
+
+    document.getElementById('userRightsTitle').textContent = `Droits — ${rightsUserName}`;
+    document.getElementById('userRightsEmail').textContent = email;
+
+    // Reset
+    document.getElementById('userRightsLoader').classList.remove('hidden');
+    document.getElementById('userRightsList').classList.add('hidden');
+    document.getElementById('userRightsEmpty').classList.add('hidden');
+    document.getElementById('userRightsList').innerHTML = '';
+
+    openModal('overlayUserRights');
 
     try {
-        await db.collection('users').doc(uid).update({ role: newRole });
-        showToast(`Rôle mis à jour : ${newRole}.`, 'success');
-        loadUsers();
+        const espacesSnap = await db.collection('espaces').orderBy('createdAt', 'desc').get();
+
+        if (espacesSnap.empty) {
+            document.getElementById('userRightsLoader').classList.add('hidden');
+            document.getElementById('userRightsEmpty').classList.remove('hidden');
+            return;
+        }
+
+        const espaces = espacesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Charger toutes les accessRequests de cet utilisateur
+        const reqSnap = await db.collection('accessRequests').where('userId', '==', uid).get();
+        const accessMap = {};
+        reqSnap.forEach(d => { accessMap[d.data().espaceId] = { requestId: d.id, ...d.data() }; });
+
+        const list = document.getElementById('userRightsList');
+        list.innerHTML = espaces.map((espace, idx) => {
+            const access = accessMap[espace.id];
+            const status = access?.status || 'none';
+            const dateStr = (espace.dateDebut && espace.dateFin)
+                ? `${formatDate(espace.dateDebut)} → ${formatDate(espace.dateFin)}`
+                : espace.dateDebut ? formatDate(espace.dateDebut) : 'Dates à définir';
+
+            return `
+            <div style="
+                display:flex;align-items:center;justify-content:space-between;
+                padding:14px 0;
+                ${idx < espaces.length - 1 ? 'border-bottom:1px solid var(--clr-surface-3);' : ''}
+                gap:12px;flex-wrap:wrap;
+            ">
+                <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">
+                    <div style="
+                        width:40px;height:40px;
+                        background:linear-gradient(135deg,var(--clr-bg-dark),var(--clr-bg-mid));
+                        border-radius:10px;display:flex;align-items:center;justify-content:center;
+                        font-size:18px;flex-shrink:0;
+                    ">${espace.emoji || '🏕️'}</div>
+                    <div style="min-width:0;">
+                        <div style="font-weight:700;font-size:0.9rem;color:var(--clr-text);">${espace.nom || 'Sans nom'}</div>
+                        <div style="font-size:0.75rem;color:var(--clr-text-muted);">${dateStr}</div>
+                    </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                    ${buildStatusBadge(status)}
+                    ${buildRightsActionBtn(espace, access, status)}
+                </div>
+            </div>`;
+        }).join('');
+
+        document.getElementById('userRightsLoader').classList.add('hidden');
+        list.classList.remove('hidden');
+
     } catch (err) {
-        console.error('toggleUserRole:', err);
+        console.error('openUserRightsPanel:', err);
+        document.getElementById('userRightsLoader').classList.add('hidden');
+        showToast('Erreur lors du chargement des droits.', 'error');
+    }
+}
+
+function buildStatusBadge(status) {
+    const map = {
+        'approved': '<span class="es-badge es-badge--approved"><i class="bi bi-check-circle"></i> Accordé</span>',
+        'pending': '<span class="es-badge es-badge--pending"><i class="bi bi-hourglass-split"></i> En attente</span>',
+        'refused': '<span class="es-badge es-badge--refused"><i class="bi bi-x-circle"></i> Refusé</span>',
+        'none': '<span class="es-badge" style="background:var(--clr-surface-3);color:var(--clr-text-light)"><i class="bi bi-dash"></i> Aucune demande</span>',
+    };
+    return map[status] || map['none'];
+}
+
+function buildRightsActionBtn(espace, access, status) {
+    const rId = access?.requestId || '';
+    if (status === 'approved') {
+        return `<button class="es-btn es-btn--sm es-btn--danger"
+                        onclick="revokeAccess('${rId}', '${espace.id}', '${escapeHtml(espace.nom || '')}')"
+                ><i class="bi bi-lock"></i> Révoquer</button>`;
+    }
+    if (status === 'none') {
+        return `<button class="es-btn es-btn--sm es-btn--success"
+                        onclick="grantAccess('${espace.id}', '${escapeHtml(espace.nom || '')}')"
+                ><i class="bi bi-unlock"></i> Autoriser</button>`;
+    }
+    if (status === 'pending') {
+        return `
+            <button class="es-btn es-btn--sm es-btn--success"
+                    onclick="reviewDemandeFromRights('${rId}', 'approved', '${espace.id}', '${escapeHtml(espace.nom || '')}')"
+            ><i class="bi bi-check-lg"></i> Valider</button>
+            <button class="es-btn es-btn--sm es-btn--danger"
+                    onclick="reviewDemandeFromRights('${rId}', 'refused', '${espace.id}', '${escapeHtml(espace.nom || '')}')"
+            ><i class="bi bi-x-lg"></i> Refuser</button>`;
+    }
+    if (status === 'refused') {
+        return `<button class="es-btn es-btn--sm es-btn--success"
+                        onclick="reviewDemandeFromRights('${rId}', 'approved', '${espace.id}', '${escapeHtml(espace.nom || '')}')"
+                ><i class="bi bi-check-lg"></i> Autoriser quand même</button>`;
+    }
+    return '';
+}
+
+async function grantAccess(espaceId, espaceName) {
+    if (!rightsUserId) return;
+    try {
+        await db.collection('accessRequests').add({
+            userId: rightsUserId,
+            userEmail: document.getElementById('userRightsEmail').textContent || '',
+            userName: rightsUserName || '',
+            espaceId,
+            espaceName,
+            status: 'approved',
+            grantedDirectly: true,
+            requestedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            reviewedBy: currentAdminUser.uid
+        });
+        showToast(`Accès accordé à "${espaceName}".`, 'success');
+        openUserRightsPanel(rightsUserId, document.getElementById('userRightsEmail').textContent, rightsUserName);
+    } catch (err) {
+        console.error('grantAccess:', err);
+        showToast('Erreur lors de l\'attribution.', 'error');
+    }
+}
+
+async function revokeAccess(requestId, espaceId, espaceName) {
+    try {
+        await db.collection('accessRequests').doc(requestId).update({
+            status: 'refused',
+            reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            reviewedBy: currentAdminUser.uid
+        });
+        showToast(`Accès révoqué pour "${espaceName}".`, 'default');
+        openUserRightsPanel(rightsUserId, document.getElementById('userRightsEmail').textContent, rightsUserName);
+    } catch (err) {
+        console.error('revokeAccess:', err);
+        showToast('Erreur lors de la révocation.', 'error');
+    }
+}
+
+async function reviewDemandeFromRights(requestId, status, espaceId, espaceName) {
+    try {
+        await db.collection('accessRequests').doc(requestId).update({
+            status,
+            reviewedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            reviewedBy: currentAdminUser.uid
+        });
+        const msg = status === 'approved'
+            ? `Accès accordé pour "${espaceName}".`
+            : `Accès refusé pour "${espaceName}".`;
+        showToast(msg, status === 'approved' ? 'success' : 'default');
+        openUserRightsPanel(rightsUserId, document.getElementById('userRightsEmail').textContent, rightsUserName);
+    } catch (err) {
+        console.error('reviewDemandeFromRights:', err);
         showToast('Erreur lors de la mise à jour.', 'error');
     }
 }
