@@ -29,6 +29,7 @@ auth.onAuthStateChanged(async (user) => {
 
     initAdminTabs();
     loadColos();
+    loadPendingBadge(); // badge demandes en attente dès l'ouverture
 });
 
 // ----------------------------------------------------------------
@@ -50,11 +51,39 @@ function initAdminTabs() {
     });
 }
 
+// ----------------------------------------------------------------
+// BADGE DEMANDES EN ATTENTE (temps réel dès l'init)
+// ----------------------------------------------------------------
+let pendingBadgeUnsub = null;
+
+function loadPendingBadge() {
+    if (pendingBadgeUnsub) pendingBadgeUnsub(); // détacher l'ancien listener
+
+    const badge = document.getElementById('badgePending');
+    if (!badge) return;
+
+    // Écoute en temps réel : se met à jour automatiquement
+    pendingBadgeUnsub = db.collection('accessRequests')
+        .where('status', '==', 'pending')
+        .onSnapshot(snapshot => {
+            const count = snapshot.size;
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }, err => {
+            console.error('loadPendingBadge snapshot:', err);
+        });
+}
+
 // ================================================================
 // ONGLET COLONIES
 // ================================================================
 
 async function loadColos() {
+
     const loader = document.getElementById('colosLoader2');
     const list = document.getElementById('colosAdminList');
     const empty = document.getElementById('colosAdminEmpty');
