@@ -399,6 +399,19 @@ textarea {
   color: var(--clr-text);
 }
 
+/* Ghost sur fond sombre (topbar) */
+.es-topbar .es-btn--ghost {
+  color: rgba(255, 255, 255, 0.65);
+  border-color: rgba(255, 255, 255, 0.15);
+  background: transparent;
+}
+
+.es-topbar .es-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
 .es-btn--danger {
   background: var(--clr-danger-soft);
   color: var(--clr-danger);
