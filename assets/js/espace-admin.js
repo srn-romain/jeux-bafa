@@ -7,6 +7,7 @@
 
 let currentAdminUser = null;
 let currentColoId = null; // Pour la gestion des participants
+let currentColoNom = ''; // Pour l'export
 let deleteTarget = null; // { type: 'colo'|'participant', id, coloId? }
 
 // ----------------------------------------------------------------
@@ -337,6 +338,7 @@ let adminEditingParticipantId = null;
 
 async function openParticipantsModal(coloId, coloNom) {
     currentColoId = coloId;
+    currentColoNom = coloNom;
     document.getElementById('participantsAdminTitle').textContent = `Participants – ${coloNom}`;
     openModal('overlayParticipantsAdmin');
     loadParticipantsAdmin(coloId);
@@ -454,6 +456,110 @@ document.getElementById('btnSaveParticipantForm')?.addEventListener('click', asy
         btnLoading(btn, false);
     }
 });
+
+// ----------------------------------------------------------------
+// IMPORT / EXPORT JSON
+// ----------------------------------------------------------------
+
+document.getElementById('btnExportParticipants')?.addEventListener('click', () => {
+    if (!currentColoId) return;
+    exportParticipantsData(currentColoId, currentColoNom);
+});
+
+async function exportParticipantsData(coloId, coloNom) {
+    try {
+        const snap = await db.collection('espaces').doc(coloId).collection('participants').get();
+        const participants = snap.docs.map(d => {
+            const data = d.data();
+            return {
+                prenom: data.prenom,
+                nom: data.nom,
+                age: data.age,
+                genre: data.genre
+            };
+        });
+
+        const exportData = {
+            coloId,
+            coloNom,
+            exportDate: new Date().toISOString(),
+            participants
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `participants_${coloNom.replace(/\s+/g, '_').toLowerCase()}_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Export réussi !', 'success');
+    } catch (err) {
+        console.error('export error:', err);
+        showToast("Erreur lors de l'export.", 'error');
+    }
+}
+
+document.getElementById('btnImportParticipants')?.addEventListener('click', () => {
+    document.getElementById('inputImportParticipants')?.click();
+});
+
+document.getElementById('inputImportParticipants')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleImportJSON(file);
+});
+
+async function handleImportJSON(file) {
+    if (!file || !currentColoId) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            // On accepte soit un tableau direct, soit l'objet exporté par l'appli
+            const list = Array.isArray(data) ? data : data.participants;
+
+            if (!list || !Array.isArray(list)) {
+                throw new Error("Format invalide (attendu : tableau JSON)");
+            }
+
+            if (!confirm(`Importer ${list.length} participants dans cette colonie ?`)) {
+                document.getElementById('inputImportParticipants').value = '';
+                return;
+            }
+
+            const colRef = db.collection('espaces').doc(currentColoId).collection('participants');
+            let added = 0;
+            let errors = 0;
+
+            for (const p of list) {
+                if (p.prenom && p.nom && p.age) {
+                    await colRef.add({
+                        prenom: p.prenom.trim(),
+                        nom: p.nom.trim(),
+                        age: parseInt(p.age),
+                        genre: p.genre || 'feminin',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    added++;
+                } else {
+                    errors++;
+                }
+            }
+
+            showToast(`${added} importés ! ${errors > 0 ? `(${errors} erreurs)` : ''}`, added > 0 ? 'success' : 'error');
+            loadParticipantsAdmin(currentColoId);
+        } catch (err) {
+            console.error('import error:', err);
+            showToast("Fichier JSON invalide.", 'error');
+        } finally {
+            document.getElementById('inputImportParticipants').value = '';
+        }
+    };
+    reader.readAsText(file);
+}
 
 // ================================================================
 // ONGLET DEMANDES D'ACCÈS

@@ -271,7 +271,14 @@
                 <button class="es-modal__close" id="btnCloseParticipantsAdmin"><i class="bi bi-x"></i></button>
             </div>
             <div class="es-modal__body">
-                <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+                <div style="display:flex;justify-content:flex-end;margin-bottom:12px;gap:8px;flex-wrap:wrap;">
+                    <button class="es-btn es-btn--ghost es-btn--sm" id="btnExportParticipants">
+                        <i class="bi bi-download"></i> Export JSON
+                    </button>
+                    <button class="es-btn es-btn--ghost es-btn--sm" id="btnImportParticipants">
+                        <i class="bi bi-upload"></i> Import JSON
+                    </button>
+                    <input type="file" id="inputImportParticipants" class="hidden" accept=".json">
                     <button class="es-btn es-btn--primary es-btn--sm" id="btnAddParticipantAdmin">
                         <i class="bi bi-plus-lg"></i> Ajouter
                     </button>

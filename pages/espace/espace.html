@@ -104,6 +104,9 @@
           <button class="es-nav-tab" data-tab="participants" role="tab">
             <i class="bi bi-people"></i> Participants
           </button>
+          <button class="es-nav-tab" data-tab="animateurs" role="tab">
+            <i class="bi bi-person-badge"></i> Animateurs
+          </button>
         </div>
 
         <!-- === ONGLET GROUPES === -->
@@ -180,10 +183,18 @@
               <h3 style="font-weight:700;font-size:1rem;color:var(--clr-text);">
                 <i class="bi bi-people" style="color:var(--clr-primary)"></i> Liste des participants
               </h3>
-              <!-- Visible pour admin et anim -->
-              <button class="es-btn es-btn--primary es-btn--sm hidden anim-can" id="btnAddParticipant">
-                <i class="bi bi-plus-lg"></i> Ajouter
-              </button>
+              <div style="display:flex; gap:8px;">
+                <button class="es-btn es-btn--ghost es-btn--sm hidden" id="btnExportParticipantsColo">
+                  <i class="bi bi-download"></i> Export JSON
+                </button>
+                <button class="es-btn es-btn--ghost es-btn--sm hidden" id="btnImportParticipantsColo">
+                  <i class="bi bi-upload"></i> Import JSON
+                </button>
+                <input type="file" id="inputImportParticipantsColo" class="hidden" accept=".json">
+                <button class="es-btn es-btn--primary es-btn--sm hidden anim-can" id="btnAddParticipant">
+                  <i class="bi bi-plus-lg"></i> Ajouter
+                </button>
+              </div>
             </div>
             <div class="es-table-wrap">
               <!-- Bannière verrou (visible anim si verrouillé) -->
@@ -208,6 +219,18 @@
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- === ONGLET ANIMATEURS === -->
+        <div id="tab-animateurs" class="hidden">
+          <div class="es-card">
+            <h3 style="font-weight:700;font-size:1rem;color:var(--clr-text);margin-bottom:14px;">
+              <i class="bi bi-person-badge" style="color:var(--clr-primary)"></i> Équipe d'animation
+            </h3>
+            <div id="animateursList" class="es-anim-list">
+              <div class="text-center text-muted" style="padding:24px;">Chargement…</div>
             </div>
           </div>
         </div>

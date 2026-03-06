@@ -903,7 +903,7 @@ textarea {
 }
 
 .es-page__header-info {
-  text-align: right;
+  text-align: left;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -1904,4 +1904,75 @@ input:checked+.es-slider:before {
   .es-topbar__brand span.brand-label {
     display: none;
   }
+}
+
+/* ================================================================
+   LISTE ANIMATEURS (ÉQUIPE)
+   ================================================================ */
+.es-anim-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.es-anim-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 12px 16px;
+  background: var(--clr-surface-2);
+  border-radius: 12px;
+  border: 1px solid var(--clr-surface-3);
+  transition: all 0.2s;
+}
+
+.es-anim-item:hover {
+  background: var(--clr-surface-3);
+  transform: translateX(4px);
+  border-color: var(--clr-surface-4);
+}
+
+.es-anim-item__avatar {
+  width: 46px;
+  height: 46px;
+  background: var(--clr-bg-dark);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid var(--clr-surface-4);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+
+.es-anim-item__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.es-anim-item__avatar i {
+  color: var(--clr-text-light);
+  font-size: 24px;
+}
+
+.es-anim-item__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.es-anim-item__name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--clr-text);
+  margin-bottom: 2px;
+}
+
+.es-anim-item__email {
+  font-size: 0.8rem;
+  color: var(--clr-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

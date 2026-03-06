@@ -130,6 +130,8 @@ function initColoContent(colo, role) {
     if (role === 'admin') {
         // L'admin voit et interagit toujours
         document.getElementById('btnAddParticipant')?.classList.remove('hidden');
+        document.getElementById('btnExportParticipantsColo')?.classList.remove('hidden');
+        document.getElementById('btnImportParticipantsColo')?.classList.remove('hidden');
         document.querySelectorAll('.anim-can').forEach(el => el.classList.remove('hidden'));
     } else if (role === 'anim') {
         // L'anim voit les boutons, mais disabled si verrouillé
@@ -148,6 +150,8 @@ function initColoContent(colo, role) {
 
     // Charger les participants
     loadParticipants(colo.id, role);
+    // Charger les animateurs
+    loadAnimateurs(colo.id);
 
     // Onglets
     initTabs();
@@ -164,6 +168,7 @@ function initTabs() {
             const tab = btn.getAttribute('data-tab');
             document.getElementById('tab-groupes').classList.toggle('hidden', tab !== 'groupes');
             document.getElementById('tab-participants').classList.toggle('hidden', tab !== 'participants');
+            document.getElementById('tab-animateurs').classList.toggle('hidden', tab !== 'animateurs');
         });
     });
 }
@@ -480,5 +485,172 @@ async function deleteParticipant(id, nom) {
     } catch (err) {
         console.error('deleteParticipant:', err);
         showToast('Erreur lors de la suppression.', 'error');
+    }
+}
+
+// ----------------------------------------------------------------
+// IMPORT / EXPORT JSON (Colo)
+// ----------------------------------------------------------------
+
+document.getElementById('btnExportParticipantsColo')?.addEventListener('click', async () => {
+    if (!espaceId) return;
+    const coloDoc = await db.collection('espaces').doc(espaceId).get();
+    const coloNom = coloDoc.exists ? (coloDoc.data().nom || 'Colo') : 'Colo';
+    exportParticipantsColo(espaceId, coloNom);
+});
+
+async function exportParticipantsColo(coloId, coloNom) {
+    try {
+        const snap = await db.collection('espaces').doc(coloId).collection('participants')
+            .orderBy('nom', 'asc').get();
+        const pts = snap.docs.map(d => {
+            const data = d.data();
+            return {
+                prenom: data.prenom,
+                nom: data.nom,
+                age: data.age,
+                genre: data.genre
+            };
+        });
+
+        const exportData = {
+            coloId,
+            coloNom,
+            exportDate: new Date().toISOString(),
+            participants: pts
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `participants_${coloNom.replace(/\s+/g, '_').toLowerCase()}_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Export réussi !', 'success');
+    } catch (err) {
+        console.error('export error:', err);
+        showToast("Erreur lors de l'export.", 'error');
+    }
+}
+
+document.getElementById('btnImportParticipantsColo')?.addEventListener('click', () => {
+    document.getElementById('inputImportParticipantsColo')?.click();
+});
+
+document.getElementById('inputImportParticipantsColo')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) handleImportJSONColo(file);
+});
+
+async function handleImportJSONColo(file) {
+    if (!file || !espaceId) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            const list = Array.isArray(data) ? data : data.participants;
+
+            if (!list || !Array.isArray(list)) {
+                throw new Error("Format invalide");
+            }
+
+            if (!confirm(`Importer ${list.length} participants dans cette colonie ?`)) {
+                document.getElementById('inputImportParticipantsColo').value = '';
+                return;
+            }
+
+            const colRef = db.collection('espaces').doc(espaceId).collection('participants');
+            let added = 0;
+            let errors = 0;
+
+            for (const p of list) {
+                if (p.prenom && p.nom && p.age) {
+                    await colRef.add({
+                        prenom: p.prenom.trim(),
+                        nom: p.nom.trim(),
+                        age: parseInt(p.age),
+                        genre: p.genre || 'feminin',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    added++;
+                } else {
+                    errors++;
+                }
+            }
+
+            showToast(`${added} importés ! ${errors > 0 ? `(${errors} erreurs)` : ''}`, added > 0 ? 'success' : 'error');
+            loadParticipants(espaceId, currentRole);
+        } catch (err) {
+            console.error('import error:', err);
+            showToast("Fichier JSON invalide ou corrompu.", 'error');
+        } finally {
+            document.getElementById('inputImportParticipantsColo').value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+// ----------------------------------------------------------------
+// CHARGER LES ANIMATEURS
+// ----------------------------------------------------------------
+async function loadAnimateurs(coloId) {
+    const listEl = document.getElementById('animateursList');
+    if (!listEl) return;
+
+    try {
+        // 1. Récupérer les demandes approuvées pour cette colo
+        const snap = await db.collection('accessRequests')
+            .where('espaceId', '==', coloId)
+            .where('status', '==', 'approved')
+            .get();
+
+        const userIds = snap.docs.map(doc => doc.data().userId);
+
+        // On récupère aussi l'admin qui a créé la colo s'il n'est pas déjà dans la liste
+        const coloDoc = await db.collection('espaces').doc(coloId).get();
+        if (coloDoc.exists && coloDoc.data().createdBy) {
+            if (!userIds.includes(coloDoc.data().createdBy)) {
+                userIds.push(coloDoc.data().createdBy);
+            }
+        }
+
+        if (userIds.length === 0) {
+            listEl.innerHTML = `<div class="text-center text-muted" style="padding:24px;">Aucun animateur sur cet espace.</div>`;
+            return;
+        }
+
+        // 2. Récupérer les données de chaque utilisateur
+        const animsData = [];
+        for (const uid of userIds) {
+            const uDoc = await db.collection('users').doc(uid).get();
+            if (uDoc.exists) {
+                animsData.push({ id: uDoc.id, ...uDoc.data() });
+            }
+        }
+
+        // 3. Afficher
+        listEl.innerHTML = animsData.map(anim => `
+            <div class="es-anim-item">
+                <div class="es-anim-item__avatar">
+                    ${anim.photoURL
+                ? `<img src="${anim.photoURL}" alt="${anim.displayName}">`
+                : `<i class="bi bi-person-circle" style="font-size:24px; opacity:0.5;"></i>`}
+                </div>
+                <div class="es-anim-item__info">
+                    <div class="es-anim-item__name">${anim.displayName || 'Anonyme'}</div>
+                    <div class="es-anim-item__email">${anim.email || ''}</div>
+                </div>
+                <div class="es-badge ${anim.role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}">
+                    ${anim.role === 'admin' ? 'Directeur' : 'Animateur'}
+                </div>
+            </div>
+        `).join('');
+
+    } catch (err) {
+        console.error('loadAnimateurs error:', err);
+        listEl.innerHTML = `<div class="text-center text-danger" style="padding:24px;">Erreur lors du chargement de l'équipe.</div>`;
     }
 }

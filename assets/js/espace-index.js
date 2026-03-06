@@ -74,6 +74,14 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
     const btn = document.getElementById('btnSignup');
     const errorEl = document.getElementById('signupError');
     const msgEl = document.getElementById('signupErrorMsg');
+
+    const name = document.getElementById('nameSignup').value.trim();
+    if (!name) {
+        msgEl.textContent = "Le nom / pseudo est obligatoire.";
+        errorEl.classList.remove('hidden');
+        return;
+    }
+
     errorEl.classList.add('hidden');
     btnLoading(btn, true);
 
@@ -84,7 +92,7 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
         );
         await db.collection('users').doc(cred.user.uid).set({
             email: cred.user.email,
-            displayName: '',
+            displayName: name,
             role: 'anim',
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
