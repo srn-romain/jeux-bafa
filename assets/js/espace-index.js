@@ -7,6 +7,7 @@
 // Éléments
 const loginView = document.getElementById('loginView');
 const dashboardView = document.getElementById('dashboardView');
+const pageLoader = document.getElementById('pageLoader');
 
 // ----------------------------------------------------------------
 // ONGLETS LOGIN / INSCRIPTION
@@ -111,6 +112,8 @@ document.getElementById('btnGoogleSignup')?.addEventListener('click', signInWith
 // ÉTAT AUTHENTIFICATION
 // ----------------------------------------------------------------
 auth.onAuthStateChanged(async (user) => {
+    if (pageLoader) pageLoader.classList.add('hidden');
+
     if (!user) {
         loginView.classList.remove('hidden');
         dashboardView.classList.add('hidden');

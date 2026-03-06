@@ -16,9 +16,17 @@
 <body class="espace-body">
 
     <!-- ========================================================
+     LOADER GLOBAL (Vérification de session en cours)
+     ======================================================== -->
+    <div class="es-loader" id="pageLoader" style="height: 100vh;">
+        <div class="es-spinner"></div>
+        <span>Vérification de votre session…</span>
+    </div>
+
+    <!-- ========================================================
      VUE LOGIN
      ======================================================== -->
-    <div id="loginView" class="es-login-page">
+    <div id="loginView" class="es-login-page hidden">
         <div class="es-login-card">
 
             <div class="es-login-logo">
