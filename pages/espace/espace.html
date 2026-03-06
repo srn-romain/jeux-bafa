@@ -26,14 +26,30 @@
         <a href="../../index.html" class="es-btn es-btn--sm es-btn--ghost">
           <i class="bi bi-house"></i> <span class="brand-label">Site</span>
         </a>
-        <div class="es-user-chip">
-          <i class="bi bi-person-circle" style="color:rgba(255,255,255,0.6);font-size:16px;flex-shrink:0;"></i>
-          <span class="es-user-chip__name" id="userDisplayName">…</span>
-          <span class="es-badge" id="userBadge">…</span>
+        <!-- Menu Profil -->
+        <div class="es-user-dropdown-wrap">
+          <button class="es-user-chip" id="btnUserMenu">
+            <div class="es-user-avatar" id="userAvatar">
+              <i class="bi bi-person-circle"></i>
+            </div>
+            <span class="es-user-chip__name" id="userDisplayName">…</span>
+            <span class="es-badge" id="userBadge">…</span>
+            <i class="bi bi-chevron-down" style="font-size:10px;opacity:0.6;"></i>
+          </button>
+          <div class="es-user-dropdown hidden" id="userDropdown">
+            <button class="es-user-dropdown__item" id="btnOpenSettings">
+              <i class="bi bi-person-gear"></i> Paramètres
+            </button>
+            <!-- Lien admin visible uniquement pour admin -->
+            <a href="admin.html" class="es-user-dropdown__item hidden" id="linkAdmin">
+              <i class="bi bi-shield-lock"></i> Administration
+            </a>
+            <div class="es-user-dropdown__sep"></div>
+            <button class="es-user-dropdown__item es-user-dropdown__item--danger" id="btnLogout">
+              <i class="bi bi-box-arrow-right"></i> Déconnexion
+            </button>
+          </div>
         </div>
-        <button class="es-btn es-btn--logout" id="btnLogout">
-          <i class="bi bi-box-arrow-right"></i>
-        </button>
       </div>
     </div>
   </header>
@@ -71,12 +87,10 @@
             <span class="es-breadcrumb__sep">/</span>
             <span id="coloBreadcrumb">Colo</span>
           </nav>
-          <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;">
-            <div>
-              <h1 class="es-page__title" id="coloTitle">Chargement…</h1>
-              <p class="es-page__subtitle" id="coloDates"></p>
-            </div>
-            <a href="#" target="_blank" id="driveLinkBtn" class="es-drive-btn hidden">
+          <div class="es-page__header-info">
+            <h1 class="es-page__title" id="coloTitle">Chargement…</h1>
+            <p class="es-page__subtitle" id="coloDates"></p>
+            <a href="#" target="_blank" id="driveLinkBtn" class="es-drive-btn hidden" style="margin-top:8px;">
               <i class="bi bi-google" style="font-size:18px;"></i> Dossier Drive
             </a>
           </div>
@@ -252,6 +266,63 @@
     </div>
   </div>
 
+  <!-- Modal : Paramètres du compte -->
+  <div class="es-overlay hidden" id="overlaySettings" role="dialog" aria-modal="true">
+    <div class="es-modal" style="max-width:440px;">
+      <div class="es-modal__header">
+        <h2 class="es-modal__title">Mon compte</h2>
+        <button class="es-modal__close" id="btnCloseSettings"><i class="bi bi-x"></i></button>
+      </div>
+      <div class="es-modal__body">
+        <div class="es-settings-profile">
+          <div class="es-settings-avatar-wrap">
+            <img src="" alt="" class="es-settings-avatar hidden" id="settingsAvatarImg">
+            <div class="es-settings-avatar-placeholder" id="settingsAvatarPlaceholder">
+              <i class="bi bi-person"></i>
+            </div>
+            <button class="es-settings-avatar-edit" id="btnEditAvatar" title="Modifier la photo">
+              <i class="bi bi-camera"></i>
+            </button>
+            <input type="file" id="inputAvatar" class="hidden" accept="image/*">
+          </div>
+          <div class="es-settings-info">
+            <h3 id="settingsUserEmail" style="font-size:0.9rem;font-weight:700;margin-bottom:2px;">...</h3>
+            <p id="settingsUserRole" style="font-size:0.75rem;color:var(--clr-text-light);text-transform:uppercase;">
+            </p>
+          </div>
+        </div>
+
+        <form id="settingsForm" style="margin-top:20px;">
+          <div class="es-field">
+            <label class="es-field__label" for="settingsDisplayName">Pseudo / Nom d'affichage</label>
+            <input class="es-input" type="text" id="settingsDisplayName" placeholder="Ex: Romain">
+          </div>
+        </form>
+
+        <div class="es-settings-danger-zone">
+          <h4 class="es-settings-danger-title">Zone de danger</h4>
+          <p style="font-size:0.78rem;color:var(--clr-text-light);margin-bottom:12px;">La suppression de votre
+            compte est définitive et supprimera toutes vos demandes d'accès.</p>
+          <button class="es-btn es-btn--danger es-btn--sm es-btn--full" id="btnDeleteAccount">
+            <i class="bi bi-trash3"></i> Supprimer mon compte
+          </button>
+        </div>
+
+        <div class="es-alert es-alert--error hidden mt-3" id="settingsError">
+          <i class="bi bi-exclamation-circle"></i> <span id="settingsErrorMsg"></span>
+        </div>
+      </div>
+      <div class="es-modal__footer">
+        <button class="es-btn es-btn--ghost" id="btnCancelSettings">Annuler</button>
+        <button class="es-btn es-btn--primary" id="btnSaveSettings">
+          <i class="bi bi-check-lg"></i>
+          <span class="es-btn__text">Enregistrer</span>
+          <span class="es-btn__spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast container -->
   <div class="es-toast-container" id="toastContainer"></div>
 
@@ -259,6 +330,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
   <script src="../../assets/js/firebase-config.js"></script>
   <script src="../../assets/js/espace-auth.js"></script>
   <script src="../../assets/js/espace-colo.js"></script>

@@ -45,7 +45,17 @@
                         </div>
                     </div>
                     <div class="es-field">
-                        <label class="es-field__label es-field__label--light" for="passwordLogin">Mot de passe</label>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <label class="es-field__label es-field__label--light" for="passwordLogin">Mot de
+                                passe</label>
+                            <button type="button" id="btnForgotPwd" style="background:none; border:none; color:rgba(255,255,255,0.45); 
+                                       font-size:0.75rem; text-decoration:underline; cursor:pointer; 
+                                       padding:0; margin-bottom:6px; transition:color .2s;"
+                                onmouseover="this.style.color='rgba(255,255,255,0.8)'"
+                                onmouseout="this.style.color='rgba(255,255,255,0.45)'">
+                                Mot de passe oublié ?
+                            </button>
+                        </div>
                         <div class="es-input-wrap">
                             <i class="bi bi-lock es-input-icon"></i>
                             <input class="es-input es-input--icon es-input--dark es-input--pwd" type="password"

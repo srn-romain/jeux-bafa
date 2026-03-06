@@ -894,6 +894,21 @@ textarea {
 
 .es-page__header {
   padding: 24px 0 20px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.es-page__header-info {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex: 1;
 }
 
 .es-page__title {
@@ -906,7 +921,6 @@ textarea {
 .es-page__subtitle {
   font-size: 0.88rem;
   color: rgba(255, 255, 255, 0.55);
-  margin-top: 3px;
 }
 
 /* ================================================================
@@ -1008,15 +1022,6 @@ textarea {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.es-page__header {
-  margin-bottom: 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  gap: 15px;
-  flex-wrap: wrap;
 }
 
 /* Toggle Statistiques */
