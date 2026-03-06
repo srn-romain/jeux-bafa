@@ -15,16 +15,23 @@ let deleteTarget = null; // { type: 'colo'|'participant', id, coloId? }
 auth.onAuthStateChanged(async (user) => {
     if (!user) { window.location.href = 'index.html'; return; }
 
-    const role = await getUserRole(user.uid);
-    document.getElementById('adminLoader')?.classList.add('hidden');
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) { auth.signOut(); window.location.href = 'index.html'; return; }
+    const role = userDoc.data().role;
+    const userData = userDoc.data();
+
+    // Mettre à jour lastLogin
+    db.collection('users').doc(user.uid).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
 
     if (role !== 'admin') {
+        document.getElementById('adminLoader')?.classList.add('hidden');
         document.getElementById('accessDenied')?.classList.remove('hidden');
         return;
     }
 
     currentAdminUser = user;
-    updateTopbarUser(user, role);
+    updateTopbarUser(user, role, userData);
+    document.getElementById('adminLoader')?.classList.add('hidden');
     document.getElementById('adminContent')?.classList.remove('hidden');
 
     initAdminTabs();

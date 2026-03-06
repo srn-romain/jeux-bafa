@@ -1121,6 +1121,182 @@ input:checked+.es-slider:before {
 }
 
 /* ================================================================
+   MENU PROFIL & DROPDOWN
+   ================================================================ */
+.es-user-dropdown-wrap {
+  position: relative;
+}
+
+.es-user-chip {
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 10px 4px 4px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+  color: #fff;
+}
+
+.es-user-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.es-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--clr-surface-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.es-user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.es-user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 200px;
+  background: var(--clr-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--clr-surface-3);
+  padding: 6px;
+  z-index: 1000;
+  animation: slideInUp 0.2s ease;
+}
+
+.es-user-dropdown__item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  color: var(--clr-text);
+  font-size: 0.88rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.es-user-dropdown__item:hover {
+  background: var(--clr-surface-2);
+}
+
+.es-user-dropdown__item--danger {
+  color: var(--clr-danger);
+}
+
+.es-user-dropdown__item i {
+  font-size: 1.1rem;
+  opacity: 0.7;
+}
+
+.es-user-dropdown__sep {
+  height: 1px;
+  background: var(--clr-surface-3);
+  margin: 6px;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================================================
+   PARAMETRES DU COMPTE
+   ================================================================ */
+.es-settings-profile {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--clr-surface-3);
+}
+
+.es-settings-avatar-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.es-settings-avatar,
+.es-settings-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--clr-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: var(--clr-text-light);
+  border: 2px solid var(--clr-surface-3);
+}
+
+.es-settings-avatar-edit {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--clr-primary);
+  color: var(--clr-bg-deep);
+  border: 2px solid var(--clr-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.es-settings-avatar-edit:hover {
+  transform: scale(1.1);
+}
+
+.es-settings-danger-zone {
+  margin-top: 30px;
+  padding: 16px;
+  background: rgba(231, 76, 60, 0.05);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(231, 76, 60, 0.15);
+}
+
+.es-settings-danger-title {
+  color: var(--clr-danger);
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ================================================================
    CARD ADMIN (dans admin.html)
    ================================================================ */
 .es-colo-admin-card {

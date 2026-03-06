@@ -84,13 +84,25 @@ async function getUserRole(uid) {
 // ----------------------------------------------------------------
 // Mettre à jour le nom affiché dans la topbar
 // ----------------------------------------------------------------
-function updateTopbarUser(user, role) {
+function updateTopbarUser(user, role, userData = null) {
     const nameEl = document.getElementById('userDisplayName');
     const badgeEl = document.getElementById('userBadge');
-    if (nameEl) nameEl.textContent = user.displayName || user.email || '';
+    const avatarEl = document.getElementById('userAvatar');
+
+    const displayName = userData?.displayName || user.displayName || user.email || '';
+    const photoURL = userData?.photoURL || user.photoURL || '';
+
+    if (nameEl) nameEl.textContent = displayName;
     if (badgeEl) {
         badgeEl.textContent = role === 'admin' ? '👑 Admin' : '🎨 Anim';
         badgeEl.className = `es-badge ${role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}`;
+    }
+    if (avatarEl) {
+        if (photoURL) {
+            avatarEl.innerHTML = `<img src="${photoURL}" alt="">`;
+        } else {
+            avatarEl.innerHTML = `<i class="bi bi-person-circle"></i>`;
+        }
     }
 }
 
@@ -115,9 +127,18 @@ async function signInWithGoogle() {
             await firebase.firestore().collection('users').doc(user.uid).set({
                 email: user.email,
                 displayName: user.displayName || '',
+                photoURL: user.photoURL || '',
                 role: 'anim',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+        } else {
+            // Uniquement si pas déjà de photo (ou si l'admin veut forcer la synchro)
+            const currentData = doc.data();
+            if (!currentData.photoURL) {
+                await firebase.firestore().collection('users').doc(user.uid).update({
+                    photoURL: user.photoURL || ''
+                });
+            }
         }
     } catch (err) {
         if (err.code !== 'auth/popup-closed-by-user') {

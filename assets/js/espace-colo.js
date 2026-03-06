@@ -23,12 +23,17 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
 
-    const role = await getUserRole(user.uid);
-    if (!role) { auth.signOut(); window.location.href = 'index.html'; return; }
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) { auth.signOut(); window.location.href = 'index.html'; return; }
+    const role = userDoc.data().role;
+    const userData = userDoc.data();
+
+    // Mettre à jour lastLogin
+    db.collection('users').doc(user.uid).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
 
     currentUser = user;
     currentRole = role;
-    updateTopbarUser(user, role);
+    updateTopbarUser(user, role, userData);
 
     if (!espaceId) {
         showAccessDenied('❓', 'Espace introuvable', 'Aucun identifiant d\'espace fourni.');
