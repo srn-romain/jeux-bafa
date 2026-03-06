@@ -24,10 +24,17 @@ function btnLoading(btn, on) {
     btn.classList.toggle('loading', on);
 }
 
-function formatDate(dateStr) {
-    if (!dateStr) return '';
-    const d = new Date(dateStr);
+function formatDate(date) {
+    if (!date) return '';
+    const d = date.toDate ? date.toDate() : new Date(date);
     return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatFullDate(date) {
+    if (!date) return 'Jamais';
+    const d = date.toDate ? date.toDate() : new Date(date);
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' +
+        d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
 function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }

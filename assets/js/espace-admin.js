@@ -564,6 +564,7 @@ async function loadUsers() {
             <tr>
                 <td style="font-size:0.87rem;">${u.email || ''}</td>
                 <td>${u.displayName || '<span style="color:var(--clr-text-light)">–</span>'}</td>
+                <td style="font-size:0.82rem;color:var(--clr-text-muted);">${formatFullDate(u.lastLogin)}</td>
                 <td>
                     <span class="es-badge ${u.role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}">
                         ${u.role === 'admin' ? '👑 Admin' : '🎨 Anim'}

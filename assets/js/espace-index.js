@@ -105,6 +105,15 @@ auth.onAuthStateChanged(async (user) => {
     dashboardView.classList.remove('hidden');
     updateTopbarUser(user, role);
 
+    // Mettre à jour la date de dernière connexion
+    try {
+        await db.collection('users').doc(user.uid).update({
+            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (err) {
+        console.error("Erreur mise à jour lastLogin :", err);
+    }
+
     // Éléments Admin Only
     if (role === 'admin') {
         document.getElementById('linkAdmin')?.classList.remove('hidden');
