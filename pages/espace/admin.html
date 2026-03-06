@@ -295,6 +295,7 @@
                                 <th>Âge</th>
                                 <th>Genre</th>
                                 <th class="col-groupe hidden">Groupe</th>
+                                <th>Remarque</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -354,6 +355,12 @@
                         <select class="es-select" id="pAdminGroup">
                             <option value="">-- Aucun groupe --</option>
                         </select>
+                    </div>
+                    <div class="es-field">
+                        <label class="es-field__label" for="pAdminNote"><i class="bi bi-info-circle"
+                                style="color:var(--clr-primary)"></i> Remarques</label>
+                        <textarea class="es-textarea es-textarea--note" id="pAdminNote" rows="2"
+                            placeholder="Infos..."></textarea>
                     </div>
                 </form>
                 <div class="es-alert es-alert--error hidden mt-3" id="pAdminError">

@@ -180,6 +180,9 @@
           <div class="es-card">
             <div
               style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+              <h3 style="font-weight:700;font-size:1rem;color:var(--clr-text);">
+                <i class="bi bi-people" style="color:var(--clr-primary)"></i> Liste des participants
+              </h3>
               <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                 <button class="es-btn es-btn--ghost es-btn--sm hidden admin-only" id="btnManageGroups">
                   <i class="bi bi-tags"></i> Gérer les groupes
@@ -211,6 +214,7 @@
                     <th>Âge</th>
                     <th>Genre</th>
                     <th class="col-groupe hidden">Groupe</th>
+                    <th>Remarque</th>
                     <th class="hidden anim-can">Actions</th>
                   </tr>
                 </thead>
@@ -279,6 +283,12 @@
             <select class="es-select" id="pGroup">
               <option value="">-- Aucun groupe --</option>
             </select>
+          </div>
+          <div class="es-field">
+            <label class="es-field__label" for="pNote"><i class="bi bi-info-circle"
+                style="color:var(--clr-primary)"></i> Remarques / Infos (allergies, soins...)</label>
+            <textarea class="es-textarea es-textarea--note" id="pNote" rows="3"
+              placeholder="Ex: Allergie au gluten, traitement asthme..."></textarea>
           </div>
         </form>
         <div class="es-alert es-alert--error hidden mt-3" id="participantError">
@@ -375,6 +385,23 @@
       </div>
       <div class="es-modal__footer">
         <button class="es-btn es-btn--primary" id="btnFinishGroups">Terminer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal : Voir Remarque -->
+  <div class="es-overlay hidden" id="overlayViewNote" role="dialog" aria-modal="true">
+    <div class="es-modal" style="max-width:440px;">
+      <div class="es-modal__header">
+        <h2 class="es-modal__title">Remarque</h2>
+        <button class="es-modal__close" id="btnCloseViewNote"><i class="bi bi-x"></i></button>
+      </div>
+      <div class="es-modal__body">
+        <p id="viewNoteText" style="white-space: pre-wrap; font-size:0.95rem; line-height:1.5; color:var(--clr-text);">
+        </p>
+      </div>
+      <div class="es-modal__footer">
+        <button class="es-btn es-btn--primary" id="btnFinishViewNote">Fermer</button>
       </div>
     </div>
   </div>

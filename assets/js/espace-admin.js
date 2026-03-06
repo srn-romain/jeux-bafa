@@ -361,6 +361,10 @@ async function loadParticipantsAdmin(coloId) {
 
         tbody.innerHTML = participants.map(p => {
             const g = hasGroups ? currentAdminGroups.find(x => x.id === p.groupeId) : null;
+            const note = p.note || '';
+            const isLong = note.length > 20;
+            const noteDisplay = isLong ? note.substring(0, 17) + '...' : note;
+
             return `
             <tr>
                 <td><strong>${p.prenom || ''}</strong></td>
@@ -372,11 +376,19 @@ async function loadParticipantsAdmin(coloId) {
                 <td class="col-groupe ${!hasGroups ? 'hidden' : ''}">
                     ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted">–</span>'}
                 </td>
+                <td>
+                    ${note ? `
+                        <span style="font-size:0.8rem; color:var(--clr-text-muted);">
+                            ${escapeHtml(noteDisplay)}
+                            ${isLong ? `<button class="es-btn es-btn--ghost es-btn--sm" style="padding:0 4px; border:none; color:var(--clr-primary); background:none;" onclick="showAdminNote('${escapeHtml(note)}')"><i class="bi bi-eye"></i></button>` : ''}
+                        </span>
+                    ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
+                </td>
                 <td class="es-table__actions">
-                    <button class="es-btn es-btn--ghost es-btn--sm" onclick="editParticipantAdmin('${p.id}', '${escapeHtml(JSON.stringify(p))}')">
+                    <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier" onclick="editParticipantAdmin('${p.id}', '${escapeHtml(JSON.stringify(p))}')">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="es-btn es-btn--danger es-btn--sm" onclick="confirmDeleteParticipant('${p.id}', '${escapeHtml(p.prenom + ' ' + p.nom)}')">
+                    <button class="es-btn es-btn--danger es-btn--sm" title="Supprimer" onclick="confirmDeleteParticipant('${p.id}', '${escapeHtml(p.prenom + ' ' + p.nom)}')">
                         <i class="bi bi-trash3"></i>
                     </button>
                 </td>
@@ -385,7 +397,7 @@ async function loadParticipantsAdmin(coloId) {
         }).join('');
     } catch (err) {
         console.error('loadParticipantsAdmin:', err);
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color:var(--clr-danger);padding:20px;">Erreur de chargement.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="color:var(--clr-danger);padding:20px;">Erreur de chargement.</td></tr>`;
     }
 }
 
@@ -409,6 +421,7 @@ function editParticipantAdmin(id, pJson) {
         document.getElementById('pAdminNom').value = p.nom || '';
         document.getElementById('pAdminAge').value = p.age || '';
         document.getElementById('pAdminGenre').value = p.genre || 'feminin';
+        document.getElementById('pAdminNote').value = p.note || '';
 
         const groupSelect = document.getElementById('pAdminGroup');
         if (groupSelect) groupSelect.value = p.groupeId || '';
@@ -449,7 +462,8 @@ document.getElementById('btnSaveParticipantForm')?.addEventListener('click', asy
     try {
         const colRef = db.collection('espaces').doc(currentColoId).collection('participants');
         const groupeId = document.getElementById('pAdminGroup')?.value || null;
-        const data = { prenom, nom, age, genre, groupeId };
+        const note = document.getElementById('pAdminNote')?.value.trim();
+        const data = { prenom, nom, age, genre, groupeId, note };
 
         if (adminEditingParticipantId) {
             await colRef.doc(adminEditingParticipantId).update(data);
@@ -987,4 +1001,8 @@ async function deleteAdminGroupName(id, name) {
         console.error('deleteGroupAdmin error:', err);
         showToast('Erreur lors de la suppression.', 'error');
     }
+}
+
+function showAdminNote(note) {
+    alert(note); // Utilisation simple pour l'admin, peut être amélioré avec une modale si nécessaire
 }

@@ -628,6 +628,37 @@ textarea {
   box-shadow: 0 0 0 3px rgba(166, 216, 102, 0.18);
 }
 
+.es-textarea {
+  width: 100%;
+  padding: 11px 13px;
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: var(--radius-md);
+  font-size: 0.93rem;
+  color: var(--clr-text);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+.es-textarea:focus {
+  border-color: var(--clr-primary);
+  box-shadow: 0 0 0 3px rgba(166, 216, 102, 0.18);
+}
+
+.es-textarea--note {
+  background: #fffcf0;
+  border-color: #f3e5c2;
+  color: #5d4037;
+}
+
+.es-textarea--note:focus {
+  border-color: #d4a017;
+  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.1);
+}
+
 .es-input--icon {
   padding-left: 38px;
 }

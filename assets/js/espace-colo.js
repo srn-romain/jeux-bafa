@@ -223,6 +223,10 @@ function renderParticipantsTable(role) {
 
     tbody.innerHTML = participants.map(p => {
         const g = hasGroups ? currentGroups.find(x => x.id === p.groupeId) : null;
+        const note = p.note || '';
+        const isLong = note.length > 25;
+        const noteDisplay = isLong ? note.substring(0, 22) + '...' : note;
+
         return `
         <tr>
             <td><strong>${p.prenom || ''}</strong></td>
@@ -236,11 +240,17 @@ function renderParticipantsTable(role) {
             <td class="col-groupe ${!hasGroups ? 'hidden' : ''}">
                 ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
+            <td>
+                ${note ? `
+                    <span style="font-size:0.82rem; color:var(--clr-text-muted);">
+                        ${escapeHtml(noteDisplay)}
+                        ${isLong ? `<button class="es-btn es-btn--ghost es-btn--sm" style="padding:0 4px; border:none; color:var(--clr-primary); background:none;" onclick="openNoteModal('${escapeHtml(note)}')"><i class="bi bi-eye"></i></button>` : ''}
+                    </span>
+                ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
+            </td>
             <td class="es-table__actions">
-                <button class="es-btn es-btn--ghost es-btn--sm"
-                        onclick="${canEdit ? `editParticipant('${p.id}')` : 'void(0)'}"
-                        ${!canEdit ? 'disabled title="Verrouillé par le directeur"' : 'title="Modifier"'}
-                        style="${!canEdit && role === 'anim' ? 'opacity:0.4;cursor:not-allowed;' : ''}">
+                <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier"
+                        onclick="editParticipant('${p.id}')">
                     <i class="bi bi-pencil"></i>
                 </button>
                 <button class="es-btn es-btn--danger es-btn--sm" 
@@ -426,6 +436,13 @@ document.getElementById('btnAddParticipant')?.addEventListener('click', () => {
     editingParticipantId = null;
     document.getElementById('participantModalTitle').textContent = 'Ajouter un participant';
     document.getElementById('participantForm')?.reset();
+
+    // Réinitialiser les disabled
+    ['pPrenom', 'pNom', 'pAge', 'pGenre', 'pGroup'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.disabled = false;
+    });
+
     const groupSelect = document.getElementById('pGroup');
     if (groupSelect) groupSelect.value = '';
 
@@ -438,10 +455,19 @@ function editParticipant(id) {
     if (!p) return;
     editingParticipantId = id;
     document.getElementById('participantModalTitle').textContent = 'Modifier le participant';
+
+    // Si verrouillé et anim, on ne peut changer que la remarque
+    const isLockedAnim = (currentRole === 'anim' && currentLocked);
+    ['pPrenom', 'pNom', 'pAge', 'pGenre', 'pGroup'].forEach(fId => {
+        const el = document.getElementById(fId);
+        if (el) el.disabled = isLockedAnim;
+    });
+
     document.getElementById('pPrenom').value = p.prenom || '';
     document.getElementById('pNom').value = p.nom || '';
     document.getElementById('pAge').value = p.age || '';
     document.getElementById('pGenre').value = p.genre || 'feminin';
+    document.getElementById('pNote').value = p.note || '';
 
     const groupSelect = document.getElementById('pGroup');
     if (groupSelect) groupSelect.value = p.groupeId || '';
@@ -462,6 +488,7 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
     const nom = document.getElementById('pNom')?.value.trim();
     const age = parseInt(document.getElementById('pAge')?.value);
     const genre = document.getElementById('pGenre')?.value;
+    const note = document.getElementById('pNote')?.value.trim();
     const groupeId = document.getElementById('pGroup')?.value || null;
 
     if (!prenom || !nom || isNaN(age)) {
@@ -474,13 +501,21 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
     btnLoading(btn, true);
 
     try {
-        const data = { prenom, nom, age, genre, groupeId };
+        let data = { prenom, nom, age, genre, note, groupeId };
         const colRef = db.collection('espaces').doc(espaceId).collection('participants');
 
         if (editingParticipantId) {
+            // Sécurité : si verrouillé par le directeur, les animateurs ne peuvent changer QUE la remarque
+            if (currentRole === 'anim' && currentLocked) {
+                data = { note };
+            }
             await colRef.doc(editingParticipantId).update(data);
             showToast('Participant modifié.', 'success');
         } else {
+            // Les animateurs ne peuvent pas ajouter si c'est verrouillé
+            if (currentRole === 'anim' && currentLocked) {
+                throw new Error("La création est verrouillée par le directeur.");
+            }
             await colRef.add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             showToast('Participant ajouté.', 'success');
         }
@@ -772,3 +807,15 @@ async function deleteGroupName(id, name) {
         showToast('Erreur lors de la suppression.', 'error');
     }
 }
+// ----------------------------------------------------------------
+// MODALE REMARQUE
+// ----------------------------------------------------------------
+
+function openNoteModal(fullNote) {
+    const textEl = document.getElementById('viewNoteText');
+    if (textEl) textEl.textContent = fullNote;
+    openModal('overlayViewNote');
+}
+
+document.getElementById('btnCloseViewNote')?.addEventListener('click', () => closeModal('overlayViewNote'));
+document.getElementById('btnFinishViewNote')?.addEventListener('click', () => closeModal('overlayViewNote'));
