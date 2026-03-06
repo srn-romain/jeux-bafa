@@ -81,18 +81,37 @@
       <!-- Contenu réel (visible uniquement si accès validé) -->
       <div id="coloContent" class="hidden">
 
-        <!-- Breadcrumb + titre -->
-        <div class="es-page__header">
-          <nav class="es-breadcrumb">
-            <a href="index.html"><i class="bi bi-house"></i> Tableau de bord</a>
-            <span class="es-breadcrumb__sep">/</span>
-            <span id="coloBreadcrumb">Colo</span>
+        <!-- En-tête de la colo -->
+        <div
+          style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+
+          <!-- Fil d'Ariane -->
+          <nav
+            style="font-size: 0.85rem; color: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+            <a href="index.html" style="color: var(--clr-primary-light); text-decoration: none; transition: 0.2s;"><i
+                class="bi bi-grid"></i> Tableau de bord</a>
+            <span>/</span>
+            <span id="coloBreadcrumb" style="font-weight: 600; color: #fff;">Colo</span>
           </nav>
-          <div class="es-page__header-info">
-            <h1 class="es-page__title" id="coloTitle">Chargement…</h1>
-            <p class="es-page__subtitle" id="coloDates"></p>
-            <a href="#" target="_blank" id="driveLinkBtn" class="es-drive-btn hidden" style="margin-top:8px;">
-              <i class="bi bi-google" style="font-size:18px;"></i> Dossier Drive
+
+          <!-- Titre & Actions -->
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <h1 class="es-page__title" id="coloTitle" style="margin: 0 0 8px 0; font-size: 2rem; font-weight: 800;">
+                Chargement…</h1>
+              <div
+                style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; color: rgba(255,255,255,0.8); background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 12px;">
+                <i class="bi bi-calendar3"></i>
+                <span id="coloDates">...</span>
+              </div>
+            </div>
+
+            <!-- Bouton Drive -->
+            <a href="#" target="_blank" id="driveLinkBtn" class="es-btn es-btn--secondary hidden"
+              style="background: white; color: #333; border: none; font-weight: 600;">
+              <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg"
+                alt="Drive" style="width: 18px; height: 18px;">
+              <span>Dossier Drive</span>
             </a>
           </div>
         </div>
