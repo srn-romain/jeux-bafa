@@ -211,6 +211,62 @@
           </div>
 
           <!-- Future sections could be added here -->
+          <!-- SECTION ALERTES -->
+          <div class="es-section mt-4">
+            <h3 class="es-section__title">
+              <i class="bi bi-bell"></i> 2. Générateur d'événements / alertes
+            </h3>
+            <p class="es-section__desc">
+              Permet de créer des événements personnalisés (ex: prise de médicament). L'alerte sera visible par tous en
+              haut de la page jusqu'à sa suppression.
+            </p>
+
+            <div class="es-section__content">
+              <div class="es-card" style="margin-bottom:0;">
+                <form id="formCreateAlert">
+                  <div class="es-field">
+                    <label class="es-field__label" for="alertMessage">Message de l'événement *</label>
+                    <input type="text" id="alertMessage" class="es-input"
+                      placeholder="Ex: Prise de médicament Léo (après repas)" required>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="es-field">
+                      <label class="es-field__label" for="alertType">Type d'alerte</label>
+                      <select id="alertType" class="es-select">
+                        <option value="meds">💊 Médicament / Soin</option>
+                        <option value="info" selected>ℹ️ Information</option>
+                        <option value="activity">⚽ Activité / RDV</option>
+                        <option value="warning">⚠️ Attention</option>
+                      </select>
+                    </div>
+                    <div class="es-field">
+                      <label class="es-field__label" for="alertSeverity">Niveau de criticité</label>
+                      <select id="alertSeverity" class="es-select">
+                        <option value="low">Bas (Bleu)</option>
+                        <option value="medium" selected>Moyen (Orange)</option>
+                        <option value="high">Critique (Rouge)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="es-field admin-only hidden" style="margin-top:8px;">
+                    <label class="es-checkbox-label">
+                      <input type="checkbox" id="alertLocked">
+                      <span style="color:var(--clr-text-light); font-size: 0.85rem;">Bloquer la suppression (seul un
+                        directeur pourra retirer cette alerte)</span>
+                    </label>
+                  </div>
+
+                  <button type="submit" class="es-btn es-btn--primary mt-3" id="btnCreateAlert">
+                    <span class="es-btn__text"><i class="bi bi-plus-circle"></i> Créer l'événement</span>
+                    <span class="es-btn__spinner"></span>
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- === ONGLET PARTICIPANTS === -->
