@@ -163,7 +163,7 @@ function buildColoAdminCard(colo, nbParticipants) {
                     <span class="brand-label">${locked ? 'Déverrouiller' : 'Verrouiller'}</span>
                 </button>
                 <button class="es-btn es-btn--sm" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);"
-                        onclick="openParticipantsModal('${colo.id}', '${escapeHtml(colo.nom || '')}')">
+                        onclick="openParticipantsModal('${colo.id}', ${escapeHtml(JSON.stringify(colo.nom || ''))})">
                     <i class="bi bi-people"></i> <span class="brand-label">Participants</span>
                 </button>
                 <button class="es-btn es-btn--sm" style="background:rgba(166,216,102,0.12);color:#a6d866;border:1px solid rgba(166,216,102,0.25);"
@@ -171,7 +171,7 @@ function buildColoAdminCard(colo, nbParticipants) {
                     <i class="bi bi-pencil"></i>
                 </button>
                 <button class="es-btn es-btn--sm es-btn--danger"
-                        onclick="confirmDeleteColo('${colo.id}', '${escapeHtml(colo.nom || '')}')">
+                        onclick="confirmDeleteColo('${colo.id}', ${escapeHtml(JSON.stringify(colo.nom || ''))})">
                     <i class="bi bi-trash3"></i>
                 </button>
             </div>
@@ -380,15 +380,15 @@ async function loadParticipantsAdmin(coloId) {
                     ${note ? `
                         <span style="font-size:0.8rem; color:var(--clr-text-muted);">
                             ${escapeHtml(noteDisplay)}
-                            ${isLong ? `<button class="es-btn es-btn--ghost es-btn--sm" style="padding:0 4px; border:none; color:var(--clr-primary); background:none;" onclick="showAdminNote('${escapeHtml(note)}')"><i class="bi bi-eye"></i></button>` : ''}
+                            ${isLong ? `<button class="es-btn es-btn--ghost es-btn--sm" style="padding:0 4px; border:none; color:var(--clr-primary); background:none;" onclick="showAdminNote(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye"></i></button>` : ''}
                         </span>
                     ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
                 </td>
                 <td class="es-table__actions">
-                    <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier" onclick="editParticipantAdmin('${p.id}', '${escapeHtml(JSON.stringify(p))}')">
+                    <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier" onclick="editParticipantAdmin('${p.id}', ${escapeHtml(JSON.stringify(JSON.stringify(p)))})">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="es-btn es-btn--danger es-btn--sm" title="Supprimer" onclick="confirmDeleteParticipant('${p.id}', '${escapeHtml(p.prenom + ' ' + p.nom)}')">
+                    <button class="es-btn es-btn--danger es-btn--sm" title="Supprimer" onclick="confirmDeleteParticipant('${p.id}', ${escapeHtml(JSON.stringify(p.prenom + ' ' + p.nom))})">
                         <i class="bi bi-trash3"></i>
                     </button>
                 </td>
@@ -414,7 +414,7 @@ document.getElementById('btnAddParticipantAdmin')?.addEventListener('click', () 
 
 function editParticipantAdmin(id, pJson) {
     try {
-        const p = JSON.parse(pJson.replace(/&quot;/g, '"'));
+        const p = JSON.parse(pJson);
         adminEditingParticipantId = id;
         document.getElementById('participantFormTitle').textContent = 'Modifier le participant';
         document.getElementById('pAdminPrenom').value = p.prenom || '';
@@ -714,7 +714,7 @@ async function loadUsers() {
                     ${u.id !== currentAdminUser?.uid ? `
                         <button class="es-btn es-btn--sm"
                                 style="color:var(--clr-info);border:1.5px solid rgba(41,128,185,0.3);background:rgba(41,128,185,0.08);"
-                                onclick="openUserRightsPanel('${u.id}', '${escapeHtml(u.email || '')}', '${escapeHtml(u.displayName || u.email || '')}')"
+                                onclick="openUserRightsPanel('${u.id}', ${escapeHtml(JSON.stringify(u.email || ''))}, ${escapeHtml(JSON.stringify(u.displayName || u.email || ''))})"
                         >
                             <i class="bi bi-shield-check"></i> Gérer droits
                         </button>
@@ -830,26 +830,26 @@ function buildRightsActionBtn(espace, access, status) {
     const rId = access?.requestId || '';
     if (status === 'approved') {
         return `<button class="es-btn es-btn--sm es-btn--danger"
-                        onclick="revokeAccess('${rId}', '${espace.id}', '${escapeHtml(espace.nom || '')}')"
+                        onclick="revokeAccess('${rId}', '${espace.id}', ${escapeHtml(JSON.stringify(espace.nom || ''))})"
                 ><i class="bi bi-lock"></i> Révoquer</button>`;
     }
     if (status === 'none') {
         return `<button class="es-btn es-btn--sm es-btn--success"
-                        onclick="grantAccess('${espace.id}', '${escapeHtml(espace.nom || '')}')"
+                        onclick="grantAccess('${espace.id}', ${escapeHtml(JSON.stringify(espace.nom || ''))})"
                 ><i class="bi bi-unlock"></i> Autoriser</button>`;
     }
     if (status === 'pending') {
         return `
             <button class="es-btn es-btn--sm es-btn--success"
-                    onclick="reviewDemandeFromRights('${rId}', 'approved', '${espace.id}', '${escapeHtml(espace.nom || '')}')"
+                    onclick="reviewDemandeFromRights('${rId}', 'approved', '${espace.id}', ${escapeHtml(JSON.stringify(espace.nom || ''))})"
             ><i class="bi bi-check-lg"></i> Valider</button>
             <button class="es-btn es-btn--sm es-btn--danger"
-                    onclick="reviewDemandeFromRights('${rId}', 'refused', '${espace.id}', '${escapeHtml(espace.nom || '')}')"
+                    onclick="reviewDemandeFromRights('${rId}', 'refused', '${espace.id}', ${escapeHtml(JSON.stringify(espace.nom || ''))})"
             ><i class="bi bi-x-lg"></i> Refuser</button>`;
     }
     if (status === 'refused') {
         return `<button class="es-btn es-btn--sm es-btn--success"
-                        onclick="reviewDemandeFromRights('${rId}', 'approved', '${espace.id}', '${escapeHtml(espace.nom || '')}')"
+                        onclick="reviewDemandeFromRights('${rId}', 'approved', '${espace.id}', ${escapeHtml(JSON.stringify(espace.nom || ''))})"
                 ><i class="bi bi-check-lg"></i> Autoriser quand même</button>`;
     }
     return '';
@@ -965,7 +965,7 @@ function renderGroupsNameListAdmin() {
             <div class="es-anim-item__info">
                 <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
             </div>
-            <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteAdminGroupName('${g.id}', '${escapeHtml(g.name)}')">
+            <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteAdminGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})">
                 <i class="bi bi-trash3"></i>
             </button>
         </div>

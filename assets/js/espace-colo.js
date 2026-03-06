@@ -244,7 +244,7 @@ function renderParticipantsTable(role) {
                 ${note ? `
                     <span style="font-size:0.82rem; color:var(--clr-text-muted);">
                         ${escapeHtml(noteDisplay)}
-                        ${isLong ? `<button class="es-btn es-btn--ghost es-btn--sm" style="padding:0 4px; border:none; color:var(--clr-primary); background:none;" onclick="openNoteModal('${escapeHtml(note)}')"><i class="bi bi-eye"></i></button>` : ''}
+                        ${isLong ? `<button class="es-btn es-btn--ghost es-btn--sm" style="padding:0 4px; border:none; color:var(--clr-primary); background:none;" onclick="openNoteModal(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye"></i></button>` : ''}
                     </span>
                 ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
@@ -254,7 +254,7 @@ function renderParticipantsTable(role) {
                     <i class="bi bi-pencil"></i>
                 </button>
                 <button class="es-btn es-btn--danger es-btn--sm" 
-                        onclick="${canEdit ? `deleteParticipant('${p.id}', '${escapeHtml(p.prenom)} ${escapeHtml(p.nom)}')` : 'void(0)'}"
+                        onclick="${canEdit ? `deleteParticipant('${p.id}', ${escapeHtml(JSON.stringify(p.prenom + ' ' + p.nom))})` : 'void(0)'}"
                         ${!canEdit ? 'disabled title="Verrouillé par le directeur"' : 'title="Supprimer"'}
                         style="${!canEdit && role === 'anim' ? 'opacity:0.4;cursor:not-allowed;' : ''}">
                     <i class="bi bi-trash3"></i>
@@ -770,7 +770,7 @@ function renderGroupsNameList() {
             <div class="es-anim-item__info">
                 <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
             </div>
-            <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteGroupName('${g.id}', '${escapeHtml(g.name)}')">
+            <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})">
                 <i class="bi bi-trash3"></i>
             </button>
         </div>
