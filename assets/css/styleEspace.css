@@ -649,6 +649,32 @@ textarea {
   background: rgba(255, 255, 255, 0.11);
 }
 
+.es-input--pwd {
+  padding-right: 42px;
+}
+
+.es-pwd-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 1.1rem;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color var(--transition);
+  z-index: 2;
+}
+
+.es-pwd-toggle:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+
 .es-select {
   width: 100%;
   padding: 11px 13px;

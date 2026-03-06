@@ -33,6 +33,17 @@ function formatDate(dateStr) {
 function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
 function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
 
+function togglePwd(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+    input.setAttribute('type', type);
+    const icon = btn.querySelector('i');
+    if (icon) {
+        icon.className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+    }
+}
+
 // Fermer les modals en cliquant sur l'overlay (pas le modal lui-même)
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('es-overlay')) {
