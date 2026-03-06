@@ -964,11 +964,23 @@ function renderAlerts(alerts, role) {
         return;
     }
 
+    // Fonction simple pour parser le markdown (**gras**, *italique*)
+    const parseMarkdown = (text) => {
+        if (!text) return "";
+        // On échappe d'abord le HTML pour la sécurité, puis on parse le markdown
+        const escaped = escapeHtml(text);
+        return escaped
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/_(.*?)_/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>'); // Support des retours à la ligne manuels
+    };
+
     // Styles des alertes selon criticité
     const colors = {
         low: { bg: 'rgba(52, 152, 219, 0.15)', border: 'rgba(52, 152, 219, 0.4)', color: '#3498db', icon: 'bi-info-circle' },
         medium: { bg: 'rgba(243, 156, 18, 0.15)', border: 'rgba(243, 156, 18, 0.4)', color: '#f39c12', icon: 'bi-exclamation-triangle' },
-        high: { bg: 'rgba(231, 76, 60, 0.2)', border: 'rgba(231, 76, 60, 0.4)', color: '#e74c3c', icon: 'bi-exclamation-octagon-fill' }
+        high: { bg: 'rgba(231, 76, 60, 0.35)', border: 'rgba(231, 76, 60, 0.6)', color: '#ffffff', icon: 'bi-exclamation-octagon-fill' }
     };
 
     container.innerHTML = alerts.map(alert => {
@@ -981,23 +993,24 @@ function renderAlerts(alerts, role) {
         else if (alert.type === 'warning') icon = 'bi-shield-exclamation';
 
         const canDelete = role === 'admin' || !alert.locked;
+        const parsedMessage = parseMarkdown(alert.message);
 
         return `
-            <div class="es-alert-item" style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-radius:12px; border:1px solid ${theme.border}; background:${theme.bg}; color:${theme.color}; gap: 15px; backdrop-filter: blur(5px); transition: all 0.3s ease;">
-                <div style="display:flex; align-items:center; gap:14px;">
-                    <i class="bi ${icon}" style="font-size:1.3rem;"></i>
-                    <div style="display:flex; flex-direction:column; gap:2px;">
-                        <span style="font-weight:700; font-size:0.95rem; line-height:1.2;">${alert.message}</span>
-                        <span style="font-size:0.7rem; opacity:0.6; font-style:italic;">Posté par ${alert.createdBy || 'Système'}</span>
+            <div class="es-alert-item" style="display:flex; align-items:flex-start; justify-content:space-between; padding:13px 18px; border-radius:12px; border:1px solid ${theme.border}; background:${theme.bg}; color:${theme.color}; gap: 15px; backdrop-filter: blur(8px); transition: all 0.3s ease; width: 100%; box-sizing: border-box; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                <div style="display:flex; align-items:flex-start; gap:14px; flex: 1; min-width: 0;">
+                    <i class="bi ${icon}" style="font-size:1.35rem; flex-shrink: 0; margin-top: 2px;"></i>
+                    <div style="display:flex; flex-direction:column; gap:4px; flex: 1; min-width: 0;">
+                        <span style="font-weight:600; font-size:0.96rem; line-height:1.5; overflow-wrap: anywhere; word-break: normal; white-space: normal;">${parsedMessage}</span>
+                        <span style="font-size:0.75rem; opacity:0.8; font-style:italic;">Posté par ${alert.createdBy || 'Système'}</span>
                     </div>
                 </div>
                 ${canDelete ? `
-                    <button onclick="deleteAlert('${alert.id}')" style="background:rgba(255,255,255,0.1); border:none; width:28px; height:28px; border-radius:50%; color:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="Marquer comme fait / Supprimer">
-                        <i class="bi bi-x-lg" style="font-size:0.8rem;"></i>
+                    <button onclick="deleteAlert('${alert.id}')" style="background:rgba(255,255,255,0.15); border:none; width:30px; height:30px; border-radius:50%; color:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: all 0.2s; margin-top: 2px;" onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='scale(1.1)';" onmouseout="this.style.background='rgba(255,255,255,0.15)'; this.style.transform='scale(1)';" title="Marquer comme fait / Supprimer">
+                        <i class="bi bi-x-lg" style="font-size:0.85rem;"></i>
                     </button>
                 ` : `
-                    <div style="width:28px; height:28px; display:flex; align-items:center; justify-content:center; opacity:0.3; flex-shrink:0;" title="Verrouillé par le directeur">
-                        <i class="bi bi-lock-fill" style="font-size:0.9rem;"></i>
+                    <div style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; opacity:0.35; flex-shrink:0; margin-top: 2px;" title="Verrouillé par le directeur">
+                        <i class="bi bi-lock-fill" style="font-size:0.95rem;"></i>
                     </div>
                 `}
             </div>
