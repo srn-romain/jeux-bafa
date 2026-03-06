@@ -8,6 +8,7 @@
 let currentAdminUser = null;
 let currentColoId = null; // Pour la gestion des participants
 let currentColoNom = ''; // Pour l'export
+let currentAdminGroups = []; // Noms des groupes thématiques
 let deleteTarget = null; // { type: 'colo'|'participant', id, coloId? }
 
 // ----------------------------------------------------------------
@@ -193,9 +194,6 @@ async function toggleParticipantsLock(coloId, currentlyLocked) {
     }
 }
 
-function escapeHtml(str) {
-    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
-}
 
 // ----------------------------------------------------------------
 // NOUVEAU / MODIFIER COLO
@@ -341,6 +339,7 @@ async function openParticipantsModal(coloId, coloNom) {
     currentColoNom = coloNom;
     document.getElementById('participantsAdminTitle').textContent = `Participants – ${coloNom}`;
     openModal('overlayParticipantsAdmin');
+    loadAdminGroups(coloId);
     loadParticipantsAdmin(coloId);
 }
 
@@ -357,7 +356,12 @@ async function loadParticipantsAdmin(coloId) {
             return;
         }
 
-        tbody.innerHTML = participants.map(p => `
+        const hasGroups = currentAdminGroups.length > 0;
+        document.querySelectorAll('#overlayParticipantsAdmin .col-groupe').forEach(el => el.classList.toggle('hidden', !hasGroups));
+
+        tbody.innerHTML = participants.map(p => {
+            const g = hasGroups ? currentAdminGroups.find(x => x.id === p.groupeId) : null;
+            return `
             <tr>
                 <td><strong>${p.prenom || ''}</strong></td>
                 <td>${p.nom || ''}</td>
@@ -365,6 +369,9 @@ async function loadParticipantsAdmin(coloId) {
                 <td><span class="es-pill ${p.genre === 'masculin' ? 'es-pill--m' : 'es-pill--f'}">
                     ${p.genre === 'masculin' ? '♂' : '♀'}
                 </span></td>
+                <td class="col-groupe ${!hasGroups ? 'hidden' : ''}">
+                    ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted">–</span>'}
+                </td>
                 <td class="es-table__actions">
                     <button class="es-btn es-btn--ghost es-btn--sm" onclick="editParticipantAdmin('${p.id}', '${escapeHtml(JSON.stringify(p))}')">
                         <i class="bi bi-pencil"></i>
@@ -374,7 +381,8 @@ async function loadParticipantsAdmin(coloId) {
                     </button>
                 </td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
     } catch (err) {
         console.error('loadParticipantsAdmin:', err);
         tbody.innerHTML = `<tr><td colspan="5" class="text-center" style="color:var(--clr-danger);padding:20px;">Erreur de chargement.</td></tr>`;
@@ -401,6 +409,10 @@ function editParticipantAdmin(id, pJson) {
         document.getElementById('pAdminNom').value = p.nom || '';
         document.getElementById('pAdminAge').value = p.age || '';
         document.getElementById('pAdminGenre').value = p.genre || 'feminin';
+
+        const groupSelect = document.getElementById('pAdminGroup');
+        if (groupSelect) groupSelect.value = p.groupeId || '';
+
         document.getElementById('pAdminError')?.classList.add('hidden');
         openModal('overlayParticipantForm');
     } catch (_) { }
@@ -436,7 +448,8 @@ document.getElementById('btnSaveParticipantForm')?.addEventListener('click', asy
 
     try {
         const colRef = db.collection('espaces').doc(currentColoId).collection('participants');
-        const data = { prenom, nom, age, genre };
+        const groupeId = document.getElementById('pAdminGroup')?.value || null;
+        const data = { prenom, nom, age, genre, groupeId };
 
         if (adminEditingParticipantId) {
             await colRef.doc(adminEditingParticipantId).update(data);
@@ -881,5 +894,97 @@ async function reviewDemandeFromRights(requestId, status, espaceId, espaceName) 
     } catch (err) {
         console.error('reviewDemandeFromRights:', err);
         showToast('Erreur lors de la mise à jour.', 'error');
+    }
+}
+
+// ----------------------------------------------------------------
+// GESTION DES GROUPES (Admin Panel)
+// ----------------------------------------------------------------
+
+async function loadAdminGroups(coloId) {
+    if (!coloId) return;
+    try {
+        const snap = await db.collection('espaces').doc(coloId).collection('groups').orderBy('name').get();
+        currentAdminGroups = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Afficher/Cacher le champ groupe dans le formulaire participant
+        const field = document.getElementById('fieldAdminParticipantGroup');
+        if (field) {
+            field.classList.toggle('hidden', currentAdminGroups.length === 0);
+        }
+
+        // Mettre à jour le select dans le formulaire participant
+        const select = document.getElementById('pAdminGroup');
+        if (select) {
+            const val = select.value;
+            select.innerHTML = '<option value="">-- Aucun groupe --</option>' +
+                currentAdminGroups.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
+            select.value = val;
+        }
+
+        // Re-render le tableau pour la colonne groupe
+        loadParticipantsAdmin(coloId);
+    } catch (err) {
+        console.error('loadAdminGroups error:', err);
+    }
+}
+
+document.getElementById('btnManageGroupsAdmin')?.addEventListener('click', () => {
+    renderGroupsNameListAdmin();
+    openModal('overlayManageGroupsAdmin');
+});
+
+document.getElementById('btnCloseManageGroupsAdmin')?.addEventListener('click', () => closeModal('overlayManageGroupsAdmin'));
+document.getElementById('btnFinishGroupsAdmin')?.addEventListener('click', () => closeModal('overlayManageGroupsAdmin'));
+
+function renderGroupsNameListAdmin() {
+    const listEl = document.getElementById('groupsNameListAdmin');
+    if (!listEl) return;
+
+    if (currentAdminGroups.length === 0) {
+        listEl.innerHTML = '<div class="text-center text-muted" style="padding:15px;">Aucun groupe créé.</div>';
+        return;
+    }
+
+    listEl.innerHTML = currentAdminGroups.map(g => `
+        <div class="es-anim-item" style="padding: 8px 12px;">
+            <div class="es-anim-item__info">
+                <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
+            </div>
+            <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteAdminGroupName('${g.id}', '${escapeHtml(g.name)}')">
+                <i class="bi bi-trash3"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+document.getElementById('btnAddGroupNameAdmin')?.addEventListener('click', async () => {
+    const input = document.getElementById('inputNewGroupNameAdmin');
+    const name = input.value.trim();
+    if (!name) return;
+
+    try {
+        await db.collection('espaces').doc(currentColoId).collection('groups').add({ name });
+        input.value = '';
+        await loadAdminGroups(currentColoId);
+        renderGroupsNameListAdmin();
+        showToast('Groupe créé.', 'success');
+    } catch (err) {
+        console.error('addGroupAdmin error:', err);
+        showToast('Erreur lors de la création du groupe.', 'error');
+    }
+});
+
+async function deleteAdminGroupName(id, name) {
+    if (!confirm(`Supprimer le groupe "${name}" ?`)) return;
+
+    try {
+        await db.collection('espaces').doc(currentColoId).collection('groups').doc(id).delete();
+        await loadAdminGroups(currentColoId);
+        renderGroupsNameListAdmin();
+        showToast('Groupe supprimé.', 'success');
+    } catch (err) {
+        console.error('deleteGroupAdmin error:', err);
+        showToast('Erreur lors de la suppression.', 'error');
     }
 }

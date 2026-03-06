@@ -9,7 +9,8 @@
 
 function escapeHtml(str) {
     if (!str) return '';
-    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    // Gestion spécifique des quotes pour les onclick
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": "\\'" };
     return str.replace(/[&<>"']/g, m => map[m]);
 }
 

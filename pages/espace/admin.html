@@ -272,6 +272,9 @@
             </div>
             <div class="es-modal__body">
                 <div style="display:flex;justify-content:flex-end;margin-bottom:12px;gap:8px;flex-wrap:wrap;">
+                    <button class="es-btn es-btn--ghost es-btn--sm" id="btnManageGroupsAdmin">
+                        <i class="bi bi-tags"></i> Groupes
+                    </button>
                     <button class="es-btn es-btn--ghost es-btn--sm" id="btnExportParticipants">
                         <i class="bi bi-download"></i> Export JSON
                     </button>
@@ -291,6 +294,7 @@
                                 <th>Nom</th>
                                 <th>Âge</th>
                                 <th>Genre</th>
+                                <th class="col-groupe hidden">Groupe</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -344,6 +348,12 @@
                                 <option value="masculin">Garçon ♂</option>
                             </select>
                         </div>
+                    </div>
+                    <div class="es-field hidden" id="fieldAdminParticipantGroup">
+                        <label class="es-field__label" for="pAdminGroup">Groupe thématique</label>
+                        <select class="es-select" id="pAdminGroup">
+                            <option value="">-- Aucun groupe --</option>
+                        </select>
                     </div>
                 </form>
                 <div class="es-alert es-alert--error hidden mt-3" id="pAdminError">
@@ -477,6 +487,32 @@
                     <span class="es-btn__text">Enregistrer</span>
                     <span class="es-btn__spinner"></span>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal : Gestion des Groupes (Admin Colo) -->
+    <div class="es-overlay hidden" id="overlayManageGroupsAdmin" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:440px;">
+            <div class="es-modal__header">
+                <h2 class="es-modal__title">Gérer les groupes</h2>
+                <button class="es-modal__close" id="btnCloseManageGroupsAdmin"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body">
+                <p style="font-size:0.85rem;color:var(--clr-text-muted);margin-bottom:15px;">
+                    Noms des groupes thématiques pour cette colo.
+                </p>
+                <div class="es-field" style="display:flex; gap:8px; margin-bottom:15px;">
+                    <input class="es-input" type="text" id="inputNewGroupNameAdmin" placeholder="Nom du nouveau groupe">
+                    <button class="es-btn es-btn--primary" id="btnAddGroupNameAdmin"><i class="bi bi-plus"></i></button>
+                </div>
+                <div id="groupsNameListAdmin" class="es-anim-list"
+                    style="max-height:300px; overflow-y:auto; padding-right:5px;">
+                    <!-- Liste des groupes -->
+                </div>
+            </div>
+            <div class="es-modal__footer">
+                <button class="es-btn es-btn--primary" id="btnFinishGroupsAdmin">Terminer</button>
             </div>
         </div>
     </div>
