@@ -91,24 +91,60 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
 
-    const role = await getUserRole(user.uid);
-    if (!role) {
-        // Compte Firebase mais pas de doc Firestore (cas rare)
+    // Récupérer les données utilisateur (rôle)
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    if (!userDoc.exists) {
         await auth.signOut();
         return;
     }
+    const userData = userDoc.data();
+    const role = userData.role;
 
     // Masquer login, afficher dashboard
     loginView.classList.add('hidden');
     dashboardView.classList.remove('hidden');
     updateTopbarUser(user, role);
 
-    // Lien admin visible uniquement si admin
+    // Éléments Admin Only
     if (role === 'admin') {
         document.getElementById('linkAdmin')?.classList.remove('hidden');
+        document.getElementById('adminStatsToggle')?.classList.remove('hidden');
     }
 
+    // Écouter le réglage global d'affichage des stats
+    db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
+        if (doc.exists) {
+            showStats = doc.data().showColoStats !== false;
+        } else {
+            showStats = true; // Par défaut
+        }
+
+        // Mettre à jour l'état du toggle (si présent)
+        const toggle = document.getElementById('checkShowStats');
+        if (toggle) toggle.checked = showStats;
+
+        // Appliquer aux cartes existantes sans recharger tout
+        document.querySelectorAll('.es-colo-card__stats').forEach(el => {
+            el.classList.toggle('es-stats--hidden', !showStats);
+        });
+    });
+
     loadColos(user, role);
+});
+
+// Listener toggle stats (Admins seulement car visible que pour eux)
+document.getElementById('checkShowStats')?.addEventListener('change', async (e) => {
+    const val = e.target.checked;
+    try {
+        await db.collection('globalSettings').doc('dashboard').set({
+            showColoStats: val,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast(`Visibilité des stats mise à jour.`, 'success');
+    } catch (err) {
+        console.error("Erreur sauvegarde global stats:", err);
+        showToast("Erreur lors de la modification globale.", "error");
+    }
 });
 
 // ----------------------------------------------------------------
@@ -118,6 +154,7 @@ let currentColoId = null;
 let currentColoData = null;
 let currentUser = null;
 let currentRole = null;
+let showStats = true;
 
 async function loadColos(user, role) {
     currentUser = user;
@@ -135,6 +172,15 @@ async function loadColos(user, role) {
     try {
         // Récupérer toutes les colos
         const snapshot = await db.collection('espaces').orderBy('createdAt', 'desc').get();
+
+        // Récupérer tous les accès approuvés pour compter les anims par colo (une seule requête)
+        const animCounts = {};
+        const allApprovedSnap = await db.collection('accessRequests').where('status', '==', 'approved').get();
+        allApprovedSnap.forEach(d => {
+            const eid = d.data().espaceId;
+            animCounts[eid] = (animCounts[eid] || 0) + 1;
+        });
+
         loader.classList.add('hidden');
 
         if (snapshot.empty) {
@@ -142,7 +188,7 @@ async function loadColos(user, role) {
             return;
         }
 
-        // Si animateur, récupérer ses demandes d'accès
+        // Si animateur, récupérer ses propres demandes d'accès
         let accessMap = {};
         if (role === 'anim') {
             const accessSnap = await db.collection('accessRequests')
@@ -157,15 +203,16 @@ async function loadColos(user, role) {
             const colo = { id: doc.id, ...doc.data() };
 
             let accessStatus = role === 'admin' ? 'admin' : (accessMap[colo.id] || 'none');
+            const nbAnims = animCounts[colo.id] || 0;
 
-            // Compter participants
+            // Compter participants (sous-collection)
             let nbParticipants = 0;
             try {
                 const pSnap = await db.collection('espaces').doc(colo.id).collection('participants').get();
                 nbParticipants = pSnap.size;
             } catch (_) { }
 
-            grid.appendChild(buildColoCard(colo, accessStatus, nbParticipants, role));
+            grid.appendChild(buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role));
         }
 
         grid.classList.remove('hidden');
@@ -186,7 +233,7 @@ async function loadColos(user, role) {
 // ----------------------------------------------------------------
 // CONSTRUCTION D'UNE CARTE COLO
 // ----------------------------------------------------------------
-function buildColoCard(colo, accessStatus, nbParticipants, role) {
+function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
     const card = document.createElement('div');
     card.className = 'es-colo-card';
     if (accessStatus === 'pending') card.classList.add('es-colo-card--pending');
@@ -220,9 +267,9 @@ function buildColoCard(colo, accessStatus, nbParticipants, role) {
         </div>
         <div class="es-colo-card__body">
             <div class="es-colo-card__desc">${colo.description || 'Aucune description.'}</div>
-            <div class="es-colo-card__stats">
-                <div class="es-colo-card__stat"><i class="bi bi-people"></i> ${nbParticipants} participant${nbParticipants !== 1 ? 's' : ''}</div>
-                ${colo.driveId ? '<div class="es-colo-card__stat"><i class="bi bi-google" style="color:#4285F4"></i> Drive</div>' : ''}
+            <div class="es-colo-card__stats ${!showStats ? 'es-stats--hidden' : ''}">
+                <div class="es-colo-card__stat"><i class="bi bi-people"></i> ${nbParticipants} jeune${nbParticipants !== 1 ? 's' : ''}</div>
+                <div class="es-colo-card__stat"><i class="bi bi-person-badge"></i> ${nbAnims} anim${nbAnims !== 1 ? 's' : ''}</div>
             </div>
         </div>
         <div class="es-colo-card__footer">

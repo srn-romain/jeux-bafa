@@ -176,9 +176,19 @@
         <main class="es-page">
             <div class="es-container">
                 <div class="es-page__header">
-                    <h1 class="es-page__title">Mes colonies</h1>
-                    <p class="es-page__subtitle" id="dashSubtitle">Sélectionne une colonie pour accéder à son espace.
-                    </p>
+                    <div>
+                        <h1 class="es-page__title">Mes colonies</h1>
+                        <p class="es-page__subtitle" id="dashSubtitle">Sélectionne une colonie pour accéder à son
+                            espace.</p>
+                    </div>
+                    <!-- Toggle Statistiques -->
+                    <div class="es-stats-toggle hidden" id="adminStatsToggle">
+                        <span class="es-stats-toggle__label">Statistiques</span>
+                        <label class="es-switch">
+                            <input type="checkbox" id="checkShowStats" checked>
+                            <span class="es-slider"></span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- Loader -->
