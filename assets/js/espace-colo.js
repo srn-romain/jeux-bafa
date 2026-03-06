@@ -334,9 +334,23 @@ document.getElementById('filterAge')?.addEventListener('change', () => renderPar
 
 document.getElementById('btnExportImage')?.addEventListener('click', async () => {
     const tableContainer = document.getElementById('participantsTableContainer');
-    if (!tableContainer) return;
+    const btn = document.getElementById('btnExportImage');
+    if (!tableContainer || !btn) return;
 
-    // Pour html2canvas, on s'assure d'une capture propre avec fond blanc
+    // Etat chargement
+    btnLoading(btn, true);
+
+    // Sauvegarde des styles pour annuler le scroll bar sur mobile
+    // Cela permet à html2canvas de "voir" toute la largeur du tableau
+    const originalOverflow = tableContainer.style.overflow || '';
+    const originalWidth = tableContainer.style.width || '';
+    const originalMaxWidth = tableContainer.style.maxWidth || '';
+
+    // Forcer l'affichage entier (débordement)
+    tableContainer.style.overflow = 'visible';
+    tableContainer.style.width = 'max-content';
+    tableContainer.style.maxWidth = 'none';
+
     try {
         const canvas = await html2canvas(tableContainer, {
             backgroundColor: '#ffffff',
@@ -355,6 +369,13 @@ document.getElementById('btnExportImage')?.addEventListener('click', async () =>
     } catch (e) {
         console.error('Export PNG:', e);
         showToast('Erreur lors de la capture d\'écran', 'error');
+    } finally {
+        // Restaurer styles originaux
+        tableContainer.style.overflow = originalOverflow;
+        tableContainer.style.width = originalWidth;
+        tableContainer.style.maxWidth = originalMaxWidth;
+
+        btnLoading(btn, false);
     }
 });
 
