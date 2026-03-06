@@ -165,6 +165,8 @@ function initColoContent(colo, role) {
     loadAnimateurs(colo.id);
     // Charger les groupes
     loadGroups(colo.id, role);
+    // Charger les alertes
+    loadAlerts(colo.id, role);
 
     // Onglets
     initTabs();
@@ -928,7 +930,6 @@ async function deleteGroupName(id, name) {
 // ----------------------------------------------------------------
 // MODALE REMARQUE
 // ----------------------------------------------------------------
-
 function openNoteModal(fullNote) {
     const textEl = document.getElementById('viewNoteText');
     if (textEl) textEl.textContent = fullNote;
@@ -937,3 +938,109 @@ function openNoteModal(fullNote) {
 
 document.getElementById('btnCloseViewNote')?.addEventListener('click', () => closeModal('overlayViewNote'));
 document.getElementById('btnFinishViewNote')?.addEventListener('click', () => closeModal('overlayViewNote'));
+
+// ----------------------------------------------------------------
+// GESTION DES ALERTES / ÉVÉNEMENTS
+// ----------------------------------------------------------------
+let alertsUnsubscribe = null;
+
+function loadAlerts(coloId, role) {
+    if (alertsUnsubscribe) alertsUnsubscribe();
+
+    alertsUnsubscribe = db.collection('espaces').doc(coloId).collection('alerts')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(snap => {
+            const alerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderAlerts(alerts, role);
+        }, err => console.error("Alerts error:", err));
+}
+
+function renderAlerts(alerts, role) {
+    const container = document.getElementById('alertsContainer');
+    if (!container) return;
+
+    if (alerts.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+
+    // Styles des alertes selon criticité
+    const colors = {
+        low: { bg: 'rgba(52, 152, 219, 0.15)', border: 'rgba(52, 152, 219, 0.4)', color: '#3498db', icon: 'bi-info-circle' },
+        medium: { bg: 'rgba(243, 156, 18, 0.15)', border: 'rgba(243, 156, 18, 0.4)', color: '#f39c12', icon: 'bi-exclamation-triangle' },
+        high: { bg: 'rgba(231, 76, 60, 0.2)', border: 'rgba(231, 76, 60, 0.4)', color: '#e74c3c', icon: 'bi-exclamation-octagon-fill' }
+    };
+
+    container.innerHTML = alerts.map(alert => {
+        const theme = colors[alert.severity] || colors.medium;
+        let icon = theme.icon;
+
+        // Surcharges d'icônes par type
+        if (alert.type === 'meds') icon = 'bi-capsule';
+        else if (alert.type === 'activity') icon = 'bi-calendar-event';
+        else if (alert.type === 'warning') icon = 'bi-shield-exclamation';
+
+        const canDelete = role === 'admin' || !alert.locked;
+
+        return `
+            <div class="es-alert-item" style="display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-radius:12px; border:1px solid ${theme.border}; background:${theme.bg}; color:${theme.color}; gap: 15px; backdrop-filter: blur(5px); transition: all 0.3s ease;">
+                <div style="display:flex; align-items:center; gap:14px;">
+                    <i class="bi ${icon}" style="font-size:1.3rem;"></i>
+                    <div style="display:flex; flex-direction:column; gap:2px;">
+                        <span style="font-weight:700; font-size:0.95rem; line-height:1.2;">${alert.message}</span>
+                        <span style="font-size:0.7rem; opacity:0.6; font-style:italic;">Posté par ${alert.createdBy || 'Système'}</span>
+                    </div>
+                </div>
+                ${canDelete ? `
+                    <button onclick="deleteAlert('${alert.id}')" style="background:rgba(255,255,255,0.1); border:none; width:28px; height:28px; border-radius:50%; color:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'" title="Marquer comme fait / Supprimer">
+                        <i class="bi bi-x-lg" style="font-size:0.8rem;"></i>
+                    </button>
+                ` : `
+                    <div style="width:28px; height:28px; display:flex; align-items:center; justify-content:center; opacity:0.3; flex-shrink:0;" title="Verrouillé par le directeur">
+                        <i class="bi bi-lock-fill" style="font-size:0.9rem;"></i>
+                    </div>
+                `}
+            </div>
+        `;
+    }).join('');
+}
+
+document.getElementById('formCreateAlert')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btnCreateAlert');
+    const message = document.getElementById('alertMessage').value.trim();
+    const type = document.getElementById('alertType').value;
+    const severity = document.getElementById('alertSeverity').value;
+    const locked = document.getElementById('alertLocked')?.checked || false;
+
+    if (!message || !espaceId) return;
+
+    btnLoading(btn, true);
+    try {
+        await db.collection('espaces').doc(espaceId).collection('alerts').add({
+            message,
+            type,
+            severity,
+            locked,
+            createdBy: currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'Inconnu'),
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        document.getElementById('formCreateAlert').reset();
+        showToast("Événement créé avec succès !", "success");
+    } catch (err) {
+        console.error("CreateAlert error:", err);
+        showToast("Erreur lors de la création.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
+});
+
+async function deleteAlert(alertId) {
+    try {
+        await db.collection('espaces').doc(espaceId).collection('alerts').doc(alertId).delete();
+        showToast("Alerte levée.", "success");
+    } catch (err) {
+        console.error("DeleteAlert error:", err);
+        showToast("Erreur lors de la suppression.", "error");
+    }
+}
