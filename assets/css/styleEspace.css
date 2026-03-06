@@ -2119,3 +2119,36 @@ input:checked+.es-slider:before {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Sélection d'Emoji */
+.es-emoji-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  background: var(--clr-surface-2);
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--clr-surface-3);
+}
+
+.es-emoji-selector button {
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  padding: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.es-emoji-selector button:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.1);
+}
+
+.es-emoji-selector button.selected {
+  background: #fff;
+  border-color: var(--clr-primary);
+  box-shadow: var(--shadow-sm);
+}

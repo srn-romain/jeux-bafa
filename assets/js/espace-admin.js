@@ -208,6 +208,39 @@ async function toggleParticipantsLock(coloId, currentlyLocked) {
 // ----------------------------------------------------------------
 // NOUVEAU / MODIFIER COLO
 // ----------------------------------------------------------------
+const AVAILABLE_EMOJIS = [
+    { emoji: '🏖️', desc: 'plage' },
+    { emoji: '🏔️', desc: 'montagne' },
+    { emoji: '🌲', desc: 'forêt / nature' },
+    { emoji: '🌳', desc: 'campagne / parc' },
+    { emoji: '🌊', desc: 'mer / océan' },
+    { emoji: '🏕️', desc: 'camping / plein air' },
+    { emoji: '🏞️', desc: 'randonnée / paysage' },
+    { emoji: '⛷️', desc: 'ski / sports d’hiver' },
+    { emoji: '🏄', desc: 'surf / sports nautiques' },
+    { emoji: '🧗', desc: 'escalade / aventure' },
+    { emoji: '🚣', desc: 'kayak / canoë' },
+    { emoji: '🏹', desc: 'tir à l’arc / jeux plein air' },
+    { emoji: '⚽', desc: 'football / sport collectif' },
+    { emoji: '🏀', desc: 'basket / sport collectif' },
+    { emoji: '🏐', desc: 'volley / plage' },
+    { emoji: '🎨', desc: 'peinture / arts plastiques' },
+    { emoji: '🎭', desc: 'théâtre / spectacle' },
+    { emoji: '🎸', desc: 'musique / guitare' },
+    { emoji: '🥁', desc: 'percussion / musique rythmique' },
+    { emoji: '🎤', desc: 'chant / karaoké' },
+    { emoji: '💃', desc: 'danse' },
+    { emoji: '🐴', desc: 'poney / équitation' },
+    { emoji: '🐾', desc: 'animaux / observation nature' },
+    { emoji: '🦉', desc: 'observation animaux nocturnes' },
+    { emoji: '🐟', desc: 'pêche / activités nature' },
+    { emoji: '✈️', desc: 'voyage / étranger' },
+    { emoji: '🌍', desc: 'découverte du monde / culture' },
+    { emoji: '🏛️', desc: 'visite culturelle / musée' },
+    { emoji: '🍳', desc: 'cuisine' },
+    { emoji: '🧩', desc: 'jeux / activités manuelles / puzzle' }
+];
+
 document.getElementById('btnNewColo')?.addEventListener('click', () => openColoForm());
 
 function openColoForm(colo = null) {
@@ -217,11 +250,27 @@ function openColoForm(colo = null) {
     document.getElementById('coloDateDebut').value = colo?.dateDebut || '';
     document.getElementById('coloDateFin').value = colo?.dateFin || '';
     document.getElementById('coloDriveId').value = colo?.driveId || '';
-    document.getElementById('coloEmoji').value = colo?.emoji || '🏕️';
+
+    const currentEmoji = colo?.emoji || '🏕️';
+    document.getElementById('coloEmoji').value = currentEmoji;
+
+    const emojiSelector = document.getElementById('coloEmojiSelector');
+    if (emojiSelector) {
+        emojiSelector.innerHTML = AVAILABLE_EMOJIS.map(item =>
+            `<button type="button" title="${item.desc}" class="${item.emoji === currentEmoji ? 'selected' : ''}" onclick="selectColoEmoji('${item.emoji}', this)">${item.emoji}</button>`
+        ).join('');
+    }
 
     document.getElementById('coloFormTitle').textContent = colo ? 'Modifier la colonie' : 'Nouvelle colonie';
     document.getElementById('coloFormError')?.classList.add('hidden');
     openModal('overlayColoForm');
+}
+
+function selectColoEmoji(emoji, btnEl) {
+    document.getElementById('coloEmoji').value = emoji;
+    const btns = document.getElementById('coloEmojiSelector').querySelectorAll('button');
+    btns.forEach(b => b.classList.remove('selected'));
+    btnEl.classList.add('selected');
 }
 
 async function openEditColo(id) {

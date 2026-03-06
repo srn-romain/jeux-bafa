@@ -240,9 +240,11 @@
                         </p>
                     </div>
                     <div class="es-field">
-                        <label class="es-field__label" for="coloEmoji">Emoji (optionnel)</label>
-                        <input class="es-input" type="text" id="coloEmoji" placeholder="🏕️" maxlength="4"
-                            style="width:80px;">
+                        <label class="es-field__label">Emoji (optionnel)</label>
+                        <input type="hidden" id="coloEmoji" value="🏕️">
+                        <div id="coloEmojiSelector" class="es-emoji-selector">
+                            <!-- JS fill -->
+                        </div>
                     </div>
                 </form>
                 <div class="es-alert es-alert--error hidden mt-3" id="coloFormError">
