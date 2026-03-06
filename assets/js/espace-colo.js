@@ -193,6 +193,7 @@ async function loadParticipants(coloId, role) {
     try {
         const snap = await db.collection('espaces').doc(coloId).collection('participants').get();
         participants = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        buildFilters();
         renderParticipantsTable(role);
         buildAgeGroupCheckboxes();
         updateStats();
@@ -220,8 +221,34 @@ function renderParticipantsTable(role) {
         }
     }
 
-    if (participants.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:24px;">Aucun participant enregistré.</td></tr>`;
+    let filteredParticipants = [...participants];
+
+    // Application des filtres et recherche
+    const searchVal = document.getElementById('searchParticipant')?.value.toLowerCase().trim() || '';
+    const filterGroup = document.getElementById('filterGroup')?.value || '';
+    const filterGenre = document.getElementById('filterGenre')?.value || '';
+    const filterAge = document.getElementById('filterAge')?.value || '';
+
+    if (searchVal) {
+        filteredParticipants = filteredParticipants.filter(p => {
+            const nomComplet = `${p.prenom || ''} ${p.nom || ''}`.toLowerCase();
+            const tags = (p.spec || []).join(' ').toLowerCase();
+            return nomComplet.includes(searchVal) || tags.includes(searchVal);
+        });
+    }
+    if (filterGroup) {
+        filteredParticipants = filteredParticipants.filter(p => p.groupeId === filterGroup);
+    }
+    if (filterGenre) {
+        filteredParticipants = filteredParticipants.filter(p => p.genre === filterGenre);
+    }
+    if (filterAge) {
+        filteredParticipants = filteredParticipants.filter(p => String(p.age) === filterAge);
+    }
+
+    if (filteredParticipants.length === 0) {
+        const msg = participants.length > 0 ? "Aucun participant ne correspond à vos filtres." : "Aucun participant enregistré.";
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted" style="padding:24px;">${msg}</td></tr>`;
         return;
     }
 
@@ -231,7 +258,7 @@ function renderParticipantsTable(role) {
     // Afficher/Cacher la colonne groupe
     document.querySelectorAll('.col-groupe').forEach(el => el.classList.toggle('hidden', !hasGroups));
 
-    tbody.innerHTML = participants.map(p => {
+    tbody.innerHTML = filteredParticipants.map(p => {
         const g = hasGroups ? currentGroups.find(x => x.id === p.groupeId) : null;
         const note = p.note || '';
         const isLong = note.length > 25;
@@ -277,6 +304,59 @@ function renderParticipantsTable(role) {
     `;
     }).join('');
 }
+
+// ----------------------------------------------------------------
+// FILTRES ET RECHERCHE
+// ----------------------------------------------------------------
+function buildFilters() {
+    // 1. Groupes
+    const filterGroup = document.getElementById('filterGroup');
+    if (filterGroup) {
+        const val = filterGroup.value;
+        filterGroup.innerHTML = '<option value="">Tous les groupes</option>' + currentGroups.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
+        filterGroup.value = val;
+    }
+
+    // 2. Ages
+    const filterAge = document.getElementById('filterAge');
+    if (filterAge) {
+        const val = filterAge.value;
+        const ages = [...new Set(participants.map(p => p.age))].sort((a, b) => a - b);
+        filterAge.innerHTML = '<option value="">Tous âges</option>' + ages.map(a => `<option value="${a}">${a} ans</option>`).join('');
+        filterAge.value = val;
+    }
+}
+
+document.getElementById('searchParticipant')?.addEventListener('input', () => renderParticipantsTable(currentRole));
+document.getElementById('filterGroup')?.addEventListener('change', () => renderParticipantsTable(currentRole));
+document.getElementById('filterGenre')?.addEventListener('change', () => renderParticipantsTable(currentRole));
+document.getElementById('filterAge')?.addEventListener('change', () => renderParticipantsTable(currentRole));
+
+document.getElementById('btnExportImage')?.addEventListener('click', async () => {
+    const tableContainer = document.getElementById('participantsTableContainer');
+    if (!tableContainer) return;
+
+    // Pour html2canvas, on s'assure d'une capture propre avec fond blanc
+    try {
+        const canvas = await html2canvas(tableContainer, {
+            backgroundColor: '#ffffff',
+            scale: 2 // Export HD
+        });
+
+        const coloTitle = document.getElementById('coloTitle')?.textContent.trim() || 'colo';
+        const fileName = `participants-${coloTitle.replace(/[^a-z0-9]/gi, '_')}.png`;
+
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        showToast('Image enregistrée avec succès', 'success');
+    } catch (e) {
+        console.error('Export PNG:', e);
+        showToast('Erreur lors de la capture d\'écran', 'error');
+    }
+});
 
 // ----------------------------------------------------------------
 // CASES À COCHER DES ÂGES (générées dynamiquement)

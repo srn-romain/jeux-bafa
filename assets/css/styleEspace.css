@@ -504,6 +504,19 @@ textarea {
   border-color: rgba(255, 255, 255, 0.35);
 }
 
+.es-btn--secondary {
+  background: var(--clr-surface);
+  color: var(--clr-text-muted);
+  border: 1.5px solid var(--clr-surface-3);
+  box-shadow: var(--shadow-sm);
+}
+
+.es-btn--secondary:hover {
+  background: var(--clr-surface-2);
+  color: var(--clr-text);
+  border-color: rgba(166, 216, 102, 0.3);
+}
+
 .es-btn--danger {
   background: var(--clr-danger-soft);
   color: var(--clr-danger);
@@ -1388,6 +1401,49 @@ input:checked+.es-slider:before {
 
 .es-colo-admin-card__body {
   padding: 16px 20px;
+}
+
+/* ================================================================
+   BARRE DE FILTRES ET RECHERCHE
+   ================================================================ */
+.es-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  background: var(--clr-surface-2);
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--clr-surface-3);
+  margin-bottom: 16px;
+}
+
+.es-filters-bar .es-input-wrap {
+  flex: 1;
+  min-width: 200px;
+}
+
+.es-filters-bar .es-select {
+  width: auto;
+  padding-right: 30px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+.es-filters-bar .es-btn {
+  white-space: nowrap;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+}
+
+
+
+/* Layout écran très petit */
+@media (max-width: 480px) {
+  .es-filters-bar .es-select {
+    flex: 1 1 100%;
+  }
 }
 
 /* ================================================================

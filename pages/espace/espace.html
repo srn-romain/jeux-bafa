@@ -217,7 +217,35 @@
                 </button>
               </div>
             </div>
-            <div class="es-table-wrap">
+
+            <!-- Barre de filtres / recherche -->
+            <div class="es-filters-bar">
+              <div class="es-input-wrap">
+                <i class="bi bi-search es-input-icon"></i>
+                <input type="text" id="searchParticipant" class="es-input es-input--icon"
+                  placeholder="Rechercher un participant (prénom, nom, tags...)">
+              </div>
+
+              <select id="filterGroup" class="es-select col-groupe hidden">
+                <option value="">Tous les groupes</option>
+              </select>
+
+              <select id="filterGenre" class="es-select">
+                <option value="">Tous genres</option>
+                <option value="masculin">Garçons</option>
+                <option value="feminin">Filles</option>
+              </select>
+
+              <select id="filterAge" class="es-select">
+                <option value="">Tous âges</option>
+              </select>
+
+              <button class="es-btn es-btn--secondary" id="btnExportImage">
+                <i class="bi bi-camera"></i> Enregistrer l'image
+              </button>
+            </div>
+
+            <div class="es-table-wrap" id="participantsTableContainer">
               <!-- Bannière verrou (visible anim si verrouillé) -->
               <div id="lockBanner" class="es-alert es-alert--warning hidden" style="margin-bottom:12px;">
                 <i class="bi bi-lock-fill"></i>
@@ -434,6 +462,9 @@
 
   <!-- Toast container -->
   <div class="es-toast-container" id="toastContainer"></div>
+
+  <!-- html2canvas pour l'export PNG -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
