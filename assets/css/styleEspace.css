@@ -1798,6 +1798,41 @@ input:checked+.es-slider:before {
   margin-bottom: 8px;
 }
 
+/* Tool Sections (onglet Groupes) */
+.es-section {
+  background: var(--clr-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--clr-surface-3);
+  animation: slide-up 0.3s ease;
+}
+
+.es-section__title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.es-section__title i {
+  font-size: 1.4rem;
+  color: var(--clr-primary);
+}
+
+.es-section__desc {
+  font-size: 0.9rem;
+  color: var(--clr-text-muted);
+  margin-bottom: 24px;
+  line-height: 1.6;
+  max-width: 700px;
+}
+
+
 .es-access-notice__text {
   font-size: 0.9rem;
   color: var(--clr-text-muted);

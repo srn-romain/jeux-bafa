@@ -112,67 +112,85 @@
         <!-- === ONGLET GROUPES === -->
         <div id="tab-groupes">
 
-          <!-- Stats bar -->
-          <div class="es-card es-stats-bar" id="statsBar" style="margin-bottom:14px;">
-            <div class="es-stat-chip"><i class="bi bi-people" style="color:var(--clr-primary)"></i> <strong
-                id="statTotal">0</strong> participants</div>
-            <div class="es-stat-chip">♂ <strong id="statBoys">0</strong> garçons</div>
-            <div class="es-stat-chip">♀ <strong id="statGirls">0</strong> filles</div>
-            <div class="es-stat-chip"><i class="bi bi-calendar3" style="color:var(--clr-accent)"></i> Moy. <strong
-                id="statAge">–</strong> ans</div>
-          </div>
+          <div class="es-section">
+            <h3 class="es-section__title">
+              <i class="bi bi-shuffle"></i> 1. Création de groupes aléatoires
+            </h3>
+            <p class="es-section__desc">
+              Cette section permet de générer automatiquement des groupes de participants de manière aléatoire.
+              Cela peut aider les animateurs à créer rapidement des équipes pour un jeu, une activité ou un atelier.
+            </p>
 
-          <!-- Options -->
-          <div class="es-options-panel">
-            <div class="es-options-panel__title">
-              <i class="bi bi-sliders" style="color:var(--clr-primary)"></i> Options de répartition
-            </div>
-            <div class="es-options-row">
-              <div class="es-field">
-                <label class="es-field__label" for="groupCount">Nombre de groupes</label>
-                <select class="es-select" id="groupCount">
-                  <option value="2">2 groupes</option>
-                  <option value="3" selected>3 groupes</option>
-                  <option value="4">4 groupes</option>
-                  <option value="5">5 groupes</option>
-                </select>
+            <div class="es-section__content">
+              <!-- Stats bar inside for context -->
+              <div class="es-card es-stats-bar" id="statsBar"
+                style="margin-bottom:14px; background:var(--clr-bg-deep); border:1px solid var(--clr-surface-3);">
+                <div class="es-stat-chip"><i class="bi bi-people" style="color:var(--clr-primary)"></i> <strong
+                    id="statTotal">0</strong> participants</div>
+                <div class="es-stat-chip">♂ <strong id="statBoys">0</strong> garçons</div>
+                <div class="es-stat-chip">♀ <strong id="statGirls">0</strong> filles</div>
+                <div class="es-stat-chip"><i class="bi bi-calendar3" style="color:var(--clr-accent)"></i> Moy. <strong
+                    id="statAge">–</strong> ans</div>
               </div>
-              <div class="es-field">
-                <label class="es-field__label" for="balanceMode">Mode d'équilibrage</label>
-                <select class="es-select" id="balanceMode">
-                  <option value="gender">Par genre</option>
-                  <option value="age">Par âge</option>
-                  <option value="both" selected>Genre + âge</option>
-                  <option value="random">Aléatoire</option>
-                </select>
-              </div>
-            </div>
-            <div class="es-options-row" style="margin-top:10px;">
-              <div class="es-field">
-                <label class="es-field__label">Âges</label>
-                <div class="es-checkbox-group" id="ageGroupsWrap"></div>
-              </div>
-              <div class="es-field">
-                <label class="es-field__label">Genre</label>
-                <div class="es-checkbox-group">
-                  <label class="es-checkbox-label">
-                    <input type="checkbox" name="genderSelection" value="masculin" checked> Garçons
-                  </label>
-                  <label class="es-checkbox-label">
-                    <input type="checkbox" name="genderSelection" value="feminin" checked> Filles
-                  </label>
+
+              <!-- Options -->
+              <div class="es-options-panel"
+                style="box-shadow:none; border:1.5px solid var(--clr-surface-3); background:none; padding:15px;">
+                <div class="es-options-panel__title"
+                  style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; opacity:0.8;">
+                  <i class="bi bi-sliders" style="color:var(--clr-primary)"></i> Options de répartition
+                </div>
+                <div class="es-options-row">
+                  <div class="es-field">
+                    <label class="es-field__label" for="groupCount">Nombre de groupes</label>
+                    <select class="es-select" id="groupCount">
+                      <option value="2">2 groupes</option>
+                      <option value="3" selected>3 groupes</option>
+                      <option value="4">4 groupes</option>
+                      <option value="5">5 groupes</option>
+                    </select>
+                  </div>
+                  <div class="es-field">
+                    <label class="es-field__label" for="balanceMode">Mode d'équilibrage</label>
+                    <select class="es-select" id="balanceMode">
+                      <option value="gender">Par genre</option>
+                      <option value="age">Par âge</option>
+                      <option value="both" selected>Genre + âge</option>
+                      <option value="random">Aléatoire</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="es-options-row" style="margin-top:10px;">
+                  <div class="es-field">
+                    <label class="es-field__label">Âges à inclure</label>
+                    <div class="es-checkbox-group" id="ageGroupsWrap"></div>
+                  </div>
+                  <div class="es-field">
+                    <label class="es-field__label">Genre</label>
+                    <div class="es-checkbox-group">
+                      <label class="es-checkbox-label">
+                        <input type="checkbox" name="genderSelection" value="masculin" checked> Garçons
+                      </label>
+                      <label class="es-checkbox-label">
+                        <input type="checkbox" name="genderSelection" value="feminin" checked> Filles
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              <div style="text-align:center;margin-bottom:24px;">
+                <button class="es-btn es-btn--primary es-btn--lg" onclick="regenerateGroups()"
+                  style="padding: 12px 30px;">
+                  <i class="bi bi-shuffle"></i> Générer les équipes
+                </button>
+              </div>
+
+              <div class="es-groups-grid" id="groupsContainer"></div>
             </div>
           </div>
 
-          <div style="text-align:center;margin-bottom:16px;">
-            <button class="es-btn es-btn--primary es-btn--lg" onclick="regenerateGroups()">
-              <i class="bi bi-shuffle"></i> Générer les groupes
-            </button>
-          </div>
-
-          <div class="es-groups-grid" id="groupsContainer"></div>
+          <!-- Future sections could be added here -->
         </div>
 
         <!-- === ONGLET PARTICIPANTS === -->
