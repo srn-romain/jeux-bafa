@@ -94,8 +94,13 @@ service cloud.firestore {
                         get(/databases/$(database)/documents/espaces/$(espaceId)).data.get('participantsLocked', true) == false
                        );
 
-        // Suppression : admin uniquement
-        allow delete: if isAdmin();
+        // Suppression : admin OU animateur avec accès approuvé ET non verrouillé
+        allow delete: if isAdmin()
+                    || (isAuth() &&
+                        exists(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)) &&
+                        get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)).data.status == 'approved' &&
+                        get(/databases/$(database)/documents/espaces/$(espaceId)).data.get('participantsLocked', true) == false
+                       );
       }
     }
 

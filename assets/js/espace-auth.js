@@ -40,6 +40,12 @@ function formatFullDate(date) {
 function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
 function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
 
+function escapeHtml(text) {
+    if (!text) return "";
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return text.toString().replace(/[&<>"']/g, m => map[m]);
+}
+
 function togglePwd(inputId, btn) {
     const input = document.getElementById(inputId);
     if (!input) return;
