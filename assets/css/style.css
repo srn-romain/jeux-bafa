@@ -258,7 +258,8 @@ body {
   right: 0;
   bottom: 0;
   background: #50644c;
-  display: flex;
+  display: none;
+  /* Caché par défaut (Ordi) */
   flex-direction: column;
   padding: 20px;
   gap: 15px;
@@ -295,6 +296,11 @@ body {
 }
 
 @media (max-width: 860px) {
+  .nav-menu-mobile {
+    display: flex;
+    /* Affiché uniquement sur Mobile */
+  }
+
   .navbar-links {
     display: none;
     /* Masquer sur mobile */
