@@ -7,6 +7,12 @@
 // Utilitaires globaux (toasts, modals, formating)
 // ----------------------------------------------------------------
 
+function escapeHtml(str) {
+    if (!str) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return str.replace(/[&<>"']/g, m => map[m]);
+}
+
 function showToast(msg, type = 'default', duration = 3500) {
     const container = document.getElementById('toastContainer');
     if (!container) return;

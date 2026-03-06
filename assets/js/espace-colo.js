@@ -13,6 +13,7 @@ let currentUser = null;
 let currentRole = null;
 let currentLocked = true;
 let participants = [];
+let currentGroups = []; // { id, name }
 
 // ----------------------------------------------------------------
 // AUTH STATE
@@ -152,6 +153,8 @@ function initColoContent(colo, role) {
     loadParticipants(colo.id, role);
     // Charger les animateurs
     loadAnimateurs(colo.id);
+    // Charger les groupes
+    loadGroups(colo.id, role);
 
     // Onglets
     initTabs();
@@ -213,8 +216,14 @@ function renderParticipantsTable(role) {
     }
 
     const canEdit = role === 'admin' || (role === 'anim' && !currentLocked);
+    const hasGroups = currentGroups.length > 0;
 
-    tbody.innerHTML = participants.map(p => `
+    // Afficher/Cacher la colonne groupe
+    document.querySelectorAll('.col-groupe').forEach(el => el.classList.toggle('hidden', !hasGroups));
+
+    tbody.innerHTML = participants.map(p => {
+        const g = hasGroups ? currentGroups.find(x => x.id === p.groupeId) : null;
+        return `
         <tr>
             <td><strong>${p.prenom || ''}</strong></td>
             <td>${p.nom || ''}</td>
@@ -223,6 +232,9 @@ function renderParticipantsTable(role) {
                 <span class="es-pill ${p.genre === 'masculin' ? 'es-pill--m' : 'es-pill--f'}">
                     ${p.genre === 'masculin' ? '♂ Garçon' : '♀ Fille'}
                 </span>
+            </td>
+            <td class="col-groupe ${!hasGroups ? 'hidden' : ''}">
+                ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
             <td class="es-table__actions">
                 <button class="es-btn es-btn--ghost es-btn--sm"
@@ -239,7 +251,8 @@ function renderParticipantsTable(role) {
                 </button>
             </td>
         </tr>
-    `).join('');
+    `;
+    }).join('');
 }
 
 // ----------------------------------------------------------------
@@ -413,6 +426,9 @@ document.getElementById('btnAddParticipant')?.addEventListener('click', () => {
     editingParticipantId = null;
     document.getElementById('participantModalTitle').textContent = 'Ajouter un participant';
     document.getElementById('participantForm')?.reset();
+    const groupSelect = document.getElementById('pGroup');
+    if (groupSelect) groupSelect.value = '';
+
     document.getElementById('participantError')?.classList.add('hidden');
     openModal('overlayParticipant');
 });
@@ -426,6 +442,10 @@ function editParticipant(id) {
     document.getElementById('pNom').value = p.nom || '';
     document.getElementById('pAge').value = p.age || '';
     document.getElementById('pGenre').value = p.genre || 'feminin';
+
+    const groupSelect = document.getElementById('pGroup');
+    if (groupSelect) groupSelect.value = p.groupeId || '';
+
     document.getElementById('participantError')?.classList.add('hidden');
     openModal('overlayParticipant');
 }
@@ -442,6 +462,7 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
     const nom = document.getElementById('pNom')?.value.trim();
     const age = parseInt(document.getElementById('pAge')?.value);
     const genre = document.getElementById('pGenre')?.value;
+    const groupeId = document.getElementById('pGroup')?.value || null;
 
     if (!prenom || !nom || isNaN(age)) {
         errMsg.textContent = 'Prénom, nom et âge sont obligatoires.';
@@ -453,7 +474,7 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
     btnLoading(btn, true);
 
     try {
-        const data = { prenom, nom, age, genre };
+        const data = { prenom, nom, age, genre, groupeId };
         const colRef = db.collection('espaces').doc(espaceId).collection('participants');
 
         if (editingParticipantId) {
@@ -652,5 +673,102 @@ async function loadAnimateurs(coloId) {
     } catch (err) {
         console.error('loadAnimateurs error:', err);
         listEl.innerHTML = `<div class="text-center text-danger" style="padding:24px;">Erreur lors du chargement de l'équipe.</div>`;
+    }
+}
+// ----------------------------------------------------------------
+// GESTION DES GROUPES (Directeur)
+// ----------------------------------------------------------------
+
+async function loadGroups(id, role) {
+    if (!id) return;
+    try {
+        const snap = await db.collection('espaces').doc(id).collection('groups').orderBy('name').get();
+        currentGroups = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Afficher/Cacher le champ groupe dans le formulaire participant
+        const field = document.getElementById('fieldParticipantGroup');
+        if (field) {
+            field.classList.toggle('hidden', currentGroups.length === 0);
+        }
+
+        // Mettre à jour le select dans le formulaire participant
+        const select = document.getElementById('pGroup');
+        if (select) {
+            const val = select.value;
+            select.innerHTML = '<option value="">-- Aucun groupe --</option>' +
+                currentGroups.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
+            select.value = val;
+        }
+
+        // Afficher le bouton de gestion pour les admins
+        if (role === 'admin') {
+            document.getElementById('btnManageGroups')?.classList.remove('hidden');
+        }
+
+        // Re-render le tableau pour la colonne groupe
+        renderParticipantsTable(role);
+
+    } catch (err) {
+        console.error('loadGroups error:', err);
+    }
+}
+
+document.getElementById('btnManageGroups')?.addEventListener('click', () => {
+    renderGroupsNameList();
+    openModal('overlayManageGroups');
+});
+
+document.getElementById('btnCloseManageGroups')?.addEventListener('click', () => closeModal('overlayManageGroups'));
+document.getElementById('btnFinishGroups')?.addEventListener('click', () => closeModal('overlayManageGroups'));
+
+function renderGroupsNameList() {
+    const listEl = document.getElementById('groupsNameList');
+    if (!listEl) return;
+
+    if (currentGroups.length === 0) {
+        listEl.innerHTML = '<div class="text-center text-muted" style="padding:15px;">Aucun groupe créé.</div>';
+        return;
+    }
+
+    listEl.innerHTML = currentGroups.map(g => `
+        <div class="es-anim-item" style="padding: 8px 12px;">
+            <div class="es-anim-item__info">
+                <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
+            </div>
+            <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteGroupName('${g.id}', '${escapeHtml(g.name)}')">
+                <i class="bi bi-trash3"></i>
+            </button>
+        </div>
+    `).join('');
+}
+
+document.getElementById('btnAddGroupName')?.addEventListener('click', async () => {
+    const input = document.getElementById('inputNewGroupName');
+    const name = input.value.trim();
+    if (!name) return;
+
+    try {
+        await db.collection('espaces').doc(espaceId).collection('groups').add({ name });
+        input.value = '';
+        await loadGroups(espaceId, currentRole);
+        renderGroupsNameList();
+        showToast('Groupe créé.', 'success');
+    } catch (err) {
+        console.error('addGroup error:', err);
+        showToast('Erreur lors de la création du groupe.', 'error');
+    }
+});
+
+async function deleteGroupName(id, name) {
+    if (!confirm(`Supprimer le groupe "${name}" ? Cela ne supprimera pas les jeunes, mais ils n'auront plus de groupe attribué.`)) return;
+
+    try {
+        await db.collection('espaces').doc(espaceId).collection('groups').doc(id).delete();
+        await loadGroups(espaceId, currentRole);
+        renderGroupsNameList();
+        showToast('Groupe supprimé.', 'success');
+    } catch (err) {
+        console.error('deleteGroup error:', err);
+        showToast('Erreur lors de la suppression.', 'error');
     }
 }
