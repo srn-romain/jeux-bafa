@@ -118,14 +118,30 @@ function initColoContent(colo, role) {
         driveBtn.classList.remove('hidden');
     }
 
-    // Bouton admin "Ajouter participant"
+    // Gestion du verrou participants
+    const locked = colo.participantsLocked !== false; // true par défaut
+
     if (role === 'admin') {
+        // L'admin voit et interagit toujours
         document.getElementById('btnAddParticipant')?.classList.remove('hidden');
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('.anim-can').forEach(el => el.classList.remove('hidden'));
+    } else if (role === 'anim') {
+        // L'anim voit les boutons, mais disabled si verrouillé
+        const addBtn = document.getElementById('btnAddParticipant');
+        document.querySelectorAll('.anim-can').forEach(el => el.classList.remove('hidden'));
+        if (locked) {
+            addBtn?.setAttribute('disabled', 'true');
+            addBtn?.setAttribute('title', 'Le directeur a verrouillé la gestion des participants.');
+            addBtn?.style.setProperty('opacity', '0.45');
+            addBtn?.style.setProperty('cursor', 'not-allowed');
+        } else {
+            addBtn?.removeAttribute('disabled');
+            addBtn?.classList.remove('hidden');
+        }
     }
 
-    // Charger les participants
-    loadParticipants(colo.id, role);
+    // Charger les participants en passant le statut de verrou
+    loadParticipants(colo.id, role, locked);
 
     // Onglets
     initTabs();
@@ -149,11 +165,11 @@ function initTabs() {
 // ----------------------------------------------------------------
 // CHARGER LES PARTICIPANTS
 // ----------------------------------------------------------------
-async function loadParticipants(coloId, role) {
+async function loadParticipants(coloId, role, locked = false) {
     try {
         const snap = await db.collection('espaces').doc(coloId).collection('participants').get();
         participants = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        renderParticipantsTable(role);
+        renderParticipantsTable(role, locked);
         buildAgeGroupCheckboxes();
         updateStats();
         regenerateGroups();
@@ -166,14 +182,26 @@ async function loadParticipants(coloId, role) {
 // ----------------------------------------------------------------
 // TABLEAU DES PARTICIPANTS
 // ----------------------------------------------------------------
-function renderParticipantsTable(role) {
+function renderParticipantsTable(role, locked = false) {
     const tbody = document.getElementById('participantsTbody');
     if (!tbody) return;
+
+    // Bannière de verrou pour les anims
+    const lockBanner = document.getElementById('lockBanner');
+    if (lockBanner) {
+        if (role === 'anim' && locked) {
+            lockBanner.classList.remove('hidden');
+        } else {
+            lockBanner.classList.add('hidden');
+        }
+    }
 
     if (participants.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:24px;">Aucun participant enregistré.</td></tr>`;
         return;
     }
+
+    const canEdit = role === 'admin' || (role === 'anim' && !locked);
 
     tbody.innerHTML = participants.map(p => `
         <tr>
@@ -185,15 +213,19 @@ function renderParticipantsTable(role) {
                     ${p.genre === 'masculin' ? '♂ Garçon' : '♀ Fille'}
                 </span>
             </td>
-            ${role === 'admin' ? `
             <td class="es-table__actions">
-                <button class="es-btn es-btn--ghost es-btn--sm" onclick="editParticipant('${p.id}')">
+                ${(role === 'admin' || role === 'anim') ? `
+                <button class="es-btn es-btn--ghost es-btn--sm"
+                        onclick="${canEdit ? `editParticipant('${p.id}')` : 'void(0)'}"
+                        ${!canEdit ? 'disabled title="Verrouillé par le directeur"' : 'title="Modifier"'}
+                        style="${!canEdit && role === 'anim' ? 'opacity:0.4;cursor:not-allowed;' : ''}">
                     <i class="bi bi-pencil"></i>
-                </button>
-                <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteParticipant('${p.id}', '${p.prenom} ${p.nom}')">
+                </button>` : ''}
+                ${role === 'admin' ? `
+                <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteParticipant('${p.id}', '${p.prenom} ${p.nom}')" title="Supprimer">
                     <i class="bi bi-trash3"></i>
-                </button>
-            </td>` : '<td></td>'}
+                </button>` : ''}
+            </td>
         </tr>
     `).join('');
 }

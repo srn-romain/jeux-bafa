@@ -239,25 +239,28 @@ textarea {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(166, 216, 102, 0.12);
-  padding: 0 16px;
+  padding: 0 12px;
 }
 
 .es-topbar__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px;
+  height: 56px;
   max-width: 1100px;
   margin: 0 auto;
+  gap: 8px;
 }
 
 .es-topbar__brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 0.95rem;
   color: #fff;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .es-topbar__brand-icon {
@@ -275,17 +278,20 @@ textarea {
 .es-topbar__actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
+/* Chip utilisateur */
 .es-user-chip {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 10px;
+  gap: 6px;
+  padding: 4px 10px;
   background: rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-full);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  min-width: 0;
 }
 
 .es-user-chip__name {
@@ -296,6 +302,70 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ================================================================
+   TOPBAR — RESPONSIVE MOBILE (< 560px)
+   ================================================================ */
+@media (max-width: 559px) {
+  .es-topbar {
+    padding: 0 10px;
+  }
+
+  .es-topbar__inner {
+    height: 52px;
+    gap: 6px;
+  }
+
+  /* Masquer les labels texte dans la navbar */
+  .es-topbar .brand-label,
+  .es-user-chip__name,
+  .es-user-chip .es-badge {
+    display: none;
+  }
+
+  /* User chip — icône seule */
+  .es-user-chip {
+    padding: 6px;
+    border-radius: 50%;
+    gap: 0;
+  }
+
+  /* Boutons — icône seule, taille réduite */
+  .es-topbar .es-btn--sm {
+    padding: 6px 8px;
+    gap: 0;
+  }
+
+  /* Masquer les textes dans les boutons de la topbar */
+  .es-topbar .es-btn--sm span.brand-label,
+  .es-topbar .es-btn--sm span:not(.bi) {
+    display: none;
+  }
+
+  /* Bouton logout — icône seule */
+  .es-btn--logout {
+    padding: 6px 8px;
+  }
+
+  /* Topbar brand — conserver uniquement l'icône */
+  .es-topbar__brand .brand-label {
+    display: none;
+  }
+}
+
+@media (min-width: 560px) {
+  .es-topbar {
+    padding: 0 16px;
+  }
+
+  .es-topbar__inner {
+    height: 60px;
+  }
+
+  .es-topbar__actions {
+    gap: 10px;
+  }
 }
 
 /* ================================================================

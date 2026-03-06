@@ -82,12 +82,20 @@ service cloud.firestore {
         // Lecture : admin OU animateur avec accès approuvé
         allow read: if isAdmin()
                     || (isAuth() &&
-                        get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)) != null &&
+                        exists(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)) &&
                         get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)).data.status == 'approved'
                        );
 
-        // Écriture (CRUD) : admin uniquement
-        allow create, update, delete: if isAdmin();
+        // Création + Modification : admin OU animateur avec accès approuvé ET non verrouillé
+        allow create, update: if isAdmin()
+                    || (isAuth() &&
+                        exists(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)) &&
+                        get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)).data.status == 'approved' &&
+                        get(/databases/$(database)/documents/espaces/$(espaceId)).data.get('participantsLocked', true) == false
+                       );
+
+        // Suppression : admin uniquement
+        allow delete: if isAdmin();
       }
     }
 

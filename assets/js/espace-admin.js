@@ -125,16 +125,37 @@ function buildColoAdminCard(colo, nbParticipants) {
         ? `${formatDate(colo.dateDebut)} → ${formatDate(colo.dateFin)}`
         : 'Dates non définies';
 
+    const locked = colo.participantsLocked !== false; // true par défaut
+
     div.innerHTML = `
         <div class="es-colo-admin-card__header">
             <div>
                 <div class="es-colo-admin-card__title">${colo.emoji || '🏕️'} ${colo.nom || 'Sans nom'}</div>
-                <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:2px;">${dateStr} · ${nbParticipants} participant${nbParticipants !== 1 ? 's' : ''}</div>
+                <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:2px;display:flex;align-items:center;gap:8px;">
+                    ${dateStr} · ${nbParticipants} participant${nbParticipants !== 1 ? 's' : ''}
+                    <span style="
+                        padding:1px 7px;border-radius:20px;font-size:0.7rem;font-weight:700;
+                        ${locked
+            ? 'background:rgba(231,76,60,0.2);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);'
+            : 'background:rgba(39,174,96,0.2);color:#27ae60;border:1px solid rgba(39,174,96,0.3);'}
+                    ">
+                        ${locked ? '🔒 Participants verrouillés' : '🔓 Participants ouverts'}
+                    </span>
+                </div>
             </div>
             <div class="es-colo-admin-card__actions">
+                <button class="es-btn es-btn--sm"
+                        title="${locked ? 'Déverrouiller la gestion des participants pour les anims' : 'Verrouiller la gestion des participants'}"
+                        style="${locked
+            ? 'background:rgba(39,174,96,0.12);color:#27ae60;border:1px solid rgba(39,174,96,0.3);'
+            : 'background:rgba(231,76,60,0.12);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);'}"
+                        onclick="toggleParticipantsLock('${colo.id}', ${locked})">
+                    <i class="bi bi-${locked ? 'unlock' : 'lock'}"></i>
+                    <span class="brand-label">${locked ? 'Déverrouiller' : 'Verrouiller'}</span>
+                </button>
                 <button class="es-btn es-btn--sm" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);"
                         onclick="openParticipantsModal('${colo.id}', '${escapeHtml(colo.nom || '')}')">
-                    <i class="bi bi-people"></i> Participants
+                    <i class="bi bi-people"></i> <span class="brand-label">Participants</span>
                 </button>
                 <button class="es-btn es-btn--sm" style="background:rgba(166,216,102,0.12);color:#a6d866;border:1px solid rgba(166,216,102,0.25);"
                         onclick="openEditColo('${colo.id}')">
@@ -149,6 +170,19 @@ function buildColoAdminCard(colo, nbParticipants) {
         ${colo.description ? `<div class="es-colo-admin-card__body" style="font-size:0.87rem;color:var(--clr-text-muted);">${colo.description}</div>` : ''}
     `;
     return div;
+}
+
+async function toggleParticipantsLock(coloId, currentlyLocked) {
+    const newLocked = !currentlyLocked;
+    const label = newLocked ? 'verrouillés' : 'ouverts aux animateurs';
+    try {
+        await db.collection('espaces').doc(coloId).update({ participantsLocked: newLocked });
+        showToast(`Participants ${label}.`, newLocked ? 'default' : 'success');
+        loadColos();
+    } catch (err) {
+        console.error('toggleParticipantsLock:', err);
+        showToast('Erreur lors du changement de verrou.', 'error');
+    }
 }
 
 function escapeHtml(str) {
