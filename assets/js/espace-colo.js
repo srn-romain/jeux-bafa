@@ -278,17 +278,17 @@ function renderParticipantsTable(role) {
                 ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
             <td>
-                ${(p.spec || []).length > 0 ? p.spec.map(s => `<span class="es-tag" style="${getStringColorStyle(s)}">${escapeHtml(s)}</span>`).join('') : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
+                ${(p.spec || []).length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">${p.spec.map(s => `<span class="es-tag" style="${getStringColorStyle(s)}">${escapeHtml(s)}</span>`).join('')}</div>` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
             <td>
                 ${note ? `
-                    <span style="font-size:0.82rem; color:var(--clr-text-muted);">
-                        ${escapeHtml(noteDisplay)}
-                        ${isLong ? `<button class="es-btn es-btn--ghost es-btn--sm" style="padding:0 4px; border:none; color:var(--clr-primary); background:none;" onclick="openNoteModal(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye"></i></button>` : ''}
-                    </span>
+                    <div style="font-size:0.82rem; color:var(--clr-text-muted); display:flex; align-items:center; gap:6px;">
+                        <span>${escapeHtml(noteDisplay)}</span>
+                        ${isLong ? `<button class="es-btn es-btn--ghost es-btn--sm" style="padding:0; height:18px; width:18px; border:none; color:var(--clr-primary); background:none; display:inline-flex; align-items:center; justify-content:center;" onclick="openNoteModal(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye"></i></button>` : ''}
+                    </div>
                 ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
-            <td class="es-table__actions">
+            <td class="es-table__actions" data-html2canvas-ignore="true">
                 <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier"
                         onclick="editParticipant('${p.id}')">
                     <i class="bi bi-pencil"></i>
