@@ -232,6 +232,7 @@
                     <th>Âge</th>
                     <th>Genre</th>
                     <th class="col-groupe hidden">Groupe</th>
+                    <th>Spécificités</th>
                     <th>Remarque</th>
                     <th class="hidden anim-can">Actions</th>
                   </tr>
@@ -301,6 +302,12 @@
             <select class="es-select" id="pGroup">
               <option value="">-- Aucun groupe --</option>
             </select>
+          </div>
+          <div class="es-field">
+            <label class="es-field__label" for="pSpec"><i class="bi bi-tag" style="color:var(--clr-primary)"></i>
+              Spécificités (diabétique, hyperactif...)</label>
+            <input class="es-input" type="text" id="pSpec"
+              placeholder="Ex: diabétique, hyperactif (séparez par virgules)">
           </div>
           <div class="es-field">
             <label class="es-field__label" for="pNote"><i class="bi bi-info-circle"

@@ -411,6 +411,28 @@ textarea {
   border: 1px solid rgba(231, 76, 60, 0.25);
 }
 
+/* Tags de spécificité (santé, comportement...) */
+.es-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: rgba(41, 128, 185, 0.08);
+  color: #2980b9;
+  border: 1px solid rgba(41, 128, 185, 0.2);
+  margin-right: 4px;
+  margin-bottom: 2px;
+  white-space: nowrap;
+}
+
+.es-tag--alert {
+  background: rgba(231, 76, 60, 0.08);
+  color: #e74c3c;
+  border-color: rgba(231, 76, 60, 0.2);
+}
+
 /* ================================================================
    BOUTONS
    ================================================================ */

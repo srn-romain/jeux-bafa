@@ -11,6 +11,16 @@ let currentColoNom = ''; // Pour l'export
 let currentAdminGroups = []; // Noms des groupes thématiques
 let deleteTarget = null; // { type: 'colo'|'participant', id, coloId? }
 
+// Générateur de couleur pseudo-aléatoire basé sur un mot
+function getStringColorStyle(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `background-color: hsla(${h}, 70%, 50%, 0.1); color: hsl(${h}, 70%, 40%); border-color: hsla(${h}, 70%, 50%, 0.3);`;
+}
+
 // ----------------------------------------------------------------
 // AUTH STATE — Vérifier le rôle admin
 // ----------------------------------------------------------------
@@ -377,6 +387,9 @@ async function loadParticipantsAdmin(coloId) {
                     ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted">–</span>'}
                 </td>
                 <td>
+                    ${(p.spec || []).length > 0 ? p.spec.map(s => `<span class="es-tag" style="${getStringColorStyle(s)}">${escapeHtml(s)}</span>`).join('') : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
+                </td>
+                <td>
                     ${note ? `
                         <span style="font-size:0.8rem; color:var(--clr-text-muted);">
                             ${escapeHtml(noteDisplay)}
@@ -421,6 +434,7 @@ function editParticipantAdmin(id, pJson) {
         document.getElementById('pAdminNom').value = p.nom || '';
         document.getElementById('pAdminAge').value = p.age || '';
         document.getElementById('pAdminGenre').value = p.genre || 'feminin';
+        document.getElementById('pAdminSpec').value = Array.isArray(p.spec) ? p.spec.join(', ') : (p.spec || '');
         document.getElementById('pAdminNote').value = p.note || '';
 
         const groupSelect = document.getElementById('pAdminGroup');
@@ -449,6 +463,9 @@ document.getElementById('btnSaveParticipantForm')?.addEventListener('click', asy
     const nom = document.getElementById('pAdminNom')?.value.trim();
     const age = parseInt(document.getElementById('pAdminAge')?.value);
     const genre = document.getElementById('pAdminGenre')?.value;
+    const specRaw = document.getElementById('pAdminSpec')?.value.trim() || '';
+
+    const spec = specRaw ? specRaw.split(',').map(s => s.trim().toLowerCase()).filter(s => s) : [];
 
     if (!prenom || !nom || isNaN(age)) {
         errMsg.textContent = 'Prénom, nom et âge sont obligatoires.';
@@ -463,7 +480,7 @@ document.getElementById('btnSaveParticipantForm')?.addEventListener('click', asy
         const colRef = db.collection('espaces').doc(currentColoId).collection('participants');
         const groupeId = document.getElementById('pAdminGroup')?.value || null;
         const note = document.getElementById('pAdminNote')?.value.trim();
-        const data = { prenom, nom, age, genre, groupeId, note };
+        const data = { prenom, nom, age, genre, groupeId, spec, note };
 
         if (adminEditingParticipantId) {
             await colRef.doc(adminEditingParticipantId).update(data);

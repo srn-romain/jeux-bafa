@@ -15,6 +15,16 @@ let currentLocked = true;
 let participants = [];
 let currentGroups = []; // { id, name }
 
+// Générateur de couleur pseudo-aléatoire basé sur un mot
+function getStringColorStyle(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return `background-color: hsla(${h}, 70%, 50%, 0.1); color: hsl(${h}, 70%, 40%); border-color: hsla(${h}, 70%, 50%, 0.3);`;
+}
+
 // ----------------------------------------------------------------
 // AUTH STATE
 // ----------------------------------------------------------------
@@ -239,6 +249,9 @@ function renderParticipantsTable(role) {
             </td>
             <td class="col-groupe ${!hasGroups ? 'hidden' : ''}">
                 ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
+            </td>
+            <td>
+                ${(p.spec || []).length > 0 ? p.spec.map(s => `<span class="es-tag" style="${getStringColorStyle(s)}">${escapeHtml(s)}</span>`).join('') : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
             <td>
                 ${note ? `
@@ -467,6 +480,7 @@ function editParticipant(id) {
     document.getElementById('pNom').value = p.nom || '';
     document.getElementById('pAge').value = p.age || '';
     document.getElementById('pGenre').value = p.genre || 'feminin';
+    document.getElementById('pSpec').value = Array.isArray(p.spec) ? p.spec.join(', ') : (p.spec || '');
     document.getElementById('pNote').value = p.note || '';
 
     const groupSelect = document.getElementById('pGroup');
@@ -488,8 +502,11 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
     const nom = document.getElementById('pNom')?.value.trim();
     const age = parseInt(document.getElementById('pAge')?.value);
     const genre = document.getElementById('pGenre')?.value;
+    const specRaw = document.getElementById('pSpec')?.value.trim() || '';
     const note = document.getElementById('pNote')?.value.trim();
     const groupeId = document.getElementById('pGroup')?.value || null;
+
+    const spec = specRaw ? specRaw.split(',').map(s => s.trim().toLowerCase()).filter(s => s) : [];
 
     if (!prenom || !nom || isNaN(age)) {
         errMsg.textContent = 'Prénom, nom et âge sont obligatoires.';
@@ -501,7 +518,7 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
     btnLoading(btn, true);
 
     try {
-        let data = { prenom, nom, age, genre, note, groupeId };
+        let data = { prenom, nom, age, genre, note, spec, groupeId };
         const colRef = db.collection('espaces').doc(espaceId).collection('participants');
 
         if (editingParticipantId) {
