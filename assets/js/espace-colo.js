@@ -408,10 +408,10 @@ document.getElementById('btnExportPdf')?.addEventListener('click', () => {
             return [
                 p.prenom || '',
                 p.nom || '',
-                `${p.age}`,
+                `${p.age} ans`,
                 p.genre === 'masculin' ? 'Garçon' : 'Fille',
                 ...(hasGroups ? [g ? g.name : ''] : []),
-                (p.spec || []).join(', '),
+                p.spec || [],
                 p.note || ''
             ];
         });
@@ -420,19 +420,125 @@ document.getElementById('btnExportPdf')?.addEventListener('click', () => {
             ['Prénom', 'Nom', 'Âge', 'Genre', ...(hasGroups ? ['Groupe'] : []), 'Spécificités', 'Remarques']
         ];
 
+        let tagColIndex = hasGroups ? 5 : 4;
+
         doc.autoTable({
             startY: 35,
             head: head,
             body: tableData,
             theme: 'striped',
-            styles: { fontSize: 9 },
-            headStyles: { fillColor: [41, 128, 185] } // Code couleur approchant du primary
+            styles: { fontSize: 9, valign: 'middle' },
+            headStyles: { fillColor: [41, 128, 185] }, // Code couleur approchant du primary
+            didParseCell: function (data) {
+                if (data.section === 'body') {
+                    // Âge en gras et bleu
+                    if (data.column.index === 2) {
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.textColor = [41, 128, 185];
+                    }
+                    // Genre coloré
+                    if (data.column.index === 3) {
+                        data.cell.styles.fontStyle = 'bold';
+                        if (data.cell.raw === 'Garçon') {
+                            data.cell.styles.textColor = [52, 152, 219];
+                        } else {
+                            data.cell.styles.textColor = [232, 62, 140];
+                        }
+                    }
+                    // Groupe
+                    if (hasGroups && data.column.index === 4) {
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.textColor = [100, 100, 100];
+                    }
+                }
+            },
+            willDrawCell: function (data) {
+                // Vider le texte pour la colonne des tags (dessin manuel)
+                if (data.section === 'body' && data.column.index === tagColIndex) {
+                    data.customTags = data.cell.raw;
+                    data.cell.text = [];
+                }
+            },
+            didDrawCell: function (data) {
+                // Dessiner les petits tags arrondis
+                if (data.section === 'body' && data.column.index === tagColIndex && data.customTags) {
+                    const tags = data.customTags;
+                    if (!Array.isArray(tags) || tags.length === 0) {
+                        doc.setTextColor(150);
+                        doc.setFont("helvetica", "normal");
+                        doc.text('-', data.cell.x + data.cell.padding('left'), data.cell.y + data.cell.height / 2, { baseline: 'middle' });
+                        return;
+                    }
+
+                    let cursorX = data.cell.x + data.cell.padding('left');
+                    const cursorY = data.cell.y + data.cell.height / 2;
+
+                    tags.forEach(t => {
+                        let hash = 0;
+                        for (let i = 0; i < t.length; i++) hash = t.charCodeAt(i) + ((hash << 5) - hash);
+                        const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+                        const hex = "00000".substring(0, 6 - c.length) + c;
+
+                        const r = parseInt(hex.substring(0, 2), 16) || 0;
+                        const g = parseInt(hex.substring(2, 4), 16) || 0;
+                        const b = parseInt(hex.substring(4, 6), 16) || 0;
+
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(8);
+                        const textWidth = doc.getTextWidth(t);
+                        const paddingX = 2;
+                        const w = textWidth + paddingX * 2;
+                        const h = 5;
+
+                        // Eviter que ça ne déborde de la cellule horizontalement
+                        if (cursorX + w > data.cell.x + data.cell.width - data.cell.padding('right')) {
+                            return;
+                        }
+
+                        // Background: on l'éclaircit de 75%
+                        const bgR = Math.min(255, Math.floor((r + 255 * 3) / 4));
+                        const bgG = Math.min(255, Math.floor((g + 255 * 3) / 4));
+                        const bgB = Math.min(255, Math.floor((b + 255 * 3) / 4));
+                        doc.setFillColor(bgR, bgG, bgB);
+                        doc.roundedRect(cursorX, cursorY - h / 2, w, h, 1, 1, 'F');
+
+                        // Texte: on l'assombrit un peu
+                        doc.setTextColor(Math.max(0, Math.floor(r * 0.8)), Math.max(0, Math.floor(g * 0.8)), Math.max(0, Math.floor(b * 0.8)));
+                        doc.text(t, cursorX + paddingX, cursorY, { baseline: 'middle' });
+
+                        cursorX += w + 2;
+                    });
+                }
+            }
         });
 
         doc.setFontSize(10);
-        doc.setTextColor(100);
         const finalY = doc.lastAutoTable.finalY || 35;
-        doc.text("Document généré via l'app de votre directeur préféré aka Romain ! Bisous", 14, finalY + 15);
+
+        const part1 = "Document généré ";
+        const linkText = "par l'app";
+        const part2 = " de votre directeur préféré aka Romain ! Bisous";
+
+        let cursorX = 14;
+        const textY = finalY + 15;
+
+        doc.setTextColor(100);
+        doc.text(part1, cursorX, textY);
+        cursorX += doc.getTextWidth(part1);
+
+        doc.setTextColor(41, 128, 185);
+        doc.text(linkText, cursorX, textY);
+        const linkWidth = doc.getTextWidth(linkText);
+        // Souligné
+        doc.setLineWidth(0.3);
+        doc.setDrawColor(41, 128, 185);
+        doc.line(cursorX, textY + 0.8, cursorX + linkWidth, textY + 0.8);
+        // Lien cliquable
+        doc.link(cursorX, textY - 3, linkWidth, 4, { url: "https://srn-romain.github.io/jeux-bafa/" });
+
+        cursorX += linkWidth;
+        doc.setTextColor(100);
+        doc.text(part2, cursorX, textY);
 
         doc.save(`participants-${coloTitle.replace(/[^a-z0-9]/gi, '_')}.pdf`);
         showToast('PDF généré avec succès', 'success');
