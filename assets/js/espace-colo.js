@@ -978,7 +978,7 @@ function renderAlerts(alerts, role) {
 
     // Styles des alertes selon criticité
     const colors = {
-        low: { bg: 'rgba(52, 152, 219, 0.15)', border: 'rgba(52, 152, 219, 0.4)', color: '#3498db', icon: 'bi-info-circle' },
+        low: { bg: 'rgba(52, 152, 219, 0.3)', border: 'rgba(52, 152, 219, 0.6)', color: '#ffffff', icon: 'bi-info-circle' },
         medium: { bg: 'rgba(243, 156, 18, 0.15)', border: 'rgba(243, 156, 18, 0.4)', color: '#f39c12', icon: 'bi-exclamation-triangle' },
         high: { bg: 'rgba(231, 76, 60, 0.35)', border: 'rgba(231, 76, 60, 0.6)', color: '#ffffff', icon: 'bi-exclamation-octagon-fill' }
     };
