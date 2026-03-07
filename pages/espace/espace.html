@@ -318,9 +318,13 @@
 
                 <div id="weatherAdminContainer" class="hidden admin-only" style="margin-bottom: 20px;">
                   <form id="formSetLocation" style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;">
-                    <div class="es-field" style="flex:1; margin-bottom:0; min-width: 200px;">
+                    <div class="es-field" style="flex:1; margin-bottom:0; min-width: 200px; position: relative;">
                       <label class="es-field__label" for="meteoLocation">Lieu du séjour</label>
-                      <input type="text" id="meteoLocation" class="es-input" placeholder="Ex: Chamonix">
+                      <input type="text" id="meteoLocation" class="es-input" placeholder="Ex: Chamonix"
+                        autocomplete="off">
+                      <div id="meteoSuggestions" class="hidden"
+                        style="position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--clr-surface); color:var(--clr-text); border:1px solid rgba(0,0,0,0.1); border-radius:var(--radius-sm); z-index:100; max-height:200px; overflow-y:auto; box-shadow:var(--shadow-md);">
+                      </div>
                     </div>
                     <button type="submit" class="es-btn es-btn--primary" id="btnSetLocation">
                       <span class="es-btn__text"><i class="bi bi-geo-alt"></i> Mettre à jour</span>

@@ -1218,9 +1218,10 @@ async function loadWeather(coloId, role) {
             document.getElementById('weatherForecastContainer')?.classList.remove('hidden');
 
             const locNameEl = document.getElementById('weatherLocationName');
-            if (locNameEl) locNameEl.textContent = `📍 ${data.meteoLocationName || data.meteoLocation}`;
+            const locationName = data.meteoLocationName || data.meteoLocation;
+            if (locNameEl) locNameEl.textContent = `📍 ${locationName}`;
 
-            await fetchAndDisplayWeather(data.meteoLat, data.meteoLon, role);
+            await fetchAndDisplayWeather(data.meteoLat, data.meteoLon, role, locationName);
         } else {
             document.getElementById('weatherEmptyState')?.classList.remove('hidden');
             document.getElementById('weatherForecastContainer')?.classList.add('hidden');
@@ -1238,7 +1239,7 @@ function getWeatherWMO(code) {
     return { icon: 'bi-cloud', name: 'Inconnu', bad: false, color: '#bdc3c7' };
 }
 
-async function fetchAndDisplayWeather(lat, lon, role) {
+async function fetchAndDisplayWeather(lat, lon, role, locationName) {
     try {
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FParis&forecast_days=5`);
         const data = await res.json();
@@ -1284,7 +1285,7 @@ async function fetchAndDisplayWeather(lat, lon, role) {
                     if (existingSnap.empty) {
                         try {
                             await db.collection('espaces').doc(espaceId).collection('alerts').add({
-                                message: `⚠️ Alerte Météo : ${w.name} prévus pour demain (${d.toLocaleDateString('fr-FR')}). Pensez à un plan B ou des activités d'intérieur !`,
+                                message: `⚠️ Alerte Météo à ${locationName || 'votre camp'} : ${w.name} prévu(s) pour demain (${d.toLocaleDateString('fr-FR')}). Pensez à un plan B ou des activités d'intérieur !`,
                                 type: 'warning',
                                 severity: 'high',
                                 locked: true,
@@ -1306,27 +1307,115 @@ async function fetchAndDisplayWeather(lat, lon, role) {
         console.error("Météo error:", e);
     }
 }
+// ----------------------------------------------------------------
+// AUTOCOMPLETION METEO
+// ----------------------------------------------------------------
+const meteoLocationInput = document.getElementById('meteoLocation');
+const meteoSuggestionsCont = document.getElementById('meteoSuggestions');
+let meteoDebounceTimeout = null;
+
+if (meteoLocationInput && meteoSuggestionsCont) {
+    meteoLocationInput.addEventListener('input', (e) => {
+        const query = e.target.value.trim();
+        // Réinitialiser les datas
+        delete meteoLocationInput.dataset.lat;
+        delete meteoLocationInput.dataset.lon;
+        delete meteoLocationInput.dataset.name;
+
+        if (query.length < 4) {
+            meteoSuggestionsCont.classList.add('hidden');
+            meteoSuggestionsCont.innerHTML = '';
+            return;
+        }
+
+        clearTimeout(meteoDebounceTimeout);
+        meteoDebounceTimeout = setTimeout(async () => {
+            try {
+                const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=fr&format=json`);
+                const data = await res.json();
+                if (data.results && data.results.length > 0) {
+                    meteoSuggestionsCont.innerHTML = data.results.map(city => {
+                        const fullName = `${city.name}${city.admin1 ? ', ' + city.admin1 : ''}${city.country ? ' (' + city.country + ')' : ''}`;
+                        // Mettre en gras ce qui a été tapé
+                        const regex = new RegExp(`(${query})`, 'gi');
+                        const highlightedName = fullName.replace(regex, '<strong>$1</strong>');
+                        return `<div class="meteo-suggestion-item" style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid rgba(0,0,0,0.05); font-size: 0.9rem;" data-name="${city.name}" data-fullname="${fullName}" data-lat="${city.latitude}" data-lon="${city.longitude}">
+                            ${highlightedName}
+                        </div>`;
+                    }).join('');
+
+                    meteoSuggestionsCont.classList.remove('hidden');
+
+                    document.querySelectorAll('.meteo-suggestion-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            meteoLocationInput.value = item.getAttribute('data-fullname');
+                            meteoLocationInput.dataset.lat = item.getAttribute('data-lat');
+                            meteoLocationInput.dataset.lon = item.getAttribute('data-lon');
+                            meteoLocationInput.dataset.name = item.getAttribute('data-name');
+                            meteoSuggestionsCont.classList.add('hidden');
+                        });
+                        item.addEventListener('mouseover', () => item.style.background = 'rgba(0,0,0,0.05)');
+                        item.addEventListener('mouseout', () => item.style.background = 'transparent');
+                    });
+                } else {
+                    meteoSuggestionsCont.classList.add('hidden');
+                }
+            } catch (err) {
+                console.error("Erreur de recherche météo:", err);
+            }
+        }, 350);
+    });
+
+    // Cacher si on clique à l'extérieur
+    document.addEventListener('click', (e) => {
+        if (!meteoLocationInput.contains(e.target) && !meteoSuggestionsCont.contains(e.target)) {
+            meteoSuggestionsCont.classList.add('hidden');
+        }
+    });
+}
 
 document.getElementById('formSetLocation')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const loc = document.getElementById('meteoLocation').value.trim();
     if (!loc) return;
     const btn = document.getElementById('btnSetLocation');
+    const input = document.getElementById('meteoLocation');
     btnLoading(btn, true);
 
     try {
-        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(loc)}&count=1&language=fr&format=json`);
-        const data = await res.json();
-        if (!data.results || data.results.length === 0) {
+        let cityObj = null;
+        // Si cliqué dans la liste, on a les data
+        if (input.dataset.lat && input.dataset.lon && input.dataset.name) {
+            cityObj = {
+                name: input.dataset.name,
+                latitude: parseFloat(input.dataset.lat),
+                longitude: parseFloat(input.dataset.lon),
+                country: loc.split('(')[1]?.replace(')', '') || ''
+            };
+        } else {
+            // Sinon on fait une requête avec le premier résultat
+            const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(loc)}&count=1&language=fr&format=json`);
+            const data = await res.json();
+            if (data.results && data.results.length > 0) {
+                cityObj = data.results[0];
+            }
+        }
+
+        if (!cityObj) {
             showToast("Ville non trouvée.", "warning");
         } else {
-            const city = data.results[0];
             await db.collection('espaces').doc(espaceId).update({
                 meteoLocation: loc,
-                meteoLocationName: `${city.name} (${city.country || ''})`,
-                meteoLat: city.latitude,
-                meteoLon: city.longitude
+                meteoLocationName: `${cityObj.name} (${cityObj.country || ''})`,
+                meteoLat: cityObj.latitude,
+                meteoLon: cityObj.longitude
             });
+            // Nettoyage
+            delete input.dataset.lat;
+            delete input.dataset.lon;
+            delete input.dataset.name;
+            meteoSuggestionsCont?.classList.add('hidden');
+
             showToast("Lieu enregistré et météo mise à jour.", "success");
         }
     } catch (e) {
