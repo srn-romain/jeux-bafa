@@ -380,3 +380,15 @@ function authErrorMessage(code) {
     };
     return map[code] || 'Une erreur est survenue.';
 }
+
+// ----------------------------------------------------------------
+// ENREGISTREMENT SERVICE WORKER (PWA & Notifications)
+// ----------------------------------------------------------------
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        const swPath = window.location.pathname.includes('/pages/') ? '../../sw.js' : 'sw.js';
+        navigator.serviceWorker.register(swPath)
+            .then(reg => console.log('SW Registered'))
+            .catch(err => console.log('SW Registration Failed', err));
+    });
+}

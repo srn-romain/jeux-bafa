@@ -945,14 +945,69 @@ document.getElementById('btnFinishViewNote')?.addEventListener('click', () => cl
 // ----------------------------------------------------------------
 let alertsUnsubscribe = null;
 
+// ----------------------------------------------------------------
+// NOTIFICATIONS PUSH (SERVICE WORKER)
+// ----------------------------------------------------------------
+
+function requestNotificationPermission() {
+    if (!("Notification" in window)) return;
+
+    if (Notification.permission === "default") {
+        Notification.requestPermission().then(permission => {
+            if (permission === "granted") {
+                console.log("Accès aux notifications accordé.");
+            }
+        });
+    }
+}
+
+function sendLocalPush(alert) {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+    const payload = {
+        title: "📢 Nouveau message BAFA",
+        body: alert.message,
+        icon: '/jeux-bafa/public/images/favicon.webp',
+        data: { url: window.location.href }
+    };
+
+    if (navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+            type: 'SHOW_NOTIFICATION',
+            payload: payload
+        });
+    } else {
+        new Notification(payload.title, { body: payload.body, icon: payload.icon });
+    }
+}
+
 function loadAlerts(coloId, role) {
     lastUserRole = role;
     if (alertsUnsubscribe) alertsUnsubscribe();
 
+    requestNotificationPermission();
+    let isInitialLoad = true;
+
     alertsUnsubscribe = db.collection('espaces').doc(coloId).collection('alerts')
         .orderBy('createdAt', 'desc')
         .onSnapshot(snap => {
-            lastAlertsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            if (!isInitialLoad) {
+                snap.docChanges().forEach(change => {
+                    if (change.type === "added") {
+                        const alert = change.doc.data();
+                        const scheduledTime = alert.scheduledAt ? (alert.scheduledAt.toDate ? alert.scheduledAt.toDate() : new Date(alert.scheduledAt)) : null;
+                        const isNow = !scheduledTime || scheduledTime <= new Date();
+                        if (isNow) {
+                            sendLocalPush(alert);
+                        }
+                    }
+                });
+            }
+            isInitialLoad = false;
+
+            lastAlertsData = data;
             renderAlerts(lastAlertsData, role);
         }, err => console.error("Alerts error:", err));
 }
@@ -1060,15 +1115,25 @@ function renderAlerts(alerts, role) {
     }
 }
 
+let lastAlertsData = [];
+let lastUserRole = '';
+let notifiedAlertIds = new Set();
+
 // Rafraîchir l'affichage toutes les 30 secondes pour activer les alertes programmées
 setInterval(() => {
     if (typeof lastAlertsData !== 'undefined' && typeof lastUserRole !== 'undefined') {
+        const now = new Date();
+        // Vérifier si des alertes programmées doivent maintenant s'afficher et notifier
+        lastAlertsData.forEach(alert => {
+            const scheduledTime = alert.scheduledAt ? (alert.scheduledAt.toDate ? alert.scheduledAt.toDate() : new Date(alert.scheduledAt)) : null;
+            if (scheduledTime && scheduledTime <= now && !notifiedAlertIds.has(alert.id)) {
+                sendLocalPush(alert);
+                notifiedAlertIds.add(alert.id);
+            }
+        });
         renderAlerts(lastAlertsData, lastUserRole);
     }
 }, 30000);
-
-let lastAlertsData = [];
-let lastUserRole = '';
 
 document.getElementById('formCreateAlert')?.addEventListener('submit', async (e) => {
     e.preventDefault();
