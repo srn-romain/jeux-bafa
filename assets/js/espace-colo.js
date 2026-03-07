@@ -144,6 +144,7 @@ function initColoContent(colo, role) {
         document.getElementById('btnExportParticipantsColo')?.classList.remove('hidden');
         document.getElementById('btnImportParticipantsColo')?.classList.remove('hidden');
         document.querySelectorAll('.anim-can').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
     } else if (role === 'anim') {
         // L'anim voit les boutons, mais disabled si verrouillé
         const addBtn = document.getElementById('btnAddParticipant');
@@ -945,78 +946,129 @@ document.getElementById('btnFinishViewNote')?.addEventListener('click', () => cl
 let alertsUnsubscribe = null;
 
 function loadAlerts(coloId, role) {
+    lastUserRole = role;
     if (alertsUnsubscribe) alertsUnsubscribe();
 
     alertsUnsubscribe = db.collection('espaces').doc(coloId).collection('alerts')
         .orderBy('createdAt', 'desc')
         .onSnapshot(snap => {
-            const alerts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            renderAlerts(alerts, role);
+            lastAlertsData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            renderAlerts(lastAlertsData, role);
         }, err => console.error("Alerts error:", err));
 }
 
 function renderAlerts(alerts, role) {
     const container = document.getElementById('alertsContainer');
+    const scheduledContainer = document.getElementById('scheduledAlertsContainer');
+    const scheduledList = document.getElementById('scheduledAlertsList');
     if (!container) return;
 
-    if (alerts.length === 0) {
+    const now = new Date();
+
+    // Séparer les alertes actives des programmées
+    const activeAlerts = [];
+    const futureAlerts = [];
+
+    alerts.forEach(alert => {
+        const scheduledTime = alert.scheduledAt ? (alert.scheduledAt.toDate ? alert.scheduledAt.toDate() : new Date(alert.scheduledAt)) : null;
+        if (!scheduledTime || scheduledTime <= now) {
+            activeAlerts.push(alert);
+        } else {
+            futureAlerts.push(alert);
+        }
+    });
+
+    if (activeAlerts.length === 0) {
         container.innerHTML = '';
-        return;
+    } else {
+        // Fonction simple pour parser le markdown (**gras**, *italique*)
+        const parseMarkdown = (text) => {
+            if (!text) return "";
+            const escaped = escapeHtml(text);
+            return escaped
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/_(.*?)_/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>');
+        };
+
+        const colors = {
+            low: { bg: 'rgba(52, 152, 219, 0.3)', border: 'rgba(52, 152, 219, 0.6)', color: '#ffffff', icon: 'bi-info-circle' },
+            medium: { bg: 'rgba(243, 156, 18, 0.15)', border: 'rgba(243, 156, 18, 0.4)', color: '#f39c12', icon: 'bi-exclamation-triangle' },
+            high: { bg: 'rgba(231, 76, 60, 0.35)', border: 'rgba(231, 76, 60, 0.6)', color: '#ffffff', icon: 'bi-exclamation-octagon-fill' }
+        };
+
+        container.innerHTML = activeAlerts.map(alert => {
+            const theme = colors[alert.severity] || colors.medium;
+            let icon = theme.icon;
+            if (alert.type === 'meds') icon = 'bi-capsule';
+            else if (alert.type === 'activity') icon = 'bi-calendar-event';
+            else if (alert.type === 'warning') icon = 'bi-shield-exclamation';
+
+            const canDelete = role === 'admin' || !alert.locked;
+            const parsedMessage = parseMarkdown(alert.message);
+
+            return `
+                <div class="es-alert-item" style="display:flex; align-items:flex-start; justify-content:space-between; padding:13px 18px; border-radius:12px; border:1px solid ${theme.border}; background:${theme.bg}; color:${theme.color}; gap: 15px; backdrop-filter: blur(8px); transition: all 0.3s ease; width: 100%; box-sizing: border-box; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                    <div style="display:flex; align-items:flex-start; gap:14px; flex: 1; min-width: 0;">
+                        <i class="bi ${icon}" style="font-size:1.35rem; flex-shrink: 0; margin-top: 2px;"></i>
+                        <div style="display:flex; flex-direction:column; gap:4px; flex: 1; min-width: 0;">
+                            <span style="font-weight:600; font-size:0.96rem; line-height:1.5; overflow-wrap: anywhere; word-break: normal; white-space: normal;">${parsedMessage}</span>
+                            <span style="font-size:0.75rem; opacity:0.8; font-style:italic;">Posté par ${alert.createdBy || 'Système'}</span>
+                        </div>
+                    </div>
+                    ${canDelete ? `
+                        <button onclick="deleteAlert('${alert.id}')" style="background:rgba(255,255,255,0.15); border:none; width:30px; height:30px; border-radius:50%; color:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: all 0.2s; margin-top: 2px;" onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='scale(1.1)';" onmouseout="this.style.background='rgba(255,255,255,0.15)'; this.style.transform='scale(1)';" title="Marquer comme fait / Supprimer">
+                            <i class="bi bi-x-lg" style="font-size:0.85rem;"></i>
+                        </button>
+                    ` : `
+                        <div style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; opacity:0.35; flex-shrink:0; margin-top: 2px;" title="Verrouillé par le directeur">
+                            <i class="bi bi-lock-fill" style="font-size:0.95rem;"></i>
+                        </div>
+                    `}
+                </div>
+            `;
+        }).join('');
     }
 
-    // Fonction simple pour parser le markdown (**gras**, *italique*)
-    const parseMarkdown = (text) => {
-        if (!text) return "";
-        // On échappe d'abord le HTML pour la sécurité, puis on parse le markdown
-        const escaped = escapeHtml(text);
-        return escaped
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/_(.*?)_/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>'); // Support des retours à la ligne manuels
-    };
-
-    // Styles des alertes selon criticité
-    const colors = {
-        low: { bg: 'rgba(52, 152, 219, 0.3)', border: 'rgba(52, 152, 219, 0.6)', color: '#ffffff', icon: 'bi-info-circle' },
-        medium: { bg: 'rgba(243, 156, 18, 0.15)', border: 'rgba(243, 156, 18, 0.4)', color: '#f39c12', icon: 'bi-exclamation-triangle' },
-        high: { bg: 'rgba(231, 76, 60, 0.35)', border: 'rgba(231, 76, 60, 0.6)', color: '#ffffff', icon: 'bi-exclamation-octagon-fill' }
-    };
-
-    container.innerHTML = alerts.map(alert => {
-        const theme = colors[alert.severity] || colors.medium;
-        let icon = theme.icon;
-
-        // Surcharges d'icônes par type
-        if (alert.type === 'meds') icon = 'bi-capsule';
-        else if (alert.type === 'activity') icon = 'bi-calendar-event';
-        else if (alert.type === 'warning') icon = 'bi-shield-exclamation';
-
-        const canDelete = role === 'admin' || !alert.locked;
-        const parsedMessage = parseMarkdown(alert.message);
-
-        return `
-            <div class="es-alert-item" style="display:flex; align-items:flex-start; justify-content:space-between; padding:13px 18px; border-radius:12px; border:1px solid ${theme.border}; background:${theme.bg}; color:${theme.color}; gap: 15px; backdrop-filter: blur(8px); transition: all 0.3s ease; width: 100%; box-sizing: border-box; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-                <div style="display:flex; align-items:flex-start; gap:14px; flex: 1; min-width: 0;">
-                    <i class="bi ${icon}" style="font-size:1.35rem; flex-shrink: 0; margin-top: 2px;"></i>
-                    <div style="display:flex; flex-direction:column; gap:4px; flex: 1; min-width: 0;">
-                        <span style="font-weight:600; font-size:0.96rem; line-height:1.5; overflow-wrap: anywhere; word-break: normal; white-space: normal;">${parsedMessage}</span>
-                        <span style="font-size:0.75rem; opacity:0.8; font-style:italic;">Posté par ${alert.createdBy || 'Système'}</span>
+    // Gérer l'affichage des alertes futures (pour le créateur/admin)
+    if (scheduledContainer && scheduledList) {
+        if (futureAlerts.length > 0) {
+            scheduledContainer.classList.remove('hidden');
+            scheduledList.innerHTML = futureAlerts.map(alert => {
+                const date = alert.scheduledAt.toDate ? alert.scheduledAt.toDate() : new Date(alert.scheduledAt);
+                const dateStr = date.toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+                return `
+                    <div style="background:rgba(255,255,255,0.05); padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:10px; flex:1; min-width:0;">
+                            <i class="bi bi-calendar-check" style="color:var(--clr-primary); font-size:1.1rem;"></i>
+                            <div style="display:flex; flex-direction:column; min-width:0;">
+                                <span style="font-size:0.85rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${alert.message}</span>
+                                <span style="font-size:0.75rem; opacity:0.6;">Prévu pour le ${dateStr}</span>
+                            </div>
+                        </div>
+                        <button onclick="deleteAlert('${alert.id}')" style="background:none; border:none; color:var(--clr-danger); cursor:pointer; padding:5px; opacity:0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" title="Annuler la programmation">
+                            <i class="bi bi-trash"></i>
+                        </button>
                     </div>
-                </div>
-                ${canDelete ? `
-                    <button onclick="deleteAlert('${alert.id}')" style="background:rgba(255,255,255,0.15); border:none; width:30px; height:30px; border-radius:50%; color:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition: all 0.2s; margin-top: 2px;" onmouseover="this.style.background='rgba(255,255,255,0.3)'; this.style.transform='scale(1.1)';" onmouseout="this.style.background='rgba(255,255,255,0.15)'; this.style.transform='scale(1)';" title="Marquer comme fait / Supprimer">
-                        <i class="bi bi-x-lg" style="font-size:0.85rem;"></i>
-                    </button>
-                ` : `
-                    <div style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; opacity:0.35; flex-shrink:0; margin-top: 2px;" title="Verrouillé par le directeur">
-                        <i class="bi bi-lock-fill" style="font-size:0.95rem;"></i>
-                    </div>
-                `}
-            </div>
-        `;
-    }).join('');
+                `;
+            }).join('');
+        } else {
+            scheduledContainer.classList.add('hidden');
+            scheduledList.innerHTML = '';
+        }
+    }
 }
+
+// Rafraîchir l'affichage toutes les 30 secondes pour activer les alertes programmées
+setInterval(() => {
+    if (typeof lastAlertsData !== 'undefined' && typeof lastUserRole !== 'undefined') {
+        renderAlerts(lastAlertsData, lastUserRole);
+    }
+}, 30000);
+
+let lastAlertsData = [];
+let lastUserRole = '';
 
 document.getElementById('formCreateAlert')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1028,6 +1080,23 @@ document.getElementById('formCreateAlert')?.addEventListener('submit', async (e)
 
     if (!message || !espaceId) return;
 
+    // Gestion de la programmation
+    const isScheduled = document.getElementById('alertIsScheduled')?.checked || false;
+    let scheduledAt = null;
+    if (isScheduled) {
+        const dateVal = document.getElementById('alertDate').value;
+        const timeVal = document.getElementById('alertTime').value;
+        if (!dateVal || !timeVal) {
+            showToast("Veuillez choisir une date et une heure pour la programmation.", "warning");
+            return;
+        }
+        scheduledAt = new Date(`${dateVal}T${timeVal}`);
+        if (scheduledAt <= new Date()) {
+            showToast("La date programmée doit être dans le futur.", "warning");
+            return;
+        }
+    }
+
     btnLoading(btn, true);
     try {
         await db.collection('espaces').doc(espaceId).collection('alerts').add({
@@ -1035,11 +1104,13 @@ document.getElementById('formCreateAlert')?.addEventListener('submit', async (e)
             type,
             severity,
             locked,
+            scheduledAt: scheduledAt ? firebase.firestore.Timestamp.fromDate(scheduledAt) : null,
             createdBy: currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'Inconnu'),
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
         document.getElementById('formCreateAlert').reset();
-        showToast("Événement créé avec succès !", "success");
+        document.getElementById('scheduleInputs')?.classList.add('hidden');
+        showToast(scheduledAt ? "L'événement a été programmé." : "Événement créé avec succès !", "success");
     } catch (err) {
         console.error("CreateAlert error:", err);
         showToast("Erreur lors de la création.", "error");

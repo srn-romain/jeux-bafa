@@ -230,8 +230,7 @@
                   <div class="es-field">
                     <label class="es-field__label" for="alertMessage">Message de l'événement *</label>
                     <textarea id="alertMessage" class="es-textarea" rows="2"
-                      placeholder="Ex: Prise de médicament Léo (après repas)"
-                      required></textarea>
+                      placeholder="Ex: Prise de médicament Léo (après repas)" required></textarea>
                   </div>
 
                   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
@@ -254,19 +253,51 @@
                     </div>
                   </div>
 
-                  <div class="es-field admin-only hidden" style="margin-top:8px;">
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
+                    <div class="es-field">
+                      <label class="es-checkbox-label">
+                        <input type="checkbox" id="alertIsScheduled"
+                          onchange="document.getElementById('scheduleInputs').classList.toggle('hidden', !this.checked)">
+                        <span style="color:var(--clr-text-light); font-size: 0.85rem;">Programmer l'affichage</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div id="scheduleInputs" class="hidden"
+                    style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px dashed rgba(255,255,255,0.1);">
+                    <div class="es-field">
+                      <label class="es-field__label" for="alertDate">Date</label>
+                      <input type="date" id="alertDate" class="es-input es-input--sm">
+                    </div>
+                    <div class="es-field">
+                      <label class="es-field__label" for="alertTime">Heure</label>
+                      <input type="time" id="alertTime" class="es-input es-input--sm">
+                    </div>
+                  </div>
+
+                  <div class="es-field admin-only hidden" style="margin-top:12px;">
                     <label class="es-checkbox-label">
                       <input type="checkbox" id="alertLocked">
-                      <span style="color:var(--clr-text-light); font-size: 0.85rem;">Bloquer la suppression (seul un
-                        directeur pourra retirer cette alerte)</span>
+                      <span style="color:var(--clr-text-light); font-size: 0.85rem;">Bloquer la suppression (directeur
+                        uniquement)</span>
                     </label>
                   </div>
 
-                  <button type="submit" class="es-btn es-btn--primary mt-3" id="btnCreateAlert">
+                  <button type="submit" class="es-btn es-btn--primary mt-3" id="btnCreateAlert" style="width: 100%;">
                     <span class="es-btn__text"><i class="bi bi-plus-circle"></i> Créer l'événement</span>
                     <span class="es-btn__spinner"></span>
                   </button>
                 </form>
+
+                <!-- Liste des alertes programmées -->
+                <div id="scheduledAlertsContainer" class="hidden"
+                  style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.08); padding-top:15px;">
+                  <h4
+                    style="font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px; opacity:0.6; margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                    <i class="bi bi-clock-history"></i> Événements programmés
+                  </h4>
+                  <div id="scheduledAlertsList" style="display:flex; flex-direction:column; gap:8px;"></div>
+                </div>
               </div>
             </div>
           </div>
