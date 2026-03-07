@@ -168,6 +168,8 @@ function initColoContent(colo, role) {
     loadGroups(colo.id, role);
     // Charger les alertes
     loadAlerts(colo.id, role);
+    // Charger la météo dynamique
+    loadWeather(colo.id, role);
 
     // Onglets
     initTabs();
@@ -1193,3 +1195,142 @@ async function deleteAlert(alertId) {
         showToast("Erreur lors de la suppression.", "error");
     }
 }
+
+// ----------------------------------------------------------------
+// METEO
+// ----------------------------------------------------------------
+async function loadWeather(coloId, role) {
+    db.collection('espaces').doc(coloId).onSnapshot(async snap => {
+        if (!snap.exists) return;
+        const data = snap.data();
+        if (role === 'admin') {
+            document.getElementById('weatherAdminContainer')?.classList.remove('hidden');
+            if (data.meteoLocation) {
+                const meteoLocationInput = document.getElementById('meteoLocation');
+                if (meteoLocationInput && !meteoLocationInput.value) {
+                    meteoLocationInput.value = data.meteoLocation;
+                }
+            }
+        }
+
+        if (data.meteoLat && data.meteoLon) {
+            document.getElementById('weatherEmptyState')?.classList.add('hidden');
+            document.getElementById('weatherForecastContainer')?.classList.remove('hidden');
+
+            const locNameEl = document.getElementById('weatherLocationName');
+            if (locNameEl) locNameEl.textContent = `📍 ${data.meteoLocationName || data.meteoLocation}`;
+
+            await fetchAndDisplayWeather(data.meteoLat, data.meteoLon, role);
+        } else {
+            document.getElementById('weatherEmptyState')?.classList.remove('hidden');
+            document.getElementById('weatherForecastContainer')?.classList.add('hidden');
+        }
+    });
+}
+
+function getWeatherWMO(code) {
+    if ([0, 1].includes(code)) return { icon: 'bi-sun', name: 'Soleil', bad: false, color: '#f1c40f' };
+    if ([2, 3].includes(code)) return { icon: 'bi-cloud-sun', name: 'Nuages', bad: false, color: '#bdc3c7' };
+    if ([45, 48].includes(code)) return { icon: 'bi-cloud-haze', name: 'Brouillard', bad: false, color: '#95a5a6' };
+    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return { icon: 'bi-cloud-rain', name: 'Pluie', bad: true, color: '#3498db' };
+    if ([71, 73, 75, 77, 85, 86, 56, 57, 66, 67].includes(code)) return { icon: 'bi-cloud-snow', name: 'Neige', bad: true, color: '#ecf0f1' };
+    if ([95, 96, 99].includes(code)) return { icon: 'bi-cloud-lightning-rain', name: 'Orage', bad: true, color: '#9b59b6' };
+    return { icon: 'bi-cloud', name: 'Inconnu', bad: false, color: '#bdc3c7' };
+}
+
+async function fetchAndDisplayWeather(lat, lon, role) {
+    try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FParis&forecast_days=5`);
+        const data = await res.json();
+
+        const daily = data.daily;
+        const container = document.getElementById('weatherDaysList');
+        if (!container) return;
+
+        let html = '';
+        for (let i = 0; i < daily.time.length; i++) {
+            const dateStr = daily.time[i];
+            const code = daily.weathercode[i];
+            const maxT = Math.round(daily.temperature_2m_max[i]);
+            const minT = Math.round(daily.temperature_2m_min[i]);
+            const w = getWeatherWMO(code);
+            const d = new Date(dateStr);
+            const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+
+            html += `
+                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:15px 10px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;">
+                    <span style="font-size:0.85rem; font-weight:600; text-transform:uppercase;">${dayName}</span>
+                    <i class="bi ${w.icon}" style="font-size:2.2rem; color:${w.color};"></i>
+                    <span style="font-size:0.85rem; font-weight:500;">${w.name}</span>
+                    <div style="display:flex; justify-content:center; gap:10px; font-size:0.85rem; width:100%;">
+                        <span style="color:var(--clr-text-light);">${minT}°</span>
+                        <span style="font-weight:700;">${maxT}°</span>
+                    </div>
+                </div>
+            `;
+
+            // SI ADMIN : on gère la création des alertes automatiques
+            if (role === 'admin' && w.bad) {
+                const targetDate = new Date(dateStr);
+                targetDate.setDate(targetDate.getDate() - 1);
+                targetDate.setHours(12, 0, 0, 0); // La veille à midi
+
+                if (targetDate > new Date()) {
+                    // Vérifier si une alerte existe déjà pour cette journée météo
+                    const existingSnap = await db.collection('espaces').doc(espaceId).collection('alerts')
+                        .where('weatherDate', '==', dateStr)
+                        .get();
+
+                    if (existingSnap.empty) {
+                        try {
+                            await db.collection('espaces').doc(espaceId).collection('alerts').add({
+                                message: `⚠️ Alerte Météo : ${w.name} prévus pour demain (${d.toLocaleDateString('fr-FR')}). Pensez à un plan B ou des activités d'intérieur !`,
+                                type: 'warning',
+                                severity: 'high',
+                                locked: true,
+                                scheduledAt: firebase.firestore.Timestamp.fromDate(targetDate),
+                                weatherDate: dateStr,
+                                createdBy: 'Météo Auto',
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                        } catch (err) {
+                            console.error("Erreur de création de l'alerte météo :", err);
+                        }
+                    }
+                }
+            }
+        }
+        container.innerHTML = html;
+
+    } catch (e) {
+        console.error("Météo error:", e);
+    }
+}
+
+document.getElementById('formSetLocation')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const loc = document.getElementById('meteoLocation').value.trim();
+    if (!loc) return;
+    const btn = document.getElementById('btnSetLocation');
+    btnLoading(btn, true);
+
+    try {
+        const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(loc)}&count=1&language=fr&format=json`);
+        const data = await res.json();
+        if (!data.results || data.results.length === 0) {
+            showToast("Ville non trouvée.", "warning");
+        } else {
+            const city = data.results[0];
+            await db.collection('espaces').doc(espaceId).update({
+                meteoLocation: loc,
+                meteoLocationName: `${city.name} (${city.country || ''})`,
+                meteoLat: city.latitude,
+                meteoLon: city.longitude
+            });
+            showToast("Lieu enregistré et météo mise à jour.", "success");
+        }
+    } catch (e) {
+        showToast("Erreur lors de la configuration de la météo.", "error");
+    }
+    btnLoading(btn, false);
+});
