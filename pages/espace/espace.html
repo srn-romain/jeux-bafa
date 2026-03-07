@@ -253,12 +253,14 @@
                     </div>
                   </div>
 
-                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
+                  <div style="display:grid; grid-template-columns:1fr; gap:12px; margin-top:12px;">
                     <div class="es-field">
-                      <label class="es-checkbox-label">
+                      <label class="es-checkbox-label"
+                        style="display:flex; align-items:center; gap:8px; cursor:pointer;">
                         <input type="checkbox" id="alertIsScheduled"
                           onchange="document.getElementById('scheduleInputs').classList.toggle('hidden', !this.checked)">
-                        <span style="color:var(--clr-text-light); font-size: 0.85rem;">Programmer l'affichage</span>
+                        <span style="color:var(--clr-text-light); font-size: 0.85rem; white-space: nowrap;">Programmer
+                          l'affichage</span>
                       </label>
                     </div>
                   </div>
@@ -276,10 +278,10 @@
                   </div>
 
                   <div class="es-field admin-only hidden" style="margin-top:12px;">
-                    <label class="es-checkbox-label">
-                      <input type="checkbox" id="alertLocked">
-                      <span style="color:var(--clr-text-light); font-size: 0.85rem;">Bloquer la suppression (directeur
-                        uniquement)</span>
+                    <label class="es-checkbox-label"
+                      style="display:flex; align-items:flex-start; gap:8px; cursor:pointer;">
+                      <input type="checkbox" id="alertLocked" style="margin-top: 3px;">
+                      <span style="color:var(--clr-text-light); font-size: 0.85rem;">Bloquer la suppression</span>
                     </label>
                   </div>
 
