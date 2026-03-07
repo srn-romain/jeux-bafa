@@ -251,6 +251,8 @@ function renderParticipantsTable(role) {
         filteredParticipants = filteredParticipants.filter(p => String(p.age) === filterAge);
     }
 
+    window.currentFilteredParticipants = filteredParticipants;
+
     if (filteredParticipants.length === 0) {
         const msg = participants.length > 0 ? "Aucun participant ne correspond à vos filtres." : "Aucun participant enregistré.";
         tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted" style="padding:24px;">${msg}</td></tr>`;
@@ -379,7 +381,65 @@ document.getElementById('btnExportImage')?.addEventListener('click', async () =>
         tableContainer.style.overflow = originalOverflow;
         tableContainer.style.width = originalWidth;
         tableContainer.style.maxWidth = originalMaxWidth;
+        btnLoading(btn, false);
+    }
+});
 
+document.getElementById('btnExportPdf')?.addEventListener('click', () => {
+    const btn = document.getElementById('btnExportPdf');
+    if (!btn) return;
+
+    try {
+        btnLoading(btn, true);
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        const coloTitle = document.getElementById('coloTitle')?.textContent.trim() || 'Colo';
+        const hasGroups = currentGroups.length > 0;
+
+        doc.setFontSize(18);
+        doc.text(`Liste des participants - ${coloTitle}`, 14, 20);
+
+        doc.setFontSize(10);
+        doc.text(`Généré le: ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, 14, 28);
+
+        const dataList = window.currentFilteredParticipants || participants || [];
+        const tableData = dataList.map(p => {
+            const g = hasGroups ? currentGroups.find(x => x.id === p.groupeId) : null;
+            return [
+                p.prenom || '',
+                p.nom || '',
+                `${p.age}`,
+                p.genre === 'masculin' ? 'Garçon' : 'Fille',
+                ...(hasGroups ? [g ? g.name : ''] : []),
+                (p.spec || []).join(', '),
+                p.note || ''
+            ];
+        });
+
+        const head = [
+            ['Prénom', 'Nom', 'Âge', 'Genre', ...(hasGroups ? ['Groupe'] : []), 'Spécificités', 'Remarques']
+        ];
+
+        doc.autoTable({
+            startY: 35,
+            head: head,
+            body: tableData,
+            theme: 'striped',
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [41, 128, 185] } // Code couleur approchant du primary
+        });
+
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        const finalY = doc.lastAutoTable.finalY || 35;
+        doc.text("Document généré via l'app de votre directeur préféré aka Romain ! Bisous", 14, finalY + 15);
+
+        doc.save(`participants-${coloTitle.replace(/[^a-z0-9]/gi, '_')}.pdf`);
+        showToast('PDF généré avec succès', 'success');
+    } catch (e) {
+        console.error('Export PDF error:', e);
+        showToast("Erreur lors de la génération du PDF", "error");
+    } finally {
         btnLoading(btn, false);
     }
 });

@@ -399,8 +399,12 @@
                 <option value="">Tous âges</option>
               </select>
 
-              <button class="es-btn es-btn--secondary" id="btnExportImage">
-                <span class="es-btn__text"><i class="bi bi-camera"></i> Enregistrer l'image</span>
+              <button class="es-btn es-btn--secondary" id="btnExportImage" style="margin-right: 8px;">
+                <span class="es-btn__text"><i class="bi bi-camera"></i> Image</span>
+                <span class="es-btn__spinner"></span>
+              </button>
+              <button class="es-btn es-btn--secondary" id="btnExportPdf">
+                <span class="es-btn__text"><i class="bi bi-file-pdf"></i> PDF</span>
                 <span class="es-btn__spinner"></span>
               </button>
             </div>
@@ -625,6 +629,9 @@
 
   <!-- html2canvas pour l'export PNG -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- jsPDF & autoTable pour l'export PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
