@@ -237,17 +237,11 @@ async function loadColos(user, role) {
         }
 
         grid.innerHTML = '';
-        let accessibleColos = [];
-
         for (const doc of snapshot.docs) {
             const colo = { id: doc.id, ...doc.data() };
 
             let accessStatus = role === 'admin' ? 'admin' : (accessMap[colo.id] || 'none');
             const nbAnims = animCounts[colo.id] || 0;
-
-            if (accessStatus === 'approved' || accessStatus === 'admin') {
-                accessibleColos.push(colo.id);
-            }
 
             // Compter participants (sous-collection)
             let nbParticipants = 0;
@@ -260,26 +254,6 @@ async function loadColos(user, role) {
         }
 
         grid.classList.remove('hidden');
-
-        // AUTO-REDIRECT A LA CONNEXION (si anim)
-        if (role === 'anim' && !sessionStorage.getItem('dashboardVisited')) {
-            sessionStorage.setItem('dashboardVisited', 'true');
-            if (accessibleColos.length === 1) {
-                localStorage.setItem('lastVisitedColo', accessibleColos[0]);
-                window.location.href = `espace.html?id=${accessibleColos[0]}`;
-                return;
-            } else if (accessibleColos.length > 1) {
-                const lastColo = localStorage.getItem('lastVisitedColo');
-                if (lastColo && accessibleColos.includes(lastColo)) {
-                    window.location.href = `espace.html?id=${lastColo}`;
-                    return;
-                }
-            }
-        } else {
-            // S'il revient manuellement au dashboard (bouton retour), on s'assure qu'au prochain refresh il ne sera pas re-redirigé de force,
-            // d'où l'utilisation de sessionStorage pour 'dashboardVisited'.
-            sessionStorage.setItem('dashboardVisited', 'true');
-        }
 
         if (role === 'anim') {
             subtitle.textContent = 'Clique sur une colonie pour demander ou accéder à son espace.';
@@ -354,8 +328,7 @@ function handleColoClick(colo, accessStatus) {
     currentColoData = colo;
 
     if (accessStatus === 'admin' || accessStatus === 'approved') {
-        // Accès direct → mémoriser choix et rediriger
-        localStorage.setItem('lastVisitedColo', colo.id);
+        // Accès direct → rediriger vers espace.html?id=...
         window.location.href = `espace.html?id=${colo.id}`;
         return;
     }
