@@ -1112,6 +1112,9 @@ document.getElementById('btnFinishViewNote')?.addEventListener('click', () => cl
 // GESTION DES ALERTES / ÉVÉNEMENTS
 // ----------------------------------------------------------------
 let alertsUnsubscribe = null;
+let lastAlertsData = [];
+let lastUserRole = '';
+let notifiedAlertIds = new Set();
 
 // ----------------------------------------------------------------
 // NOTIFICATIONS PUSH (SERVICE WORKER)
@@ -1136,7 +1139,7 @@ function sendLocalPush(alert) {
         title: "📢 Nouveau message BAFA",
         body: alert.message,
         icon: '/jeux-bafa/public/images/favicon.webp',
-        data: { url: window.location.href }
+        data: { url: window.location.href, id: alert.id }
     };
 
     if (navigator.serviceWorker.controller) {
@@ -1165,11 +1168,21 @@ function loadAlerts(coloId, role) {
                 snap.docChanges().forEach(change => {
                     if (change.type === "added") {
                         const alert = change.doc.data();
+                        alert.id = change.doc.id;
                         const scheduledTime = alert.scheduledAt ? (alert.scheduledAt.toDate ? alert.scheduledAt.toDate() : new Date(alert.scheduledAt)) : null;
                         const isNow = !scheduledTime || scheduledTime <= new Date();
-                        if (isNow) {
+                        if (isNow && !notifiedAlertIds.has(alert.id)) {
                             sendLocalPush(alert);
+                            notifiedAlertIds.add(alert.id);
                         }
+                    }
+                });
+            } else {
+                data.forEach(alert => {
+                    const scheduledTime = alert.scheduledAt ? (alert.scheduledAt.toDate ? alert.scheduledAt.toDate() : new Date(alert.scheduledAt)) : null;
+                    const isNow = !scheduledTime || scheduledTime <= new Date();
+                    if (isNow) {
+                        notifiedAlertIds.add(alert.id);
                     }
                 });
             }
@@ -1283,12 +1296,8 @@ function renderAlerts(alerts, role) {
     }
 }
 
-let lastAlertsData = [];
-let lastUserRole = '';
-let notifiedAlertIds = new Set();
-
 // Rafraîchir l'affichage toutes les 30 secondes pour activer les alertes programmées
-setInterval(() => {
+function checkAndTriggerAlerts() {
     if (typeof lastAlertsData !== 'undefined' && typeof lastUserRole !== 'undefined') {
         const now = new Date();
         // Vérifier si des alertes programmées doivent maintenant s'afficher et notifier
@@ -1301,7 +1310,17 @@ setInterval(() => {
         });
         renderAlerts(lastAlertsData, lastUserRole);
     }
-}, 30000);
+}
+
+setInterval(checkAndTriggerAlerts, 30000);
+
+// Écouter quand l'utilisateur réactive son téléphone ou revient sur l'onglet 
+// (Permet de faire "popper" la notification manquante dès le déverrouillage du téléphone)
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === 'visible') {
+        checkAndTriggerAlerts();
+    }
+});
 
 document.getElementById('formCreateAlert')?.addEventListener('submit', async (e) => {
     e.preventDefault();
