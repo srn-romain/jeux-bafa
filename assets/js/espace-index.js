@@ -386,7 +386,7 @@ document.getElementById('btnConfirmRequest')?.addEventListener('click', async ()
             return;
         }
 
-        await db.collection('accessRequests').add({
+        await db.collection('accessRequests').doc(`${currentUser.uid}_${currentColoId}`).set({
             userId: currentUser.uid,
             userEmail: currentUser.email,
             userName: currentUser.displayName || currentUser.email,

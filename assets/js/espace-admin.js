@@ -924,7 +924,7 @@ function buildRightsActionBtn(espace, access, status) {
 async function grantAccess(espaceId, espaceName) {
     if (!rightsUserId) return;
     try {
-        await db.collection('accessRequests').add({
+        await db.collection('accessRequests').doc(`${rightsUserId}_${espaceId}`).set({
             userId: rightsUserId,
             userEmail: document.getElementById('userRightsEmail').textContent || '',
             userName: rightsUserName || '',
@@ -1072,3 +1072,38 @@ async function deleteAdminGroupName(id, name) {
 function showAdminNote(note) {
     alert(note); // Utilisation simple pour l'admin, peut être amélioré avec une modale si nécessaire
 }
+
+// ----------------------------------------------------------------
+// FIX / MIGRATION SCRIPT FOR ACCESS REQUESTS
+// ----------------------------------------------------------------
+async function migrateOldAccessRequests() {
+    try {
+        const snap = await db.collection('accessRequests').get();
+        if (snap.empty) return;
+
+        let migratedCount = 0;
+        const batch = db.batch();
+
+        snap.forEach(doc => {
+            const data = doc.data();
+            const expectedId = `${data.userId}_${data.espaceId}`;
+            // Si l'ID actuel n'est pas userId_espaceId, on migre
+            if (doc.id !== expectedId && data.userId && data.espaceId) {
+                const newRef = db.collection('accessRequests').doc(expectedId);
+                batch.set(newRef, data); // Créer nouveau
+                batch.delete(doc.ref);   // Supprimer l'ancien
+                migratedCount++;
+            }
+        });
+
+        if (migratedCount > 0) {
+            await batch.commit();
+            console.log(`Migrated ${migratedCount} accessRequests to correctly formatted IDs.`);
+        }
+    } catch (e) {
+        console.error("Migration error: ", e);
+    }
+}
+
+// Lancement automatique à l'ouverture de la page admin (ou une seule fois)
+setTimeout(migrateOldAccessRequests, 2000);

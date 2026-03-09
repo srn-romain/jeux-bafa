@@ -743,7 +743,7 @@ function editParticipant(id) {
 
     // Si verrouillé et anim, on ne peut changer que la remarque
     const isLockedAnim = (currentRole === 'anim' && currentLocked);
-    ['pPrenom', 'pNom', 'pAge', 'pGenre', 'pGroup'].forEach(fId => {
+    ['pPrenom', 'pNom', 'pAge', 'pGenre', 'pGroup', 'pSpec'].forEach(fId => {
         const el = document.getElementById(fId);
         if (el) el.disabled = isLockedAnim;
     });
