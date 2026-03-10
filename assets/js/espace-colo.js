@@ -61,6 +61,13 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         const colo = { id: espaceDoc.id, ...espaceDoc.data() };
+        const visible = colo.visible !== false;
+
+        // SI ANIMATEUR : On bloque l'accès si la colo est masquée par le directeur
+        if (role === 'anim' && !visible) {
+            showAccessDenied('🔒', 'Bientôt disponible', 'Le directeur a temporairement masqué cet espace le temps de sa préparation.', true);
+            return;
+        }
 
         // Admin → accès direct
         if (role === 'admin') {
