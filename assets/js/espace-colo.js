@@ -1453,10 +1453,11 @@ function getWeatherWMO(code) {
 
 async function fetchAndDisplayWeather(lat, lon, role, locationName) {
     try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FParis&forecast_days=5`);
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&hourly=weathercode,temperature_2m&timezone=Europe%2FParis&forecast_days=5`);
         const data = await res.json();
 
         const daily = data.daily;
+        const hourly = data.hourly;
         const container = document.getElementById('weatherDaysList');
         if (!container) return;
 
@@ -1466,24 +1467,49 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
             const code = daily.weathercode[i];
             const maxT = Math.round(daily.temperature_2m_max[i]);
             const minT = Math.round(daily.temperature_2m_min[i]);
-            const w = getWeatherWMO(code);
+            const wTableau = getWeatherWMO(code);
             const d = new Date(dateStr);
             const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
 
+            // Extraction Matin (10h) et Après-midi (15h)
+            const morningIdx = i * 24 + 10;
+            const afternoonIdx = i * 24 + 15;
+
+            const wMorning = getWeatherWMO(hourly.weathercode[morningIdx]);
+            const wAfternoon = getWeatherWMO(hourly.weathercode[afternoonIdx]);
+            const tempMorning = Math.round(hourly.temperature_2m[morningIdx]);
+            const tempAfternoon = Math.round(hourly.temperature_2m[afternoonIdx]);
+
             html += `
-                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:15px 10px; text-align:center; display:flex; flex-direction:column; align-items:center; gap:8px;">
-                    <span style="font-size:0.85rem; font-weight:600; text-transform:uppercase;">${dayName}</span>
-                    <i class="bi ${w.icon}" style="font-size:2.2rem; color:${w.color};"></i>
-                    <span style="font-size:0.85rem; font-weight:500;">${w.name}</span>
-                    <div style="display:flex; justify-content:center; gap:10px; font-size:0.85rem; width:100%;">
-                        <span style="color:var(--clr-text-light);">${minT}°</span>
-                        <span style="font-weight:700;">${maxT}°</span>
+                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:15px 8px; text-align:center; display:flex; flex-direction:column; gap:10px; min-width:115px; flex:1;">
+                    <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--clr-text-light);">${dayName}</span>
+                    
+                    <div style="display:flex; gap:6px; justify-content:center;">
+                        <!-- Matin -->
+                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 4px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="font-size:0.6rem; text-transform:uppercase; opacity:0.5; font-weight:700;">Matin</span>
+                            <i class="bi ${wMorning.icon}" style="font-size:1.4rem; color:${wMorning.color};" title="${wMorning.name}"></i>
+                            <span style="font-size:0.85rem; font-weight:700;">${tempMorning}°</span>
+                        </div>
+                        
+                        <!-- Après-midi -->
+                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 4px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="font-size:0.6rem; text-transform:uppercase; opacity:0.5; font-weight:700;">Aprem</span>
+                            <i class="bi ${wAfternoon.icon}" style="font-size:1.4rem; color:${wAfternoon.color};" title="${wAfternoon.name}"></i>
+                            <span style="font-size:0.85rem; font-weight:700;">${tempAfternoon}°</span>
+                        </div>
+                    </div>
+                    
+                    <div style="display:flex; justify-content:center; gap:8px; font-size:0.7rem; opacity:0.6; font-weight:500;">
+                        <span>Min ${minT}°</span>
+                        <span>Max ${maxT}°</span>
                     </div>
                 </div>
             `;
 
             // SI ADMIN : on gère la création des alertes automatiques
-            if (role === 'admin' && w.bad) {
+            if (role === 'admin' && wTableau.bad) {
+                const w = wTableau; // Pour compatibilité avec le code suivant
                 const targetDate = new Date(dateStr);
                 targetDate.setDate(targetDate.getDate() - 1);
                 targetDate.setHours(12, 0, 0, 0); // La veille à midi
