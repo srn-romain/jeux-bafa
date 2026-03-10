@@ -753,8 +753,12 @@ async function loadDemandes() {
                     </div>
                 </td>
                 <td style="text-align: center; vertical-align: middle;">
-                    <button class="es-btn es-btn--ghost" style="color:var(--clr-danger); padding:6px 10px; border-radius:50%; margin:0 auto; opacity:0.8; transition:all 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';" onmouseout="this.style.opacity='0.8'; this.style.transform='scale(1)';" onclick="deleteDemande('${d.id}')" title="Supprimer définitivement la demande">
-                        <i class="bi bi-trash" style="font-size:1.1rem;"></i>
+                    <button class="es-btn es-btn--ghost" style="color:var(--clr-danger); padding:6px 10px; border-radius:50%; margin:0 auto; opacity:0.8; transition:all 0.2s; outline:none; box-shadow:none; background:transparent; border:none;"
+                        onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';"
+                          onmouseout="this.style.opacity='0.8'; this.style.transform='scale(1)';"
+                          onfocus="this.blur()"
+                          onclick="deleteDemande('${d.id}')" title="Supprimer définitivement la demande">
+                          <i class="bi bi-trash" style="font-size:1.1rem;"></i>
                     </button>
                 </td>
             </tr>
