@@ -1487,9 +1487,8 @@ input:checked+.es-slider:before {
 }
 
 .es-table__actions {
-  display: flex;
-  gap: 6px;
-  align-items: center;
+  /* Retrait du flex direct sur la cellule td pour ne pas casser la hauteur du tableau */
+  white-space: nowrap;
 }
 
 /* ================================================================

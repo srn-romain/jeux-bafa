@@ -696,24 +696,31 @@ async function loadDemandes() {
                     <strong>${d.userName || ''}</strong><br>
                     <span style="font-size:0.78rem;color:var(--clr-text-muted)">${d.userEmail || ''}</span>
                 </td>
-                <td>${d.espaceName || d.espaceId || ''}</td>
-                <td style="font-size:0.82rem;color:var(--clr-text-muted);">
+                <td style="text-align: center;">${d.espaceName || d.espaceId || ''}</td>
+                <td style="text-align: center; font-size:0.82rem;color:var(--clr-text-muted);">
                     ${d.requestedAt ? new Date(d.requestedAt.toDate()).toLocaleDateString('fr-FR') : '–'}
                 </td>
-                <td>
+                <td style="text-align: center;">
                     <span class="es-badge ${d.status === 'pending' ? 'es-badge--pending' : d.status === 'approved' ? 'es-badge--approved' : 'es-badge--refused'}">
                         ${d.status === 'pending' ? '⏳ En attente' : d.status === 'approved' ? '✅ Validé' : '❌ Refusé'}
                     </span>
                 </td>
-                <td class="es-table__actions">
-                    ${d.status === 'pending' ? `
-                        <button class="es-btn es-btn--success es-btn--sm" onclick="reviewDemande('${d.id}', 'approved')">
-                            <i class="bi bi-check-lg"></i> Valider
-                        </button>
-                        <button class="es-btn es-btn--danger es-btn--sm" onclick="reviewDemande('${d.id}', 'refused')">
-                            <i class="bi bi-x-lg"></i> Refuser
-                        </button>
-                    ` : `<button class="es-btn es-btn--ghost es-btn--sm" onclick="reviewDemande('${d.id}', 'pending')">Remettre en attente</button>`}
+                <td class="es-table__actions" style="vertical-align: middle;">
+                    <div style="display:flex; gap:6px; align-items:center; justify-content: center;">
+                        ${d.status === 'pending' ? `
+                            <button class="es-btn es-btn--success es-btn--sm" onclick="reviewDemande('${d.id}', 'approved')">
+                                <i class="bi bi-check-lg"></i> Valider
+                            </button>
+                            <button class="es-btn es-btn--danger es-btn--sm" onclick="reviewDemande('${d.id}', 'refused')">
+                                <i class="bi bi-x-lg"></i> Refuser
+                            </button>
+                        ` : `<button class="es-btn es-btn--ghost es-btn--sm" onclick="reviewDemande('${d.id}', 'pending')">Remettre en attente</button>`}
+                    </div>
+                </td>
+                <td style="text-align: center; vertical-align: middle;">
+                    <button class="es-btn es-btn--ghost" style="color:var(--clr-danger); padding:6px 10px; border-radius:50%; margin:0 auto; opacity:0.8; transition:all 0.2s;" onmouseover="this.style.opacity='1'; this.style.transform='scale(1.1)';" onmouseout="this.style.opacity='0.8'; this.style.transform='scale(1)';" onclick="deleteDemande('${d.id}')" title="Supprimer définitivement la demande">
+                        <i class="bi bi-trash" style="font-size:1.1rem;"></i>
+                    </button>
                 </td>
             </tr>
         `).join('');
@@ -742,6 +749,39 @@ async function reviewDemande(id, status) {
     }
 }
 
+let pendingDeleteDemandeId = null;
+
+function deleteDemande(id) {
+    pendingDeleteDemandeId = id;
+    openModal('overlayConfirmDeleteDemande');
+}
+
+document.getElementById('btnCancelDeleteDemande')?.addEventListener('click', () => {
+    pendingDeleteDemandeId = null;
+    closeModal('overlayConfirmDeleteDemande');
+});
+
+document.getElementById('btnConfirmDeleteDemande')?.addEventListener('click', async () => {
+    if (!pendingDeleteDemandeId) return;
+
+    const id = pendingDeleteDemandeId;
+    const btn = document.getElementById('btnConfirmDeleteDemande');
+    btnLoading(btn, true);
+
+    try {
+        await db.collection('accessRequests').doc(id).delete();
+        showToast("Demande supprimée.", "success");
+        loadDemandes();
+        closeModal('overlayConfirmDeleteDemande');
+    } catch (err) {
+        console.error('deleteDemande:', err);
+        showToast('Erreur lors de la suppression.', 'error');
+    } finally {
+        btnLoading(btn, false);
+        pendingDeleteDemandeId = null;
+    }
+});
+
 // ================================================================
 // ONGLET UTILISATEURS
 // ================================================================
@@ -769,22 +809,24 @@ async function loadUsers() {
         tbody.innerHTML = users.map(u => `
             <tr>
                 <td style="font-size:0.87rem;">${u.email || ''}</td>
-                <td>${u.displayName || '<span style="color:var(--clr-text-light)">–</span>'}</td>
-                <td style="font-size:0.82rem;color:var(--clr-text-muted);">${formatFullDate(u.lastLogin)}</td>
-                <td>
+                <td style="text-align: center;">${u.displayName || '<span style="color:var(--clr-text-light)">–</span>'}</td>
+                <td style="text-align: center; font-size:0.82rem;color:var(--clr-text-muted);">${formatFullDate(u.lastLogin)}</td>
+                <td style="text-align: center;">
                     <span class="es-badge ${u.role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}">
                         ${u.role === 'admin' ? '👑 Admin' : '🎨 Anim'}
                     </span>
                 </td>
-                <td class="es-table__actions">
-                    ${u.id !== currentAdminUser?.uid ? `
-                        <button class="es-btn es-btn--sm"
-                                style="color:var(--clr-info);border:1.5px solid rgba(41,128,185,0.3);background:rgba(41,128,185,0.08);"
-                                onclick="openUserRightsPanel('${u.id}', ${escapeHtml(JSON.stringify(u.email || ''))}, ${escapeHtml(JSON.stringify(u.displayName || u.email || ''))})"
-                        >
-                            <i class="bi bi-shield-check"></i> Gérer droits
-                        </button>
-                    ` : '<span style="font-size:0.78rem;color:var(--clr-text-light)">Vous</span>'}
+                <td class="es-table__actions" style="vertical-align: middle;">
+                    <div style="display:flex; gap:6px; align-items:center; justify-content: center;">
+                        ${u.id !== currentAdminUser?.uid ? `
+                            <button class="es-btn es-btn--sm"
+                                    style="color:var(--clr-info);border:1.5px solid rgba(41,128,185,0.3);background:rgba(41,128,185,0.08);"
+                                    onclick="openUserRightsPanel('${u.id}', ${escapeHtml(JSON.stringify(u.email || ''))}, ${escapeHtml(JSON.stringify(u.displayName || u.email || ''))})"
+                            >
+                                <i class="bi bi-shield-check"></i> Gérer droits
+                            </button>
+                        ` : '<span style="font-size:0.78rem;color:var(--clr-text-light)">Vous</span>'}
+                    </div>
                 </td>
             </tr>
         `).join('');

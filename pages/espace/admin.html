@@ -138,15 +138,17 @@
                             <thead>
                                 <tr>
                                     <th>Animateur</th>
-                                    <th>Colonie</th>
-                                    <th>Date</th>
-                                    <th>Statut</th>
-                                    <th>Actions</th>
+                                    <th style="text-align: center;">Colonie</th>
+                                    <th style="text-align: center;">Date</th>
+                                    <th style="text-align: center;">Statut</th>
+                                    <th style="text-align: center;">Actions</th>
+                                    <th style="text-align: center; width: 60px;" title="Supprimer la demande"><i
+                                            class="bi bi-trash" style="opacity:0.7;"></i></th>
                                 </tr>
                             </thead>
                             <tbody id="demandesTbody">
                                 <tr>
-                                    <td colspan="5" class="text-center text-muted" style="padding:24px;">Chargement…
+                                    <td colspan="6" class="text-center text-muted" style="padding:24px;">Chargement…
                                     </td>
                                 </tr>
                             </tbody>
@@ -177,10 +179,10 @@
                             <thead>
                                 <tr>
                                     <th>Email</th>
-                                    <th>Nom</th>
-                                    <th>Dernière connexion</th>
-                                    <th>Rôle</th>
-                                    <th>Actions</th>
+                                    <th style="text-align: center;">Nom</th>
+                                    <th style="text-align: center;">Dernière connexion</th>
+                                    <th style="text-align: center;">Rôle</th>
+                                    <th style="text-align: center;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="usersTbody">
@@ -530,6 +532,28 @@
             </div>
             <div class="es-modal__footer">
                 <button class="es-btn es-btn--primary" id="btnFinishGroupsAdmin">Terminer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal : Confirmer la suppression d'une demande -->
+    <div class="es-overlay hidden" id="overlayConfirmDeleteDemande" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:350px; text-align:center;">
+            <div class="es-modal__body" style="padding-top:20px; padding-bottom:10px;">
+                <div style="font-size: 3rem; color: var(--clr-danger); margin-bottom: 5px; line-height: 1;">
+                    <i class="bi bi-exclamation-octagon"></i>
+                </div>
+                <h2 style="font-size:1.25rem; font-weight:700; margin-bottom:15px;">Supprimer la demande ?</h2>
+                <p style="font-size:0.85rem; color:var(--clr-text-muted); line-height:1.5;">
+                    Cette action est définitive. C'est comme si l'animateur n'avait jamais rien demandé.
+                </p>
+            </div>
+            <div class="es-modal__footer" style="justify-content:center; border-top:none; padding-top:0;">
+                <button class="es-btn es-btn--ghost" id="btnCancelDeleteDemande">Annuler</button>
+                <button class="es-btn es-btn--danger" id="btnConfirmDeleteDemande">
+                    <span class="es-btn__text">Supprimer</span>
+                    <span class="es-btn__spinner"></span>
+                </button>
             </div>
         </div>
     </div>
