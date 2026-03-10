@@ -14,6 +14,7 @@ let currentRole = null;
 let currentLocked = true;
 let participants = [];
 let currentGroups = []; // { id, name }
+let isScheduledAlertsExpanded = false;
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -1292,7 +1293,18 @@ function renderAlerts(alerts, role) {
     if (scheduledContainer && scheduledList) {
         if (futureAlerts.length > 0) {
             scheduledContainer.classList.remove('hidden');
-            scheduledList.innerHTML = futureAlerts.map(alert => {
+
+            // Tri : de la plus proche (bientôt) à la plus lointaine
+            futureAlerts.sort((a, b) => {
+                const da = a.scheduledAt.toDate ? a.scheduledAt.toDate() : new Date(a.scheduledAt);
+                const db = b.scheduledAt.toDate ? b.scheduledAt.toDate() : new Date(b.scheduledAt);
+                return da - db;
+            });
+
+            // Affichage partiel si non déplié
+            const visibleAlerts = isScheduledAlertsExpanded ? futureAlerts : futureAlerts.slice(0, 3);
+
+            let html = visibleAlerts.map(alert => {
                 const date = alert.scheduledAt.toDate ? alert.scheduledAt.toDate() : new Date(alert.scheduledAt);
                 const dateStr = date.toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
                 return `
@@ -1316,10 +1328,28 @@ function renderAlerts(alerts, role) {
                     </div>
                 `;
             }).join('');
+
+            // Bouton Voir plus / Replier
+            if (futureAlerts.length > 3) {
+                html += `
+                    <button onclick="toggleScheduledAlerts()" style="background:none; border:none; color:var(--clr-primary); font-size:0.75rem; font-weight:700; cursor:pointer; padding:8px 0; margin-top:4px; text-transform:uppercase; letter-spacing:0.5px; display:flex; align-items:center; gap:5px; align-self:center;">
+                        ${isScheduledAlertsExpanded ? '<i class="bi bi-chevron-up"></i> Replier' : `<i class="bi bi-chevron-down"></i> Voir plus (${futureAlerts.length - 3})`}
+                    </button>
+                `;
+            }
+
+            scheduledList.innerHTML = html;
         } else {
             scheduledContainer.classList.add('hidden');
             scheduledList.innerHTML = '';
         }
+    }
+}
+
+function toggleScheduledAlerts() {
+    isScheduledAlertsExpanded = !isScheduledAlertsExpanded;
+    if (lastAlertsData && lastUserRole) {
+        renderAlerts(lastAlertsData, lastUserRole);
     }
 }
 
