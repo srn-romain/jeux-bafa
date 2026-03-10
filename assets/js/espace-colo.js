@@ -1245,12 +1245,14 @@ function renderAlerts(alerts, role) {
             const parsedMessage = parseMarkdown(alert.message);
 
             let dateInfo = '';
+            let isTodayMsg = false;
             const timestamp = alert.scheduledAt || alert.createdAt;
             if (timestamp) {
                 const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
                 const isToday = d.toDateString() === now.toDateString();
                 const timeStr = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
                 if (isToday) {
+                    isTodayMsg = true;
                     dateInfo = ` à ${timeStr}`;
                 } else {
                     const dateStr = d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
@@ -1258,13 +1260,17 @@ function renderAlerts(alerts, role) {
                 }
             }
 
+            const postedStr = isTodayMsg
+                ? `Posté aujourd'hui par ${alert.createdBy || 'Système'}${dateInfo}`
+                : `Posté par ${alert.createdBy || 'Système'}${dateInfo}`;
+
             return `
                 <div class="es-alert-item" style="display:flex; align-items:flex-start; justify-content:space-between; padding:13px 18px; border-radius:12px; border:1px solid ${theme.border}; background:${theme.bg}; color:${theme.color}; gap: 15px; backdrop-filter: blur(8px); transition: all 0.3s ease; width: 100%; box-sizing: border-box; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                     <div style="display:flex; align-items:flex-start; gap:14px; flex: 1; min-width: 0;">
                         <i class="bi ${icon}" style="font-size:1.35rem; flex-shrink: 0; margin-top: 2px;"></i>
                         <div style="display:flex; flex-direction:column; gap:4px; flex: 1; min-width: 0;">
                             <span style="font-weight:600; font-size:0.96rem; line-height:1.5; overflow-wrap: anywhere; word-break: normal; white-space: normal;">${parsedMessage}</span>
-                            <span style="font-size:0.75rem; opacity:0.8; font-style:italic;">Posté par ${alert.createdBy || 'Système'}${dateInfo}</span>
+                            <span style="font-size:0.75rem; opacity:0.8; font-style:italic;">${postedStr}</span>
                         </div>
                     </div>
                     ${canDelete ? `
