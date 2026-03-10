@@ -970,41 +970,100 @@ async function loadAnimateurs(coloId) {
             }
         }
 
-        if (userIds.length === 0) {
+        // 2. Si ADMIN : Récupérer aussi les demandes EN ATTENTE
+        const pendingAnimsData = [];
+        if (currentRole === 'admin') {
+            const pendingSnap = await db.collection('accessRequests')
+                .where('espaceId', '==', coloId)
+                .where('status', '==', 'pending')
+                .get();
+
+            for (const doc of pendingSnap.docs) {
+                const req = doc.data();
+                // On récupère les infos de l'user pour avoir sa photo etc.
+                const uDoc = await db.collection('users').doc(req.userId).get();
+                if (uDoc.exists) {
+                    pendingAnimsData.push({
+                        id: uDoc.id,
+                        requestId: doc.id,
+                        isPending: true,
+                        ...uDoc.data()
+                    });
+                }
+            }
+        }
+
+        // 3. Récupérer les données de chaque utilisateur APPROUVÉ
+        const approvedAnimsData = [];
+        for (const uid of userIds) {
+            const uDoc = await db.collection('users').doc(uid).get();
+            if (uDoc.exists) {
+                approvedAnimsData.push({ id: uDoc.id, isPending: false, ...uDoc.data() });
+            }
+        }
+
+        const allAnims = [...pendingAnimsData, ...approvedAnimsData];
+
+        if (allAnims.length === 0) {
             listEl.innerHTML = `<div class="text-center text-muted" style="padding:24px;">Aucun animateur sur cet espace.</div>`;
             return;
         }
 
-        // 2. Récupérer les données de chaque utilisateur
-        const animsData = [];
-        for (const uid of userIds) {
-            const uDoc = await db.collection('users').doc(uid).get();
-            if (uDoc.exists) {
-                animsData.push({ id: uDoc.id, ...uDoc.data() });
-            }
-        }
-
-        // 3. Afficher
-        listEl.innerHTML = animsData.map(anim => `
-            <div class="es-anim-item">
+        // 4. Afficher
+        listEl.innerHTML = allAnims.map(anim => `
+            <div class="es-anim-item ${anim.isPending ? 'es-anim-item--pending' : ''}">
                 <div class="es-anim-item__avatar">
                     ${anim.photoURL
                 ? `<img src="${anim.photoURL}" alt="${anim.displayName}">`
                 : `<i class="bi bi-person-circle" style="font-size:24px; opacity:0.5;"></i>`}
                 </div>
                 <div class="es-anim-item__info">
-                    <div class="es-anim-item__name">${anim.displayName || 'Anonyme'}</div>
+                    <div class="es-anim-item__name">
+                        ${anim.displayName || 'Anonyme'}
+                        ${anim.isPending ? '<span style="font-size:0.65rem; color:var(--clr-warning); margin-left:5px; font-weight:800; text-transform:uppercase;">(En attente)</span>' : ''}
+                    </div>
                     <div class="es-anim-item__email">${anim.email || ''}</div>
                 </div>
-                <div class="es-badge ${anim.role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}">
-                    ${anim.role === 'admin' ? 'Directeur' : 'Animateur'}
-                </div>
+                
+                ${anim.isPending ? `
+                    <div style="display:flex; gap:6px;">
+                        <button class="es-btn es-btn--sm" style="background:var(--clr-success); color:#fff; padding:4px 8px;" 
+                                onclick="handleRequestStatus('${anim.requestId}', 'approved')">
+                            <i class="bi bi-check-lg"></i>
+                        </button>
+                        <button class="es-btn es-btn--sm" style="background:var(--clr-danger); color:#fff; padding:4px 8px;" 
+                                onclick="handleRequestStatus('${anim.requestId}', 'refused')">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                ` : `
+                    <div class="es-badge ${anim.role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}">
+                        ${anim.role === 'admin' ? 'Directeur' : 'Animateur'}
+                    </div>
+                `}
             </div>
         `).join('');
 
     } catch (err) {
         console.error('loadAnimateurs error:', err);
         listEl.innerHTML = `<div class="text-center text-danger" style="padding:24px;">Erreur lors du chargement de l'équipe.</div>`;
+    }
+}
+
+async function handleRequestStatus(requestId, newStatus) {
+    if (!confirm(newStatus === 'approved' ? 'Accepter cette demande ?' : 'Refuser cette demande ?')) return;
+
+    try {
+        await db.collection('accessRequests').doc(requestId).update({
+            status: newStatus,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast(newStatus === 'approved' ? 'Accès accordé.' : 'Accès refusé.', 'success');
+        // Recharger la liste
+        loadAnimateurs(espaceId);
+    } catch (err) {
+        console.error('handleRequestStatus error:', err);
+        showToast('Erreur lors du traitement.', 'error');
     }
 }
 // ----------------------------------------------------------------

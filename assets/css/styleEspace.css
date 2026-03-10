@@ -2075,6 +2075,13 @@ input:checked+.es-slider:before {
   border-color: var(--clr-surface-4);
 }
 
+.es-anim-item--pending {
+  border-style: dashed;
+  border-color: var(--clr-warning);
+  background: rgba(255, 165, 0, 0.05);
+  opacity: 0.8;
+}
+
 .es-anim-item__avatar {
   width: 46px;
   height: 46px;
