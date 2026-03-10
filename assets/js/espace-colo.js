@@ -1241,7 +1241,8 @@ function renderAlerts(alerts, role) {
             else if (alert.type === 'activity') icon = 'bi-calendar-event';
             else if (alert.type === 'warning') icon = 'bi-shield-exclamation';
 
-            const canDelete = role === 'admin' || !alert.locked;
+            const isWeatherAlert = alert.createdBy === 'Météo Auto';
+            const canDelete = role === 'admin' || (!alert.locked && !isWeatherAlert);
             const parsedMessage = parseMarkdown(alert.message);
 
             let dateInfo = '';
@@ -1303,9 +1304,15 @@ function renderAlerts(alerts, role) {
                                 <span style="font-size:0.75rem; opacity:0.6;">Prévu pour le ${dateStr}</span>
                             </div>
                         </div>
+                        ${(role === 'admin' || alert.createdBy !== 'Météo Auto') ? `
                         <button onclick="deleteAlert('${alert.id}')" style="background:none; border:none; color:var(--clr-danger); cursor:pointer; padding:5px; opacity:0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" title="Annuler la programmation">
                             <i class="bi bi-trash"></i>
                         </button>
+                        ` : `
+                        <div style="padding:5px; opacity:0.35;" title="Programmé par la météo">
+                            <i class="bi bi-lock-fill"></i>
+                        </div>
+                        `}
                     </div>
                 `;
             }).join('');
