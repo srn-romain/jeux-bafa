@@ -1471,32 +1471,42 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
             const d = new Date(dateStr);
             const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
 
-            // Extraction Matin (10h) et Après-midi (15h)
+            // Extraction Matin (10h), Après-midi (15h) et Soirée (20h)
             const morningIdx = i * 24 + 10;
             const afternoonIdx = i * 24 + 15;
+            const eveningIdx = i * 24 + 20;
 
             const wMorning = getWeatherWMO(hourly.weathercode[morningIdx]);
             const wAfternoon = getWeatherWMO(hourly.weathercode[afternoonIdx]);
+            const wEvening = getWeatherWMO(hourly.weathercode[eveningIdx]);
             const tempMorning = Math.round(hourly.temperature_2m[morningIdx]);
             const tempAfternoon = Math.round(hourly.temperature_2m[afternoonIdx]);
+            const tempEvening = Math.round(hourly.temperature_2m[eveningIdx]);
 
             html += `
-                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:15px 8px; text-align:center; display:flex; flex-direction:column; gap:10px; min-width:115px; flex:1;">
+                <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:15px 8px; text-align:center; display:flex; flex-direction:column; gap:10px; min-width:160px; flex:1;">
                     <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--clr-text-light);">${dayName}</span>
                     
                     <div style="display:flex; gap:6px; justify-content:center;">
                         <!-- Matin -->
                         <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 4px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
                             <span style="font-size:0.6rem; text-transform:uppercase; opacity:0.5; font-weight:700;">Matin</span>
-                            <i class="bi ${wMorning.icon}" style="font-size:1.4rem; color:${wMorning.color};" title="${wMorning.name}"></i>
-                            <span style="font-size:0.85rem; font-weight:700;">${tempMorning}°</span>
+                            <i class="bi ${wMorning.icon}" style="font-size:1.3rem; color:${wMorning.color};" title="${wMorning.name}"></i>
+                            <span style="font-size:0.8rem; font-weight:700;">${tempMorning}°</span>
                         </div>
                         
                         <!-- Après-midi -->
                         <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 4px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
                             <span style="font-size:0.6rem; text-transform:uppercase; opacity:0.5; font-weight:700;">Aprem</span>
-                            <i class="bi ${wAfternoon.icon}" style="font-size:1.4rem; color:${wAfternoon.color};" title="${wAfternoon.name}"></i>
-                            <span style="font-size:0.85rem; font-weight:700;">${tempAfternoon}°</span>
+                            <i class="bi ${wAfternoon.icon}" style="font-size:1.3rem; color:${wAfternoon.color};" title="${wAfternoon.name}"></i>
+                            <span style="font-size:0.8rem; font-weight:700;">${tempAfternoon}°</span>
+                        </div>
+
+                        <!-- Soirée -->
+                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 4px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
+                            <span style="font-size:0.6rem; text-transform:uppercase; opacity:0.5; font-weight:700;">Soir</span>
+                            <i class="bi ${wEvening.icon}" style="font-size:1.3rem; color:${wEvening.color};" title="${wEvening.name}"></i>
+                            <span style="font-size:0.8rem; font-weight:700;">${tempEvening}°</span>
                         </div>
                     </div>
                     
