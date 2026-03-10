@@ -167,7 +167,61 @@ auth.onAuthStateChanged(async (user) => {
         });
     });
 
+    // Écouter le message global du directeur
+    db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
+        const wrap = document.getElementById('dashDirectorMsgWrap');
+        const viewAdmin = document.getElementById('dashDirectorMsgAdmin');
+        const viewAnim = document.getElementById('dashDirectorMsgAnim');
+        const textArea = document.getElementById('inputDirectorMsg');
+        const textDisplay = document.getElementById('dashDirectorMsgText');
+
+        if (doc.exists && doc.data().directorMessage) {
+            const msg = doc.data().directorMessage;
+            wrap.classList.remove('hidden');
+
+            if (role === 'admin') {
+                viewAdmin.classList.remove('hidden');
+                viewAnim.classList.add('hidden');
+                // On n'écrase pas le textarea s'il est focus pour laisser l'admin écrire
+                if (document.activeElement !== textArea) textArea.value = msg;
+            } else {
+                viewAnim.classList.remove('hidden');
+                viewAdmin.classList.add('hidden');
+                textDisplay.textContent = msg;
+            }
+        } else {
+            // Pas de message ou supprimé
+            if (role === 'admin') {
+                wrap.classList.remove('hidden');
+                viewAdmin.classList.remove('hidden');
+                viewAnim.classList.add('hidden');
+            } else {
+                wrap.classList.add('hidden');
+            }
+        }
+    });
+
     loadColos(user, role);
+});
+
+// Listener enregistrement message directeur
+document.getElementById('btnSaveDirectorMsg')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveDirectorMsg');
+    const msg = document.getElementById('inputDirectorMsg').value.trim();
+
+    btnLoading(btn, true);
+    try {
+        await db.collection('globalSettings').doc('dashboard').set({
+            directorMessage: msg,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast("Message direction mis à jour.", "success");
+    } catch (err) {
+        console.error("Save director msg:", err);
+        showToast("Erreur lors de l'enregistrement.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
 });
 
 // Listener toggle stats (Admins seulement car visible que pour eux)

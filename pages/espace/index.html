@@ -230,6 +230,38 @@
                     </div>
                 </div>
 
+                <!-- Message du Directeur -->
+                <div id="dashDirectorMsgWrap" class="hidden" style="margin-bottom: 24px;">
+                    <!-- Vue Animateur -->
+                    <div id="dashDirectorMsgAnim" class="hidden"
+                        style="background:rgba(166,216,102,0.12); border:1.5px solid rgba(166,216,102,0.25); border-radius:var(--radius-lg); padding:16px; display:flex; align-items:flex-start; gap:16px;">
+                        <div style="font-size:1.8rem;">📢</div>
+                        <div style="flex:1;">
+                            <div
+                                style="font-size:0.7rem; text-transform:uppercase; font-weight:800; color:#a6d866; margin-bottom:4px; letter-spacing:0.5px;">
+                                Message de la direction</div>
+                            <div id="dashDirectorMsgText"
+                                style="font-size:0.95rem; color:var(--clr-text); line-height:1.5; white-space: pre-wrap;">
+                                …</div>
+                        </div>
+                    </div>
+                    <!-- Vue Admin -->
+                    <div id="dashDirectorMsgAdmin" class="hidden"
+                        style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-lg); padding:16px;">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <div
+                                style="font-size:0.7rem; text-transform:uppercase; font-weight:800; color:var(--clr-text-muted); letter-spacing:0.5px;">
+                                Édition du message global (Visible par tous les anims)</div>
+                            <button id="btnSaveDirectorMsg" class="es-btn es-btn--sm es-btn--primary"
+                                style="padding:4px 12px; font-size:0.75rem;">Enregistrer</button>
+                        </div>
+                        <textarea id="inputDirectorMsg" class="es-input"
+                            style="min-height:80px; font-size:0.9rem; background:rgba(0,0,0,0.2);"
+                            placeholder="Écris ici un message pour tes animateurs..."></textarea>
+                    </div>
+                </div>
+
                 <!-- Loader -->
                 <div class="es-loader" id="colosLoader">
                     <div class="es-spinner"></div>
