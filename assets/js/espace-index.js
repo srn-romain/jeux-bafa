@@ -239,6 +239,10 @@ async function loadColos(user, role) {
         grid.innerHTML = '';
         for (const doc of snapshot.docs) {
             const colo = { id: doc.id, ...doc.data() };
+            const visible = colo.visible !== false;
+
+            // SI ANIMATEUR : On cache totalement si non visible
+            if (role === 'anim' && !visible) continue;
 
             let accessStatus = role === 'admin' ? 'admin' : (accessMap[colo.id] || 'none');
             const nbAnims = animCounts[colo.id] || 0;
@@ -295,13 +299,30 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         ? '<i class="bi bi-unlock-fill" style="color:var(--clr-success)"></i> Accès libre'
         : '<i class="bi bi-lock-fill" style="color:var(--clr-text-light)"></i> Accès restreint';
 
+    const visible = colo.visible !== false;
+
     card.innerHTML = `
         <div class="es-colo-card__header">
             <div class="es-colo-card__emoji">${emoji}</div>
             <div>
-                <div class="es-colo-card__name">${colo.nom || 'Sans nom'}</div>
+                <div class="es-colo-card__name">
+                    ${colo.nom || 'Sans nom'}
+                    ${!visible ? `
+                        <span style="background:rgba(255,165,0,0.15);color:#ff9f43;border:1px solid rgba(255,165,0,0.3);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;">
+                            <i class="bi bi-eye-slash-fill"></i> Caché
+                        </span>
+                    ` : ''}
+                </div>
                 <div class="es-colo-card__dates">${dateStr}</div>
             </div>
+            ${role === 'admin' ? `
+                <button class="es-btn es-btn--sm es-btn--ghost" 
+                        title="Changer la visibilité pour les animateurs"
+                        style="margin-left:auto; z-index:10; padding:4px 8px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05);"
+                        onclick="event.stopPropagation(); toggleColoVisibility('${colo.id}', ${visible})">
+                    <i class="bi bi-${visible ? 'eye' : 'eye-slash'}" style="color:${visible ? 'var(--clr-success)' : '#ff9f43'}"></i>
+                </button>
+            ` : ''}
         </div>
         <div class="es-colo-card__body">
             <div class="es-colo-card__desc">${colo.description || 'Aucune description.'}</div>
@@ -408,3 +429,16 @@ document.getElementById('btnConfirmRequest')?.addEventListener('click', async ()
         btnLoading(btn, false);
     }
 });
+
+async function toggleColoVisibility(coloId, currentVisible) {
+    const newVisible = !currentVisible;
+    try {
+        await db.collection('espaces').doc(coloId).update({ visible: newVisible });
+        showToast(newVisible ? "La colonie est maintenant visible pour les animateurs." : "La colonie est désormais cachée pour les animateurs.", "success");
+        // Recharger le dashboard
+        loadColos(currentUser, currentRole);
+    } catch (err) {
+        console.error('toggleColoVisibility dashboard:', err);
+        showToast('Erreur lors du changement de visibilité.', 'error');
+    }
+}

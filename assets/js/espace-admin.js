@@ -144,12 +144,20 @@ function buildColoAdminCard(colo, nbParticipants) {
         ? `${formatDate(colo.dateDebut)} → ${formatDate(colo.dateFin)}`
         : 'Dates non définies';
 
+    const visible = colo.visible !== false; // true par défaut
     const locked = colo.participantsLocked !== false; // true par défaut
 
     div.innerHTML = `
         <div class="es-colo-admin-card__header">
             <div>
-                <div class="es-colo-admin-card__title">${colo.emoji || '🏕️'} ${colo.nom || 'Sans nom'}</div>
+                <div class="es-colo-admin-card__title">
+                    ${colo.emoji || '🏕️'} ${colo.nom || 'Sans nom'}
+                    ${!visible ? `
+                        <span style="background:rgba(255,165,0,0.15);color:#ff9f43;border:1px solid rgba(255,165,0,0.3);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;">
+                            <i class="bi bi-eye-slash-fill"></i> Caché
+                        </span>
+                    ` : ''}
+                </div>
                 <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:2px;display:flex;align-items:center;gap:8px;">
                     ${dateStr} · ${nbParticipants} participant${nbParticipants !== 1 ? 's' : ''}
                     <span style="
@@ -163,6 +171,13 @@ function buildColoAdminCard(colo, nbParticipants) {
                 </div>
             </div>
             <div class="es-colo-admin-card__actions">
+                <button class="es-btn es-btn--sm"
+                        title="Invisibilité pour les animateurs"
+                        style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);"
+                        onclick="toggleColoVisibility('${colo.id}', ${visible})">
+                    <i class="bi bi-${visible ? 'eye' : 'eye-slash'}"></i>
+                </button>
+                <div style="width:1px;height:24px;background:rgba(255,255,255,0.1);margin:0 4px;"></div>
                 <button class="es-btn es-btn--sm"
                         title="${locked ? 'Déverrouiller la gestion des participants pour les anims' : 'Verrouiller la gestion des participants'}"
                         style="${locked
@@ -201,6 +216,18 @@ async function toggleParticipantsLock(coloId, currentlyLocked) {
     } catch (err) {
         console.error('toggleParticipantsLock:', err);
         showToast('Erreur lors du changement de verrou.', 'error');
+    }
+}
+
+async function toggleColoVisibility(coloId, currentVisible) {
+    const newVisible = !currentVisible;
+    try {
+        await db.collection('espaces').doc(coloId).update({ visible: newVisible });
+        showToast(newVisible ? "La colonie est maintenant visible pour les animateurs." : "La colonie est désormais cachée pour les animateurs.", "success");
+        loadColos();
+    } catch (err) {
+        console.error('toggleColoVisibility:', err);
+        showToast('Erreur lors du changement de visibilité.', 'error');
     }
 }
 
