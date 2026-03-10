@@ -1411,6 +1411,8 @@ async function deleteAlert(alertId) {
 // ----------------------------------------------------------------
 // METEO
 // ----------------------------------------------------------------
+let currentMeteoParams = { lat: null, lon: null, locationName: null };
+
 async function loadWeather(coloId, role) {
     db.collection('espaces').doc(coloId).onSnapshot(async snap => {
         if (!snap.exists) return;
@@ -1433,6 +1435,7 @@ async function loadWeather(coloId, role) {
             const locationName = data.meteoLocationName || data.meteoLocation;
             if (locNameEl) locNameEl.textContent = `📍 ${locationName}`;
 
+            currentMeteoParams = { lat: data.meteoLat, lon: data.meteoLon, locationName };
             await fetchAndDisplayWeather(data.meteoLat, data.meteoLon, role, locationName);
         } else {
             document.getElementById('weatherEmptyState')?.classList.remove('hidden');
@@ -1467,11 +1470,9 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
             const code = daily.weathercode[i];
             const maxT = Math.round(daily.temperature_2m_max[i]);
             const minT = Math.round(daily.temperature_2m_min[i]);
-            const wTableau = getWeatherWMO(code);
             const d = new Date(dateStr);
             const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
 
-            // Extraction Matin (10h), Après-midi (15h) et Soirée (20h)
             const morningIdx = i * 24 + 10;
             const afternoonIdx = i * 24 + 15;
             const eveningIdx = i * 24 + 20;
@@ -1486,95 +1487,135 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
             html += `
                 <div style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:15px 8px; text-align:center; display:flex; flex-direction:column; gap:10px; min-width:160px; flex:1;">
                     <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--clr-text-light);">${dayName}</span>
-                    
                     <div style="display:flex; gap:6px; justify-content:center;">
-                        <!-- Matin -->
                         <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 4px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
                             <span style="font-size:0.6rem; text-transform:uppercase; opacity:0.5; font-weight:700;">Matin</span>
                             <i class="bi ${wMorning.icon}" style="font-size:1.3rem; color:${wMorning.color};" title="${wMorning.name}"></i>
                             <span style="font-size:0.8rem; font-weight:700;">${tempMorning}°</span>
                         </div>
-                        
-                        <!-- Après-midi -->
                         <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 4px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
                             <span style="font-size:0.6rem; text-transform:uppercase; opacity:0.5; font-weight:700;">Aprem</span>
                             <i class="bi ${wAfternoon.icon}" style="font-size:1.3rem; color:${wAfternoon.color};" title="${wAfternoon.name}"></i>
                             <span style="font-size:0.8rem; font-weight:700;">${tempAfternoon}°</span>
                         </div>
-
-                        <!-- Soirée -->
                         <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; padding:6px 4px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.05);">
                             <span style="font-size:0.6rem; text-transform:uppercase; opacity:0.5; font-weight:700;">Soir</span>
                             <i class="bi ${wEvening.icon}" style="font-size:1.3rem; color:${wEvening.color};" title="${wEvening.name}"></i>
                             <span style="font-size:0.8rem; font-weight:700;">${tempEvening}°</span>
                         </div>
                     </div>
-                    
                     <div style="display:flex; justify-content:center; gap:8px; font-size:0.7rem; opacity:0.6; font-weight:500;">
                         <span>Min ${minT}°</span>
                         <span>Max ${maxT}°</span>
                     </div>
                 </div>
             `;
-
-            // SI ADMIN : on gère la création des alertes automatiques
-            if (role === 'admin' && wTableau.bad) {
-                // Déterminer le créneau précis
-                let timing = "";
-                const periods = [];
-                if (wMorning.bad) periods.push("le matin");
-                if (wAfternoon.bad) periods.push("l'aprem");
-                if (wEvening.bad) periods.push("le soir");
-
-                if (periods.length === 3 || periods.length === 0) timing = "la journée complète";
-                else if (periods.length === 2) timing = periods.join(" et ");
-                else timing = periods[0];
-
-                const phenomenon = wTableau.name;
-                const targetDate = new Date(dateStr);
-                targetDate.setDate(targetDate.getDate() - 1);
-                targetDate.setHours(12, 0, 0, 0); // La veille à midi
-
-                if (targetDate > new Date()) {
-                    const existingSnap = await db.collection('espaces').doc(espaceId).collection('alerts')
-                        .where('weatherDate', '==', dateStr)
-                        .get();
-
-                    if (existingSnap.empty) {
-                        try {
-                            // Déterminer la sévérité (Rouge si pluie/orage, Orange si brouillard)
-                            // Note: wTableau contient déjà l'info 'bad', mais on affine par type
-                            let alertSeverity = 'high'; // Rouge par défaut (Pluie/Orage/Neige)
-                            if (phenomenon.toLowerCase().includes('brouillard')) {
-                                alertSeverity = 'medium'; // Orange
-                            }
-
-                            const displayDate = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-                            const location = locationName || 'votre camp';
-
-                            await db.collection('espaces').doc(espaceId).collection('alerts').add({
-                                message: `⚠️ ${phenomenon} prévu pour le ${displayDate} à ${location} ${timing} ! Prévoir un plan B !`,
-                                type: 'warning',
-                                severity: alertSeverity,
-                                locked: true,
-                                scheduledAt: firebase.firestore.Timestamp.fromDate(targetDate),
-                                weatherDate: dateStr,
-                                createdBy: 'Météo Auto',
-                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                            });
-                        } catch (err) {
-                            console.error("Erreur de création de l'alerte météo :", err);
-                        }
-                    }
-                }
-            }
         }
         container.innerHTML = html;
+
+        // Déclencher la vérification automatique des alertes (admin uniquement)
+        if (role === 'admin') {
+            await checkAndCreateWeatherAlerts(data, locationName, role);
+        }
 
     } catch (e) {
         console.error("Météo error:", e);
     }
 }
+
+async function checkAndCreateWeatherAlerts(weatherData, locationName, role) {
+    if (role !== 'admin') return 0;
+
+    const daily = weatherData.daily;
+    const hourly = weatherData.hourly;
+    let newlyCreated = 0;
+
+    for (let i = 0; i < daily.time.length; i++) {
+        const dateStr = daily.time[i];
+        const code = daily.weathercode[i];
+        const wTableau = getWeatherWMO(code);
+
+        if (wTableau.bad) {
+            const morningIdx = i * 24 + 10;
+            const afternoonIdx = i * 24 + 15;
+            const eveningIdx = i * 24 + 20;
+
+            const wMorning = getWeatherWMO(hourly.weathercode[morningIdx]);
+            const wAfternoon = getWeatherWMO(hourly.weathercode[afternoonIdx]);
+            const wEvening = getWeatherWMO(hourly.weathercode[eveningIdx]);
+
+            let periods = [];
+            if (wMorning.bad) periods.push("le matin");
+            if (wAfternoon.bad) periods.push("l'aprem");
+            if (wEvening.bad) periods.push("le soir");
+
+            let timing = "";
+            if (periods.length === 3 || periods.length === 0) timing = "la journée complète";
+            else if (periods.length === 2) timing = periods.join(" et ");
+            else timing = periods[0];
+
+            const phenomenon = wTableau.name;
+            const targetDate = new Date(dateStr);
+            targetDate.setDate(targetDate.getDate() - 1);
+            targetDate.setHours(12, 0, 0, 0); // La veille à midi
+
+            if (targetDate > new Date()) {
+                const existingSnap = await db.collection('espaces').doc(espaceId).collection('alerts')
+                    .where('weatherDate', '==', dateStr)
+                    .get();
+
+                if (existingSnap.empty) {
+                    try {
+                        let alertSeverity = 'high';
+                        if (phenomenon.toLowerCase().includes('brouillard')) alertSeverity = 'medium';
+
+                        const d = new Date(dateStr);
+                        const displayDate = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+                        const location = locationName || 'votre camp';
+
+                        await db.collection('espaces').doc(espaceId).collection('alerts').add({
+                            message: `⚠️ ${phenomenon} prévu pour le ${displayDate} à ${location} ${timing} ! Prévoir un plan B !`,
+                            type: 'warning',
+                            severity: alertSeverity,
+                            locked: true,
+                            scheduledAt: firebase.firestore.Timestamp.fromDate(targetDate),
+                            weatherDate: dateStr,
+                            createdBy: 'Météo Auto',
+                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        newlyCreated++;
+                    } catch (err) {
+                        console.error("Erreur de création de l'alerte météo :", err);
+                    }
+                }
+            }
+        }
+    }
+    return newlyCreated;
+}
+
+document.getElementById('btnGenerateWeatherAlerts')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnGenerateWeatherAlerts');
+    if (!currentMeteoParams.lat || !currentMeteoParams.lon) {
+        showToast("Veuillez d'abord définir un lieu pour la météo.", "warning");
+        return;
+    }
+
+    btnLoading(btn, true);
+    try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${currentMeteoParams.lat}&longitude=${currentMeteoParams.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&hourly=weathercode,temperature_2m&timezone=Europe%2FParis&forecast_days=5`);
+        const data = await res.json();
+        const count = await checkAndCreateWeatherAlerts(data, currentMeteoParams.locationName, currentRole);
+
+        if (count > 0) showToast(`${count} nouvelle(s) alerte(s) météo générée(s).`, "success");
+        else showToast("Aucune nouvelle alerte météo à générer sur les 5 jours à venir.", "info");
+    } catch (err) {
+        console.error("Manual weather check error:", err);
+        showToast("Erreur lors de la vérification météo.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
+});
 // ----------------------------------------------------------------
 // AUTOCOMPLETION METEO
 // ----------------------------------------------------------------
