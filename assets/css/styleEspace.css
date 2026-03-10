@@ -1207,6 +1207,7 @@ input:checked+.es-slider:before {
   gap: 8px;
   transition: background 0.2s;
   color: #fff;
+  position: relative;
 }
 
 .es-user-chip:hover {
@@ -2094,6 +2095,19 @@ input:checked+.es-slider:before {
   border: 2px solid var(--clr-surface-4);
   flex-shrink: 0;
   box-shadow: var(--shadow-sm);
+}
+
+.es-notif-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  /* Rouge moderne (style iOS/macOS) */
+  border-radius: 50%;
+  z-index: 100;
+  pointer-events: none;
 }
 
 .es-anim-item__avatar img {

@@ -1004,6 +1004,13 @@ async function loadAnimateurs(coloId) {
 
         const allAnims = [...pendingAnimsData, ...approvedAnimsData];
 
+        // Mettre à jour les points de notification si ADMIN
+        if (currentRole === 'admin') {
+            const hasPending = pendingAnimsData.length > 0;
+            document.getElementById('userMenuDot')?.classList.toggle('hidden', !hasPending);
+            document.getElementById('navDotAnims')?.classList.toggle('hidden', !hasPending);
+        }
+
         if (allAnims.length === 0) {
             listEl.innerHTML = `<div class="text-center text-muted" style="padding:24px;">Aucun animateur sur cet espace.</div>`;
             return;

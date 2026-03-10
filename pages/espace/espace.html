@@ -36,6 +36,7 @@
             <span class="es-user-chip__name" id="userDisplayName">…</span>
             <span class="es-badge" id="userBadge">…</span>
             <i class="bi bi-chevron-down" style="font-size:10px;opacity:0.6;"></i>
+            <div id="userMenuDot" class="es-notif-dot hidden"></div>
           </button>
           <div class="es-user-dropdown hidden" id="userDropdown">
             <button class="es-user-dropdown__item" id="btnOpenSettings">
@@ -127,8 +128,9 @@
           <button class="es-nav-tab" data-tab="participants" role="tab">
             <i class="bi bi-people"></i> Participants
           </button>
-          <button class="es-nav-tab" data-tab="animateurs" role="tab">
+          <button class="es-nav-tab" data-tab="animateurs" role="tab" style="position:relative;">
             <i class="bi bi-person-badge"></i> Animateurs
+            <div id="navDotAnims" class="es-notif-dot hidden"></div>
           </button>
         </div>
 
