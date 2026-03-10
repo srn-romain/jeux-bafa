@@ -208,8 +208,8 @@ async function loadColos(user, role) {
     empty.classList.add('hidden');
 
     try {
-        // Récupérer toutes les colos
-        const snapshot = await db.collection('espaces').orderBy('createdAt', 'desc').get();
+        // Récupérer toutes les colos triées par date de début (la plus récente en haut)
+        const snapshot = await db.collection('espaces').orderBy('dateDebut', 'desc').get();
 
         // Récupérer tous les accès approuvés pour compter les anims par colo (une seule requête)
         const animCounts = {};

@@ -112,7 +112,7 @@ async function loadColos() {
     empty?.classList.add('hidden');
 
     try {
-        const snap = await db.collection('espaces').orderBy('createdAt', 'desc').get();
+        const snap = await db.collection('espaces').orderBy('dateDebut', 'desc').get();
         loader?.classList.add('hidden');
 
         if (snap.empty) {
@@ -873,7 +873,7 @@ async function openUserRightsPanel(uid, email, displayName) {
     openModal('overlayUserRights');
 
     try {
-        const espacesSnap = await db.collection('espaces').orderBy('createdAt', 'desc').get();
+        const espacesSnap = await db.collection('espaces').orderBy('dateDebut', 'desc').get();
 
         if (espacesSnap.empty) {
             document.getElementById('userRightsLoader').classList.add('hidden');
