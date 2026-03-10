@@ -297,6 +297,14 @@ document.getElementById('btnSaveColoForm')?.addEventListener('click', async () =
         return;
     }
 
+    const dateDebut = document.getElementById('coloDateDebut')?.value;
+    const dateFin = document.getElementById('coloDateFin')?.value;
+    if (dateDebut && dateFin && new Date(dateFin) <= new Date(dateDebut)) {
+        errMsg.textContent = 'La date de fin doit être après la date de début.';
+        errEl.classList.remove('hidden');
+        return;
+    }
+
     errEl.classList.add('hidden');
     btnLoading(btn, true);
 
