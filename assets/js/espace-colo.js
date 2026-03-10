@@ -1528,12 +1528,20 @@ async function checkAndCreateWeatherAlerts(weatherData, locationName, role) {
 
     const daily = weatherData.daily;
     const hourly = weatherData.hourly;
+    const now = new Date();
     let newlyCreated = 0;
 
     for (let i = 0; i < daily.time.length; i++) {
         const dateStr = daily.time[i];
         const code = daily.weathercode[i];
         const wTableau = getWeatherWMO(code);
+
+        // On ne génère des alertes que pour le futur (demain et +)
+        const d = new Date(dateStr);
+        d.setHours(0, 0, 0, 0);
+        const todayAtMidnight = new Date();
+        todayAtMidnight.setHours(0, 0, 0, 0);
+        if (d <= todayAtMidnight) continue;
 
         if (wTableau.bad) {
             const morningIdx = i * 24 + 10;
@@ -1555,38 +1563,51 @@ async function checkAndCreateWeatherAlerts(weatherData, locationName, role) {
             else timing = periods[0];
 
             const phenomenon = wTableau.name;
-            const targetDate = new Date(dateStr);
-            targetDate.setDate(targetDate.getDate() - 1);
-            targetDate.setHours(12, 0, 0, 0); // La veille à midi
+            const location = locationName || 'votre camp';
+            const displayDate = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
 
-            if (targetDate > new Date()) {
-                const existingSnap = await db.collection('espaces').doc(espaceId).collection('alerts')
-                    .where('weatherDate', '==', dateStr)
-                    .get();
+            // Calculer la date de programmation (la veille à midi)
+            const scheduledAt = new Date(d);
+            scheduledAt.setDate(scheduledAt.getDate() - 1);
+            scheduledAt.setHours(12, 0, 0, 0);
 
-                if (existingSnap.empty) {
-                    try {
-                        let alertSeverity = 'high';
-                        if (phenomenon.toLowerCase().includes('brouillard')) alertSeverity = 'medium';
+            // Important : on vérifie si une alerte existe déjà pour cette DATE météo
+            const existingSnap = await db.collection('espaces').doc(espaceId).collection('alerts')
+                .where('weatherDate', '==', dateStr)
+                .where('createdBy', '==', 'Météo Auto')
+                .get();
 
-                        const d = new Date(dateStr);
-                        const displayDate = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-                        const location = locationName || 'votre camp';
+            let shouldCreate = false;
+            if (existingSnap.empty) {
+                shouldCreate = true;
+            } else {
+                // Si l'alerte existe mais que le LIEU a changé, on la remplace
+                const existingDoc = existingSnap.docs[0];
+                const existingData = existingDoc.data();
+                if (!existingData.message.includes(`à ${location}`)) {
+                    await existingDoc.ref.delete();
+                    shouldCreate = true;
+                }
+            }
 
-                        await db.collection('espaces').doc(espaceId).collection('alerts').add({
-                            message: `⚠️ ${phenomenon} prévu pour le ${displayDate} à ${location} ${timing} ! Prévoir un plan B !`,
-                            type: 'warning',
-                            severity: alertSeverity,
-                            locked: true,
-                            scheduledAt: firebase.firestore.Timestamp.fromDate(targetDate),
-                            weatherDate: dateStr,
-                            createdBy: 'Météo Auto',
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                        });
-                        newlyCreated++;
-                    } catch (err) {
-                        console.error("Erreur de création de l'alerte météo :", err);
-                    }
+            if (shouldCreate) {
+                try {
+                    let alertSeverity = 'high';
+                    if (phenomenon.toLowerCase().includes('brouillard')) alertSeverity = 'medium';
+
+                    await db.collection('espaces').doc(espaceId).collection('alerts').add({
+                        message: `⚠️ ${phenomenon} prévu pour le ${displayDate} à ${location} ${timing} ! Prévoir un plan B !`,
+                        type: 'warning',
+                        severity: alertSeverity,
+                        locked: true,
+                        scheduledAt: firebase.firestore.Timestamp.fromDate(scheduledAt),
+                        weatherDate: dateStr,
+                        createdBy: 'Météo Auto',
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    newlyCreated++;
+                } catch (err) {
+                    console.error("Erreur de création de l'alerte météo :", err);
                 }
             }
         }
