@@ -1519,23 +1519,43 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
 
             // SI ADMIN : on gère la création des alertes automatiques
             if (role === 'admin' && wTableau.bad) {
-                const w = wTableau; // Pour compatibilité avec le code suivant
+                // Déterminer le créneau précis
+                let timing = "";
+                const periods = [];
+                if (wMorning.bad) periods.push("le matin");
+                if (wAfternoon.bad) periods.push("l'aprem");
+                if (wEvening.bad) periods.push("le soir");
+
+                if (periods.length === 3 || periods.length === 0) timing = "la journée complète";
+                else if (periods.length === 2) timing = periods.join(" et ");
+                else timing = periods[0];
+
+                const phenomenon = wTableau.name;
                 const targetDate = new Date(dateStr);
                 targetDate.setDate(targetDate.getDate() - 1);
                 targetDate.setHours(12, 0, 0, 0); // La veille à midi
 
                 if (targetDate > new Date()) {
-                    // Vérifier si une alerte existe déjà pour cette journée météo
                     const existingSnap = await db.collection('espaces').doc(espaceId).collection('alerts')
                         .where('weatherDate', '==', dateStr)
                         .get();
 
                     if (existingSnap.empty) {
                         try {
+                            // Déterminer la sévérité (Rouge si pluie/orage, Orange si brouillard)
+                            // Note: wTableau contient déjà l'info 'bad', mais on affine par type
+                            let alertSeverity = 'high'; // Rouge par défaut (Pluie/Orage/Neige)
+                            if (phenomenon.toLowerCase().includes('brouillard')) {
+                                alertSeverity = 'medium'; // Orange
+                            }
+
+                            const displayDate = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+                            const location = locationName || 'votre camp';
+
                             await db.collection('espaces').doc(espaceId).collection('alerts').add({
-                                message: `⚠️ Alerte Météo à ${locationName || 'votre camp'} : ${w.name} prévu(s) pour demain (${d.toLocaleDateString('fr-FR')}). Pensez à un plan B ou des activités d'intérieur !`,
+                                message: `⚠️ ${phenomenon} prévu pour le ${displayDate} à ${location} ${timing} ! Prévoir un plan B !`,
                                 type: 'warning',
-                                severity: 'high',
+                                severity: alertSeverity,
                                 locked: true,
                                 scheduledAt: firebase.firestore.Timestamp.fromDate(targetDate),
                                 weatherDate: dateStr,
