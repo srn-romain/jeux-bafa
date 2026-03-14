@@ -950,6 +950,7 @@ em {
 @media (max-width: 768px) {
   body {
     padding: 10px;
+    padding-top: 80px; /* Espace pour la navbar fixe (70px) + marge */
   }
 
   .container {
