@@ -1239,6 +1239,10 @@ em {
   align-items: center;
   justify-content: center;
   flex-direction: column;
+  max-width: none;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .lightbox-content {
@@ -1285,6 +1289,8 @@ em {
   padding: 18px 0;
   box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
   text-shadow: none !important;
+  max-width: none;
+  border-radius: 0;
 }
 
 .lightbox-prev, .lightbox-next {
