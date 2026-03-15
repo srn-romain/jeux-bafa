@@ -385,8 +385,93 @@
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i
       class="bi bi-arrow-up-short"></i></a>
 
+  <!-- Lightbox Modal -->
+  <div id="lightboxModal" class="lightbox-modal">
+    <span class="lightbox-close">&times;</span>
+    <img class="lightbox-content" id="lightboxImage">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+    <a class="lightbox-prev">&#10094;</a>
+    <a class="lightbox-next">&#10095;</a>
+  </div>
+
   <script src="../assets/js/main.js"></script>
   <script src="../assets/js/navigation.js"></script>
+
+  <!-- Lightbox Logic -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const modal = document.getElementById("lightboxModal");
+      const modalImg = document.getElementById("lightboxImage");
+      const captionText = document.getElementById("lightboxCaption");
+      const closeBtn = document.querySelector(".lightbox-close");
+      const prevBtn = document.querySelector(".lightbox-prev");
+      const nextBtn = document.querySelector(".lightbox-next");
+
+      let currentCategoryItems = [];
+      let currentIndex = 0;
+
+      // Add click listener on fads-grid items
+      document.querySelectorAll('.fads-grid').forEach(grid => {
+        const items = Array.from(grid.querySelectorAll('li'));
+        
+        items.forEach((item, index) => {
+          item.addEventListener('click', () => {
+            currentCategoryItems = items;
+            currentIndex = index;
+            openLightbox();
+          });
+        });
+      });
+
+      function openLightbox() {
+        if (currentCategoryItems.length === 0) return;
+        
+        const currentItem = currentCategoryItems[currentIndex];
+        const img = currentItem.querySelector('img');
+        const title = currentItem.querySelector('span').innerText;
+
+        if (img) {
+          modal.style.display = "flex";
+          modalImg.src = img.src;
+          captionText.innerText = title;
+        }
+      }
+
+      function showNext(e) {
+        if (e) e.stopPropagation();
+        if (currentCategoryItems.length === 0) return;
+        currentIndex = (currentIndex + 1) % currentCategoryItems.length;
+        openLightbox();
+      }
+
+      function showPrev(e) {
+        if (e) e.stopPropagation();
+        if (currentCategoryItems.length === 0) return;
+        currentIndex = (currentIndex - 1 + currentCategoryItems.length) % currentCategoryItems.length;
+        openLightbox();
+      }
+
+      if (nextBtn) nextBtn.addEventListener("click", showNext);
+      if (prevBtn) prevBtn.addEventListener("click", showPrev);
+      if (closeBtn) closeBtn.addEventListener("click", (e) => { e.stopPropagation(); modal.style.display = "none"; });
+
+      // Keyboard navigation
+      document.addEventListener("keydown", (e) => {
+        if (modal.style.display === "flex") {
+          if (e.key === "ArrowRight") showNext();
+          if (e.key === "ArrowLeft") showPrev();
+          if (e.key === "Escape") modal.style.display = "none";
+        }
+      });
+
+      // Close on outside click
+      modal.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.style.display = "none";
+        }
+      });
+    });
+  </script>
 </body>
 
 </html>
