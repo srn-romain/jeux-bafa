@@ -277,6 +277,7 @@ function openColoForm(colo = null) {
     document.getElementById('coloDateDebut').value = colo?.dateDebut || '';
     document.getElementById('coloDateFin').value = colo?.dateFin || '';
     document.getElementById('coloDriveId').value = colo?.driveId || '';
+    document.getElementById('coloPPId').value = colo?.ppId || '';
 
     const currentEmoji = colo?.emoji || '🏕️';
     document.getElementById('coloEmoji').value = currentEmoji;
@@ -341,6 +342,7 @@ document.getElementById('btnSaveColoForm')?.addEventListener('click', async () =
         dateDebut: document.getElementById('coloDateDebut')?.value || '',
         dateFin: document.getElementById('coloDateFin')?.value || '',
         driveId: document.getElementById('coloDriveId')?.value.trim() || '',
+        ppId: document.getElementById('coloPPId')?.value.trim() || '',
         emoji: document.getElementById('coloEmoji')?.value.trim() || '🏕️',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };

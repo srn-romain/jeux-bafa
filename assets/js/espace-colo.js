@@ -1548,6 +1548,36 @@ async function loadWeather(coloId, role) {
             document.getElementById('weatherEmptyState')?.classList.remove('hidden');
             document.getElementById('weatherForecastContainer')?.classList.add('hidden');
         }
+
+        // --- GESTION PP ---
+        const sectionPP = document.getElementById('sectionPP');
+        if (sectionPP) {
+            if (data.ppId) {
+                sectionPP.classList.remove('hidden');
+                const btnViewPP = document.getElementById('btnViewPP');
+                const ppIframe = document.getElementById('ppIframe');
+                const ppPreviewArea = document.getElementById('ppPreviewArea');
+
+                if (ppIframe) {
+                    const previewUrl = `https://drive.google.com/file/d/${data.ppId}/preview`;
+                    if (ppIframe.src !== previewUrl) {
+                        ppIframe.src = previewUrl;
+                    }
+                    ppPreviewArea?.classList.remove('hidden');
+                    document.getElementById('ppEmptyState')?.classList.add('hidden');
+                }
+
+                if (btnViewPP) {
+                    btnViewPP.href = `https://drive.google.com/file/d/${data.ppId}/view?usp=sharing`;
+                    btnViewPP.classList.remove('disabled');
+                    btnViewPP.style.opacity = '1';
+                    btnViewPP.style.pointerEvents = 'auto';
+                    btnViewPP.style.cursor = 'pointer';
+                }
+            } else {
+                sectionPP.classList.add('hidden');
+            }
+        }
     });
 }
 

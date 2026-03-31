@@ -359,6 +359,34 @@
             </div>
           </div>
 
+          <!-- SECTION PP -->
+          <div class="es-section mt-4 hidden" id="sectionPP">
+            <h3 class="es-section__title">
+              <i class="bi bi-file-earmark-pdf"></i> 4. Projet Pédagogique (PP)
+            </h3>
+            <p class="es-section__desc">
+              Consulte le projet pédagogique de la colonie pour connaître les objectifs et l'organisation du séjour.
+            </p>
+
+            <div class="es-section__content">
+              <div class="es-card" style="padding: 20px;">
+                <div id="ppPreviewArea" class="hidden" style="margin-bottom: 20px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.1);">
+                  <iframe id="ppIframe" src="" width="100%" height="600" style="border: none; background: white;" loading="lazy"></iframe>
+                </div>
+
+                <div id="ppEmptyState" class="text-center" style="padding: 40px 20px;">
+                   <div style="font-size: 4rem; color: var(--clr-danger); margin-bottom: 20px; opacity: 0.8;">
+                      <i class="bi bi-file-pdf-fill"></i>
+                   </div>
+                   <h4 id="ppTitle" style="font-weight:700; margin-bottom:24px; font-size:1.2rem;">Projet Pédagogique</h4>
+                   <a href="#" target="_blank" id="btnViewPP" class="es-btn es-btn--primary es-btn--lg" style="min-width: 200px;">
+                     <i class="bi bi-eye"></i> <span class="es-btn__text">Ouvrir dans un nouvel onglet</span>
+                   </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- === ONGLET PARTICIPANTS === -->
