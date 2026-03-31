@@ -1522,11 +1522,15 @@ async function loadWeather(coloId, role) {
         const data = snap.data();
         if (role === 'admin') {
             document.getElementById('weatherAdminContainer')?.classList.remove('hidden');
+            const deleteBtn = document.getElementById('btnDeleteLocation');
             if (data.meteoLocation) {
                 const meteoLocationInput = document.getElementById('meteoLocation');
                 if (meteoLocationInput && !meteoLocationInput.value) {
                     meteoLocationInput.value = data.meteoLocation;
                 }
+                deleteBtn?.classList.remove('hidden');
+            } else {
+                deleteBtn?.classList.add('hidden');
             }
         }
 
@@ -1853,6 +1857,36 @@ document.getElementById('formSetLocation')?.addEventListener('submit', async (e)
         }
     } catch (e) {
         showToast("Erreur lors de la configuration de la météo.", "error");
+    }
+    btnLoading(btn, false);
+});
+
+document.getElementById('btnDeleteLocation')?.addEventListener('click', async () => {
+    if (!confirm("Supprimer le lieu du séjour ? Cela arrêtera l'affichage de la météo.")) return;
+    
+    const btn = document.getElementById('btnDeleteLocation');
+    const input = document.getElementById('meteoLocation');
+    
+    btnLoading(btn, true);
+    try {
+        await db.collection('espaces').doc(espaceId).update({
+            meteoLocation: firebase.firestore.FieldValue.delete(),
+            meteoLocationName: firebase.firestore.FieldValue.delete(),
+            meteoLat: firebase.firestore.FieldValue.delete(),
+            meteoLon: firebase.firestore.FieldValue.delete()
+        });
+        
+        if (input) {
+            input.value = '';
+            delete input.dataset.lat;
+            delete input.dataset.lon;
+            delete input.dataset.name;
+        }
+        
+        showToast("Le lieu a été supprimé.", "success");
+    } catch (e) {
+        console.error("DeleteLocation error:", e);
+        showToast("Erreur lors de la suppression.", "error");
     }
     btnLoading(btn, false);
 });
