@@ -1162,9 +1162,7 @@ input:checked+.es-slider:before {
 }
 
 .es-colo-card__stats.es-stats--hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(5px);
+  display: none;
 }
 
 .es-colo-card__stat {
