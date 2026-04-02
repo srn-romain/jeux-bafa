@@ -2048,41 +2048,71 @@ document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = async () => {
-        let base64 = reader.result;
-        // Limit approx 4.5MB for Firestore limits
-        if (base64.length > 5500000) {
-            if(errUI) {
-                errUI.classList.remove('hidden');
-            } else {
-                showToast("L'image est trop lourde. Choisissez une photo plus petite (max ~4Mo).", "error");
-            }
-            btnLoading(btn, false);
-            return;
-        }
-
-        try {
-            let pseudo = currentUser.displayName || currentUser.email;
-            try {
-                const uDoc = await db.collection('users').doc(currentUser.uid).get();
-                if (uDoc.exists && uDoc.data().displayName) {
-                    pseudo = uDoc.data().displayName;
+        const img = new Image();
+        img.onload = async () => {
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 1200; // Redimensionne tranquillement pour le web
+            
+            if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                    height = Math.round((height *= maxDim / width));
+                    width = maxDim;
+                } else {
+                    width = Math.round((width *= maxDim / height));
+                    height = maxDim;
                 }
-            } catch (ignored) {}
+            }
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Qualitée moyenne/haute pour passer sous les 1 MiB de Firestore
+            let base64 = canvas.toDataURL('image/jpeg', 0.75);
 
-            await db.collection('espaces').doc(espaceId).collection('photos').add({
-                base64: base64,
-                authorId: currentUser.uid,
-                authorName: pseudo,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            showToast('Photo ajoutée !', 'success');
-        } catch (err) {
-            console.error(err);
-            showToast('Erreur lors de l\'envoi de la photo.', 'error');
-        } finally {
-            document.getElementById('photoUploadInput').value = '';
+            // Firestore absolute max doc size is ~1MB (1,048,576 bytes)
+            if (base64.length > 1000000) {
+                if(errUI) {
+                    errUI.classList.remove('hidden');
+                } else {
+                    showToast("L'image est trop lourde même après compression web.", "error");
+                }
+                btnLoading(btn, false);
+                return;
+            }
+
+            try {
+                let pseudo = currentUser.displayName || currentUser.email;
+                try {
+                    const uDoc = await db.collection('users').doc(currentUser.uid).get();
+                    if (uDoc.exists && uDoc.data().displayName) {
+                        pseudo = uDoc.data().displayName;
+                    }
+                } catch (ignored) {}
+
+                await db.collection('espaces').doc(espaceId).collection('photos').add({
+                    base64: base64,
+                    authorId: currentUser.uid,
+                    authorName: pseudo,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showToast('Photo ajoutée !', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Erreur lors de l\'envoi de la photo.', 'error');
+            } finally {
+                document.getElementById('photoUploadInput').value = '';
+                btnLoading(btn, false);
+            }
+        };
+        img.onerror = () => {
+            showToast("Format d'image non supporté ou corrompu.", "error");
             btnLoading(btn, false);
-        }
+        };
+        img.src = reader.result;
     };
     reader.onerror = () => {
         showToast("Erreur de lecture de l'image.", "error");
