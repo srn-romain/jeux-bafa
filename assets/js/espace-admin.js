@@ -174,14 +174,18 @@ function buildColoAdminCard(colo, nbParticipants) {
                     </span>
                 </div>
             </div>
-            <div class="es-colo-admin-card__actions">
-                <button class="es-btn es-btn--sm"
+        </div>
+        <div class="es-colo-admin-card__body" style="font-size:0.87rem;color:var(--clr-text-muted); display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+            <div style="flex:1;">
+                ${colo.description ? colo.description : '<span style="opacity:0.5;font-style:italic;">Aucune description.</span>'}
+            </div>
+            <div class="es-colo-admin-card__actions" style="display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; flex-wrap: wrap; flex-shrink: 0;">
+                <button class="es-btn es-btn--sm es-btn--secondary"
                         title="Invisibilité pour les animateurs"
-                        style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);"
                         onclick="toggleColoVisibility('${colo.id}', ${visible})">
                     <i class="bi bi-${visible ? 'eye' : 'eye-slash'}"></i>
                 </button>
-                <div style="width:1px;height:24px;background:rgba(255,255,255,0.1);margin:0 4px;"></div>
+                <div style="width:1px;height:24px;background:rgba(255,255,255,0.1);margin:4px 4px 0 4px;"></div>
                 <button class="es-btn es-btn--sm"
                         title="${locked ? 'Déverrouiller la gestion des participants pour les anims' : 'Verrouiller la gestion des participants'}"
                         style="${locked
@@ -191,7 +195,7 @@ function buildColoAdminCard(colo, nbParticipants) {
                     <i class="bi bi-${locked ? 'unlock' : 'lock'}"></i>
                     <span class="brand-label">${locked ? 'Déverrouiller' : 'Verrouiller'}</span>
                 </button>
-                <button class="es-btn es-btn--sm" style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);"
+                <button class="es-btn es-btn--sm es-btn--secondary"
                         onclick="openParticipantsModal('${colo.id}', ${escapeHtml(JSON.stringify(colo.nom || ''))})">
                     <i class="bi bi-people"></i> <span class="brand-label">Participants</span>
                 </button>
@@ -205,7 +209,6 @@ function buildColoAdminCard(colo, nbParticipants) {
                 </button>
             </div>
         </div>
-        ${colo.description ? `<div class="es-colo-admin-card__body" style="font-size:0.87rem;color:var(--clr-text-muted);">${colo.description}</div>` : ''}
     `;
     return div;
 }
