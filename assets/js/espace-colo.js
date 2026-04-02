@@ -2041,6 +2041,8 @@ document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
     }
     
     const btn = document.getElementById('btnUploadPhoto');
+    const errUI = document.getElementById('photoUploadError');
+    if(errUI) errUI.classList.add('hidden');
     btnLoading(btn, true);
 
     const reader = new FileReader();
@@ -2049,7 +2051,11 @@ document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
         let base64 = reader.result;
         // Limit approx 4.5MB for Firestore limits
         if (base64.length > 5500000) {
-            showToast("L'image est trop lourde. Choisissez une photo plus petite (max ~4Mo).", "error");
+            if(errUI) {
+                errUI.classList.remove('hidden');
+            } else {
+                showToast("L'image est trop lourde. Choisissez une photo plus petite (max ~4Mo).", "error");
+            }
             btnLoading(btn, false);
             return;
         }

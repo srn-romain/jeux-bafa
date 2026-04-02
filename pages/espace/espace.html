@@ -501,7 +501,13 @@
               Cette section regroupe les meilleures photos du séjour.
             </p>
             
-            <div style="display:flex; justify-content:space-between; margin-bottom: 20px; align-items:center; flex-wrap: wrap; gap: 10px;">
+            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom: 20px;">
+              <div class="admin-only hidden">
+                <label class="es-checkbox-label" style="display:flex; align-items:center; gap:8px; cursor:pointer; width:fit-content;">
+                  <input type="checkbox" id="toggleAnimUpload">
+                  <span style="font-size:0.85rem; color:var(--clr-text-light);">Autoriser les anims à ajouter des photos</span>
+                </label>
+              </div>
               <div>
                 <input type="file" id="photoUploadInput" accept="image/*" class="hidden">
                 <button class="es-btn es-btn--primary es-btn--sm hidden" id="btnUploadPhoto">
@@ -512,12 +518,11 @@
                   <i class="bi bi-info-circle"></i> Le directeur a désactivé l'ajout de photos.
                 </span>
               </div>
-              <div class="admin-only hidden">
-                <label class="es-checkbox-label" style="display:flex; align-items:center; gap:8px; cursor:pointer;">
-                  <input type="checkbox" id="toggleAnimUpload">
-                  <span style="font-size:0.85rem; color:var(--clr-text-light);">Autoriser les anims à ajouter des photos</span>
-                </label>
-              </div>
+            </div>
+
+            <div id="photoUploadError" class="es-alert es-alert--error hidden" style="margin-bottom: 20px;">
+              <i class="bi bi-file-earmark-x-fill" style="margin-top: 4px;"></i>
+              <span style="line-height:1.4;"><strong>Oups, cette photo est trop lourde !</strong><br>Veuillez choisir une image dont la taille est inférieure à 4 Mo.</span>
             </div>
 
             <div id="photosGrid" class="es-masonry-grid">
