@@ -1963,12 +1963,17 @@ function loadPhotos(colo, role) {
         }
     }
 
+    // Render once immediately for the background image
+    renderPhotos(colo, role);
+
     try {
         db.collection('espaces').doc(colo.id).collection('photos')
           .orderBy('createdAt', 'desc')
           .onSnapshot(snap => {
               currentPhotos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
               renderPhotos(colo, role);
+          }, err => {
+              console.warn("Snapshot photos échoué (règles Firebase ?) :", err);
           });
     } catch (err) {
         console.error("Photos:", err);
