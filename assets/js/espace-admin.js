@@ -269,7 +269,13 @@ const AVAILABLE_EMOJIS = [
     { emoji: '🌍', desc: 'découverte du monde / culture' },
     { emoji: '🏛️', desc: 'visite culturelle / musée' },
     { emoji: '🍳', desc: 'cuisine' },
-    { emoji: '🧩', desc: 'jeux / activités manuelles / puzzle' }
+    { emoji: '🧩', desc: 'jeux / activités manuelles / puzzle' },
+    { emoji: '🎒', desc: 'itinérance / sac à dos' },
+    { emoji: '🗣️', desc: 'linguistique / langues' },
+    { emoji: '⚜️', desc: 'scoutisme' },
+    { emoji: '🏫', desc: 'centre de loisirs / ALSH' },
+    { emoji: '🏎️', desc: 'karting / sports mécaniques' },
+    { emoji: '🚂', desc: 'voyage en train' }
 ];
 
 document.getElementById('btnNewColo')?.addEventListener('click', () => openColoForm());
