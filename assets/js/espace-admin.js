@@ -185,7 +185,7 @@ function buildColoAdminCard(colo, nbParticipants) {
                         onclick="toggleColoVisibility('${colo.id}', ${visible})">
                     <i class="bi bi-${visible ? 'eye' : 'eye-slash'}"></i>
                 </button>
-                <div style="width:1px;height:24px;background:rgba(255,255,255,0.1);margin:4px 4px 0 4px;"></div>
+                <div style="width:1px;height:24px;background:rgba(0,0,0,0.15);margin:4px 4px 0 4px;"></div>
                 <button class="es-btn es-btn--sm"
                         title="${locked ? 'Déverrouiller la gestion des participants pour les anims' : 'Verrouiller la gestion des participants'}"
                         style="${locked
