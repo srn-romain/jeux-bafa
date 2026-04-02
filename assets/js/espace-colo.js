@@ -178,6 +178,8 @@ function initColoContent(colo, role) {
     loadAlerts(colo.id, role);
     // Charger la météo dynamique
     loadWeather(colo.id, role);
+    // Charger la bibliothèque
+    loadPhotos(colo, role);
 
     // Onglets
     initTabs();
@@ -195,6 +197,7 @@ function initTabs() {
             document.getElementById('tab-groupes').classList.toggle('hidden', tab !== 'groupes');
             document.getElementById('tab-participants').classList.toggle('hidden', tab !== 'participants');
             document.getElementById('tab-animateurs').classList.toggle('hidden', tab !== 'animateurs');
+            document.getElementById('tab-bibliotheque')?.classList.toggle('hidden', tab !== 'bibliotheque');
         });
     });
 }
@@ -1920,3 +1923,161 @@ document.getElementById('btnDeleteLocation')?.addEventListener('click', async ()
     }
     btnLoading(btn, false);
 });
+
+// ================================================================
+// BIBLIOTHEQUE (PHOTOS)
+// ================================================================
+
+let currentPhotos = [];
+
+function loadPhotos(colo, role) {
+    const uploadBtn = document.getElementById('btnUploadPhoto');
+    const uploadDisabledMsg = document.getElementById('photoUploadDisabledMsg');
+    const toggleUpload = document.getElementById('toggleAnimUpload');
+    
+    // Toggle state for admin
+    if (toggleUpload) {
+        toggleUpload.checked = colo.photoUploadEnabled === true;
+        toggleUpload.addEventListener('change', async (e) => {
+            try {
+                await db.collection('espaces').doc(colo.id).update({
+                    photoUploadEnabled: e.target.checked
+                });
+                showToast("Option mise à jour", "success");
+            } catch (err) {
+                showToast("Erreur", "error");
+                e.target.checked = !e.target.checked;
+            }
+        });
+    }
+
+    // Upload permissions
+    const canUpload = role === 'admin' || (role === 'anim' && colo.photoUploadEnabled === true);
+    if (canUpload) {
+        uploadBtn?.classList.remove('hidden');
+        uploadDisabledMsg?.classList.add('hidden');
+    } else {
+        uploadBtn?.classList.add('hidden');
+        if (role === 'anim') {
+            uploadDisabledMsg?.classList.remove('hidden');
+        }
+    }
+
+    try {
+        db.collection('espaces').doc(colo.id).collection('photos')
+          .orderBy('createdAt', 'desc')
+          .onSnapshot(snap => {
+              currentPhotos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+              renderPhotos(colo, role);
+          });
+    } catch (err) {
+        console.error("Photos:", err);
+    }
+}
+
+function renderPhotos(colo, role) {
+    const grid = document.getElementById('photosGrid');
+    const empty = document.getElementById('photosEmpty');
+    if (!grid || !empty) return;
+    
+    let allPhotosHTML = '';
+
+    // First photo is always the cover of the colony (if exists)
+    if (colo.bgImage) {
+        allPhotosHTML += `
+            <div class="es-photo-item">
+                <img src="${colo.bgImage}" alt="Cover photo">
+                <div class="es-photo-author">Image de couverture</div>
+            </div>
+        `;
+    }
+
+    // Then subcollection photos
+    currentPhotos.forEach(p => {
+        const canDelete = role === 'admin' || (role === 'anim' && currentUser && currentUser.uid === p.authorId);
+        
+        allPhotosHTML += `
+            <div class="es-photo-item">
+                <img src="${p.base64}" alt="Photo">
+                <div class="es-photo-author">${escapeHtml(p.authorName)}</div>
+                ${canDelete ? `
+                    <button class="es-photo-delete delete-photo-btn" data-id="${p.id}" title="Supprimer la photo">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                ` : ''}
+            </div>
+        `;
+    });
+
+    if (allPhotosHTML === '') {
+        empty.classList.remove('hidden');
+        grid.innerHTML = '';
+    } else {
+        empty.classList.add('hidden');
+        grid.innerHTML = allPhotosHTML;
+        
+        // Add delete listeners
+        grid.querySelectorAll('.delete-photo-btn').forEach(btn => {
+            btn.addEventListener('click', () => deletePhoto(colo.id, btn.getAttribute('data-id')));
+        });
+    }
+}
+
+document.getElementById('btnUploadPhoto')?.addEventListener('click', () => {
+    document.getElementById('photoUploadInput').click();
+});
+
+document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+        showToast("Seules les images sont acceptées.", "error");
+        return;
+    }
+    
+    const btn = document.getElementById('btnUploadPhoto');
+    btnLoading(btn, true);
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = async () => {
+        let base64 = reader.result;
+        // Limit approx 4.5MB for Firestore limits
+        if (base64.length > 5500000) {
+            showToast("L'image est trop lourde. Choisissez une photo plus petite (max ~4Mo).", "error");
+            btnLoading(btn, false);
+            return;
+        }
+
+        try {
+            await db.collection('espaces').doc(espaceId).collection('photos').add({
+                base64: base64,
+                authorId: currentUser.uid,
+                authorName: currentUser.displayName || currentUser.email,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showToast('Photo ajoutée !', 'success');
+        } catch (err) {
+            console.error(err);
+            showToast('Erreur lors de l\'envoi de la photo.', 'error');
+        } finally {
+            document.getElementById('photoUploadInput').value = '';
+            btnLoading(btn, false);
+        }
+    };
+    reader.onerror = () => {
+        showToast("Erreur de lecture de l'image.", "error");
+        btnLoading(btn, false);
+    };
+});
+
+async function deletePhoto(coloId, photoId) {
+    if (!confirm("Voulez-vous vraiment supprimer cette photo ?")) return;
+    try {
+        await db.collection('espaces').doc(coloId).collection('photos').doc(photoId).delete();
+        showToast("Photo supprimée", "success");
+    } catch (err) {
+        console.error(err);
+        showToast("Erreur lors de la suppression.", "error");
+    }
+}

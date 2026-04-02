@@ -286,15 +286,16 @@ function openColoForm(colo = null) {
     const bgInput = document.getElementById('coloBgInput');
     const bgBase64 = document.getElementById('coloBgBase64');
     const bgPreview = document.getElementById('coloBgPreview');
+    const bgPreviewContainer = document.getElementById('coloBgPreviewContainer');
     if (bgInput) bgInput.value = '';
     if (bgBase64) bgBase64.value = colo?.bgImage || '';
-    if (bgPreview) {
+    if (bgPreview && bgPreviewContainer) {
         if (colo?.bgImage) {
             bgPreview.src = colo.bgImage;
-            bgPreview.classList.remove('hidden');
+            bgPreviewContainer.classList.remove('hidden');
         } else {
             bgPreview.src = '';
-            bgPreview.classList.add('hidden');
+            bgPreviewContainer.classList.add('hidden');
         }
     }
 
@@ -350,12 +351,25 @@ document.getElementById('coloBgInput')?.addEventListener('change', (e) => {
         const inputBase64 = document.getElementById('coloBgBase64');
         if (inputBase64) inputBase64.value = base64;
         const bgPreview = document.getElementById('coloBgPreview');
-        if (bgPreview) {
+        const bgPreviewContainer = document.getElementById('coloBgPreviewContainer');
+        if (bgPreview && bgPreviewContainer) {
             bgPreview.src = base64;
-            bgPreview.classList.remove('hidden');
+            bgPreviewContainer.classList.remove('hidden');
         }
     };
     reader.onerror = () => showToast("Erreur de lecture de l'image.", "error");
+});
+
+document.getElementById('btnRemoveColoBg')?.addEventListener('click', () => {
+    const bgInput = document.getElementById('coloBgInput');
+    const bgBase64 = document.getElementById('coloBgBase64');
+    const bgPreviewContainer = document.getElementById('coloBgPreviewContainer');
+    const bgPreview = document.getElementById('coloBgPreview');
+    
+    if (bgInput) bgInput.value = '';
+    if (bgBase64) bgBase64.value = '';
+    if (bgPreview) bgPreview.src = '';
+    if (bgPreviewContainer) bgPreviewContainer.classList.add('hidden');
 });
 
 document.getElementById('btnSaveColoForm')?.addEventListener('click', async () => {
