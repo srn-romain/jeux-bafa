@@ -356,12 +356,14 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
     const visible = colo.visible !== false;
 
     const headerStyle = colo.bgImage 
-        ? `style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8)), url('${colo.bgImage}'); background-size: cover; background-position: center;"` 
+        ? `style="background-image: url('${colo.bgImage}'); background-size: cover; background-position: center; text-shadow: 0px 2px 8px rgba(0,0,0,0.8), 0px 1px 3px rgba(0,0,0,0.9);"` 
         : '';
+        
+    const emojiStyle = colo.bgImage ? `style="background: transparent; box-shadow: none;"` : '';
 
     card.innerHTML = `
         <div class="es-colo-card__header" ${headerStyle}>
-            <div class="es-colo-card__emoji">${emoji}</div>
+            <div class="es-colo-card__emoji" ${emojiStyle}>${emoji}</div>
             <div>
                 <div class="es-colo-card__name">
                     ${colo.nom || 'Sans nom'}

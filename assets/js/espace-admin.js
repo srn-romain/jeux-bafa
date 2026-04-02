@@ -148,7 +148,7 @@ function buildColoAdminCard(colo, nbParticipants) {
     const locked = colo.participantsLocked !== false; // true par défaut
 
     const headerStyle = colo.bgImage 
-        ? `style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8)), url('${colo.bgImage}'); background-size: cover; background-position: center; border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg) var(--radius-lg) 0 0;"` 
+        ? `style="background-image: url('${colo.bgImage}'); background-size: cover; background-position: center; border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg) var(--radius-lg) 0 0; text-shadow: 0px 2px 8px rgba(0,0,0,0.8), 0px 1px 3px rgba(0,0,0,0.9);"` 
         : '';
 
     div.innerHTML = `
