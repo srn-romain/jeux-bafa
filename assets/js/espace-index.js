@@ -355,8 +355,12 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
 
     const visible = colo.visible !== false;
 
+    const headerStyle = colo.bgImage 
+        ? `style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8)), url('${colo.bgImage}'); background-size: cover; background-position: center;"` 
+        : '';
+
     card.innerHTML = `
-        <div class="es-colo-card__header">
+        <div class="es-colo-card__header" ${headerStyle}>
             <div class="es-colo-card__emoji">${emoji}</div>
             <div>
                 <div class="es-colo-card__name">

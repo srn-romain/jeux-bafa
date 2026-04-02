@@ -147,8 +147,12 @@ function buildColoAdminCard(colo, nbParticipants) {
     const visible = colo.visible !== false; // true par défaut
     const locked = colo.participantsLocked !== false; // true par défaut
 
+    const headerStyle = colo.bgImage 
+        ? `style="background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.8)), url('${colo.bgImage}'); background-size: cover; background-position: center; border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg) var(--radius-lg) 0 0;"` 
+        : '';
+
     div.innerHTML = `
-        <div class="es-colo-admin-card__header">
+        <div class="es-colo-admin-card__header" ${headerStyle}>
             <div>
                 <div class="es-colo-admin-card__title">
                     ${colo.emoji || '🏕️'} ${colo.nom || 'Sans nom'}
@@ -279,6 +283,21 @@ function openColoForm(colo = null) {
     document.getElementById('coloDriveId').value = colo?.driveId || '';
     document.getElementById('coloPPId').value = colo?.ppId || '';
 
+    const bgInput = document.getElementById('coloBgInput');
+    const bgBase64 = document.getElementById('coloBgBase64');
+    const bgPreview = document.getElementById('coloBgPreview');
+    if (bgInput) bgInput.value = '';
+    if (bgBase64) bgBase64.value = colo?.bgImage || '';
+    if (bgPreview) {
+        if (colo?.bgImage) {
+            bgPreview.src = colo.bgImage;
+            bgPreview.classList.remove('hidden');
+        } else {
+            bgPreview.src = '';
+            bgPreview.classList.add('hidden');
+        }
+    }
+
     const currentEmoji = colo?.emoji || '🏕️';
     document.getElementById('coloEmoji').value = currentEmoji;
 
@@ -313,6 +332,32 @@ async function openEditColo(id) {
 document.getElementById('btnCloseColoForm')?.addEventListener('click', () => closeModal('overlayColoForm'));
 document.getElementById('btnCancelColoForm')?.addEventListener('click', () => closeModal('overlayColoForm'));
 
+document.getElementById('coloBgInput')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+        showToast("Seules les images sont acceptées.", "error");
+        return;
+    }
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+        let base64 = reader.result;
+        if (base64.length > 5500000) {
+            showToast("L'image est trop lourde. Choisis une photo plus petite (max 4Mo environ).", "error");
+            return;
+        }
+        const inputBase64 = document.getElementById('coloBgBase64');
+        if (inputBase64) inputBase64.value = base64;
+        const bgPreview = document.getElementById('coloBgPreview');
+        if (bgPreview) {
+            bgPreview.src = base64;
+            bgPreview.classList.remove('hidden');
+        }
+    };
+    reader.onerror = () => showToast("Erreur de lecture de l'image.", "error");
+});
+
 document.getElementById('btnSaveColoForm')?.addEventListener('click', async () => {
     const btn = document.getElementById('btnSaveColoForm');
     const errEl = document.getElementById('coloFormError');
@@ -343,6 +388,7 @@ document.getElementById('btnSaveColoForm')?.addEventListener('click', async () =
         dateFin: document.getElementById('coloDateFin')?.value || '',
         driveId: document.getElementById('coloDriveId')?.value.trim() || '',
         ppId: document.getElementById('coloPPId')?.value.trim() || '',
+        bgImage: document.getElementById('coloBgBase64')?.value || '',
         emoji: document.getElementById('coloEmoji')?.value.trim() || '🏕️',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };

@@ -254,6 +254,15 @@
                         </p>
                     </div>
                     <div class="es-field">
+                        <label class="es-field__label" for="coloBgInput">Image de fond (Card Anim)</label>
+                        <div class="es-input-wrap">
+                            <i class="bi bi-image es-input-icon"></i>
+                            <input class="es-input es-input--icon" type="file" id="coloBgInput" accept="image/*" style="padding-top:8px;">
+                        </div>
+                        <img id="coloBgPreview" class="hidden" style="max-width: 100%; margin-top: 10px; border-radius: 8px; max-height: 150px; object-fit: cover;">
+                        <input type="hidden" id="coloBgBase64">
+                    </div>
+                    <div class="es-field">
                         <label class="es-field__label">Emoji</label>
                         <input type="hidden" id="coloEmoji" value="🏕️">
                         <div id="coloEmojiSelector" class="es-emoji-selector">
