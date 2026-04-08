@@ -10,6 +10,7 @@ let currentColoId = null; // Pour la gestion des participants
 let currentColoNom = ''; // Pour l'export
 let currentAdminGroups = []; // Noms des groupes thématiques
 let deleteTarget = null; // { type: 'colo'|'participant', id, coloId? }
+let adminParticipantColView = 'note'; // 'spec' | 'note'
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -147,8 +148,8 @@ function buildColoAdminCard(colo, nbParticipants) {
     const visible = colo.visible !== false; // true par défaut
     const locked = colo.participantsLocked !== false; // true par défaut
 
-    const headerStyle = colo.bgImage 
-        ? `style="background-image: url('${colo.bgImage}'); background-size: cover; background-position: center; border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg) var(--radius-lg) 0 0; text-shadow: 0px 2px 8px rgba(0,0,0,0.8), 0px 1px 3px rgba(0,0,0,0.9);"` 
+    const headerStyle = colo.bgImage
+        ? `style="background-image: url('${colo.bgImage}'); background-size: cover; background-position: center; border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg) var(--radius-lg) 0 0; text-shadow: 0px 2px 8px rgba(0,0,0,0.8), 0px 1px 3px rgba(0,0,0,0.9);"`
         : '';
 
     div.innerHTML = `
@@ -374,7 +375,7 @@ document.getElementById('btnRemoveColoBg')?.addEventListener('click', () => {
     const bgBase64 = document.getElementById('coloBgBase64');
     const bgPreviewContainer = document.getElementById('coloBgPreviewContainer');
     const bgPreview = document.getElementById('coloBgPreview');
-    
+
     if (bgInput) bgInput.value = '';
     if (bgBase64) bgBase64.value = '';
     if (bgPreview) bgPreview.src = '';
@@ -524,16 +525,22 @@ async function loadParticipantsAdmin(coloId) {
         const hasGroups = currentAdminGroups.length > 0;
         document.querySelectorAll('#overlayParticipantsAdmin .col-groupe').forEach(el => el.classList.toggle('hidden', !hasGroups));
 
+        // Mettre à jour la visibilité des th
+        document.querySelectorAll('.col-spec-admin').forEach(el => el.classList.toggle('hidden', adminParticipantColView !== 'spec'));
+        document.querySelectorAll('.col-note-admin').forEach(el => el.classList.toggle('hidden', adminParticipantColView !== 'note'));
+
         tbody.innerHTML = participants.map(p => {
             const g = hasGroups ? currentAdminGroups.find(x => x.id === p.groupeId) : null;
             const note = p.note || '';
             const isLong = note.length > 20;
             const noteDisplay = isLong ? note.substring(0, 17) + '...' : note;
+            const specIsVisible = adminParticipantColView === 'spec';
+            const noteIsVisible = adminParticipantColView === 'note';
 
             return `
             <tr>
-                <td><strong>${p.prenom || ''}</strong></td>
-                <td>${p.nom || ''}</td>
+                <td><strong>${escapeHtml(p.prenom || '')}</strong></td>
+                <td>${escapeHtml(p.nom || '')}</td>
                 <td><span class="es-pill es-pill--age">${p.age} ans</span></td>
                 <td><span class="es-pill ${p.genre === 'masculin' ? 'es-pill--m' : 'es-pill--f'}">
                     ${p.genre === 'masculin' ? '♂' : '♀'}
@@ -541,10 +548,10 @@ async function loadParticipantsAdmin(coloId) {
                 <td class="col-groupe ${!hasGroups ? 'hidden' : ''}">
                     ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted">–</span>'}
                 </td>
-                <td>
+                <td class="col-spec-admin${!specIsVisible ? ' hidden' : ''}">
                     ${(p.spec || []).length > 0 ? p.spec.map(s => `<span class="es-tag" style="${getStringColorStyle(s)}">${escapeHtml(s)}</span>`).join('') : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
                 </td>
-                <td>
+                <td class="col-note-admin${!noteIsVisible ? ' hidden' : ''}">
                     ${note ? `
                         <span style="font-size:0.8rem; color:var(--clr-text-muted);">
                             ${escapeHtml(noteDisplay)}
@@ -553,20 +560,42 @@ async function loadParticipantsAdmin(coloId) {
                     ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
                 </td>
                 <td class="es-table__actions">
-                    <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier" onclick="editParticipantAdmin('${p.id}', ${escapeHtml(JSON.stringify(JSON.stringify(p)))})">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="es-btn es-btn--danger es-btn--sm" title="Supprimer" onclick="confirmDeleteParticipant('${p.id}', ${escapeHtml(JSON.stringify(p.prenom + ' ' + p.nom))})">
-                        <i class="bi bi-trash3"></i>
-                    </button>
+                    <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier" onclick="editParticipantAdmin('${p.id}', ${escapeHtml(JSON.stringify(JSON.stringify(p)))})"><i class="bi bi-pencil"></i></button>
+                    <button class="es-btn es-btn--danger es-btn--sm" title="Supprimer" onclick="confirmDeleteParticipant('${p.id}', ${escapeHtml(JSON.stringify(p.prenom + ' ' + p.nom))})"><i class="bi bi-trash3"></i></button>
                 </td>
-            </tr>
-        `;
+            </tr>`;
         }).join('');
     } catch (err) {
         console.error('loadParticipantsAdmin:', err);
         tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="color:var(--clr-danger);padding:20px;">Erreur de chargement.</td></tr>`;
     }
+}
+
+function setAdminParticipantColView(view) {
+    adminParticipantColView = view;
+
+    // Mettre à jour les styles des boutons du segmented control
+    const btnSpec = document.getElementById('btnAdminShowSpec');
+    const btnNote = document.getElementById('btnAdminShowNote');
+    if (btnSpec && btnNote) {
+        if (view === 'spec') {
+            btnSpec.style.background = 'var(--clr-primary)';
+            btnSpec.style.color = '#fff';
+            btnSpec.style.fontWeight = '700';
+            btnNote.style.background = 'transparent';
+            btnNote.style.color = 'rgba(255,255,255,0.45)';
+            btnNote.style.fontWeight = '500';
+        } else {
+            btnNote.style.background = 'var(--clr-primary)';
+            btnNote.style.color = '#fff';
+            btnNote.style.fontWeight = '700';
+            btnSpec.style.background = 'transparent';
+            btnSpec.style.color = 'rgba(255,255,255,0.45)';
+            btnSpec.style.fontWeight = '500';
+        }
+    }
+
+    loadParticipantsAdmin(currentColoId);
 }
 
 document.getElementById('btnCloseParticipantsAdmin')?.addEventListener('click', () => closeModal('overlayParticipantsAdmin'));

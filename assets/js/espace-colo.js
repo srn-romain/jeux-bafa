@@ -15,6 +15,7 @@ let currentLocked = true;
 let participants = [];
 let currentGroups = []; // { id, name }
 let isScheduledAlertsExpanded = false;
+let participantColView = 'note'; // 'spec' | 'note' — colonne visible dans le tableau participants
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -294,11 +295,14 @@ function renderParticipantsTable(role) {
         const isLong = note.length > 25;
         const noteDisplay = isLong ? note.substring(0, 22) + '...' : note;
 
+        const specIsVisible = participantColView === 'spec';
+        const noteIsVisible = participantColView === 'note';
+
         return `
         <tr>
             <td style="text-align:center; font-size:0.75rem; color:var(--clr-text-muted); font-weight:600; user-select:none;">${idx + 1}</td>
-            <td><strong>${p.prenom || ''}</strong></td>
-            <td>${p.nom || ''}</td>
+            <td><strong>${escapeHtml(p.prenom || '')}</strong></td>
+            <td>${escapeHtml(p.nom || '')}</td>
             <td><span class="es-pill es-pill--age">${p.age} ans</span></td>
             <td>
                 <span class="es-pill ${p.genre === 'masculin' ? 'es-pill--m' : 'es-pill--f'}">
@@ -308,10 +312,10 @@ function renderParticipantsTable(role) {
             <td class="col-groupe ${!hasGroups ? 'hidden' : ''}">
                 ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
-            <td>
+            <td class="col-spec${!specIsVisible ? ' hidden' : ''}">
                 ${(p.spec || []).length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">${p.spec.map(s => `<span class="es-tag" style="${getStringColorStyle(s)}">${escapeHtml(s)}</span>`).join('')}</div>` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
-            <td>
+            <td class="col-note${!noteIsVisible ? ' hidden' : ''}">
                 ${note ? `
                     <div style="font-size:0.82rem; color:var(--clr-text-muted); display:flex; align-items:center; gap:6px;">
                         <span>${escapeHtml(noteDisplay)}</span>
@@ -334,6 +338,40 @@ function renderParticipantsTable(role) {
         </tr>
     `;
     }).join('');
+}
+
+// ----------------------------------------------------------------
+// TOGGLE COLONNE SPEC / NOTE
+// ----------------------------------------------------------------
+function setParticipantColView(view) {
+    participantColView = view;
+
+    // Mettre à jour les styles des boutons du segmented control
+    const btnSpec = document.getElementById('btnShowSpec');
+    const btnNote = document.getElementById('btnShowNote');
+    if (btnSpec && btnNote) {
+        if (view === 'spec') {
+            btnSpec.style.background = 'var(--clr-primary)';
+            btnSpec.style.color = '#fff';
+            btnSpec.style.fontWeight = '700';
+            btnNote.style.background = 'transparent';
+            btnNote.style.color = 'rgba(255,255,255,0.45)';
+            btnNote.style.fontWeight = '500';
+        } else {
+            btnNote.style.background = 'var(--clr-primary)';
+            btnNote.style.color = '#fff';
+            btnNote.style.fontWeight = '700';
+            btnSpec.style.background = 'transparent';
+            btnSpec.style.color = 'rgba(255,255,255,0.45)';
+            btnSpec.style.fontWeight = '500';
+        }
+    }
+
+    // Thead
+    document.querySelectorAll('.col-spec').forEach(el => el.classList.toggle('hidden', view !== 'spec'));
+    document.querySelectorAll('.col-note').forEach(el => el.classList.toggle('hidden', view !== 'note'));
+    // Re-render tbody
+    renderParticipantsTable(currentRole);
 }
 
 // ----------------------------------------------------------------
@@ -1912,10 +1950,10 @@ document.getElementById('formSetLocation')?.addEventListener('submit', async (e)
 
 document.getElementById('btnDeleteLocation')?.addEventListener('click', async () => {
     if (!confirm("Supprimer le lieu du séjour ? Cela arrêtera l'affichage de la météo.")) return;
-    
+
     const btn = document.getElementById('btnDeleteLocation');
     const input = document.getElementById('meteoLocation');
-    
+
     btnLoading(btn, true);
     try {
         await db.collection('espaces').doc(espaceId).update({
@@ -1924,14 +1962,14 @@ document.getElementById('btnDeleteLocation')?.addEventListener('click', async ()
             meteoLat: firebase.firestore.FieldValue.delete(),
             meteoLon: firebase.firestore.FieldValue.delete()
         });
-        
+
         if (input) {
             input.value = '';
             delete input.dataset.lat;
             delete input.dataset.lon;
             delete input.dataset.name;
         }
-        
+
         showToast("Le lieu a été supprimé.", "success");
     } catch (e) {
         console.error("DeleteLocation error:", e);
@@ -1950,7 +1988,7 @@ function loadPhotos(colo, role) {
     const uploadBtn = document.getElementById('btnUploadPhoto');
     const uploadDisabledMsg = document.getElementById('photoUploadDisabledMsg');
     const toggleUpload = document.getElementById('toggleAnimUpload');
-    
+
     // Toggle state for admin
     if (toggleUpload) {
         toggleUpload.checked = colo.photoUploadEnabled === true;
@@ -1984,13 +2022,13 @@ function loadPhotos(colo, role) {
 
     try {
         db.collection('espaces').doc(colo.id).collection('photos')
-          .orderBy('createdAt', 'desc')
-          .onSnapshot(snap => {
-              currentPhotos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              renderPhotos(colo, role);
-          }, err => {
-              console.warn("Snapshot photos échoué (règles Firebase ?) :", err);
-          });
+            .orderBy('createdAt', 'desc')
+            .onSnapshot(snap => {
+                currentPhotos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderPhotos(colo, role);
+            }, err => {
+                console.warn("Snapshot photos échoué (règles Firebase ?) :", err);
+            });
     } catch (err) {
         console.error("Photos:", err);
     }
@@ -2000,7 +2038,7 @@ function renderPhotos(colo, role) {
     const grid = document.getElementById('photosGrid');
     const empty = document.getElementById('photosEmpty');
     if (!grid || !empty) return;
-    
+
     let allPhotosHTML = '';
 
     // First photo is always the cover of the colony (if exists)
@@ -2016,7 +2054,7 @@ function renderPhotos(colo, role) {
     // Then subcollection photos
     currentPhotos.forEach(p => {
         const canDelete = role === 'admin' || (role === 'anim' && currentUser && currentUser.uid === p.authorId);
-        
+
         allPhotosHTML += `
             <div class="es-photo-item">
                 <img src="${p.base64}" alt="Photo">
@@ -2036,7 +2074,7 @@ function renderPhotos(colo, role) {
     } else {
         empty.classList.add('hidden');
         grid.innerHTML = allPhotosHTML;
-        
+
         // Add delete listeners
         grid.querySelectorAll('.delete-photo-btn').forEach(btn => {
             btn.addEventListener('click', () => deletePhoto(colo.id, btn.getAttribute('data-id')));
@@ -2055,10 +2093,10 @@ document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
         showToast("Seules les images sont acceptées.", "error");
         return;
     }
-    
+
     const btn = document.getElementById('btnUploadPhoto');
     const errUI = document.getElementById('photoUploadError');
-    if(errUI) errUI.classList.add('hidden');
+    if (errUI) errUI.classList.add('hidden');
     btnLoading(btn, true);
 
     const reader = new FileReader();
@@ -2069,7 +2107,7 @@ document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
             let width = img.width;
             let height = img.height;
             const maxDim = 1200; // Redimensionne tranquillement pour le web
-            
+
             if (width > maxDim || height > maxDim) {
                 if (width > height) {
                     height = Math.round((height *= maxDim / width));
@@ -2079,19 +2117,19 @@ document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
                     height = maxDim;
                 }
             }
-            
+
             const canvas = document.createElement('canvas');
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-            
+
             // Qualitée moyenne/haute pour passer sous les 1 MiB de Firestore
             let base64 = canvas.toDataURL('image/jpeg', 0.75);
 
             // Firestore absolute max doc size is ~1MB (1,048,576 bytes)
             if (base64.length > 1000000) {
-                if(errUI) {
+                if (errUI) {
                     errUI.classList.remove('hidden');
                 } else {
                     showToast("L'image est trop lourde même après compression web.", "error");
@@ -2107,7 +2145,7 @@ document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
                     if (uDoc.exists && uDoc.data().displayName) {
                         pseudo = uDoc.data().displayName;
                     }
-                } catch (ignored) {}
+                } catch (ignored) { }
 
                 await db.collection('espaces').doc(espaceId).collection('photos').add({
                     base64: base64,

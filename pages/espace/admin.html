@@ -312,6 +312,17 @@
                         <i class="bi bi-upload"></i> Import JSON
                     </button>
                     <input type="file" id="inputImportParticipants" class="hidden" accept=".json">
+                    <!-- Sélecteur colonne Spécificités / Remarques -->
+                    <div style="display:inline-flex;border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.25);padding:2px;">
+                        <button id="btnAdminShowSpec" onclick="setAdminParticipantColView('spec')"
+                            style="padding:4px 11px;font-size:0.78rem;border:none;cursor:pointer;transition:all 0.18s;background:transparent;color:rgba(255,255,255,0.45);font-weight:500;border-radius:16px;display:flex;align-items:center;gap:4px;">
+                            <i class="bi bi-tag"></i> Spécificités
+                        </button>
+                        <button id="btnAdminShowNote" onclick="setAdminParticipantColView('note')"
+                            style="padding:4px 11px;font-size:0.78rem;border:none;cursor:pointer;transition:all 0.18s;background:var(--clr-primary);color:#fff;font-weight:700;border-radius:16px;display:flex;align-items:center;gap:4px;">
+                            <i class="bi bi-chat-left-text"></i> Remarques
+                        </button>
+                    </div>
                     <button class="es-btn es-btn--primary es-btn--sm" id="btnAddParticipantAdmin">
                         <i class="bi bi-plus-lg"></i> Ajouter
                     </button>
@@ -325,8 +336,8 @@
                                 <th>Âge</th>
                                 <th>Genre</th>
                                 <th class="col-groupe hidden">Groupe</th>
-                                <th>Spécificités</th>
-                                <th>Remarque</th>
+                                <th class="col-spec-admin hidden">Spécificités</th>
+                                <th class="col-note-admin">Remarque</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
