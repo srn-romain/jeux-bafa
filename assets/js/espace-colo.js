@@ -264,9 +264,21 @@ function renderParticipantsTable(role) {
 
     window.currentFilteredParticipants = filteredParticipants;
 
+    // Mise à jour du compteur
+    const counter = document.getElementById('participantsCounter');
+    if (counter) {
+        if (participants.length === 0) {
+            counter.textContent = '';
+        } else if (filteredParticipants.length === participants.length) {
+            counter.textContent = `${participants.length} participant${participants.length > 1 ? 's' : ''} au total`;
+        } else {
+            counter.innerHTML = `<strong>${filteredParticipants.length}</strong> affiché${filteredParticipants.length > 1 ? 's' : ''} <span style="opacity:0.6;">/ ${participants.length} au total</span>`;
+        }
+    }
+
     if (filteredParticipants.length === 0) {
         const msg = participants.length > 0 ? "Aucun participant ne correspond à vos filtres." : "Aucun participant enregistré.";
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted" style="padding:24px;">${msg}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted" style="padding:24px;">${msg}</td></tr>`;
         return;
     }
 
@@ -276,7 +288,7 @@ function renderParticipantsTable(role) {
     // Afficher/Cacher la colonne groupe
     document.querySelectorAll('.col-groupe').forEach(el => el.classList.toggle('hidden', !hasGroups));
 
-    tbody.innerHTML = filteredParticipants.map(p => {
+    tbody.innerHTML = filteredParticipants.map((p, idx) => {
         const g = hasGroups ? currentGroups.find(x => x.id === p.groupeId) : null;
         const note = p.note || '';
         const isLong = note.length > 25;
@@ -284,6 +296,7 @@ function renderParticipantsTable(role) {
 
         return `
         <tr>
+            <td style="text-align:center; font-size:0.75rem; color:var(--clr-text-muted); font-weight:600; user-select:none;">${idx + 1}</td>
             <td><strong>${p.prenom || ''}</strong></td>
             <td>${p.nom || ''}</td>
             <td><span class="es-pill es-pill--age">${p.age} ans</span></td>
