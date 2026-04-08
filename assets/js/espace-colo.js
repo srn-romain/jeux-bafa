@@ -16,6 +16,7 @@ let participants = [];
 let currentGroups = []; // { id, name }
 let isScheduledAlertsExpanded = false;
 let participantColView = 'note'; // 'spec' | 'note' — colonne visible dans le tableau participants
+let currentViewIndex = -1;       // Index dans currentFilteredParticipants pour la modale fiche
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -286,6 +287,9 @@ function renderParticipantsTable(role) {
     const canEdit = role === 'admin' || (role === 'anim' && !currentLocked);
     const hasGroups = currentGroups.length > 0;
 
+    // Exposer la liste filtrée pour la modale de fiche
+    window.currentFilteredParticipants = filteredParticipants;
+
     // Afficher/Cacher la colonne groupe
     document.querySelectorAll('.col-groupe').forEach(el => el.classList.toggle('hidden', !hasGroups));
 
@@ -298,7 +302,7 @@ function renderParticipantsTable(role) {
         const noteIsVisible = participantColView === 'note';
 
         return `
-        <tr>
+        <tr onclick="openParticipantView(${idx})" style="cursor:pointer;">
             <td style="text-align:center; font-size:0.75rem; color:var(--clr-text-muted); font-weight:600; user-select:none;">${idx + 1}</td>
             <td><strong>${escapeHtml(p.prenom || '')}</strong></td>
             <td>${escapeHtml(p.nom || '')}</td>
@@ -314,17 +318,17 @@ function renderParticipantsTable(role) {
             <td class="col-spec${!specIsVisible ? ' hidden' : ''}">
                 ${(p.spec || []).length > 0 ? `<div style="display:flex; flex-wrap:wrap; gap:4px; align-items:center;">${p.spec.map(s => `<span class="es-tag" style="${getStringColorStyle(s)}">${escapeHtml(s)}</span>`).join('')}</div>` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
-            <td class="col-note${!noteIsVisible ? ' hidden' : ''}">
+            <td style="font-size:0.85rem;" class="col-note${!noteIsVisible ? ' hidden' : ''}">
                 ${note ? `
                     <div style="display:flex;align-items:center;gap:0;width:100%;min-width:0;">
                         <span class="es-note-text">${escapeHtml(note)}</span>
                         <span style="flex-shrink:0;width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;">
-                            ${isLong ? `<button style="padding:0;height:18px;width:18px;border:none;color:var(--clr-primary);background:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px;" onclick="openNoteModal(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye" style="font-size:0.82rem;"></i></button>` : ''}
+                            ${isLong ? `<button style="padding:0;height:18px;width:18px;border:none;color:var(--clr-primary);background:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px;" onclick="event.stopPropagation();openNoteModal(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye" style="font-size:0.82rem;"></i></button>` : ''}
                         </span>
                     </div>
                 ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
-            <td class="es-table__actions" data-html2canvas-ignore="true">
+            <td class="es-table__actions" data-html2canvas-ignore="true" onclick="event.stopPropagation()">
                 <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier"
                         onclick="editParticipant('${p.id}')">
                     <i class="bi bi-pencil"></i>
@@ -374,6 +378,92 @@ function setParticipantColView(view) {
     // Re-render tbody
     renderParticipantsTable(currentRole);
 }
+
+// ----------------------------------------------------------------
+// FICHE PARTICIPANT — Modale lecture seule + navigation chevrons
+// ----------------------------------------------------------------
+function openParticipantView(index) {
+    currentViewIndex = index;
+    renderParticipantView();
+    openModal('overlayParticipantView');
+}
+
+function navigateParticipantView(dir) {
+    const list = window.currentFilteredParticipants || [];
+    const next = currentViewIndex + dir;
+    if (next >= 0 && next < list.length) {
+        currentViewIndex = next;
+        renderParticipantView();
+    }
+}
+
+function renderParticipantView() {
+    const list = window.currentFilteredParticipants || [];
+    const p = list[currentViewIndex];
+    if (!p) return;
+
+    // Avatar
+    const avatar = document.getElementById('pvAvatar');
+    const initials = ((p.prenom||'')[0]||'').toUpperCase() + ((p.nom||'')[0]||'').toUpperCase();
+    const isFeminin = p.genre !== 'masculin';
+    avatar.textContent = initials;
+    avatar.style.background = isFeminin
+        ? 'linear-gradient(135deg, #f093fb, #f5576c)'
+        : 'linear-gradient(135deg, #4facfe, #00f2fe)';
+
+    // Nom & sous-titre
+    document.getElementById('pvName').textContent = `${p.prenom||''} ${p.nom||''}`;
+    document.getElementById('pvSubtitle').innerHTML =
+        `<span class="es-pill ${isFeminin?'es-pill--f':'es-pill--m'}" style="font-size:0.72rem;padding:2px 8px;">
+            ${isFeminin ? '♀ Fille' : '♂ Garçon'}
+         </span>
+         &nbsp;·&nbsp;
+         <span class="es-pill es-pill--age" style="font-size:0.72rem;padding:2px 8px;">${p.age} ans</span>`;
+
+    const g = currentGroups.find(x => x.id === p.groupeId);
+    const specList = p.spec || [];
+    const note = p.note || '';
+
+    document.getElementById('pvBody').innerHTML = `
+        <div class="es-pv-grid">
+            ${g ? `
+            <div class="es-pv-row">
+                <span class="es-pv-label"><i class="bi bi-people"></i> Groupe</span>
+                <span class="es-pv-value">
+                    <span class="es-badge" style="background:var(--clr-surface-3);border:1px solid var(--clr-surface-4);color:var(--clr-text);">
+                        ${escapeHtml(g.name)}
+                    </span>
+                </span>
+            </div>` : ''}
+
+            <div class="es-pv-row${specList.length > 0 ? ' es-pv-row--block' : ''}">
+                <span class="es-pv-label"><i class="bi bi-tag"></i> Spécificités</span>
+                ${specList.length > 0
+                    ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">${specList.map(s => `<span class="es-tag" style="${getStringColorStyle(s)}">${escapeHtml(s)}</span>`).join('')}</div>`
+                    : `<span class="es-pv-value" style="color:var(--clr-text-muted);font-style:italic;font-size:0.85rem;">Aucune</span>`}
+            </div>
+
+            <div class="es-pv-row${note ? ' es-pv-row--block' : ''}">
+                <span class="es-pv-label"><i class="bi bi-chat-left-text"></i> Remarque</span>
+                ${note
+                    ? `<p class="es-pv-note">${escapeHtml(note)}</p>`
+                    : `<span class="es-pv-value" style="color:var(--clr-text-muted);font-style:italic;font-size:0.85rem;">Aucune</span>`}
+            </div>
+        </div>
+    `;
+
+    document.getElementById('pvCounter').textContent = `${currentViewIndex + 1}\u00a0/\u00a0${list.length}`;
+    document.getElementById('btnParticipantPrev').disabled = currentViewIndex === 0;
+    document.getElementById('btnParticipantNext').disabled = currentViewIndex === list.length - 1;
+}
+
+// Navigation clavier gauche/droite dans la modale fiche
+document.addEventListener('keydown', (e) => {
+    if (document.getElementById('overlayParticipantView')?.classList.contains('hidden')) return;
+    if (e.key === 'ArrowLeft')  navigateParticipantView(-1);
+    if (e.key === 'ArrowRight') navigateParticipantView(1);
+    if (e.key === 'Escape')     closeModal('overlayParticipantView');
+});
 
 // ----------------------------------------------------------------
 // FILTRES ET RECHERCHE

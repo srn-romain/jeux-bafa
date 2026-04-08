@@ -744,6 +744,52 @@
     </div>
   </div>
 
+  <!-- ================================================ -->
+  <!-- Modal : Fiche participant (lecture seule + nav) -->
+  <!-- ================================================ -->
+  <div class="es-overlay hidden" id="overlayParticipantView" role="dialog" aria-modal="true"
+    onclick="if(event.target===this)closeModal('overlayParticipantView')">
+    <div class="es-pv-wrapper">
+
+      <!-- Chevron gauche -->
+      <button class="es-nav-chevron" id="btnParticipantPrev"
+        onclick="navigateParticipantView(-1)" title="Participant précédent" aria-label="Précédent">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+
+      <!-- Carte participant -->
+      <div class="es-modal es-pv-modal">
+        <div class="es-modal__header" style="gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0;flex:1;">
+            <div id="pvAvatar" class="es-pv-avatar"></div>
+            <div style="min-width:0;">
+              <h2 class="es-modal__title" id="pvName" style="font-size:1.1rem;"></h2>
+              <div id="pvSubtitle" style="font-size:0.8rem;color:var(--clr-text-muted);margin-top:2px;"></div>
+            </div>
+          </div>
+          <button class="es-modal__close" id="btnCloseParticipantView"
+            onclick="closeModal('overlayParticipantView')">
+            <i class="bi bi-x"></i>
+          </button>
+        </div>
+
+        <div class="es-modal__body" id="pvBody" style="padding-top:8px;"></div>
+
+        <div class="es-modal__footer" style="justify-content:space-between;align-items:center;">
+          <span id="pvCounter" style="font-size:0.82rem;color:var(--clr-text-muted);min-width:40px;text-align:center;"></span>
+          <button class="es-btn es-btn--ghost" onclick="closeModal('overlayParticipantView')">Fermer</button>
+        </div>
+      </div>
+
+      <!-- Chevron droit -->
+      <button class="es-nav-chevron" id="btnParticipantNext"
+        onclick="navigateParticipantView(1)" title="Participant suivant" aria-label="Suivant">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+
+    </div>
+  </div>
+
   <!-- Toast container -->
   <div class="es-toast-container" id="toastContainer"></div>
 

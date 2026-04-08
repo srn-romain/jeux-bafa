@@ -1530,6 +1530,166 @@ input:checked+.es-slider:before {
 }
 
 /* ================================================================
+   FICHE PARTICIPANT — Modale lecture + navigation chevronnée
+   ================================================================ */
+
+/* Wrapper flex : [chevron] [modal] [chevron] */
+.es-pv-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 640px;
+  padding: 0 4px;
+}
+
+/* La carte modale prend tout l'espace central */
+.es-pv-modal {
+  flex: 1;
+  min-width: 0;
+  max-width: 520px;
+}
+
+/* Chevrons de navigation */
+.es-nav-chevron {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.18s, opacity 0.18s;
+  outline: none;
+}
+
+.es-nav-chevron:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.24);
+  border-color: rgba(255, 255, 255, 0.55);
+  transform: scale(1.1);
+}
+
+.es-nav-chevron:disabled {
+  opacity: 0.22;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Avatar coloré avec initiales */
+.es-pv-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.25);
+}
+
+/* Grille infos participant */
+.es-pv-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.es-pv-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--clr-surface-3);
+}
+
+.es-pv-row:last-child {
+  border-bottom: none;
+}
+
+.es-pv-row--block {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.es-pv-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  min-width: 110px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.es-pv-value {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--clr-text);
+}
+
+/* Note complète dans la fiche */
+.es-pv-note {
+  font-size: 0.88rem;
+  color: var(--clr-text);
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #fffdf0;
+  border: 1px solid #e9d89a;
+  border-radius: 8px;
+  padding: 10px 13px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ligne cliquable du tableau */
+.es-table tbody tr {
+  cursor: pointer;
+}
+
+/* Mobile : chevrons en dessous de la carte */
+@media (max-width: 559px) {
+  .es-pv-wrapper {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* Réordonner : modale en haut, chevrons en bas sur 1 ligne */
+  .es-pv-modal { order: 1; }
+  #btnParticipantPrev { order: 2; }
+  #btnParticipantNext { order: 2; }
+
+  /* Les deux chevrons côte à côte en bas */
+  #btnParticipantPrev,
+  #btnParticipantNext {
+    width: 52px;
+    height: 52px;
+    font-size: 1.3rem;
+  }
+
+  .es-pv-wrapper {
+    /* row pour les chevrons une fois en bas */
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+/* ================================================================
    POPUP / MODAL
    ================================================================ */
 .es-overlay {
