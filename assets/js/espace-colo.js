@@ -120,7 +120,7 @@ function showAccessDenied(icon, title, text, isPending = false, isRefused = fals
 // ----------------------------------------------------------------
 // INITIALISER LE CONTENU DE LA COLO
 // ----------------------------------------------------------------
-function initColoContent(colo, role) {
+async function initColoContent(colo, role) {
     document.getElementById('pageLoader').classList.add('hidden');
     document.getElementById('accessDenied').classList.add('hidden');
     document.getElementById('coloContent').classList.remove('hidden');
@@ -168,12 +168,12 @@ function initColoContent(colo, role) {
         }
     }
 
-    // Charger les participants
+    // Charger les groupes EN PREMIER (les participants en dépendent pour le filtre)
+    await loadGroups(colo.id, role);
+    // Charger les participants (buildFilters s'exécute avec currentGroups déjà remplis)
     loadParticipants(colo.id, role);
     // Charger les animateurs
     loadAnimateurs(colo.id);
-    // Charger les groupes
-    loadGroups(colo.id, role);
     // Charger les alertes
     loadAlerts(colo.id, role);
     // Charger la météo dynamique
@@ -1118,6 +1118,9 @@ async function loadGroups(id, role) {
         if (role === 'admin') {
             document.getElementById('btnManageGroups')?.classList.remove('hidden');
         }
+
+        // Mettre à jour les filtres de la table participants
+        buildFilters();
 
         // Re-render le tableau pour la colonne groupe
         renderParticipantsTable(role);
