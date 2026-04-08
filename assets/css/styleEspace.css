@@ -352,6 +352,26 @@ textarea {
   .es-topbar__brand .brand-label {
     display: none;
   }
+
+  /* ---- Section participants : labels masqués sur mobile ---- */
+  /* Les .brand-label dans les cartes (pas topbar) */
+  .es-card .brand-label {
+    display: none;
+  }
+
+  /* Boutons icône-seule : padding réduit */
+  .es-card .es-btn--sm {
+    padding: 6px 9px;
+    gap: 0;
+  }
+
+  /* Toggle pill : icônes seulement, labels masqués */
+  .es-card #btnShowSpec span.brand-label,
+  .es-card #btnShowNote span.brand-label,
+  .es-card #btnAdminShowSpec span.brand-label,
+  .es-card #btnAdminShowNote span.brand-label {
+    display: none;
+  }
 }
 
 @media (min-width: 560px) {
