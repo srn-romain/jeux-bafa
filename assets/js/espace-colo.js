@@ -292,8 +292,7 @@ function renderParticipantsTable(role) {
     tbody.innerHTML = filteredParticipants.map((p, idx) => {
         const g = hasGroups ? currentGroups.find(x => x.id === p.groupeId) : null;
         const note = p.note || '';
-        const isLong = note.length > 25;
-        const noteDisplay = isLong ? note.substring(0, 22) + '...' : note;
+        const isLong = note.length > 50;
 
         const specIsVisible = participantColView === 'spec';
         const noteIsVisible = participantColView === 'note';
@@ -317,9 +316,11 @@ function renderParticipantsTable(role) {
             </td>
             <td class="col-note${!noteIsVisible ? ' hidden' : ''}">
                 ${note ? `
-                    <div style="font-size:0.82rem; color:var(--clr-text-muted); display:flex; align-items:center; gap:6px;">
-                        <span>${escapeHtml(noteDisplay)}</span>
-                        ${isLong ? `<button class="es-btn es-btn--ghost es-btn--sm" style="padding:0; height:18px; width:18px; border:none; color:var(--clr-primary); background:none; display:inline-flex; align-items:center; justify-content:center;" onclick="openNoteModal(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye"></i></button>` : ''}
+                    <div style="display:flex;align-items:center;gap:0;width:100%;min-width:0;">
+                        <span class="es-note-text">${escapeHtml(note)}</span>
+                        <span style="flex-shrink:0;width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;">
+                            ${isLong ? `<button style="padding:0;height:18px;width:18px;border:none;color:var(--clr-primary);background:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px;" onclick="openNoteModal(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye" style="font-size:0.82rem;"></i></button>` : ''}
+                        </span>
                     </div>
                 ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>

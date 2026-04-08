@@ -1510,6 +1510,25 @@ input:checked+.es-slider:before {
   white-space: nowrap;
 }
 
+/* Colonne Remarque — largeur contrainte pour text-overflow */
+.es-table .col-note,
+.es-table .col-note-admin {
+  max-width: 240px;
+  width: 220px;
+  overflow: hidden;
+}
+
+/* Texte de remarque — tronqué par CSS, jamais par JS */
+.es-note-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.82rem;
+  color: var(--clr-text-muted);
+}
+
 /* ================================================================
    POPUP / MODAL
    ================================================================ */
@@ -2239,7 +2258,7 @@ input:checked+.es-slider:before {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: rgba(0,0,0,0.65);
+  background: rgba(0, 0, 0, 0.65);
   color: #fff;
   padding: 3px 8px;
   border-radius: var(--radius-sm);
@@ -2248,7 +2267,7 @@ input:checked+.es-slider:before {
   pointer-events: none;
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .es-photo-delete {

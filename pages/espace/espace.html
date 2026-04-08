@@ -335,7 +335,8 @@
                       <span class="es-btn__text"><i class="bi bi-geo-alt"></i> Mettre à jour</span>
                       <span class="es-btn__spinner"></span>
                     </button>
-                    <button type="button" class="es-btn es-btn--danger hidden" id="btnDeleteLocation" title="Supprimer le lieu">
+                    <button type="button" class="es-btn es-btn--danger hidden" id="btnDeleteLocation"
+                      title="Supprimer le lieu">
                       <i class="bi bi-trash3"></i>
                     </button>
                     <button type="button" class="es-btn es-btn--secondary" id="btnGenerateWeatherAlerts"
@@ -373,18 +374,22 @@
 
             <div class="es-section__content">
               <div class="es-card" style="padding: 20px;">
-                <div id="ppPreviewArea" class="hidden" style="margin-bottom: 20px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.1);">
-                  <iframe id="ppIframe" src="" width="100%" height="600" style="border: none; background: white;" loading="lazy"></iframe>
+                <div id="ppPreviewArea" class="hidden"
+                  style="margin-bottom: 20px; border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.1);">
+                  <iframe id="ppIframe" src="" width="100%" height="600" style="border: none; background: white;"
+                    loading="lazy"></iframe>
                 </div>
 
                 <div id="ppEmptyState" class="text-center" style="padding: 40px 20px;">
-                   <div style="font-size: 4rem; color: var(--clr-danger); margin-bottom: 20px; opacity: 0.8;">
-                      <i class="bi bi-file-pdf-fill"></i>
-                   </div>
-                   <h4 id="ppTitle" style="font-weight:700; margin-bottom:24px; font-size:1.2rem;">Projet Pédagogique</h4>
-                   <a href="#" target="_blank" id="btnViewPP" class="es-btn es-btn--primary es-btn--lg" style="min-width: 200px;">
-                     <i class="bi bi-eye"></i> <span class="es-btn__text">Ouvrir dans un nouvel onglet</span>
-                   </a>
+                  <div style="font-size: 4rem; color: var(--clr-danger); margin-bottom: 20px; opacity: 0.8;">
+                    <i class="bi bi-file-pdf-fill"></i>
+                  </div>
+                  <h4 id="ppTitle" style="font-weight:700; margin-bottom:24px; font-size:1.2rem;">Projet Pédagogique
+                  </h4>
+                  <a href="#" target="_blank" id="btnViewPP" class="es-btn es-btn--primary es-btn--lg"
+                    style="min-width: 200px;">
+                    <i class="bi bi-eye"></i> <span class="es-btn__text">Ouvrir dans un nouvel onglet</span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -411,19 +416,18 @@
                 title="Gérer les groupes">
                 <i class="bi bi-tags"></i> <span class="brand-label">Groupes</span>
               </button>
-              <button class="es-btn es-btn--ghost es-btn--sm hidden" id="btnExportParticipantsColo"
-                title="Export JSON">
+              <button class="es-btn es-btn--ghost es-btn--sm hidden" id="btnExportParticipantsColo" title="Export JSON">
                 <i class="bi bi-download"></i> <span class="brand-label">Export</span>
               </button>
-              <button class="es-btn es-btn--ghost es-btn--sm hidden" id="btnImportParticipantsColo"
-                title="Import JSON">
+              <button class="es-btn es-btn--ghost es-btn--sm hidden" id="btnImportParticipantsColo" title="Import JSON">
                 <i class="bi bi-upload"></i> <span class="brand-label">Import</span>
               </button>
               <input type="file" id="inputImportParticipantsColo" class="hidden" accept=".json">
 
               <!-- Toggle pill auto-aligné à droite -->
               <div style="margin-left:auto;flex-shrink:0;">
-                <div style="display:inline-flex;border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.25);padding:2px;">
+                <div
+                  style="display:inline-flex;border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.25);padding:2px;">
                   <button id="btnShowSpec" onclick="setParticipantColView('spec')"
                     style="padding:4px 10px;font-size:0.75rem;border:none;cursor:pointer;transition:all 0.18s;background:transparent;color:rgba(255,255,255,0.45);font-weight:500;border-radius:16px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
                     <i class="bi bi-tag"></i> <span class="brand-label">Spécificités</span>
@@ -526,12 +530,14 @@
             <p class="es-section__desc" style="margin-bottom: 20px;">
               Cette section regroupe les meilleures photos du séjour.
             </p>
-            
+
             <div style="display:flex; flex-direction:column; gap:12px; margin-bottom: 20px;">
               <div class="admin-only hidden">
-                <label class="es-checkbox-label" style="display:flex; align-items:center; gap:8px; cursor:pointer; width:fit-content;">
+                <label class="es-checkbox-label"
+                  style="display:flex; align-items:center; gap:8px; cursor:pointer; width:fit-content;">
                   <input type="checkbox" id="toggleAnimUpload">
-                  <span style="font-size:0.85rem; color:var(--clr-text-light);">Autoriser les anims à ajouter des photos</span>
+                  <span style="font-size:0.85rem; color:var(--clr-text-light);">Autoriser les anims à ajouter des
+                    photos</span>
                 </label>
               </div>
               <div>
@@ -541,23 +547,26 @@
                   <span class="es-btn__spinner"></span>
                 </button>
                 <div id="photoUploadDisabledMsg" class="es-alert es-alert--info hidden" style="width: 100%;">
-                  <i class="bi bi-info-circle"></i> 
-                  <span>L'ajout de photo est actuellement suspendu par la direction. Vous pouvez cependant continuer à consulter la bibliothèque.</span>
+                  <i class="bi bi-info-circle"></i>
+                  <span>L'ajout de photo est actuellement suspendu par la direction. Vous pouvez cependant continuer à
+                    consulter la bibliothèque.</span>
                 </div>
               </div>
             </div>
 
             <div id="photoUploadError" class="es-alert es-alert--error hidden" style="margin-bottom: 20px;">
               <i class="bi bi-file-earmark-x-fill" style="margin-top: 4px;"></i>
-              <span style="line-height:1.4;"><strong>Oups, cette photo est trop lourde !</strong><br>Veuillez choisir une image dont la taille originale est raisonnable, elle dépasse les capacités du serveur même après compression.</span>
+              <span style="line-height:1.4;"><strong>Oups, cette photo est trop lourde !</strong><br>Veuillez choisir
+                une image dont la taille originale est raisonnable, elle dépasse les capacités du serveur même après
+                compression.</span>
             </div>
 
             <div id="photosGrid" class="es-masonry-grid">
               <!-- Grid photos loaded dynamically -->
             </div>
             <div id="photosEmpty" class="text-center text-muted hidden" style="padding:40px 20px;">
-               <i class="bi bi-image" style="font-size: 2rem; opacity: 0.5; margin-bottom: 10px; display: block;"></i>
-               La bibliothèque est vide.
+              <i class="bi bi-image" style="font-size: 2rem; opacity: 0.5; margin-bottom: 10px; display: block;"></i>
+              La bibliothèque est vide.
             </div>
           </div>
         </div>
