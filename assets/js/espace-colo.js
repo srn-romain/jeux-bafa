@@ -455,6 +455,17 @@ function renderParticipantView() {
     document.getElementById('pvCounter').textContent = `${currentViewIndex + 1}\u00a0/\u00a0${list.length}`;
     document.getElementById('btnParticipantPrev').disabled = currentViewIndex === 0;
     document.getElementById('btnParticipantNext').disabled = currentViewIndex === list.length - 1;
+
+    // Bouton Modifier — visible seulement si droits d'édition
+    const pvBtnEdit = document.getElementById('pvBtnEdit');
+    if (pvBtnEdit) {
+        const canEdit = currentRole === 'admin' || (currentRole === 'anim' && !currentLocked);
+        pvBtnEdit.classList.toggle('hidden', !canEdit);
+        pvBtnEdit.onclick = () => {
+            closeModal('overlayParticipantView');
+            editParticipant(p.id);
+        };
+    }
 }
 
 // Navigation clavier gauche/droite dans la modale fiche

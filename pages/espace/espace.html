@@ -777,7 +777,12 @@
 
         <div class="es-modal__footer" style="justify-content:space-between;align-items:center;">
           <span id="pvCounter" style="font-size:0.82rem;color:var(--clr-text-muted);min-width:40px;text-align:center;"></span>
-          <button class="es-btn es-btn--ghost" onclick="closeModal('overlayParticipantView')">Fermer</button>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="es-btn es-btn--ghost es-btn--sm hidden anim-can" id="pvBtnEdit">
+              <i class="bi bi-pencil"></i> Modifier
+            </button>
+            <button class="es-btn es-btn--ghost es-btn--sm" onclick="closeModal('overlayParticipantView')">Fermer</button>
+          </div>
         </div>
       </div>
 
