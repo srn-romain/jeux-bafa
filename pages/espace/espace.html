@@ -488,12 +488,18 @@
               <table class="es-table" id="participantsTable">
                 <thead>
                   <tr>
-                    <th style="width:36px;text-align:center;color:var(--clr-text-muted);font-size:0.75rem;">#</th>
-                    <th>Prénom</th>
-                    <th>Nom</th>
-                    <th>Âge</th>
-                    <th>Genre</th>
-                    <th class="col-groupe hidden">Groupe</th>
+                    <th class="es-th-reset" style="width:36px;text-align:center;color:var(--clr-text-muted);font-size:0.75rem;"
+                      onclick="setSortColumn(null)" title="Réinitialiser le tri">#</th>
+                    <th class="es-th-sortable" data-sort="prenom" onclick="setSortColumn('prenom')">
+                      Prénom <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                    <th class="es-th-sortable" data-sort="nom" onclick="setSortColumn('nom')">
+                      Nom <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                    <th class="es-th-sortable" data-sort="age" onclick="setSortColumn('age')">
+                      Âge <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                    <th class="es-th-sortable" data-sort="genre" onclick="setSortColumn('genre')">
+                      Genre <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                    <th class="col-groupe hidden es-th-sortable" data-sort="groupe" onclick="setSortColumn('groupe')">
+                      Groupe <i class="bi bi-arrow-down-up sort-icon"></i></th>
                     <th class="col-spec hidden">Spécificités</th>
                     <th class="col-note">Remarque</th>
                     <th class="hidden anim-can" data-html2canvas-ignore="true">Actions</th>

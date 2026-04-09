@@ -17,6 +17,8 @@ let currentGroups = []; // { id, name }
 let isScheduledAlertsExpanded = false;
 let participantColView = 'note'; // 'spec' | 'note' — colonne visible dans le tableau participants
 let currentViewIndex = -1;       // Index dans currentFilteredParticipants pour la modale fiche
+let sortColumn    = null;        // Colonne de tri active ('prenom'|'nom'|'age'|'genre'|'groupe')
+let sortDirection = 'asc';       // 'asc' | 'desc'
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -287,13 +289,15 @@ function renderParticipantsTable(role) {
     const canEdit = role === 'admin' || (role === 'anim' && !currentLocked);
     const hasGroups = currentGroups.length > 0;
 
-    // Exposer la liste filtrée pour la modale de fiche
-    window.currentFilteredParticipants = filteredParticipants;
+    // Exposer la liste filtrée pour la modale de fiche (avec tri appliqué)
+    const displayList = applySort(filteredParticipants);
+    window.currentFilteredParticipants = displayList;
+    updateSortIndicators();
 
     // Afficher/Cacher la colonne groupe
     document.querySelectorAll('.col-groupe').forEach(el => el.classList.toggle('hidden', !hasGroups));
 
-    tbody.innerHTML = filteredParticipants.map((p, idx) => {
+    tbody.innerHTML = displayList.map((p, idx) => {
         const g = hasGroups ? currentGroups.find(x => x.id === p.groupeId) : null;
         const note = p.note || '';
         const isLong = note.length > 50;
@@ -377,6 +381,62 @@ function setParticipantColView(view) {
     document.querySelectorAll('.col-note').forEach(el => el.classList.toggle('hidden', view !== 'note'));
     // Re-render tbody
     renderParticipantsTable(currentRole);
+}
+
+// ----------------------------------------------------------------
+// TRI DES COLONNES
+// ----------------------------------------------------------------
+function setSortColumn(col) {
+    if (col === null) {
+        sortColumn = null;
+        sortDirection = 'asc';
+    } else if (sortColumn === col) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = col;
+        sortDirection = 'asc';
+    }
+    renderParticipantsTable(currentRole);
+}
+
+function applySort(arr) {
+    if (!sortColumn) return arr;
+    return [...arr].sort((a, b) => {
+        let va, vb;
+        switch (sortColumn) {
+            case 'prenom': va = (a.prenom || '').toLowerCase(); vb = (b.prenom || '').toLowerCase(); break;
+            case 'nom':    va = (a.nom    || '').toLowerCase(); vb = (b.nom    || '').toLowerCase(); break;
+            case 'age':    va = Number(a.age) || 0;            vb = Number(b.age) || 0;            break;
+            case 'genre':  va = a.genre || '';                 vb = b.genre || '';                 break;
+            case 'groupe': {
+                const ga = currentGroups.find(x => x.id === a.groupeId);
+                const gb = currentGroups.find(x => x.id === b.groupeId);
+                va = ga ? ga.name.toLowerCase() : '\xFF'; // pas de groupe = fin de liste
+                vb = gb ? gb.name.toLowerCase() : '\xFF';
+                break;
+            }
+            default: return 0;
+        }
+        if (va < vb) return sortDirection === 'asc' ? -1 : 1;
+        if (va > vb) return sortDirection === 'asc' ?  1 : -1;
+        return 0;
+    });
+}
+
+function updateSortIndicators() {
+    document.querySelectorAll('.es-th-sortable').forEach(th => {
+        const col  = th.dataset.sort;
+        const icon = th.querySelector('.sort-icon');
+        if (!icon) return;
+        const isActive = col === sortColumn;
+        th.classList.toggle('sort-active', isActive);
+        icon.className = isActive
+            ? (sortDirection === 'asc' ? 'bi bi-sort-up sort-icon' : 'bi bi-sort-down sort-icon')
+            : 'bi bi-arrow-down-up sort-icon';
+    });
+    // Réinitialisation : si aucun tri, l'icône # reprend sa couleur normale
+    const resetTh = document.querySelector('.es-th-reset');
+    if (resetTh) resetTh.style.color = sortColumn ? 'var(--clr-primary-dark)' : '';
 }
 
 // ----------------------------------------------------------------

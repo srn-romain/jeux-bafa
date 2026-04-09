@@ -1510,7 +1510,7 @@ input:checked+.es-slider:before {
   white-space: nowrap;
 }
 
-/* Colonne Remarque — largeur contrainte pour text-overflow */
+/* Colonnes Remarque — largeur contrainte pour text-overflow */
 .es-table .col-note,
 .es-table .col-note-admin {
   max-width: 240px;
@@ -1518,7 +1518,7 @@ input:checked+.es-slider:before {
   overflow: hidden;
 }
 
-/* Texte de remarque — tronqué par CSS, jamais par JS */
+/* Texte de remarque — tronqué par CSS */
 .es-note-text {
   flex: 1;
   min-width: 0;
@@ -1527,6 +1527,53 @@ input:checked+.es-slider:before {
   text-overflow: ellipsis;
   font-size: 0.82rem;
   color: var(--clr-text-muted);
+}
+
+/* ----------------------------------------------------------------
+   EN-TÊTES DE COLONNES TRIABLES
+   ---------------------------------------------------------------- */
+.es-th-sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.es-th-sortable:hover {
+  background: var(--clr-surface-3) !important;
+  color: var(--clr-text) !important;
+}
+
+.es-th-reset {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.es-th-reset:hover {
+  color: var(--clr-primary-dark) !important;
+}
+
+/* Icône de tri — neutre par défaut, colorée si actif */
+.sort-icon {
+  margin-left: 3px;
+  opacity: 0.32;
+  font-size: 0.68rem;
+  vertical-align: middle;
+  transition: opacity 0.15s;
+}
+
+.es-th-sortable:hover .sort-icon {
+  opacity: 0.6;
+}
+
+.es-th-sortable.sort-active {
+  color: var(--clr-text) !important;
+}
+
+.es-th-sortable.sort-active .sort-icon {
+  opacity: 1;
+  color: var(--clr-primary-dark);
 }
 
 /* ================================================================
