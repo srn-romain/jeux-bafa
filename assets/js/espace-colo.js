@@ -1352,9 +1352,14 @@ function renderGroupsNameList() {
             <div class="es-anim-item__info">
                 <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
             </div>
-            <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})">
-                <i class="bi bi-trash3"></i>
-            </button>
+            <div style="display:flex;gap:4px;">
+                <button class="es-btn es-btn--secondary es-btn--sm" onclick="editGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})" title="Modifier">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})" title="Supprimer">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </div>
         </div>
     `).join('');
 }
@@ -1387,6 +1392,21 @@ async function deleteGroupName(id, name) {
     } catch (err) {
         console.error('deleteGroup error:', err);
         showToast('Erreur lors de la suppression.', 'error');
+    }
+}
+
+async function editGroupName(id, oldName) {
+    const newName = prompt("Nouveau nom pour le groupe :", oldName);
+    if (!newName || newName.trim() === '' || newName.trim() === oldName) return;
+
+    try {
+        await db.collection('espaces').doc(espaceId).collection('groups').doc(id).update({ name: newName.trim() });
+        await loadGroups(espaceId, currentRole);
+        renderGroupsNameList();
+        showToast('Groupe renommé.', 'success');
+    } catch (err) {
+        console.error('editGroup error:', err);
+        showToast('Erreur lors du renommage.', 'error');
     }
 }
 // ----------------------------------------------------------------
