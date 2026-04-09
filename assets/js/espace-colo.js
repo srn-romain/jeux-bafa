@@ -11,6 +11,7 @@ const espaceId = urlParams.get('id');
 
 let currentUser = null;
 let currentRole = null;
+let isAnimAdmin = false;
 let currentLocked = true;
 let participants = [];
 let currentGroups = []; // { id, name }
@@ -101,6 +102,7 @@ auth.onAuthStateChanged(async (user) => {
         }
 
         // approved
+        isAnimAdmin = (req.espaceRole === 'anim-admin');
         initColoContent(colo, role);
 
     } catch (err) {
@@ -150,14 +152,17 @@ async function initColoContent(colo, role) {
     // Gestion du verrou participants
     currentLocked = colo.participantsLocked !== false; // true par défaut
 
+    if (role === 'admin' || isAnimAdmin) {
+        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+    }
+
     if (role === 'admin') {
         // L'admin voit et interagit toujours
         document.getElementById('btnAddParticipant')?.classList.remove('hidden');
         document.getElementById('btnExportParticipantsColo')?.classList.remove('hidden');
         document.getElementById('btnImportParticipantsColo')?.classList.remove('hidden');
         document.querySelectorAll('.anim-can').forEach(el => el.classList.remove('hidden'));
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
-    } else if (role === 'anim') {
+    } else if (role === 'anim' || isAnimAdmin) {
         // L'anim voit les boutons, mais disabled si verrouillé
         const addBtn = document.getElementById('btnAddParticipant');
         document.querySelectorAll('.anim-can').forEach(el => el.classList.remove('hidden'));
@@ -1176,13 +1181,20 @@ async function loadAnimateurs(coloId) {
             .where('status', '==', 'approved')
             .get();
 
-        const userIds = snap.docs.map(doc => doc.data().userId);
+        const reqMap = {};
+        snap.docs.forEach(doc => {
+            const data = doc.data();
+            reqMap[data.userId] = { requestId: doc.id, espaceRole: data.espaceRole || 'anim' };
+        });
+        const userIds = Object.keys(reqMap);
 
         // On récupère aussi l'admin qui a créé la colo s'il n'est pas déjà dans la liste
         const coloDoc = await db.collection('espaces').doc(coloId).get();
         if (coloDoc.exists && coloDoc.data().createdBy) {
-            if (!userIds.includes(coloDoc.data().createdBy)) {
-                userIds.push(coloDoc.data().createdBy);
+            const creatorId = coloDoc.data().createdBy;
+            if (!userIds.includes(creatorId)) {
+                userIds.push(creatorId);
+                reqMap[creatorId] = { requestId: null, espaceRole: 'admin' };
             }
         }
 
@@ -1214,7 +1226,13 @@ async function loadAnimateurs(coloId) {
         for (const uid of userIds) {
             const uDoc = await db.collection('users').doc(uid).get();
             if (uDoc.exists) {
-                approvedAnimsData.push({ id: uDoc.id, isPending: false, ...uDoc.data() });
+                approvedAnimsData.push({ 
+                    id: uDoc.id, 
+                    isPending: false, 
+                    requestId: reqMap[uid]?.requestId,
+                    espaceRole: reqMap[uid]?.espaceRole || 'anim',
+                    ...uDoc.data() 
+                });
             }
         }
 
@@ -1260,8 +1278,18 @@ async function loadAnimateurs(coloId) {
                         </button>
                     </div>
                 ` : `
-                    <div class="es-badge ${anim.role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}">
-                        ${anim.role === 'admin' ? 'Directeur' : 'Animateur'}
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="es-badge ${anim.role === 'admin' || anim.espaceRole === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}" style="white-space:nowrap;">
+                            ${anim.role === 'admin' || anim.espaceRole === 'admin' ? 'Directeur' : (anim.espaceRole === 'anim-admin' ? 'Anim Admin' : 'Animateur')}
+                        </div>
+                        ${(currentRole === 'admin' && anim.role !== 'admin' && anim.espaceRole !== 'admin' && anim.requestId) ? `
+                            <button class="es-btn es-btn--sm es-btn--secondary" 
+                                    onclick="toggleAnimAdmin('${anim.requestId}', '${anim.espaceRole === 'anim-admin' ? 'anim' : 'anim-admin'}')"
+                                    title="${anim.espaceRole === 'anim-admin' ? 'Retirer les droits Admin' : 'Donner les droits Admin'}"
+                                    style="padding:2px 6px; font-size:0.7rem;">
+                                ${anim.espaceRole === 'anim-admin' ? '<i class="bi bi-arrow-down-circle"></i>' : '<i class="bi bi-arrow-up-circle"></i>'}
+                            </button>
+                        ` : ''}
                     </div>
                 `}
             </div>
@@ -1289,6 +1317,20 @@ async function handleRequestStatus(requestId, newStatus) {
         showToast('Erreur lors du traitement.', 'error');
     }
 }
+
+async function toggleAnimAdmin(requestId, newRole) {
+    if (!confirm(newRole === 'anim-admin' ? "Donner les droits d'administration de cet espace à cet animateur ?" : "Retirer les droits d'administration de cet espace ?")) return;
+    try {
+        await db.collection('accessRequests').doc(requestId).update({
+            espaceRole: newRole
+        });
+        showToast("Rôle mis à jour.", "success");
+        loadAnimateurs(espaceId);
+    } catch (e) {
+        console.error("toggleAnimAdmin error:", e);
+        showToast("Erreur lors de la modification.", "error");
+    }
+}
 // ----------------------------------------------------------------
 // GESTION DES GROUPES (Directeur)
 // ----------------------------------------------------------------
@@ -1314,8 +1356,8 @@ async function loadGroups(id, role) {
             select.value = val;
         }
 
-        // Afficher le bouton de gestion pour les admins
-        if (role === 'admin') {
+        // Afficher le bouton de gestion pour les admins et anims-admins
+        if (role === 'admin' || isAnimAdmin) {
             document.getElementById('btnManageGroups')?.classList.remove('hidden');
         }
 
@@ -1597,7 +1639,7 @@ function renderAlerts(alerts, role) {
             else if (alert.type === 'warning') icon = 'bi-shield-exclamation';
 
             const isWeatherAlert = alert.createdBy === 'Météo Auto';
-            const canDelete = role === 'admin' || (!alert.locked && !isWeatherAlert);
+            const canDelete = role === 'admin' || isAnimAdmin || (!alert.locked && !isWeatherAlert);
             const parsedMessage = parseMarkdown(alert.message);
 
             let dateInfo = '';
@@ -1670,7 +1712,7 @@ function renderAlerts(alerts, role) {
                                 <span style="font-size:0.75rem; opacity:0.6;">Prévu pour le ${dateStr}</span>
                             </div>
                         </div>
-                        ${(role === 'admin' || alert.createdBy !== 'Météo Auto') ? `
+                        ${(role === 'admin' || isAnimAdmin || alert.createdBy !== 'Météo Auto') ? `
                         <button onclick="deleteAlert('${alert.id}')" style="background:none; border:none; color:var(--clr-danger); cursor:pointer; padding:5px; opacity:0.7;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'" title="Annuler la programmation">
                             <i class="bi bi-trash"></i>
                         </button>
@@ -1801,7 +1843,7 @@ async function loadWeather(coloId, role) {
     db.collection('espaces').doc(coloId).onSnapshot(async snap => {
         if (!snap.exists) return;
         const data = snap.data();
-        if (role === 'admin') {
+        if (role === 'admin' || isAnimAdmin) {
             document.getElementById('weatherAdminContainer')?.classList.remove('hidden');
             const deleteBtn = document.getElementById('btnDeleteLocation');
             if (data.meteoLocation) {
@@ -1932,7 +1974,7 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
         container.innerHTML = html;
 
         // Déclencher la vérification automatique des alertes (admin uniquement)
-        if (role === 'admin') {
+        if (role === 'admin' || isAnimAdmin) {
             await checkAndCreateWeatherAlerts(data, locationName, role);
         }
 
@@ -1942,7 +1984,7 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
 }
 
 async function checkAndCreateWeatherAlerts(weatherData, locationName, role) {
-    if (role !== 'admin') return 0;
+    if (role !== 'admin' && !isAnimAdmin) return 0;
 
     const daily = weatherData.daily;
     const hourly = weatherData.hourly;
@@ -2230,7 +2272,7 @@ function loadPhotos(colo, role) {
     }
 
     // Upload permissions
-    const canUpload = role === 'admin' || (role === 'anim' && colo.photoUploadEnabled === true);
+    const canUpload = role === 'admin' || isAnimAdmin || (role === 'anim' && colo.photoUploadEnabled === true);
     if (canUpload) {
         uploadBtn?.classList.remove('hidden');
         uploadDisabledMsg?.classList.add('hidden');
