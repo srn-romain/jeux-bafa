@@ -1200,6 +1200,8 @@ document.getElementById('btnManageGroupsAdmin')?.addEventListener('click', () =>
 document.getElementById('btnCloseManageGroupsAdmin')?.addEventListener('click', () => closeModal('overlayManageGroupsAdmin'));
 document.getElementById('btnFinishGroupsAdmin')?.addEventListener('click', () => closeModal('overlayManageGroupsAdmin'));
 
+let editingAdminGroupId = null;
+
 function renderGroupsNameListAdmin() {
     const listEl = document.getElementById('groupsNameListAdmin');
     if (!listEl) return;
@@ -1209,21 +1211,41 @@ function renderGroupsNameListAdmin() {
         return;
     }
 
-    listEl.innerHTML = currentAdminGroups.map(g => `
-        <div class="es-anim-item" style="padding: 8px 12px;">
-            <div class="es-anim-item__info">
-                <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
-            </div>
-            <div style="display:flex;gap:4px;">
-                <button class="es-btn es-btn--secondary es-btn--sm" onclick="editAdminGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})" title="Modifier">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteAdminGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})" title="Supprimer">
-                    <i class="bi bi-trash3"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+    listEl.innerHTML = currentAdminGroups.map(g => {
+        if (g.id === editingAdminGroupId) {
+            return `
+            <div class="es-anim-item" style="padding: 8px 12px; display:flex; gap:8px;">
+                <input type="text" id="editGroupInputAdmin_${g.id}" class="es-input" style="flex:1; padding:4px 8px; font-size:0.9rem;" value="${escapeHtml(g.name)}" onkeydown="if(event.key==='Enter') saveEditedAdminGroupName('${g.id}')">
+                <button class="es-btn es-btn--primary es-btn--sm" onclick="saveEditedAdminGroupName('${g.id}')" title="Enregistrer"><i class="bi bi-check-lg"></i></button>
+                <button class="es-btn es-btn--secondary es-btn--sm" onclick="cancelEditAdminGroupName()" title="Annuler"><i class="bi bi-x-lg"></i></button>
+            </div>`;
+        } else {
+            return `
+            <div class="es-anim-item" style="padding: 8px 12px;">
+                <div class="es-anim-item__info">
+                    <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
+                </div>
+                <div style="display:flex;gap:4px;">
+                    <button class="es-btn es-btn--secondary es-btn--sm" onclick="setEditingAdminGroupId('${g.id}')" title="Modifier">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteAdminGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})" title="Supprimer">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </div>`;
+        }
+    }).join('');
+
+    if (editingAdminGroupId) {
+        setTimeout(() => {
+            const input = document.getElementById(`editGroupInputAdmin_${editingAdminGroupId}`);
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        }, 10);
+    }
 }
 
 document.getElementById('btnAddGroupNameAdmin')?.addEventListener('click', async () => {
@@ -1257,12 +1279,31 @@ async function deleteAdminGroupName(id, name) {
     }
 }
 
-async function editAdminGroupName(id, oldName) {
-    const newName = prompt("Nouveau nom pour le groupe :", oldName);
-    if (!newName || newName.trim() === '' || newName.trim() === oldName) return;
+function setEditingAdminGroupId(id) {
+    editingAdminGroupId = id;
+    renderGroupsNameListAdmin();
+}
+
+function cancelEditAdminGroupName() {
+    editingAdminGroupId = null;
+    renderGroupsNameListAdmin();
+}
+
+async function saveEditedAdminGroupName(id) {
+    const input = document.getElementById(`editGroupInputAdmin_${id}`);
+    if (!input) return;
+    const newName = input.value.trim();
+    if (!newName) return;
+    
+    const oldGroup = currentAdminGroups.find(x => x.id === id);
+    if (!oldGroup || oldGroup.name === newName) {
+        cancelEditAdminGroupName();
+        return;
+    }
 
     try {
-        await db.collection('espaces').doc(currentColoId).collection('groups').doc(id).update({ name: newName.trim() });
+        await db.collection('espaces').doc(currentColoId).collection('groups').doc(id).update({ name: newName });
+        editingAdminGroupId = null;
         await loadAdminGroups(currentColoId);
         renderGroupsNameListAdmin();
         showToast('Groupe renommé.', 'success');

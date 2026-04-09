@@ -1338,6 +1338,8 @@ document.getElementById('btnManageGroups')?.addEventListener('click', () => {
 document.getElementById('btnCloseManageGroups')?.addEventListener('click', () => closeModal('overlayManageGroups'));
 document.getElementById('btnFinishGroups')?.addEventListener('click', () => closeModal('overlayManageGroups'));
 
+let editingGroupId = null;
+
 function renderGroupsNameList() {
     const listEl = document.getElementById('groupsNameList');
     if (!listEl) return;
@@ -1347,21 +1349,42 @@ function renderGroupsNameList() {
         return;
     }
 
-    listEl.innerHTML = currentGroups.map(g => `
-        <div class="es-anim-item" style="padding: 8px 12px;">
-            <div class="es-anim-item__info">
-                <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
-            </div>
-            <div style="display:flex;gap:4px;">
-                <button class="es-btn es-btn--secondary es-btn--sm" onclick="editGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})" title="Modifier">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})" title="Supprimer">
-                    <i class="bi bi-trash3"></i>
-                </button>
-            </div>
-        </div>
-    `).join('');
+    listEl.innerHTML = currentGroups.map(g => {
+        if (g.id === editingGroupId) {
+            return `
+            <div class="es-anim-item" style="padding: 8px 12px; display:flex; gap:8px;">
+                <input type="text" id="editGroupInput_${g.id}" class="es-input" style="flex:1; padding:4px 8px; font-size:0.9rem;" value="${escapeHtml(g.name)}" onkeydown="if(event.key==='Enter') saveEditedGroupName('${g.id}')">
+                <button class="es-btn es-btn--primary es-btn--sm" onclick="saveEditedGroupName('${g.id}')" title="Enregistrer"><i class="bi bi-check-lg"></i></button>
+                <button class="es-btn es-btn--secondary es-btn--sm" onclick="cancelEditGroupName()" title="Annuler"><i class="bi bi-x-lg"></i></button>
+            </div>`;
+        } else {
+            return `
+            <div class="es-anim-item" style="padding: 8px 12px;">
+                <div class="es-anim-item__info">
+                    <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
+                </div>
+                <div style="display:flex;gap:4px;">
+                    <button class="es-btn es-btn--secondary es-btn--sm" onclick="setEditingGroupId('${g.id}')" title="Modifier">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="es-btn es-btn--danger es-btn--sm" onclick="deleteGroupName('${g.id}', ${escapeHtml(JSON.stringify(g.name))})" title="Supprimer">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            </div>`;
+        }
+    }).join('');
+
+    if (editingGroupId) {
+        setTimeout(() => {
+            const input = document.getElementById(`editGroupInput_${editingGroupId}`);
+            if (input) {
+                input.focus();
+                input.select();
+            }
+        }, 10);
+    }
+
 }
 
 document.getElementById('btnAddGroupName')?.addEventListener('click', async () => {
@@ -1395,12 +1418,31 @@ async function deleteGroupName(id, name) {
     }
 }
 
-async function editGroupName(id, oldName) {
-    const newName = prompt("Nouveau nom pour le groupe :", oldName);
-    if (!newName || newName.trim() === '' || newName.trim() === oldName) return;
+function setEditingGroupId(id) {
+    editingGroupId = id;
+    renderGroupsNameList();
+}
+
+function cancelEditGroupName() {
+    editingGroupId = null;
+    renderGroupsNameList();
+}
+
+async function saveEditedGroupName(id) {
+    const input = document.getElementById(`editGroupInput_${id}`);
+    if (!input) return;
+    const newName = input.value.trim();
+    if (!newName) return;
+    
+    const oldGroup = currentGroups.find(x => x.id === id);
+    if (!oldGroup || oldGroup.name === newName) {
+        cancelEditGroupName();
+        return;
+    }
 
     try {
-        await db.collection('espaces').doc(espaceId).collection('groups').doc(id).update({ name: newName.trim() });
+        await db.collection('espaces').doc(espaceId).collection('groups').doc(id).update({ name: newName });
+        editingGroupId = null;
         await loadGroups(espaceId, currentRole);
         renderGroupsNameList();
         showToast('Groupe renommé.', 'success');
