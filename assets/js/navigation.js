@@ -7,7 +7,7 @@ const pageOrder = [
   { file: 'quotidien.html', name: 'Vie quotidienne' },
   { file: 'activites.html', name: 'Activités' },
   { file: 'veillees.html', name: 'Veillées' },
-  { file: 'manuels.html', name: 'Activités manuels' },
+  { file: 'manuels.html', name: 'Activités manuelles' },
   { file: 'calme.html', name: 'Idées de retour au calme' },
   { file: 'gage.html', name: 'Idées de gages' },
   { file: 'regles.html', name: 'Exemple règles de vie' },
