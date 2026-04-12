@@ -21,6 +21,7 @@ let currentViewIndex = -1;       // Index dans currentFilteredParticipants pour 
 let sortColumn    = null;        // Colonne de tri active ('prenom'|'nom'|'age'|'genre'|'groupe')
 let sortDirection = 'asc';       // 'asc' | 'desc'
 let isColoFormation = false;     // Si la colo est marquée comme "Formation"
+let currentColoDateFin = null;   // Date de fin de la colo
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -142,6 +143,8 @@ async function initColoContent(colo, role) {
         ? `${formatDate(colo.dateDebut)} → ${formatDate(colo.dateFin)}`
         : '';
     document.getElementById('coloDates').textContent = dateStr;
+
+    currentColoDateFin = colo.dateFin ? new Date(colo.dateFin) : null;
 
     isColoFormation = colo.isFormation === true;
     if (isColoFormation) {
@@ -2025,10 +2028,32 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
 
 async function checkAndCreateWeatherAlerts(weatherData, locationName, role) {
     if (role !== 'admin' && !isAnimAdmin) return 0;
+    
+    let limitDate = null;
+    if (currentColoDateFin && !isNaN(new Date(currentColoDateFin).getTime())) {
+        const endDate = new Date(currentColoDateFin);
+        endDate.setHours(0, 0, 0, 0);
+        
+        limitDate = new Date(endDate);
+        limitDate.setDate(limitDate.getDate() + 2);
+        
+        const todayAtMidnight = new Date();
+        todayAtMidnight.setHours(0, 0, 0, 0);
+        
+        const wInfoMsg = document.getElementById('weatherEndInfo');
+        if (todayAtMidnight > limitDate) {
+            if (wInfoMsg) {
+                wInfoMsg.classList.remove('hidden');
+                wInfoMsg.innerHTML = `<i class="bi bi-info-circle"></i> ${isColoFormation ? "La formation est terminée. Plus aucune alerte météo ne sera générée." : "La colo est terminée. Plus aucune alerte météo ne sera générée."}`;
+            }
+            return 0;
+        } else {
+            if (wInfoMsg) wInfoMsg.classList.add('hidden');
+        }
+    }
 
     const daily = weatherData.daily;
     const hourly = weatherData.hourly;
-    const now = new Date();
     let newlyCreated = 0;
 
     for (let i = 0; i < daily.time.length; i++) {
@@ -2042,6 +2067,9 @@ async function checkAndCreateWeatherAlerts(weatherData, locationName, role) {
         const todayAtMidnight = new Date();
         todayAtMidnight.setHours(0, 0, 0, 0);
         if (d <= todayAtMidnight) continue;
+        
+        // On stoppe la génération si la date prévue est au-delà des +2 jours de fin
+        if (limitDate && d > limitDate) continue;
 
         if (wTableau.bad) {
             const morningIdx = i * 24 + 10;
