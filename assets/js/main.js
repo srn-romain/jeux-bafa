@@ -199,6 +199,8 @@ document.addEventListener("DOMContentLoaded", function () {
     var questions = document.getElementById('copyMessageQuestion');
     var tante = document.getElementById('tante');
     var hibou = document.getElementById('hibou');
+    var elan = document.getElementById('copyMessageJeuElan');
+    var chevreuil = document.getElementById('copyMessageJeuChevreuil');
 
     if (copySongButton) {
         copySongButton.addEventListener('click', function () {
@@ -299,6 +301,18 @@ document.addEventListener("DOMContentLoaded", function () {
     if (hibou) {
         hibou.addEventListener('click', function () {
             copyText('copyContenthibou');
+        });
+    }
+
+    if (elan) {
+        elan.addEventListener('click', function () {
+            copyText('copyContentElan');
+        });
+    }
+
+    if (chevreuil) {
+        chevreuil.addEventListener('click', function () {
+            copyText('copyContentChevreuil');
         });
     }
 
