@@ -358,7 +358,7 @@
                   <div id="weatherDaysList"
                     style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px;"></div>
                 </div>
-                
+
                 <div id="weatherEndInfo" class="es-alert es-alert--info hidden" style="margin-top: 15px;"></div>
 
               </div>
@@ -499,7 +499,8 @@
               <table class="es-table" id="participantsTable">
                 <thead>
                   <tr>
-                    <th class="es-th-reset" style="width:36px;text-align:center;color:var(--clr-text-muted);font-size:0.75rem;"
+                    <th class="es-th-reset"
+                      style="width:36px;text-align:center;color:var(--clr-text-muted);font-size:0.75rem;"
                       onclick="setSortColumn(null)" title="Réinitialiser le tri">#</th>
                     <th class="es-th-sortable" data-sort="prenom" onclick="setSortColumn('prenom')">
                       Prénom <i class="bi bi-arrow-down-up sort-icon"></i></th>
@@ -771,177 +772,346 @@
   <!-- ================================================ -->
   <!-- Modal : Infos DRAJES (Appréciations) -->
   <div class="es-overlay hidden" id="overlayInfoDRAJES" role="dialog" aria-modal="true">
-      <div class="es-modal" style="max-width:900px;">
-          <div class="es-modal__header">
-              <h2 class="es-modal__title">Rédaction d'appréciation BAFA : Méthodologie et Exemples</h2>
-              <button class="es-modal__close" onclick="closeModal('overlayInfoDRAJES')"><i class="bi bi-x"></i></button>
-          </div>
-          <div class="es-modal__body" style="font-size:0.9rem; line-height:1.5; color:var(--clr-text); max-height: 75vh; overflow-y: auto;">
-
-              <p style="margin-bottom:12px; font-weight:600; color:var(--clr-primary-dark);">
-                  L'appréciation est un acte pédagogique destiné au jury, qui reflète ce que chaque stagiaire a appris. Elle doit être claire, objective, sans ambiguïté et basée sur des faits.
-              </p>
-
-              <h4 style="font-size:0.95rem; margin-top:16px; margin-bottom:6px; color:var(--clr-text-muted);">
-                  <i class="bi bi-check2-circle"></i> 1. La structure et le contenu (La règle des 3 éléments)
-              </h4>
-              <p style="margin-bottom:8px;">L'appréciation doit être personnalisée et compter environ 4 à 5 phrases au total (une par critère). Pour chaque critère, votre phrase doit obligatoirement inclure :</p>
-              <ul style="padding-left:20px; margin-bottom:12px;">
-                  <li><strong>La compétence acquise :</strong> Ce que le stagiaire a appris ou validé.</li>
-                  <li><strong>Comment elle a été acquise :</strong> Les actions concrètes, comportements ou postures observables qui le prouvent.</li>
-                  <li><strong>Dans quel cadre :</strong> Le contexte précis ou l'intitulé du temps de formation concerné.</li>
-              </ul>
-              <p style="margin-bottom:12px;"><em>Il est recommandé d'ajouter une phrase finale qui met en valeur le "petit plus" du stagiaire sur la session.</em></p>
-
-              <h4 style="font-size:0.95rem; margin-top:16px; margin-bottom:6px; color:var(--clr-text-muted);">
-                  <i class="bi bi-star"></i> 2. Les règles d'or (Ce qu'il faut FAIRE)
-              </h4>
-              <ul style="padding-left:20px; margin-bottom:12px;">
-                  <li><strong>Se concentrer sur les acquis et l'évolution :</strong> Refléter de manière factuelle ce que le stagiaire a appris et la progression constatée.</li>
-                  <li><strong>S'adresser au jury (3ème personne) :</strong> Parler de lui à la troisième personne ("Il a...", "Monsieur/Madame a...").</li>
-                  <li><strong>Être parfaitement cohérent :</strong> Un avis favorable ne peut comporter aucune réserve ni critique.</li>
-              </ul>
-
-              <h4 style="font-size:0.95rem; margin-top:16px; margin-bottom:6px; color:var(--clr-text-muted);">
-                  <i class="bi bi-exclamation-triangle"></i> 3. Les erreurs à éviter (Ce qu'il ne faut PAS FAIRE)
-              </h4>
-              <ul style="padding-left:20px; margin-bottom:12px;">
-                  <li><strong>Ne pas donner de conseils ni de félicitations :</strong> Ce n'est pas le lieu pour prodiguer des conseils, qui doivent être faits à l'oral ou dans le carnet de suivi.</li>
-                  <li><strong>Ne pas juger la personnalité :</strong> Le signalement de traits de caractère ("timide", "mou") n'est pas autorisé.</li>
-                  <li><strong>Ne pas utiliser le "tu" ou le "vous" :</strong> Il ne faut pas s'adresser au stagiaire dans la rédaction.</li>
-                  <li><strong>Ne pas restreindre l'animateur à un public :</strong> Ne pas faire de remarques limitant la capacité du stagiaire à une tranche d'âge précise.</li>
-                  <li><strong>Ne pas inclure votre propre nom :</strong> Ni celui de la directrice/du directeur de l'accueil.</li>
-              </ul>
-
-              <div class="es-alert es-alert--info" style="margin-top:10px; margin-bottom:20px; font-size:0.8rem;">
-                  <i class="bi bi-info-circle"></i> <strong>RAPPEL DRAJES :</strong> <strong>Toutes les appréciations proposées ci-dessous entraînent une validation de l'étape (Avis Favorable).</strong> Un avis favorable interdit la moindre critique. Si un stagiaire a été en retrait ou s'est relâché, l'appréciation doit se concentrer sur les tâches minimales d'exécution et d'observation qu'il a tout de même réalisées, sans mentionner ce qu'il a manqué. Le jury comprendra alors le niveau réel du candidat.
-              </div>
-
-              <h4 style="font-size:1.1rem; margin-top:24px; margin-bottom:12px; color:var(--clr-primary-dark); border-bottom: 1px solid #ccc; padding-bottom: 5px;">
-                  <i class="bi bi-journal-text"></i> Modèles d'appréciations par étape du BAFA
-              </h4>
-
-              <!-- ========================================== -->
-              <!-- PARTIE 1 : FORMATION GÉNÉRALE (BASE)       -->
-              <!-- ========================================== -->
-              <div style="border-left: 4px solid #0d6efd; background-color: #f8fbff; padding: 15px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
-                  <h3 style="color: #0d6efd; margin-top: 0; margin-bottom: 15px;"><i class="bi bi-1-circle-fill"></i> Étape 1 : Formation Générale (Base)</h3>
-
-                  <h5 style="margin-top:16px; color:#0b5ed7;">🌟 1. Le stagiaire brillant</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Léa a brillamment acquis les notions de sécurité en concevant un grand jeu sans risque lors des temps de préparation en sous-groupe. Elle s'est affirmée comme moteur de son équipe de vie en organisant efficacement les repas quotidiens. Elle a intégré les enjeux de la laïcité en argumentant de manière pertinente lors des débats théoriques en plénière. Son leadership bienveillant a positivement porté le groupe de stagiaires.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Paul a développé d'excellentes compétences d'animation en menant une veillée immersive très créative lors de la pratique d'activité. Il a compris le travail d'équipe en distribuant la parole de façon équitable durant les temps de bilan de fin de journée. Il a assimilé la réglementation des accueils de mineurs en restituant parfaitement les taux d'encadrement lors des apports théoriques. Sa grande maturité a enrichi l'ensemble de la session.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#0b5ed7;">✅ 2. Le stagiaire "bien, sans plus"</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Julie a compris les bases de la sécurité physique en respectant les consignes lors de la conception de ses jeux. Elle s'est intégrée dans son équipe de vie en participant aux tâches collectives de rangement. Elle a expérimenté la prise de parole en grand groupe en présentant les règles de son activité lors des temps pratiques. Son grand sérieux a permis une validation sereine de cette première étape.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Marc a assimilé les besoins de l'enfant en adaptant correctement son jeu sportif à la tranche d'âge ciblée lors de sa menée d'activité. Il a participé à la vie collective en respectant les horaires tout au long de la semaine. Il s'est familiarisé avec la posture d'animateur en écoutant attentivement les retours des formateurs durant les bilans. Sa discrète persévérance a été appréciable.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#0b5ed7;">😐 3. Le stagiaire "plante verte" / strict minimum</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Sophie a validé les apports théoriques fondamentaux en prenant des notes régulières lors des temps de plénière. Elle a appréhendé le travail en groupe en observant la dynamique de ses pairs lors de la préparation des activités en sous-groupe. Elle a expérimenté l'animation en expliquant les consignes d'un jeu simple lors de son temps de pratique. Son écoute attentive des consignes a facilité son parcours.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Lucas a compris le rôle de l'animateur en assistant à l'ensemble des modules théoriques de la session. Il s'est familiarisé avec la vie quotidienne en effectuant les tâches de nettoyage qui lui étaient attribuées. Il a participé à l'élaboration d'un jeu en rédigeant la fiche d'activité avec son binôme lors des temps de préparation. Son respect constant du cadre de formation lui permet de valider cette étape.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#0b5ed7;">📈 4. Bof au début, puis beaucoup mieux après</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Après un temps de réserve, Emma a su prendre confiance en menant avec dynamisme une activité manuelle lors des derniers jours de pratique. Elle a développé sa capacité d'argumentation en intervenant de plus en plus pertinemment lors des débats théoriques de fin de semaine. Elle s'est impliquée dans la vie du groupe en impulsant des chants lors des temps informels. Son évolution très positive révèle un vrai potentiel éducatif.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Hugo a progressivement trouvé sa place en grand groupe en proposant des idées constructives lors de l'élaboration du projet d'animation de son équipe. Il a enrichi sa compréhension de la sécurité en intégrant les remarques des formateurs pour sécuriser son jeu final. Il a validé sa capacité à s'évaluer en formulant un bilan personnel objectif en fin de session. Sa capacité de remise en question a été son point fort.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#0b5ed7;">📉 5. Bien au début, puis "relâchement" / passivité sur la fin</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Antoine a montré un fort investissement initial en proposant un imaginaire très complet lors de sa première menée d'activité. Il a ensuite validé les connaissances réglementaires de base en écoutant les modules théoriques de fin de semaine. Il a participé à la vie du groupe en s'asseyant avec son équipe lors des temps de préparation des derniers jours. Il a suivi le cadre exigé tout au long de la formation.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Clara s'est très bien positionnée le premier jour en participant activement aux jeux de connaissance. Elle a poursuivi son apprentissage en appliquant les consignes demandées lors de sa pratique d'animation en milieu de semaine. Elle a compris les notions d'autorité en assistant aux débats proposés par les formateurs en fin de session. Sa régularité dans l'exécution des tâches basiques permet de valider son stage.</li>
-                  </ul>
-              </div>
-
-              <!-- ========================================== -->
-              <!-- PARTIE 2 : STAGE PRATIQUE                    -->
-              <!-- ========================================== -->
-              <div style="border-left: 4px solid #198754; background-color: #f8fff9; padding: 15px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
-                  <h3 style="color: #198754; margin-top: 0; margin-bottom: 15px;"><i class="bi bi-2-circle-fill"></i> Étape 2 : Stage Pratique</h3>
-
-                  <h5 style="margin-top:16px; color:#146c43;">🌟 1. Le stagiaire brillant</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Léo a acquis la capacité d'animer de grands jeux en structurant ses explications de manière claire face à un groupe de 30 enfants lors des activités en extérieur. Il a su garantir la sécurité en anticipant les zones à risque pendant les temps de préparation. Il a développé une excellente communication en prenant le temps de faire des retours individualisés aux familles lors des accueils du soir. Son dynamisme a été un moteur pour l'équipe.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Sarah s'est positionnée comme élément ressource en planifiant rigoureusement les différentes étapes de réalisation des projets lors des réunions. Elle a appris à gérer la dynamique du groupe en distribuant la parole équitablement durant les temps de régulation. Elle a assimilé les règles d'hygiène en accompagnant les plus jeunes lors des temps de repas. Sa capacité à apaiser les tensions a grandement favorisé un climat serein.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 3 :</strong> Maxime a démontré sa capacité à adapter ses activités en proposant des variantes pour les enfants en situation de handicap lors des ateliers manuels. Il a enrichi ses postures éducatives en utilisant l'écoute active pour désamorcer les conflits pendant les temps libres informels. Il a affirmé sa place dans l'équipe en organisant la logistique des veillées. Sa créativité a permis de proposer des imaginaires immersifs de grande qualité.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#146c43;">✅ 2. Le stagiaire "bien, sans plus"</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Chloé a acquis les bases de la sécurité physique en respectant scrupuleusement les taux d'encadrement lors des sorties en extérieur. Elle s'est familiarisée avec le travail d'équipe en participant à la répartition des tâches lors des réunions de préparation. Elle a appris à mener des jeux simples en appliquant les consignes de base lors des temps d'activités. Sa rigueur sur les horaires a facilité l'organisation générale.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Julien a compris le fonctionnement de la vie quotidienne en accompagnant activement les enfants lors des temps de restauration. Il a développé sa capacité à communiquer en échangeant des informations avec ses collègues durant les temps informels de pause. Il a su encadrer un petit groupe en veillant au respect des règles lors des ateliers créatifs. Sa présence discrète mais attentive a permis un bon accompagnement des mineurs.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 3 :</strong> Amina s'est positionnée dans son rôle d'animatrice en proposant des jeux de connaissance pertinents lors des premiers jours d'accueil. Elle a assimilé le rythme des enfants en garantissant le respect des temps calmes programmés après le déjeuner. Elle a expérimenté la posture d'accompagnatrice en guidant les enfants dans le rangement du matériel en fin de journée. Son respect du cadre réglementaire a été très appréciable.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#146c43;">😐 3. Le stagiaire "plante verte" / strict minimum</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Thomas a acquis les notions de base de la sécurité physique en appliquant strictement les consignes données par la direction lors des sorties. Il s'est familiarisé avec la vie quotidienne en assurant une présence auprès des enfants durant les temps de repas. Il a appris à seconder ses collègues en préparant le matériel nécessaire lors de la mise en place des activités. Son écoute attentive des directives a facilité son intégration dans la structure.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Léa a appréhendé le fonctionnement de l'équipe d'animation en observant les méthodes de ses pairs lors des réunions de préparation. Elle a assimilé le rythme de la journée en suivant le groupe lors des temps de transition entre les locaux. Elle a expérimenté l'animation en expliquant les règles de jeux de société classiques durant les temps d'accueil échelonné. Son respect du cadre établi a été constant sur l'ensemble du séjour.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 3 :</strong> Lucas a compris la logistique du travail d'équipe en exécutant les tâches de rangement qui lui ont été confiées lors des temps d'organisation. Il a validé la sécurité en effectuant des comptages réguliers des mineurs lors des grands rassemblements. Il a expérimenté la posture d'encadrement en surveillant les espaces de jeux libres lors des temps de récréation. Son grand calme a favorisé un environnement paisible sur l'accueil.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#146c43;">📈 4. Bof au début, puis beaucoup mieux après</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Après un temps d'observation, Emma a développé une réelle capacité de prise d'initiative en menant de manière autonome de grands jeux lors de la deuxième semaine. Elle a appris à s'affirmer dans l'équipe en défendant ses idées d'activités avec des arguments lors des réunions. Elle a consolidé sa gestion de l'autorité en posant un cadre ferme lors des temps calmes de fin de séjour. Son évolution particulièrement positive a révélé une animatrice impliquée.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Hugo a progressivement affirmé sa posture d'animateur en prenant de plus en plus la parole face au grand groupe lors des rassemblements matinaux. Il a enrichi sa pratique en passant de la simple observation à la menée complète d'activités manuelles au fil des jours. Il s'est situé dans le travail d'équipe en acceptant les retours constructifs de ses pairs pour ajuster son comportement. Sa grande capacité de remise en question lui a permis de progresser.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 3 :</strong> Inès a su expérimenter de nouvelles postures pour finalement encadrer des groupes d'enfants en totale autonomie lors des sorties en ville. Elle a découvert et appliqué des techniques de régulation de conflits avec de plus en plus d'aisance durant les temps libres. Elle a fortifié sa communication avec les familles en prenant en charge la transmission des bilans sur les derniers jours de l'accueil. Sa persévérance a été son grand atout.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#146c43;">📉 5. Bien au début, puis "relâchement" / passivité sur la fin</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Antoine a démontré une forte implication initiale en menant des grands jeux de qualité lors de la première semaine. Il a ensuite validé sa capacité à s'adapter au rythme en encadrant sereinement les temps de repas sur la fin du séjour. Il s'est intégré à l'équipe en écoutant les directives lors des réunions bilans des derniers jours. Son respect global du cadre réglementaire a permis de valider son stage.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Clara s'est très bien positionnée en début d'accueil en proposant des activités manuelles variées et minutieusement préparées. Elle a poursuivi son stage en accompagnant les enfants lors des temps de transition de la deuxième semaine. Elle a compris les enjeux de la sécurité physique en exécutant les tâches de surveillance basiques demandées par la direction. Son maintien des exigences sécuritaires a été constant.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 3 :</strong> Nathan a su créer une relation de confiance immédiate avec son groupe en animant des veillées immersives les premiers jours. Il a ensuite appréhendé la vie quotidienne en assurant une présence discrète mais attentive lors des temps de sieste sur la fin de session. Il a participé à la logistique en rangeant le matériel à la demande de l'équipe d'animation. Sa posture est restée adaptée au cadre d'accueil.</li>
-                  </ul>
-              </div>
-
-              <!-- ========================================== -->
-              <!-- PARTIE 3 : APPROFONDISSEMENT / QUALIF        -->
-              <!-- ========================================== -->
-              <div style="border-left: 4px solid #6f42c1; background-color: #fbf8ff; padding: 15px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
-                  <h3 style="color: #6f42c1; margin-top: 0; margin-bottom: 15px;"><i class="bi bi-3-circle-fill"></i> Étape 3 : Session d'Approfondissement</h3>
-
-                  <h5 style="margin-top:16px; color:#59339d;">🌟 1. Le stagiaire brillant</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Alice a parfaitement consolidé sa maîtrise des projets d'animation en créant un grand jeu adapté à la thématique de la session lors des temps de préparation. Elle a affiné sa posture éducative en menant des réflexions très poussées sur l'inclusion durant les débats théoriques. Elle a partagé avec brio son expérience de stage pratique lors des temps d'analyse de la pratique. Son esprit d'initiative constant a tiré tout le groupe vers le haut.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Samir a approfondi ses techniques d'animation en menant une veillée spectaculaire et sécurisée devant l'ensemble des stagiaires. Il a enrichi la dynamique de groupe en régulant les prises de parole de manière autonome lors des bilans de vie collective. Il a assimilé les responsabilités spécifiques de l'animateur en argumentant avec précision lors des études de cas. Son leadership naturel en fait un animateur complet et prêt à exercer.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#59339d;">✅ 2. Le stagiaire "bien, sans plus"</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Chloé a conforté ses acquis d'animation en proposant une activité manuelle en lien avec la thématique d'approfondissement lors des temps pratiques. Elle a analysé son stage pratique en partageant ses réussites avec ses pairs lors des temps d'échanges dédiés. Elle a respecté les règles de vie collective en participant à l'organisation des repas de la session. Son positionnement sérieux a permis d'atteindre les objectifs fixés.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Thomas a consolidé sa connaissance des besoins de l'enfant en l'appliquant à la création d'un jeu de piste lors de son travail en sous-groupe. Il a revu les bases de la réglementation en validant les quiz proposés durant les modules théoriques. Il s'est impliqué dans le quotidien de la session en respectant les horaires de manière stricte. Il a su utiliser cette semaine pour finaliser adéquatement sa formation.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#59339d;">😐 3. Le stagiaire "plante verte" / strict minimum</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Léa a revu les fondements de la sécurité physique en assistant avec attention aux rappels réglementaires des formateurs. Elle a validé la phase de retour sur stage pratique en écoutant les expériences partagées par les autres stagiaires lors des groupes de parole. Elle a expérimenté les techniques d'approfondissement en exécutant son rôle dans l'activité collective de son équipe. Sa présence assidue lui permet d'achever son parcours.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Julien a complété sa formation en prenant connaissance des outils pédagogiques liés à la thématique lors des apports théoriques. Il a réinvesti son expérience passée en rédigeant son bilan de stage pratique lors des temps individuels. Il a participé à la dynamique du groupe en suivant les directives de son équipe lors de la préparation des grands jeux. Son grand calme a contribué à l'ambiance studieuse de la session.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#59339d;">📈 4. Bof au début, puis beaucoup mieux après</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Après des premiers jours en retrait, Inès a su mobiliser ses ressources pour mener une activité de pleine nature très bien rythmée en fin de session. Elle a enrichi son analyse critique en acceptant et en appliquant les retours de ses pairs lors des bilans quotidiens. Elle a fortifié sa place dans l'équipe en s'investissant pleinement dans la préparation de la soirée de clôture. Sa montée en puissance garantit une très bonne fin de formation.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Maxime a progressivement pris conscience de ses capacités en proposant des variantes d'activités originales lors de la deuxième partie de semaine. Il a développé son argumentation en échangeant sur ses difficultés de stage pratique de manière constructive lors des temps d'analyse. Il s'est pleinement impliqué dans la vie collective en dynamisant les temps de vaisselle sur la fin de session. Son déclic en cours de stage est très prometteur.</li>
-                  </ul>
-
-                  <h5 style="margin-top:16px; color:#59339d;">📉 5. Bien au début, puis "relâchement" / passivité sur la fin</h5>
-                  <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
-                      <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Sarah a démarré la session de manière très dynamique en apportant des idées créatives lors des premiers échanges sur le stage pratique. Elle a ensuite complété ses connaissances théoriques en suivant assidument les modules sur le développement de l'enfant en milieu de semaine. Elle s'est conformée aux exigences minimales en participant silencieusement aux temps de préparation finaux de son équipe. Sa bonne compréhension globale permet la validation de son diplôme.</li>
-                      <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> David a montré une excellente réflexion éducative lors des débats initiaux sur le rôle de l'animateur. Il a par la suite conforté ses techniques d'animation en appliquant les consignes de son binôme lors de la mise en place d'un jeu de société. Il a pris part à la vie du centre en observant le respect des horaires jusqu'à la fin du séjour. Ses acquis solides de début de stage assurent sa validation finale.</li>
-                  </ul>
-              </div>
-
-          </div>
-          <div class="es-modal__footer">
-              <button class="es-btn es-btn--primary" onclick="closeModal('overlayInfoDRAJES')">Compris !</button>
-          </div>
+    <div class="es-modal" style="max-width:900px;">
+      <div class="es-modal__header">
+        <h2 class="es-modal__title">Rédaction d'appréciation BAFA : Méthodologie et Exemples</h2>
+        <button class="es-modal__close" onclick="closeModal('overlayInfoDRAJES')"><i class="bi bi-x"></i></button>
       </div>
+      <div class="es-modal__body"
+        style="font-size:0.9rem; line-height:1.5; color:var(--clr-text); max-height: 75vh; overflow-y: auto;">
+
+        <p style="margin-bottom:12px; font-weight:600; color:var(--clr-primary-dark);">
+          L'appréciation est un acte pédagogique destiné au jury, qui reflète ce que chaque stagiaire a appris. Elle
+          doit être claire, objective, sans ambiguïté et basée sur des faits.
+        </p>
+
+        <h4 style="font-size:0.95rem; margin-top:16px; margin-bottom:6px; color:var(--clr-text-muted);">
+          <i class="bi bi-check2-circle"></i> 1. La structure et le contenu (La règle des 3 éléments)
+        </h4>
+        <p style="margin-bottom:8px;">L'appréciation doit être personnalisée et compter environ 4 à 5 phrases au total
+          (une par critère). Pour chaque critère, votre phrase doit obligatoirement inclure :</p>
+        <ul style="padding-left:20px; margin-bottom:12px;">
+          <li><strong>La compétence acquise :</strong> Ce que le stagiaire a appris ou validé.</li>
+          <li><strong>Comment elle a été acquise :</strong> Les actions concrètes, comportements ou postures observables
+            qui le prouvent.</li>
+          <li><strong>Dans quel cadre :</strong> Le contexte précis ou l'intitulé du temps de formation concerné.</li>
+        </ul>
+        <p style="margin-bottom:12px;"><em>Il est recommandé d'ajouter une phrase finale qui met en valeur le "petit
+            plus" du stagiaire sur la session.</em></p>
+
+        <h4 style="font-size:0.95rem; margin-top:16px; margin-bottom:6px; color:var(--clr-text-muted);">
+          <i class="bi bi-star"></i> 2. Les règles d'or (Ce qu'il faut FAIRE)
+        </h4>
+        <ul style="padding-left:20px; margin-bottom:12px;">
+          <li><strong>Se concentrer sur les acquis et l'évolution :</strong> Refléter de manière factuelle ce que le
+            stagiaire a appris et la progression constatée.</li>
+          <li><strong>S'adresser au jury (3ème personne) :</strong> Parler de lui à la troisième personne ("Il a...",
+            "Monsieur/Madame a...").</li>
+          <li><strong>Être parfaitement cohérent :</strong> Un avis favorable ne peut comporter aucune réserve ni
+            critique.</li>
+        </ul>
+
+        <h4 style="font-size:0.95rem; margin-top:16px; margin-bottom:6px; color:var(--clr-text-muted);">
+          <i class="bi bi-exclamation-triangle"></i> 3. Les erreurs à éviter (Ce qu'il ne faut PAS FAIRE)
+        </h4>
+        <ul style="padding-left:20px; margin-bottom:12px;">
+          <li><strong>Ne pas donner de conseils ni de félicitations :</strong> Ce n'est pas le lieu pour prodiguer des
+            conseils, qui doivent être faits à l'oral ou dans le carnet de suivi.</li>
+          <li><strong>Ne pas juger la personnalité :</strong> Le signalement de traits de caractère ("timide", "mou")
+            n'est pas autorisé.</li>
+          <li><strong>Ne pas utiliser le "tu" ou le "vous" :</strong> Il ne faut pas s'adresser au stagiaire dans la
+            rédaction.</li>
+          <li><strong>Ne pas restreindre l'animateur à un public :</strong> Ne pas faire de remarques limitant la
+            capacité du stagiaire à une tranche d'âge précise.</li>
+          <li><strong>Ne pas inclure votre propre nom :</strong> Ni celui de la directrice/du directeur de l'accueil.
+          </li>
+        </ul>
+
+          <div class="es-alert es-alert--info" style="margin-top:10px; margin-bottom:20px; font-size:0.8rem;
+          display:block;">
+              <i class="bi bi-info-circle"></i> <strong>RAPPEL DRAJES : Toutes les appréciations proposées ci-dessous
+              entraînent une validation de l'étape (Avis Favorable).</strong> Un avis favorable interdit la moindre
+              critique. Si un stagiaire a été en retrait ou s'est relâché, l'appréciation doit se concentrer sur les
+              tâches minimales d'exécution et d'observation qu'il a tout de même réalisées, sans mentionner ce qu'il a
+              manqué. Le jury comprendra alors le niveau réel du candidat.
+          </div>
+
+        <h4
+          style="font-size:1.1rem; margin-top:24px; margin-bottom:12px; color:var(--clr-primary-dark); border-bottom: 1px solid #ccc; padding-bottom: 5px;">
+          <i class="bi bi-journal-text"></i> Modèles d'appréciations par étape du BAFA
+        </h4>
+
+        <!-- ========================================== -->
+        <!-- PARTIE 1 : FORMATION GÉNÉRALE (BASE)       -->
+        <!-- ========================================== -->
+        <div
+          style="border-left: 4px solid #0d6efd; background-color: #f8fbff; padding: 15px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
+          <h3 style="color: #0d6efd; margin-top: 0; margin-bottom: 15px;"><i class="bi bi-1-circle-fill"></i> Étape 1 :
+            Formation Générale (Base)</h3>
+
+          <h5 style="margin-top:16px; color:#0b5ed7;">🌟 1. Le stagiaire brillant</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Léa a brillamment acquis les notions de sécurité
+              en concevant un grand jeu sans risque lors des temps de préparation en sous-groupe. Elle s'est affirmée
+              comme moteur de son équipe de vie en organisant efficacement les repas quotidiens. Elle a intégré les
+              enjeux de la laïcité en argumentant de manière pertinente lors des débats théoriques en plénière. Son
+              leadership bienveillant a positivement porté le groupe de stagiaires.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Paul a développé d'excellentes compétences
+              d'animation en menant une veillée immersive très créative lors de la pratique d'activité. Il a compris le
+              travail d'équipe en distribuant la parole de façon équitable durant les temps de bilan de fin de journée.
+              Il a assimilé la réglementation des accueils de mineurs en restituant parfaitement les taux d'encadrement
+              lors des apports théoriques. Sa grande maturité a enrichi l'ensemble de la session.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#0b5ed7;">✅ 2. Le stagiaire "bien, sans plus"</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Julie a compris les bases de la sécurité
+              physique en respectant les consignes lors de la conception de ses jeux. Elle s'est intégrée dans son
+              équipe de vie en participant aux tâches collectives de rangement. Elle a expérimenté la prise de parole en
+              grand groupe en présentant les règles de son activité lors des temps pratiques. Son grand sérieux a permis
+              une validation sereine de cette première étape.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Marc a assimilé les besoins de l'enfant en
+              adaptant correctement son jeu sportif à la tranche d'âge ciblée lors de sa menée d'activité. Il a
+              participé à la vie collective en respectant les horaires tout au long de la semaine. Il s'est familiarisé
+              avec la posture d'animateur en écoutant attentivement les retours des formateurs durant les bilans. Sa
+              discrète persévérance a été appréciable.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#0b5ed7;">😐 3. Le stagiaire "plante verte" / strict minimum</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Sophie a validé les apports théoriques
+              fondamentaux en prenant des notes régulières lors des temps de plénière. Elle a appréhendé le travail en
+              groupe en observant la dynamique de ses pairs lors de la préparation des activités en sous-groupe. Elle a
+              expérimenté l'animation en expliquant les consignes d'un jeu simple lors de son temps de pratique. Son
+              écoute attentive des consignes a facilité son parcours.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Lucas a compris le rôle de l'animateur en
+              assistant à l'ensemble des modules théoriques de la session. Il s'est familiarisé avec la vie quotidienne
+              en effectuant les tâches de nettoyage qui lui étaient attribuées. Il a participé à l'élaboration d'un jeu
+              en rédigeant la fiche d'activité avec son binôme lors des temps de préparation. Son respect constant du
+              cadre de formation lui permet de valider cette étape.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#0b5ed7;">📈 4. Bof au début, puis beaucoup mieux après</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Après un temps de réserve, Emma a su prendre
+              confiance en menant avec dynamisme une activité manuelle lors des derniers jours de pratique. Elle a
+              développé sa capacité d'argumentation en intervenant de plus en plus pertinemment lors des débats
+              théoriques de fin de semaine. Elle s'est impliquée dans la vie du groupe en impulsant des chants lors des
+              temps informels. Son évolution très positive révèle un vrai potentiel éducatif.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Hugo a progressivement trouvé sa place en grand
+              groupe en proposant des idées constructives lors de l'élaboration du projet d'animation de son équipe. Il
+              a enrichi sa compréhension de la sécurité en intégrant les remarques des formateurs pour sécuriser son jeu
+              final. Il a validé sa capacité à s'évaluer en formulant un bilan personnel objectif en fin de session. Sa
+              capacité de remise en question a été son point fort.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#0b5ed7;">📉 5. Bien au début, puis "relâchement" / passivité sur la fin
+          </h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Antoine a montré un fort investissement initial
+              en proposant un imaginaire très complet lors de sa première menée d'activité. Il a ensuite validé les
+              connaissances réglementaires de base en écoutant les modules théoriques de fin de semaine. Il a participé
+              à la vie du groupe en s'asseyant avec son équipe lors des temps de préparation des derniers jours. Il a
+              suivi le cadre exigé tout au long de la formation.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Clara s'est très bien positionnée le premier
+              jour en participant activement aux jeux de connaissance. Elle a poursuivi son apprentissage en appliquant
+              les consignes demandées lors de sa pratique d'animation en milieu de semaine. Elle a compris les notions
+              d'autorité en assistant aux débats proposés par les formateurs en fin de session. Sa régularité dans
+              l'exécution des tâches basiques permet de valider son stage.</li>
+          </ul>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- PARTIE 2 : STAGE PRATIQUE                    -->
+        <!-- ========================================== -->
+        <div
+          style="border-left: 4px solid #198754; background-color: #f8fff9; padding: 15px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
+          <h3 style="color: #198754; margin-top: 0; margin-bottom: 15px;"><i class="bi bi-2-circle-fill"></i> Étape 2 :
+            Stage Pratique</h3>
+
+          <h5 style="margin-top:16px; color:#146c43;">🌟 1. Le stagiaire brillant</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Léo a acquis la capacité d'animer de grands jeux
+              en structurant ses explications de manière claire face à un groupe de 30 enfants lors des activités en
+              extérieur. Il a su garantir la sécurité en anticipant les zones à risque pendant les temps de préparation.
+              Il a développé une excellente communication en prenant le temps de faire des retours individualisés aux
+              familles lors des accueils du soir. Son dynamisme a été un moteur pour l'équipe.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Sarah s'est positionnée comme élément ressource
+              en planifiant rigoureusement les différentes étapes de réalisation des projets lors des réunions. Elle a
+              appris à gérer la dynamique du groupe en distribuant la parole équitablement durant les temps de
+              régulation. Elle a assimilé les règles d'hygiène en accompagnant les plus jeunes lors des temps de repas.
+              Sa capacité à apaiser les tensions a grandement favorisé un climat serein.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 3 :</strong> Maxime a démontré sa capacité à adapter ses
+              activités en proposant des variantes pour les enfants en situation de handicap lors des ateliers manuels.
+              Il a enrichi ses postures éducatives en utilisant l'écoute active pour désamorcer les conflits pendant les
+              temps libres informels. Il a affirmé sa place dans l'équipe en organisant la logistique des veillées. Sa
+              créativité a permis de proposer des imaginaires immersifs de grande qualité.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#146c43;">✅ 2. Le stagiaire "bien, sans plus"</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Chloé a acquis les bases de la sécurité physique
+              en respectant scrupuleusement les taux d'encadrement lors des sorties en extérieur. Elle s'est
+              familiarisée avec le travail d'équipe en participant à la répartition des tâches lors des réunions de
+              préparation. Elle a appris à mener des jeux simples en appliquant les consignes de base lors des temps
+              d'activités. Sa rigueur sur les horaires a facilité l'organisation générale.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Julien a compris le fonctionnement de la vie
+              quotidienne en accompagnant activement les enfants lors des temps de restauration. Il a développé sa
+              capacité à communiquer en échangeant des informations avec ses collègues durant les temps informels de
+              pause. Il a su encadrer un petit groupe en veillant au respect des règles lors des ateliers créatifs. Sa
+              présence discrète mais attentive a permis un bon accompagnement des mineurs.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 3 :</strong> Amina s'est positionnée dans son rôle
+              d'animatrice en proposant des jeux de connaissance pertinents lors des premiers jours d'accueil. Elle a
+              assimilé le rythme des enfants en garantissant le respect des temps calmes programmés après le déjeuner.
+              Elle a expérimenté la posture d'accompagnatrice en guidant les enfants dans le rangement du matériel en
+              fin de journée. Son respect du cadre réglementaire a été très appréciable.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#146c43;">😐 3. Le stagiaire "plante verte" / strict minimum</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Thomas a acquis les notions de base de la
+              sécurité physique en appliquant strictement les consignes données par la direction lors des sorties. Il
+              s'est familiarisé avec la vie quotidienne en assurant une présence auprès des enfants durant les temps de
+              repas. Il a appris à seconder ses collègues en préparant le matériel nécessaire lors de la mise en place
+              des activités. Son écoute attentive des directives a facilité son intégration dans la structure.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Léa a appréhendé le fonctionnement de l'équipe
+              d'animation en observant les méthodes de ses pairs lors des réunions de préparation. Elle a assimilé le
+              rythme de la journée en suivant le groupe lors des temps de transition entre les locaux. Elle a
+              expérimenté l'animation en expliquant les règles de jeux de société classiques durant les temps d'accueil
+              échelonné. Son respect du cadre établi a été constant sur l'ensemble du séjour.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 3 :</strong> Lucas a compris la logistique du travail
+              d'équipe en exécutant les tâches de rangement qui lui ont été confiées lors des temps d'organisation. Il a
+              validé la sécurité en effectuant des comptages réguliers des mineurs lors des grands rassemblements. Il a
+              expérimenté la posture d'encadrement en surveillant les espaces de jeux libres lors des temps de
+              récréation. Son grand calme a favorisé un environnement paisible sur l'accueil.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#146c43;">📈 4. Bof au début, puis beaucoup mieux après</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Après un temps d'observation, Emma a développé
+              une réelle capacité de prise d'initiative en menant de manière autonome de grands jeux lors de la deuxième
+              semaine. Elle a appris à s'affirmer dans l'équipe en défendant ses idées d'activités avec des arguments
+              lors des réunions. Elle a consolidé sa gestion de l'autorité en posant un cadre ferme lors des temps
+              calmes de fin de séjour. Son évolution particulièrement positive a révélé une animatrice impliquée.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Hugo a progressivement affirmé sa posture
+              d'animateur en prenant de plus en plus la parole face au grand groupe lors des rassemblements matinaux. Il
+              a enrichi sa pratique en passant de la simple observation à la menée complète d'activités manuelles au fil
+              des jours. Il s'est situé dans le travail d'équipe en acceptant les retours constructifs de ses pairs pour
+              ajuster son comportement. Sa grande capacité de remise en question lui a permis de progresser.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 3 :</strong> Inès a su expérimenter de nouvelles postures
+              pour finalement encadrer des groupes d'enfants en totale autonomie lors des sorties en ville. Elle a
+              découvert et appliqué des techniques de régulation de conflits avec de plus en plus d'aisance durant les
+              temps libres. Elle a fortifié sa communication avec les familles en prenant en charge la transmission des
+              bilans sur les derniers jours de l'accueil. Sa persévérance a été son grand atout.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#146c43;">📉 5. Bien au début, puis "relâchement" / passivité sur la fin
+          </h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Antoine a démontré une forte implication
+              initiale en menant des grands jeux de qualité lors de la première semaine. Il a ensuite validé sa capacité
+              à s'adapter au rythme en encadrant sereinement les temps de repas sur la fin du séjour. Il s'est intégré à
+              l'équipe en écoutant les directives lors des réunions bilans des derniers jours. Son respect global du
+              cadre réglementaire a permis de valider son stage.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Clara s'est très bien positionnée en début
+              d'accueil en proposant des activités manuelles variées et minutieusement préparées. Elle a poursuivi son
+              stage en accompagnant les enfants lors des temps de transition de la deuxième semaine. Elle a compris les
+              enjeux de la sécurité physique en exécutant les tâches de surveillance basiques demandées par la
+              direction. Son maintien des exigences sécuritaires a été constant.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 3 :</strong> Nathan a su créer une relation de confiance
+              immédiate avec son groupe en animant des veillées immersives les premiers jours. Il a ensuite appréhendé
+              la vie quotidienne en assurant une présence discrète mais attentive lors des temps de sieste sur la fin de
+              session. Il a participé à la logistique en rangeant le matériel à la demande de l'équipe d'animation. Sa
+              posture est restée adaptée au cadre d'accueil.</li>
+          </ul>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- PARTIE 3 : APPROFONDISSEMENT / QUALIF        -->
+        <!-- ========================================== -->
+        <div
+          style="border-left: 4px solid #6f42c1; background-color: #fbf8ff; padding: 15px; margin-bottom: 20px; border-radius: 0 8px 8px 0;">
+          <h3 style="color: #6f42c1; margin-top: 0; margin-bottom: 15px;"><i class="bi bi-3-circle-fill"></i> Étape 3 :
+            Session d'Approfondissement</h3>
+
+          <h5 style="margin-top:16px; color:#59339d;">🌟 1. Le stagiaire brillant</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Alice a parfaitement consolidé sa maîtrise des
+              projets d'animation en créant un grand jeu adapté à la thématique de la session lors des temps de
+              préparation. Elle a affiné sa posture éducative en menant des réflexions très poussées sur l'inclusion
+              durant les débats théoriques. Elle a partagé avec brio son expérience de stage pratique lors des temps
+              d'analyse de la pratique. Son esprit d'initiative constant a tiré tout le groupe vers le haut.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Samir a approfondi ses techniques d'animation en
+              menant une veillée spectaculaire et sécurisée devant l'ensemble des stagiaires. Il a enrichi la dynamique
+              de groupe en régulant les prises de parole de manière autonome lors des bilans de vie collective. Il a
+              assimilé les responsabilités spécifiques de l'animateur en argumentant avec précision lors des études de
+              cas. Son leadership naturel en fait un animateur complet et prêt à exercer.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#59339d;">✅ 2. Le stagiaire "bien, sans plus"</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Chloé a conforté ses acquis d'animation en
+              proposant une activité manuelle en lien avec la thématique d'approfondissement lors des temps pratiques.
+              Elle a analysé son stage pratique en partageant ses réussites avec ses pairs lors des temps d'échanges
+              dédiés. Elle a respecté les règles de vie collective en participant à l'organisation des repas de la
+              session. Son positionnement sérieux a permis d'atteindre les objectifs fixés.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Thomas a consolidé sa connaissance des besoins
+              de l'enfant en l'appliquant à la création d'un jeu de piste lors de son travail en sous-groupe. Il a revu
+              les bases de la réglementation en validant les quiz proposés durant les modules théoriques. Il s'est
+              impliqué dans le quotidien de la session en respectant les horaires de manière stricte. Il a su utiliser
+              cette semaine pour finaliser adéquatement sa formation.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#59339d;">😐 3. Le stagiaire "plante verte" / strict minimum</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Léa a revu les fondements de la sécurité
+              physique en assistant avec attention aux rappels réglementaires des formateurs. Elle a validé la phase de
+              retour sur stage pratique en écoutant les expériences partagées par les autres stagiaires lors des groupes
+              de parole. Elle a expérimenté les techniques d'approfondissement en exécutant son rôle dans l'activité
+              collective de son équipe. Sa présence assidue lui permet d'achever son parcours.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Julien a complété sa formation en prenant
+              connaissance des outils pédagogiques liés à la thématique lors des apports théoriques. Il a réinvesti son
+              expérience passée en rédigeant son bilan de stage pratique lors des temps individuels. Il a participé à la
+              dynamique du groupe en suivant les directives de son équipe lors de la préparation des grands jeux. Son
+              grand calme a contribué à l'ambiance studieuse de la session.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#59339d;">📈 4. Bof au début, puis beaucoup mieux après</h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Après des premiers jours en retrait, Inès a su
+              mobiliser ses ressources pour mener une activité de pleine nature très bien rythmée en fin de session.
+              Elle a enrichi son analyse critique en acceptant et en appliquant les retours de ses pairs lors des bilans
+              quotidiens. Elle a fortifié sa place dans l'équipe en s'investissant pleinement dans la préparation de la
+              soirée de clôture. Sa montée en puissance garantit une très bonne fin de formation.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> Maxime a progressivement pris conscience de ses
+              capacités en proposant des variantes d'activités originales lors de la deuxième partie de semaine. Il a
+              développé son argumentation en échangeant sur ses difficultés de stage pratique de manière constructive
+              lors des temps d'analyse. Il s'est pleinement impliqué dans la vie collective en dynamisant les temps de
+              vaisselle sur la fin de session. Son déclic en cours de stage est très prometteur.</li>
+          </ul>
+
+          <h5 style="margin-top:16px; color:#59339d;">📉 5. Bien au début, puis "relâchement" / passivité sur la fin
+          </h5>
+          <ul style="padding-left:20px; margin-bottom:16px; font-size: 0.85rem;">
+            <li style="margin-bottom:8px;"><strong>Exemple 1 :</strong> Sarah a démarré la session de manière très
+              dynamique en apportant des idées créatives lors des premiers échanges sur le stage pratique. Elle a
+              ensuite complété ses connaissances théoriques en suivant assidument les modules sur le développement de
+              l'enfant en milieu de semaine. Elle s'est conformée aux exigences minimales en participant silencieusement
+              aux temps de préparation finaux de son équipe. Sa bonne compréhension globale permet la validation de son
+              diplôme.</li>
+            <li style="margin-bottom:8px;"><strong>Exemple 2 :</strong> David a montré une excellente réflexion
+              éducative lors des débats initiaux sur le rôle de l'animateur. Il a par la suite conforté ses techniques
+              d'animation en appliquant les consignes de son binôme lors de la mise en place d'un jeu de société. Il a
+              pris part à la vie du centre en observant le respect des horaires jusqu'à la fin du séjour. Ses acquis
+              solides de début de stage assurent sa validation finale.</li>
+          </ul>
+        </div>
+
+      </div>
+      <div class="es-modal__footer">
+        <button class="es-btn es-btn--primary" onclick="closeModal('overlayInfoDRAJES')">Compris !</button>
+      </div>
+    </div>
   </div>
 
   <!-- Modal : Fiche participant (lecture seule + nav) -->
@@ -951,8 +1121,8 @@
     <div class="es-pv-wrapper">
 
       <!-- Chevron gauche -->
-      <button class="es-nav-chevron" id="btnParticipantPrev"
-        onclick="navigateParticipantView(-1)" title="Participant précédent" aria-label="Précédent">
+      <button class="es-nav-chevron" id="btnParticipantPrev" onclick="navigateParticipantView(-1)"
+        title="Participant précédent" aria-label="Précédent">
         <i class="bi bi-chevron-left"></i>
       </button>
 
@@ -966,8 +1136,7 @@
               <div id="pvSubtitle" style="font-size:0.8rem;color:var(--clr-text-muted);margin-top:2px;"></div>
             </div>
           </div>
-          <button class="es-modal__close" id="btnCloseParticipantView"
-            onclick="closeModal('overlayParticipantView')">
+          <button class="es-modal__close" id="btnCloseParticipantView" onclick="closeModal('overlayParticipantView')">
             <i class="bi bi-x"></i>
           </button>
         </div>
@@ -975,19 +1144,21 @@
         <div class="es-modal__body" id="pvBody" style="padding-top:8px;"></div>
 
         <div class="es-modal__footer" style="justify-content:space-between;align-items:center;">
-          <span id="pvCounter" style="font-size:0.82rem;color:var(--clr-text-muted);min-width:40px;text-align:center;"></span>
+          <span id="pvCounter"
+            style="font-size:0.82rem;color:var(--clr-text-muted);min-width:40px;text-align:center;"></span>
           <div style="display:flex;gap:8px;align-items:center;">
             <button class="es-btn es-btn--ghost es-btn--sm hidden anim-can" id="pvBtnEdit">
               <i class="bi bi-pencil"></i> Modifier
             </button>
-            <button class="es-btn es-btn--ghost es-btn--sm" onclick="closeModal('overlayParticipantView')">Fermer</button>
+            <button class="es-btn es-btn--ghost es-btn--sm"
+              onclick="closeModal('overlayParticipantView')">Fermer</button>
           </div>
         </div>
       </div>
 
       <!-- Chevron droit -->
-      <button class="es-nav-chevron" id="btnParticipantNext"
-        onclick="navigateParticipantView(1)" title="Participant suivant" aria-label="Suivant">
+      <button class="es-nav-chevron" id="btnParticipantNext" onclick="navigateParticipantView(1)"
+        title="Participant suivant" aria-label="Suivant">
         <i class="bi bi-chevron-right"></i>
       </button>
 
