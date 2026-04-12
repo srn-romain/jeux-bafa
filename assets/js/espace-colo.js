@@ -512,6 +512,7 @@ function renderParticipantView() {
     const g = currentGroups.find(x => x.id === p.groupeId);
     const specList = p.spec || [];
     const note = p.note || '';
+    const appreciation = p.appreciation || '';
 
     document.getElementById('pvBody').innerHTML = `
         <div class="es-pv-grid">
@@ -538,6 +539,14 @@ function renderParticipantView() {
                     ? `<p class="es-pv-note">${escapeHtml(note)}</p>`
                     : `<span class="es-pv-value" style="color:var(--clr-text-muted);font-style:italic;font-size:0.85rem;">Aucune</span>`}
             </div>
+
+            ${isColoFormation ? `
+            <div class="es-pv-row${appreciation ? ' es-pv-row--block' : ''}">
+                <span class="es-pv-label"><i class="bi bi-star"></i> Appréciation</span>
+                ${appreciation
+                    ? `<p class="es-pv-note" style="background: rgba(166, 216, 102, 0.05); border-color: rgba(166, 216, 102, 0.2);">${escapeHtml(appreciation)}</p>`
+                    : `<span class="es-pv-value" style="color:var(--clr-text-muted);font-style:italic;font-size:0.85rem;">Aucune</span>`}
+            </div>` : ''}
         </div>
     `;
 
