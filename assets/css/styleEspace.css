@@ -1512,7 +1512,8 @@ input:checked+.es-slider:before {
 
 /* Colonnes Remarque — largeur contrainte pour text-overflow */
 .es-table .col-note,
-.es-table .col-note-admin {
+.es-table .col-note-admin,
+.es-table .col-appreciation {
   max-width: 240px;
   width: 220px;
   overflow: hidden;
