@@ -20,6 +20,7 @@ let participantColView = 'note'; // 'spec' | 'note' — colonne visible dans le 
 let currentViewIndex = -1;       // Index dans currentFilteredParticipants pour la modale fiche
 let sortColumn    = null;        // Colonne de tri active ('prenom'|'nom'|'age'|'genre'|'groupe')
 let sortDirection = 'asc';       // 'asc' | 'desc'
+let isColoFormation = false;     // Si la colo est marquée comme "Formation"
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -141,6 +142,15 @@ async function initColoContent(colo, role) {
         ? `${formatDate(colo.dateDebut)} → ${formatDate(colo.dateFin)}`
         : '';
     document.getElementById('coloDates').textContent = dateStr;
+
+    isColoFormation = colo.isFormation === true;
+    if (isColoFormation) {
+        const btnShowAppreciation = document.getElementById('btnShowAppreciation');
+        if (btnShowAppreciation) btnShowAppreciation.classList.remove('hidden');
+    } else {
+        const btnShowAppreciation = document.getElementById('btnShowAppreciation');
+        if (btnShowAppreciation) btnShowAppreciation.classList.add('hidden');
+    }
 
     // Drive
     if (colo.driveId) {
@@ -305,10 +315,13 @@ function renderParticipantsTable(role) {
     tbody.innerHTML = displayList.map((p, idx) => {
         const g = hasGroups ? currentGroups.find(x => x.id === p.groupeId) : null;
         const note = p.note || '';
-        const isLong = note.length > 50;
+        const appreciation = p.appreciation || '';
+        const isLongNote = note.length > 50;
+        const isLongApp = appreciation.length > 50;
 
         const specIsVisible = participantColView === 'spec';
         const noteIsVisible = participantColView === 'note';
+        const appreIsVisible = participantColView === 'appreciation';
 
         return `
         <tr onclick="openParticipantView(${idx})" style="cursor:pointer;">
@@ -332,7 +345,17 @@ function renderParticipantsTable(role) {
                     <div style="display:flex;align-items:center;gap:0;width:100%;min-width:0;">
                         <span class="es-note-text">${escapeHtml(note)}</span>
                         <span style="flex-shrink:0;width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;">
-                            ${isLong ? `<button style="padding:0;height:18px;width:18px;border:none;color:var(--clr-primary);background:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px;" onclick="event.stopPropagation();openNoteModal(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye" style="font-size:0.82rem;"></i></button>` : ''}
+                            ${isLongNote ? `<button style="padding:0;height:18px;width:18px;border:none;color:var(--clr-primary);background:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px;" onclick="event.stopPropagation();openNoteModal(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye" style="font-size:0.82rem;"></i></button>` : ''}
+                        </span>
+                    </div>
+                ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
+            </td>
+            <td style="font-size:0.85rem;" class="col-appreciation${!appreIsVisible ? ' hidden' : ''}">
+                ${appreciation ? `
+                    <div style="display:flex;align-items:center;gap:0;width:100%;min-width:0;">
+                        <span class="es-note-text">${escapeHtml(appreciation)}</span>
+                        <span style="flex-shrink:0;width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;">
+                            ${isLongApp ? `<button style="padding:0;height:18px;width:18px;border:none;color:var(--clr-primary);background:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px;" onclick="event.stopPropagation();openNoteModal(${escapeHtml(JSON.stringify(appreciation))})"><i class="bi bi-eye" style="font-size:0.82rem;"></i></button>` : ''}
                         </span>
                     </div>
                 ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
@@ -360,30 +383,26 @@ function renderParticipantsTable(role) {
 function setParticipantColView(view) {
     participantColView = view;
 
-    // Mettre à jour les styles des boutons du segmented control
-    const btnSpec = document.getElementById('btnShowSpec');
-    const btnNote = document.getElementById('btnShowNote');
-    if (btnSpec && btnNote) {
-        if (view === 'spec') {
-            btnSpec.style.background = 'var(--clr-primary)';
-            btnSpec.style.color = '#fff';
-            btnSpec.style.fontWeight = '700';
-            btnNote.style.background = 'transparent';
-            btnNote.style.color = 'rgba(255,255,255,0.45)';
-            btnNote.style.fontWeight = '500';
-        } else {
-            btnNote.style.background = 'var(--clr-primary)';
-            btnNote.style.color = '#fff';
-            btnNote.style.fontWeight = '700';
-            btnSpec.style.background = 'transparent';
-            btnSpec.style.color = 'rgba(255,255,255,0.45)';
-            btnSpec.style.fontWeight = '500';
+    const views = ['spec', 'note', 'appreciation'];
+    views.forEach(v => {
+        const btn = document.getElementById(`btnShow${v.charAt(0).toUpperCase() + v.slice(1)}`);
+        if (btn) {
+            if (view === v) {
+                btn.style.background = 'var(--clr-primary)';
+                btn.style.color = '#fff';
+                btn.style.fontWeight = '700';
+            } else {
+                btn.style.background = 'transparent';
+                btn.style.color = 'rgba(255,255,255,0.45)';
+                btn.style.fontWeight = '500';
+            }
         }
-    }
+    });
 
     // Thead
     document.querySelectorAll('.col-spec').forEach(el => el.classList.toggle('hidden', view !== 'spec'));
     document.querySelectorAll('.col-note').forEach(el => el.classList.toggle('hidden', view !== 'note'));
+    document.querySelectorAll('.col-appreciation').forEach(el => el.classList.toggle('hidden', view !== 'appreciation'));
     // Re-render tbody
     renderParticipantsTable(currentRole);
 }
@@ -952,13 +971,18 @@ document.getElementById('btnAddParticipant')?.addEventListener('click', () => {
     document.getElementById('participantForm')?.reset();
 
     // Réinitialiser les disabled
-    ['pPrenom', 'pNom', 'pAge', 'pGenre', 'pGroup'].forEach(id => {
+    ['pPrenom', 'pNom', 'pAge', 'pGenre', 'pGroup', 'pAppreciation'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.disabled = false;
     });
 
     const groupSelect = document.getElementById('pGroup');
     if (groupSelect) groupSelect.value = '';
+
+    const fieldAppreciation = document.getElementById('fieldParticipantAppreciation');
+    if (fieldAppreciation) {
+        fieldAppreciation.classList.toggle('hidden', !isColoFormation);
+    }
 
     document.getElementById('participantError')?.classList.add('hidden');
     openModal('overlayParticipant');
@@ -970,11 +994,16 @@ function editParticipant(id) {
     editingParticipantId = id;
     document.getElementById('participantModalTitle').textContent = 'Modifier le participant';
 
-    // Si verrouillé et anim, on ne peut changer que la remarque
+    const fieldAppreciation = document.getElementById('fieldParticipantAppreciation');
+    if (fieldAppreciation) {
+        fieldAppreciation.classList.toggle('hidden', !isColoFormation);
+    }
+
+    // Si verrouillé et anim, on ne peut changer que la remarque (et l'appréciation)
     const isLockedAnim = (currentRole === 'anim' && currentLocked);
-    ['pPrenom', 'pNom', 'pAge', 'pGenre', 'pGroup', 'pSpec'].forEach(fId => {
+    ['pPrenom', 'pNom', 'pAge', 'pGenre', 'pGroup', 'pSpec', 'pAppreciation'].forEach(fId => {
         const el = document.getElementById(fId);
-        if (el) el.disabled = isLockedAnim;
+        if (el && fId !== 'pAppreciation') el.disabled = isLockedAnim;
     });
 
     document.getElementById('pPrenom').value = p.prenom || '';
@@ -983,6 +1012,10 @@ function editParticipant(id) {
     document.getElementById('pGenre').value = p.genre || 'feminin';
     document.getElementById('pSpec').value = Array.isArray(p.spec) ? p.spec.join(', ') : (p.spec || '');
     document.getElementById('pNote').value = p.note || '';
+    if (isColoFormation) {
+        const pAppreciationEl = document.getElementById('pAppreciation');
+        if (pAppreciationEl) pAppreciationEl.value = p.appreciation || '';
+    }
 
     const groupSelect = document.getElementById('pGroup');
     if (groupSelect) groupSelect.value = p.groupeId || '';
@@ -1005,6 +1038,7 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
     const genre = document.getElementById('pGenre')?.value;
     const specRaw = document.getElementById('pSpec')?.value.trim() || '';
     const note = document.getElementById('pNote')?.value.trim();
+    const appreciation = document.getElementById('pAppreciation')?.value.trim();
     const groupeId = document.getElementById('pGroup')?.value || null;
 
     const spec = specRaw ? specRaw.split(',').map(s => s.trim().toLowerCase()).filter(s => s) : [];
@@ -1020,12 +1054,18 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
 
     try {
         let data = { prenom, nom, age, genre, note, spec, groupeId };
+        if (isColoFormation && appreciation !== undefined) {
+            data.appreciation = appreciation;
+        }
         const colRef = db.collection('espaces').doc(espaceId).collection('participants');
 
         if (editingParticipantId) {
             // Sécurité : si verrouillé par le directeur, les animateurs ne peuvent changer QUE la remarque
             if (currentRole === 'anim' && currentLocked) {
                 data = { note };
+                if (isColoFormation && appreciation !== undefined) {
+                    data.appreciation = appreciation;
+                }
             }
             await colRef.doc(editingParticipantId).update(data);
             showToast('Participant modifié.', 'success');

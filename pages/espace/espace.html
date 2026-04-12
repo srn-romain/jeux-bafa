@@ -436,6 +436,10 @@
                     style="padding:4px 10px;font-size:0.75rem;border:none;cursor:pointer;transition:all 0.18s;background:var(--clr-primary);color:#fff;font-weight:700;border-radius:16px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
                     <i class="bi bi-chat-left-text"></i> <span class="brand-label">Remarques</span>
                   </button>
+                  <button id="btnShowAppreciation" onclick="setParticipantColView('appreciation')" class="hidden"
+                    style="padding:4px 10px;font-size:0.75rem;border:none;cursor:pointer;transition:all 0.18s;background:transparent;color:rgba(255,255,255,0.45);font-weight:500;border-radius:16px;align-items:center;gap:4px;white-space:nowrap;">
+                    <i class="bi bi-star"></i> <span class="brand-label">Appréciation</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -502,6 +506,7 @@
                       Groupe <i class="bi bi-arrow-down-up sort-icon"></i></th>
                     <th class="col-spec hidden">Spécificités</th>
                     <th class="col-note">Remarque</th>
+                    <th class="col-appreciation hidden">Appréciation</th>
                     <th class="hidden anim-can" data-html2canvas-ignore="true">Actions</th>
                   </tr>
                 </thead>
@@ -632,6 +637,12 @@
                 style="color:var(--clr-primary)"></i> Remarques / Infos (allergies, soins...)</label>
             <textarea class="es-textarea es-textarea--note" id="pNote" rows="3"
               placeholder="Ex: Allergie au gluten, traitement asthme..."></textarea>
+          </div>
+          <div class="es-field hidden" id="fieldParticipantAppreciation">
+            <label class="es-field__label" for="pAppreciation"><i class="bi bi-star"
+                style="color:var(--clr-primary)"></i> Appréciation / Évaluation</label>
+            <textarea class="es-textarea es-textarea--note" id="pAppreciation" rows="3"
+              placeholder="Ex: Très bonne progression, participe activement..."></textarea>
           </div>
         </form>
         <div class="es-alert es-alert--error hidden mt-3" id="participantError">

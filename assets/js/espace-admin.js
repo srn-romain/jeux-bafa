@@ -292,6 +292,9 @@ function openColoForm(colo = null) {
     document.getElementById('coloDateFin').value = colo?.dateFin || '';
     document.getElementById('coloDriveId').value = colo?.driveId || '';
     document.getElementById('coloPPId').value = colo?.ppId || '';
+    
+    const cbFormation = document.getElementById('coloIsFormation');
+    if (cbFormation) cbFormation.checked = colo?.isFormation === true;
 
     const bgInput = document.getElementById('coloBgInput');
     const bgBase64 = document.getElementById('coloBgBase64');
@@ -412,6 +415,7 @@ document.getElementById('btnSaveColoForm')?.addEventListener('click', async () =
         dateFin: document.getElementById('coloDateFin')?.value || '',
         driveId: document.getElementById('coloDriveId')?.value.trim() || '',
         ppId: document.getElementById('coloPPId')?.value.trim() || '',
+        isFormation: document.getElementById('coloIsFormation')?.checked || false,
         bgImage: document.getElementById('coloBgBase64')?.value || '',
         emoji: document.getElementById('coloEmoji')?.value.trim() || '🏕️',
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
