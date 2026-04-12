@@ -427,7 +427,12 @@
               <input type="file" id="inputImportParticipantsColo" class="hidden" accept=".json">
 
               <!-- Toggle pill auto-aligné à droite -->
-              <div style="margin-left:auto;flex-shrink:0;">
+              <div style="margin-left:auto;flex-shrink:0;display:flex;align-items:center;gap:8px;">
+                <button id="btnInfoDRAJES" class="es-btn es-btn--ghost es-btn--sm hidden"
+                  style="padding: 6px; border-radius: 50%; opacity: 0.6; min-width: 32px; height: 32px; border: 1px solid rgba(255,255,255,0.2);"
+                  title="Critères d'appréciation DRAJES">
+                  <i class="bi bi-journal-check"></i>
+                </button>
                 <div
                   style="display:inline-flex;border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.25);padding:2px;">
                   <button id="btnShowSpec" onclick="setParticipantColView('spec')"
@@ -764,6 +769,50 @@
   </div>
 
   <!-- ================================================ -->
+  <!-- Modal : Infos DRAJES (Appréciations) -->
+  <div class="es-overlay hidden" id="overlayInfoDRAJES" role="dialog" aria-modal="true">
+    <div class="es-modal" style="max-width:550px;">
+      <div class="es-modal__header">
+        <h2 class="es-modal__title">Rédaction d'appréciation BAFA</h2>
+        <button class="es-modal__close" onclick="closeModal('overlayInfoDRAJES')"><i class="bi bi-x"></i></button>
+      </div>
+      <div class="es-modal__body" style="font-size:0.9rem; line-height:1.5; color:var(--clr-text);">
+        <p style="margin-bottom:12px; font-weight:600; color:var(--clr-primary-dark);">
+          L'appréciation est un acte pédagogique qui aide le stagiaire à progresser et permet au jury de valider son diplôme.
+        </p>
+
+        <h4 style="font-size:0.95rem; margin-top:16px; margin-bottom:6px; color:var(--clr-text-muted);">
+          <i class="bi bi-check2-circle"></i> Les 6 fonctions de l'animateur
+        </h4>
+        <ul style="padding-left:20px; margin-bottom:12px;">
+          <li><strong>Sécurité :</strong> Capacité à assurer la sécurité physique et morale (risques, prévention).</li>
+          <li><strong>Démocratie :</strong> Participation à l'accueil, à la communication et à la vie d'équipe.</li>
+          <li><strong>Projet :</strong> Mise en œuvre du projet pédagogique de la structure.</li>
+          <li><strong>Vie quotidienne :</strong> Encadrement des repas, de l'hygiène et du sommeil.</li>
+          <li><strong>Activités :</strong> Conception et animation de jeux adaptés à l'âge des enfants.</li>
+          <li><strong>Accompagnement :</strong> Soutien aux initiatives et projets des mineurs.</li>
+        </ul>
+
+        <h4 style="font-size:0.95rem; margin-top:16px; margin-bottom:6px; color:var(--clr-text-muted);">
+          <i class="bi bi-pencil-square"></i> Conseils de rédaction
+        </h4>
+        <ul style="padding-left:20px; margin-bottom:12px;">
+          <li><strong>Soyez factuel :</strong> Évitez les jugements ("sympa", "mou"). Relatez des faits observés.</li>
+          <li><strong>Notez l'évolution :</strong> Comparez son autonomie entre le début et la fin du stage.</li>
+          <li><strong>Valorisez les acquis :</strong> Mettez en avant ce qu'il a appris à maîtriser.</li>
+          <li><strong>Donnez des axes :</strong> Si un point est faible, accompagnez-le d'un conseil de progression.</li>
+        </ul>
+        
+        <div class="es-alert es-alert--info" style="margin-top:10px; font-size:0.8rem;">
+          <i class="bi bi-info-circle"></i> L'appréciation finale doit être cohérente avec l'avis rendu (Favorable / Défavorable) et avoir été discutée oralement avec le stagiaire.
+        </div>
+      </div>
+      <div class="es-modal__footer">
+        <button class="es-btn es-btn--primary" onclick="closeModal('overlayInfoDRAJES')">Compris !</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal : Fiche participant (lecture seule + nav) -->
   <!-- ================================================ -->
   <div class="es-overlay hidden" id="overlayParticipantView" role="dialog" aria-modal="true"

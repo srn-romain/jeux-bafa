@@ -147,12 +147,14 @@ async function initColoContent(colo, role) {
     currentColoDateFin = colo.dateFin ? new Date(colo.dateFin) : null;
 
     isColoFormation = colo.isFormation === true;
+    const btnAppr = document.getElementById('btnShowAppreciation');
+    const btnInfoD = document.getElementById('btnInfoDRAJES');
     if (isColoFormation) {
-        const btnShowAppreciation = document.getElementById('btnShowAppreciation');
-        if (btnShowAppreciation) btnShowAppreciation.classList.remove('hidden');
+        if (btnAppr) btnAppr.classList.remove('hidden');
+        if (btnInfoD) btnInfoD.classList.remove('hidden');
     } else {
-        const btnShowAppreciation = document.getElementById('btnShowAppreciation');
-        if (btnShowAppreciation) btnShowAppreciation.classList.add('hidden');
+        if (btnAppr) btnAppr.classList.add('hidden');
+        if (btnInfoD) btnInfoD.classList.add('hidden');
     }
 
     // Drive
@@ -967,6 +969,10 @@ document.querySelectorAll('input[name="genderSelection"]').forEach(cb => {
 // ================================================================
 
 let editingParticipantId = null;
+
+document.getElementById('btnInfoDRAJES')?.addEventListener('click', () => {
+    openModal('overlayInfoDRAJES');
+});
 
 document.getElementById('btnAddParticipant')?.addEventListener('click', () => {
     editingParticipantId = null;
