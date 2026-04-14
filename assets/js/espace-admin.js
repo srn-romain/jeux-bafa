@@ -709,7 +709,10 @@ async function exportParticipantsData(coloId, coloNom) {
                 prenom: data.prenom,
                 nom: data.nom,
                 age: data.age,
-                genre: data.genre
+                genre: data.genre,
+                note: data.note || '',
+                appreciation: data.appreciation || '',
+                spec: data.spec || []
             };
         });
 
@@ -775,6 +778,9 @@ async function handleImportJSON(file) {
                         nom: p.nom.trim(),
                         age: parseInt(p.age),
                         genre: p.genre || 'feminin',
+                        note: p.note || '',
+                        appreciation: p.appreciation || '',
+                        spec: Array.isArray(p.spec) ? p.spec : (p.spec ? p.spec.split(',').map(s=>s.trim()) : []),
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     added++;
