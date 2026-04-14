@@ -518,7 +518,7 @@ async function loadParticipantsAdmin(coloId) {
     tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">Chargement…</td></tr>`;
 
     try {
-        const snap = await db.collection('espaces').doc(coloId).collection('participants').get();
+        const snap = await db.collection('espaces').doc(coloId).collection('participants').orderBy('nom').get();
         const participants = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
         if (participants.length === 0) {

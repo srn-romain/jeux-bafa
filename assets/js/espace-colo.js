@@ -18,7 +18,7 @@ let currentGroups = []; // { id, name }
 let isScheduledAlertsExpanded = false;
 let participantColView = 'note'; // 'spec' | 'note' — colonne visible dans le tableau participants
 let currentViewIndex = -1;       // Index dans currentFilteredParticipants pour la modale fiche
-let sortColumn    = null;        // Colonne de tri active ('prenom'|'nom'|'age'|'genre'|'groupe')
+let sortColumn    = 'nom';      // Colonne de tri active ('prenom'|'nom'|'age'|'genre'|'groupe')
 let sortDirection = 'asc';       // 'asc' | 'desc'
 let isColoFormation = false;     // Si la colo est marquée comme "Formation"
 let currentColoDateFin = null;   // Date de fin de la colo
@@ -231,7 +231,7 @@ function initTabs() {
 // ----------------------------------------------------------------
 async function loadParticipants(coloId, role) {
     try {
-        const snap = await db.collection('espaces').doc(coloId).collection('participants').get();
+        const snap = await db.collection('espaces').doc(coloId).collection('participants').orderBy('nom').get();
         participants = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         buildFilters();
         renderParticipantsTable(role);
