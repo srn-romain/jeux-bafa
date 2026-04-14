@@ -356,7 +356,7 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
     const visible = colo.visible !== false;
 
     const headerStyle = colo.bgImage 
-        ? `style="background-image: url('${colo.bgImage}'); background-size: cover; background-position: center; text-shadow: 0px 2px 8px rgba(0,0,0,0.8), 0px 1px 3px rgba(0,0,0,0.9);"` 
+        ? `style="background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.7)), url('${colo.bgImage}'); background-size: cover; background-position: center; text-shadow: 0px 2px 10px rgba(0,0,0,0.9), 0px 1px 3px rgba(0,0,0,1);"` 
         : '';
         
     const emojiStyle = colo.bgImage ? `style="background: transparent; box-shadow: none;"` : '';
