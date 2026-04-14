@@ -164,7 +164,7 @@ function buildColoAdminCard(colo, nbParticipants) {
                     ` : ''}
                 </div>
                 <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:2px;display:flex;align-items:center;gap:8px;">
-                    ${dateStr} · ${nbParticipants} participant${nbParticipants !== 1 ? 's' : ''}
+                    ${dateStr} · ${nbParticipants} ${colo.isFormation ? 'stagiaire' : 'participant'}${nbParticipants !== 1 ? 's' : ''}
                     <span style="
                         padding:1px 7px;border-radius:20px;font-size:0.7rem;font-weight:700;
                         ${locked

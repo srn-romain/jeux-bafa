@@ -152,6 +152,16 @@ async function initColoContent(colo, role) {
     if (isColoFormation) {
         if (btnAppr) btnAppr.classList.remove('hidden');
         if (btnInfoD) btnInfoD.classList.remove('hidden');
+        
+        // Mise à jour des labels spécifiques "Formation"
+        const statTotalLabel = document.getElementById('statTotal')?.parentElement;
+        if (statTotalLabel) statTotalLabel.innerHTML = statTotalLabel.innerHTML.replace('participants', 'stagiaires');
+        
+        const manageGroupsDesc = document.querySelector('#overlayManageGroups .es-modal__body p');
+        if (manageGroupsDesc) manageGroupsDesc.innerHTML = manageGroupsDesc.innerHTML.replace('jeunes', 'stagiaires');
+
+        const searchInput = document.getElementById('searchParticipant');
+        if (searchInput) searchInput.placeholder = searchInput.placeholder.replace('participant', 'stagiaire');
     } else {
         if (btnAppr) btnAppr.classList.add('hidden');
         if (btnInfoD) btnInfoD.classList.add('hidden');
@@ -295,15 +305,15 @@ function renderParticipantsTable(role) {
 
     window.currentFilteredParticipants = filteredParticipants;
 
-    // Mise à jour du compteur
+    const pLabel = isColoFormation ? 'stagiaire' : 'participant';
     const counter = document.getElementById('participantsCounter');
     if (counter) {
         if (participants.length === 0) {
             counter.textContent = '';
         } else if (filteredParticipants.length === participants.length) {
-            counter.textContent = `${participants.length} participant${participants.length > 1 ? 's' : ''} au total`;
+            counter.textContent = `${participants.length} ${pLabel}${participants.length > 1 ? 's' : ''} au total`;
         } else {
-            counter.innerHTML = `<strong>${filteredParticipants.length}</strong> affiché${filteredParticipants.length > 1 ? 's' : ''} <span style="opacity:0.6;">/ ${participants.length} au total</span>`;
+            counter.innerHTML = `<strong>${filteredParticipants.length}</strong> affiché${filteredParticipants.length > 1 ? 's' : ''} <span style="opacity:0.6;">/ ${participants.length} ${pLabel}${participants.length > 1 ? 's' : ''} au total</span>`;
         }
     }
 
@@ -948,12 +958,13 @@ function displayGroups(groups) {
             ? (group.reduce((s, p) => s + p.age, 0) / group.length).toFixed(1)
             : '-';
 
+        const pLabel = isColoFormation ? 'stagiaires' : 'jeunes';
         return `
         <div class="es-group-card">
             <div class="es-group-card__header">
                 Groupe ${i + 1}
                 <span style="font-weight:400;color:var(--clr-text-muted);font-size:0.83rem;margin-left:8px;">
-                    ${group.length} jeunes · ${boys}♂ ${girls}♀ · moy. ${avgAge} ans
+                    ${group.length} ${pLabel} · ${boys}♂ ${girls}♀ · moy. ${avgAge} ans
                 </span>
             </div>
             <ul class="es-group-card__list">
@@ -1140,7 +1151,8 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
 });
 
 async function deleteParticipant(id, nom) {
-    if (!confirm(`Supprimer ${nom} ? Cette action est irréversible.`)) return;
+    const pLabel = isColoFormation ? 'le stagiaire' : 'le participant';
+    if (!confirm(`Supprimer ${pLabel} "${nom}" ? Cette action est irréversible.`)) return;
     try {
         await db.collection('espaces').doc(espaceId).collection('participants').doc(id).delete();
         showToast('Participant supprimé.', 'success');
@@ -1590,7 +1602,8 @@ document.getElementById('btnAddGroupName')?.addEventListener('click', async () =
 });
 
 async function deleteGroupName(id, name) {
-    if (!confirm(`Supprimer le groupe "${name}" ? Cela ne supprimera pas les jeunes, mais ils n'auront plus de groupe attribué.`)) return;
+    const pLabel = isColoFormation ? 'stagiaires' : 'jeunes';
+    if (!confirm(`Supprimer le groupe "${name}" ? Cela ne supprimera pas les ${pLabel}, mais ils n'auront plus de groupe attribué.`)) return;
 
     try {
         await db.collection('espaces').doc(espaceId).collection('groups').doc(id).delete();

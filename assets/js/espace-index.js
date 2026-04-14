@@ -387,7 +387,10 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         <div class="es-colo-card__body">
             <div class="es-colo-card__desc">${colo.description || 'Aucune description.'}</div>
             <div class="es-colo-card__stats ${!showStats ? 'es-stats--hidden' : ''}">
-                <div class="es-colo-card__stat"><i class="bi bi-people"></i> ${nbParticipants} jeune${nbParticipants !== 1 ? 's' : ''}</div>
+                <div class="es-colo-card__stat">
+                    <i class="bi bi-people"></i> 
+                    ${nbParticipants} ${colo.isFormation ? 'stagiaire' : 'jeune'}${nbParticipants !== 1 ? 's' : ''}
+                </div>
                 <div class="es-colo-card__stat"><i class="bi bi-person-badge"></i> ${nbAnims} anim${nbAnims !== 1 ? 's' : ''}</div>
             </div>
         </div>
