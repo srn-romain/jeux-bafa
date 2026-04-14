@@ -596,7 +596,31 @@ function buildFilters() {
     }
 }
 
-document.getElementById('searchParticipant')?.addEventListener('input', () => renderParticipantsTable(currentRole));
+const searchParticipantInput = document.getElementById('searchParticipant');
+const clearSearchParticipantBtn = document.getElementById('clearSearchParticipant');
+
+if (searchParticipantInput) {
+    searchParticipantInput.addEventListener('input', (e) => {
+        if (clearSearchParticipantBtn) {
+            if (e.target.value.length > 0) {
+                clearSearchParticipantBtn.classList.remove('hidden');
+            } else {
+                clearSearchParticipantBtn.classList.add('hidden');
+            }
+        }
+        renderParticipantsTable(currentRole);
+    });
+}
+if (clearSearchParticipantBtn) {
+    clearSearchParticipantBtn.addEventListener('click', () => {
+        if (searchParticipantInput) {
+            searchParticipantInput.value = '';
+            clearSearchParticipantBtn.classList.add('hidden');
+            renderParticipantsTable(currentRole);
+            searchParticipantInput.focus();
+        }
+    });
+}
 document.getElementById('filterGroup')?.addEventListener('change', () => renderParticipantsTable(currentRole));
 document.getElementById('filterGenre')?.addEventListener('change', () => renderParticipantsTable(currentRole));
 document.getElementById('filterAge')?.addEventListener('change', () => renderParticipantsTable(currentRole));
