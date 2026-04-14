@@ -1142,6 +1142,7 @@ async function exportParticipantsColo(coloId, coloNom) {
                 nom: data.nom,
                 age: data.age,
                 genre: data.genre,
+                groupeId: data.groupeId || null,
                 note: data.note || '',
                 appreciation: data.appreciation || '',
                 spec: data.spec || []
@@ -1209,6 +1210,7 @@ async function handleImportJSONColo(file) {
                         nom: p.nom.trim(),
                         age: parseInt(p.age),
                         genre: p.genre || 'feminin',
+                        groupeId: p.groupeId || null,
                         note: p.note || '',
                         appreciation: p.appreciation || '',
                         spec: Array.isArray(p.spec) ? p.spec : (p.spec ? p.spec.split(',').map(s=>s.trim()) : []),
