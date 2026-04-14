@@ -2417,6 +2417,63 @@ document.getElementById('btnDeleteLocation')?.addEventListener('click', async ()
 // ================================================================
 
 let currentPhotos = [];
+let lightboxPhotos = [];
+let currentLightboxIndex = 0;
+
+function openLightbox(index) {
+    currentLightboxIndex = index;
+    updateLightboxUI();
+    document.getElementById('overlayLightbox').classList.remove('hidden');
+}
+
+function updateLightboxUI() {
+    const img = document.getElementById('lightboxImg');
+    const info = document.getElementById('lightboxInfo');
+    const photo = lightboxPhotos[currentLightboxIndex];
+    if (img && photo) {
+        img.style.opacity = '0';
+        setTimeout(() => {
+            img.src = photo.src;
+            img.style.opacity = '1';
+        }, 150);
+    }
+    if (info && photo) {
+        info.innerHTML = `<strong>${escapeHtml(photo.author)}</strong> — ${currentLightboxIndex + 1} / ${lightboxPhotos.length}`;
+    }
+}
+
+function navigateLightbox(dir) {
+    currentLightboxIndex += dir;
+    if (currentLightboxIndex < 0) currentLightboxIndex = lightboxPhotos.length - 1;
+    if (currentLightboxIndex >= lightboxPhotos.length) currentLightboxIndex = 0;
+    updateLightboxUI();
+}
+
+// Listeners Lightbox
+document.getElementById('btnCloseLightbox')?.addEventListener('click', () => {
+    document.getElementById('overlayLightbox').classList.add('hidden');
+});
+document.getElementById('btnPrevLightbox')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    navigateLightbox(-1);
+});
+document.getElementById('btnNextLightbox')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    navigateLightbox(1);
+});
+document.getElementById('overlayLightbox')?.addEventListener('click', (e) => {
+    if (e.target.id === 'overlayLightbox' || e.target.classList.contains('lightbox-container')) {
+        document.getElementById('overlayLightbox').classList.add('hidden');
+    }
+});
+
+// Clavier
+document.addEventListener('keydown', (e) => {
+    if (document.getElementById('overlayLightbox').classList.contains('hidden')) return;
+    if (e.key === 'ArrowLeft') navigateLightbox(-1);
+    if (e.key === 'ArrowRight') navigateLightbox(1);
+    if (e.key === 'Escape') document.getElementById('overlayLightbox').classList.add('hidden');
+});
 
 function loadPhotos(colo, role) {
     const uploadBtn = document.getElementById('btnUploadPhoto');
@@ -2474,24 +2531,28 @@ function renderPhotos(colo, role) {
     if (!grid || !empty) return;
 
     let allPhotosHTML = '';
+    lightboxPhotos = [];
 
     // First photo is always the cover of the colony (if exists)
     if (colo.bgImage) {
+        lightboxPhotos.push({ src: colo.bgImage, author: 'Image de couverture' });
         allPhotosHTML += `
             <div class="es-photo-item">
-                <img src="${colo.bgImage}" alt="Cover photo">
+                <img src="${colo.bgImage}" alt="Cover photo" onclick="openLightbox(0)" style="cursor:zoom-in;">
                 <div class="es-photo-author">Image de couverture</div>
             </div>
         `;
     }
 
     // Then subcollection photos
-    currentPhotos.forEach(p => {
+    currentPhotos.forEach((p, idx) => {
         const canDelete = role === 'admin' || (role === 'anim' && currentUser && currentUser.uid === p.authorId);
+        const actualIdx = lightboxPhotos.length;
+        lightboxPhotos.push({ src: p.base64, author: p.authorName });
 
         allPhotosHTML += `
             <div class="es-photo-item">
-                <img src="${p.base64}" alt="Photo">
+                <img src="${p.base64}" alt="Photo" onclick="openLightbox(${actualIdx})" style="cursor:zoom-in;">
                 <div class="es-photo-author">${escapeHtml(p.authorName)}</div>
                 ${canDelete ? `
                     <button class="es-photo-delete delete-photo-btn" data-id="${p.id}" title="Supprimer la photo">
