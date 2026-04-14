@@ -1145,6 +1145,55 @@ async function deleteParticipant(id, nom) {
 }
 
 // ----------------------------------------------------------------
+// RÉINITIALISATION MASSIVE (Admin seulement)
+// ----------------------------------------------------------------
+document.getElementById('btnDeleteAllParticipants')?.addEventListener('click', async () => {
+    // Stage 1
+    if (!confirm("⚠️ ATTENTION : Vous allez supprimer TOUS les participants de cette colonie. Cette action est irréversible. Continuer ?")) return;
+    
+    // Stage 2
+    if (!confirm("🛑 Êtes-vous ABSOLUMENT sûr ? Tous les noms, âges, remarques, appréciations et affectations de groupes seront perdus définitivement.")) return;
+    
+    // Stage 3
+    if (!confirm("🤯 Dernière chance ! Si vous cliquez sur OK, il n'y aura pas de retour en arrière possible. Confirmer la suppression totale ?")) return;
+    
+    // Stage 4 (Final validation string)
+    const confirmationText = prompt("Pour confirmer définitivement la destruction des données de TOUS les participants, tapez 'SUPPRIMER TOUT' en majuscules :");
+    if (confirmationText !== 'SUPPRIMER TOUT') {
+        showToast("Action annulée (texte de confirmation incorrect).", "info");
+        return;
+    }
+
+    const btn = document.getElementById('btnDeleteAllParticipants');
+    btnLoading(btn, true);
+
+    try {
+        const snap = await db.collection('espaces').doc(espaceId).collection('participants').get();
+        if (snap.empty) {
+            showToast("Il n'y a aucun participant à supprimer.", "info");
+            return;
+        }
+
+        const batchSize = 500;
+        let docs = [...snap.docs];
+        while (docs.length > 0) {
+            const batch = db.batch();
+            const chunk = docs.splice(0, batchSize);
+            chunk.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+        }
+
+        showToast("Tous les participants ont été supprimés avec succès.", "success");
+        await loadParticipants(espaceId, currentRole);
+    } catch (err) {
+        console.error('Delete all participants error:', err);
+        showToast("Erreur lors de la suppression massive.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
+});
+
+// ----------------------------------------------------------------
 // IMPORT / EXPORT JSON (Colo)
 // ----------------------------------------------------------------
 
