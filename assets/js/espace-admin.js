@@ -148,6 +148,11 @@ function buildColoAdminCard(colo, nbParticipants) {
     const visible = colo.visible !== false; // true par défaut
     const locked = colo.participantsLocked !== false; // true par défaut
 
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    const startDate = colo.dateDebut ? new Date(colo.dateDebut) : null;
+    const isUpcoming = startDate && startDate > now;
+
     const headerStyle = colo.bgImage
         ? `style="background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.7)), url('${colo.bgImage}'); background-size: cover; background-position: center; border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg) var(--radius-lg) 0 0; text-shadow: 0px 2px 10px rgba(0,0,0,0.9), 0px 1px 3px rgba(0,0,0,1);"`
         : '';
@@ -157,6 +162,11 @@ function buildColoAdminCard(colo, nbParticipants) {
             <div>
                 <div class="es-colo-admin-card__title">
                     ${colo.emoji || '🏕️'} ${colo.nom || 'Sans nom'}
+                    ${isUpcoming ? `
+                        <span style="background:rgba(52,152,219,0.2);color:#3498db;border:1px solid rgba(52,152,219,0.3);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;vertical-align:middle;">
+                            À venir
+                        </span>
+                    ` : ''}
                     ${!visible ? `
                         <span style="background:rgba(255,165,0,0.15);color:#ff9f43;border:1px solid rgba(255,165,0,0.3);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;">
                             <i class="bi bi-eye-slash-fill"></i> Caché
