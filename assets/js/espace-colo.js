@@ -1370,6 +1370,7 @@ async function loadAnimateurs(coloId) {
                         id: uDoc.id,
                         requestId: doc.id,
                         isPending: true,
+                        requestedAt: req.requestedAt,
                         ...uDoc.data()
                     });
                 }
@@ -1418,7 +1419,13 @@ async function loadAnimateurs(coloId) {
                         ${anim.displayName || 'Anonyme'}
                         ${anim.isPending ? '<span style="font-size:0.65rem; color:var(--clr-warning); margin-left:5px; font-weight:800; text-transform:uppercase;">(En attente)</span>' : ''}
                     </div>
-                    <div class="es-anim-item__email">${anim.email || ''}</div>
+                    ${anim.isPending ? `
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:2px;">
+                            <i class="bi bi-clock"></i> Demandé le ${formatFullDate(anim.requestedAt)}
+                        </div>
+                    ` : `
+                        <div class="es-anim-item__email">${anim.email || ''}</div>
+                    `}
                 </div>
                 
                 ${anim.isPending ? `

@@ -847,7 +847,7 @@ async function loadDemandes() {
                 </td>
                 <td style="text-align: center;">${d.espaceName || d.espaceId || ''}</td>
                 <td style="text-align: center; font-size:0.82rem;color:var(--clr-text-muted);">
-                    ${d.requestedAt ? new Date(d.requestedAt.toDate()).toLocaleDateString('fr-FR') : '–'}
+                    ${formatFullDate(d.requestedAt)}
                 </td>
                 <td style="text-align: center;">
                     <span class="es-badge ${d.status === 'pending' ? 'es-badge--pending' : d.status === 'approved' ? 'es-badge--approved' : 'es-badge--refused'}">
