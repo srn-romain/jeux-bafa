@@ -350,13 +350,13 @@ function renderParticipantsTable(role) {
             <td style="text-align:center; font-size:0.75rem; color:var(--clr-text-muted); font-weight:600; user-select:none;">${idx + 1}</td>
             <td><strong>${escapeHtml(p.prenom || '')}</strong></td>
             <td>${escapeHtml(p.nom || '')}</td>
-            <td><span class="es-pill es-pill--age">${p.age} ans</span></td>
-            <td>
+            <td style="text-align:center;"><span class="es-pill es-pill--age">${p.age} ans</span></td>
+            <td style="text-align:center;">
                 <span class="es-pill ${p.genre === 'masculin' ? 'es-pill--m' : 'es-pill--f'}">
                     ${p.genre === 'masculin' ? '♂ Garçon' : '♀ Fille'}
                 </span>
             </td>
-            <td class="col-groupe ${!hasGroups ? 'hidden' : ''}">
+            <td class="col-groupe ${!hasGroups ? 'hidden' : ''}" style="text-align:center;">
                 ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
             <td class="col-spec${!specIsVisible ? ' hidden' : ''}">
@@ -382,7 +382,7 @@ function renderParticipantsTable(role) {
                     </div>
                 ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
-            <td class="es-table__actions" data-html2canvas-ignore="true" onclick="event.stopPropagation()">
+            <td class="es-table__actions" data-html2canvas-ignore="true" onclick="event.stopPropagation()" style="text-align:center;">
                 <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier"
                         onclick="editParticipant('${p.id}')">
                     <i class="bi bi-pencil"></i>
