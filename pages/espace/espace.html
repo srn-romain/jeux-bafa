@@ -510,6 +510,15 @@
                   <i class="bi bi-tag"></i> <span class="brand-label">Spécificités</span>
                 </button>
                 <div class="es-bulk-bar__sep"></div>
+                <button class="es-btn es-btn--sm" id="btnBulkClearNote" title="Vider les remarques"
+                  style="border-color:rgba(239,68,68,0.35);color:rgba(239,68,68,0.85);">
+                  <i class="bi bi-eraser"></i> <span class="brand-label">Vider remarques</span>
+                </button>
+                <button class="es-btn es-btn--sm" id="btnBulkClearSpec" title="Vider les spécificités"
+                  style="border-color:rgba(239,68,68,0.35);color:rgba(239,68,68,0.85);">
+                  <i class="bi bi-eraser"></i> <span class="brand-label">Vider spécificités</span>
+                </button>
+                <div class="es-bulk-bar__sep"></div>
                 <button class="es-btn es-btn--sm es-btn--ghost" id="btnBulkClear" title="Désélectionner tout">
                   <i class="bi bi-x"></i> Désélectionner
                 </button>
@@ -1169,6 +1178,22 @@
             <p style="font-size:0.78rem;color:var(--clr-text-muted);margin-top:6px;">
               <i class="bi bi-info-circle"></i> S'ajoute après la remarque existante, séparé par un saut de ligne.
             </p>
+          </div>
+        </div>
+
+        <!-- Vider les remarques -->
+        <div id="bulkPanelClearNote" class="bulk-panel hidden">
+          <div class="es-alert es-alert--warning" style="margin-bottom:0;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>Cette action effacera <strong>définitivement</strong> le champ Remarque de tous les participants sélectionnés. Cette opération est irréversible.</span>
+          </div>
+        </div>
+
+        <!-- Vider les spécificités -->
+        <div id="bulkPanelClearSpec" class="bulk-panel hidden">
+          <div class="es-alert es-alert--warning" style="margin-bottom:0;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>Cette action effacera <strong>définitivement</strong> tous les tags Spécificités des participants sélectionnés. Cette opération est irréversible.</span>
           </div>
         </div>
 
