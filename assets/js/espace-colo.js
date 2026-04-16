@@ -345,9 +345,22 @@ function renderParticipantsTable(role) {
         const noteIsVisible = participantColView === 'note';
         const appreIsVisible = participantColView === 'appreciation';
 
+        const isSelected = selectedParticipantIds.has(p.id);
+
+        // Cellule # : pour admin, hover affiche une checkbox de sélection individuelle
+        const numCell = currentRole === 'admin'
+            ? `<td class="es-td-num--admin${isSelected ? ' es-td-num--selected' : ''}"
+                   data-html2canvas-ignore="true"
+                   onclick="event.stopPropagation(); toggleParticipantSelection('${p.id}', !selectedParticipantIds.has('${p.id}'), this.closest('tr'))"
+                   title="Sélectionner">
+                   <span class="es-num-label">${isSelected ? '' : idx + 1}</span>
+                   <i class="bi ${isSelected ? 'bi-check-circle-fill' : 'bi-circle'} es-num-cb-icon"></i>
+               </td>`
+            : `<td style="text-align:center; font-size:0.75rem; color:var(--clr-text-muted); font-weight:600; user-select:none;">${idx + 1}</td>`;
+
         return `
-        <tr onclick="openParticipantView(${idx})" style="cursor:pointer;">
-            <td style="text-align:center; font-size:0.75rem; color:var(--clr-text-muted); font-weight:600; user-select:none;">${idx + 1}</td>
+        <tr onclick="openParticipantView(${idx})" style="cursor:pointer;" class="${isSelected ? 'es-row--selected' : ''}">
+            ${numCell}
             <td><strong>${escapeHtml(p.prenom || '')}</strong></td>
             <td>${escapeHtml(p.nom || '')}</td>
             <td style="text-align:center;"><span class="es-pill es-pill--age">${p.age} ans</span></td>
@@ -397,7 +410,39 @@ function renderParticipantsTable(role) {
         </tr>
     `;
     }).join('');
+
+    // Mettre à jour la barre d'actions de masse + l'en-tête après rendu
+    updateBulkBar();
+    _updateSelectAllHeader();
 }
+
+// Met à jour l'en-tête # pour admin : checkbox select-all ou simple #
+function _updateSelectAllHeader() {
+    const th = document.getElementById('thRowNum');
+    if (!th) return;
+    if (currentRole === 'admin') {
+        const total = (window.currentFilteredParticipants || []).length;
+        const n = selectedParticipantIds.size;
+        const isAll = n > 0 && n === total;
+        const isSome = n > 0 && n < total;
+        th.onclick = null; // désactiver le reset tri
+        th.title = 'Tout sélectionner / désélectionner';
+        th.style.cursor = 'pointer';
+        th.innerHTML = `<input type="checkbox" id="checkboxSelectAll"
+            title="Tout sélectionner/désélectionner"
+            style="accent-color:var(--clr-primary);width:15px;height:15px;cursor:pointer;"
+            ${isAll ? 'checked' : ''} onchange="toggleSelectAllParticipants(this.checked)">`;
+        const cb = document.getElementById('checkboxSelectAll');
+        if (cb) cb.indeterminate = isSome;
+    } else {
+        th.onclick = () => setSortColumn(null);
+        th.title = 'Réinitialiser le tri';
+        th.style.cursor = 'pointer';
+        th.textContent = '#';
+    }
+}
+
+
 
 // ----------------------------------------------------------------
 // TOGGLE COLONNE SPEC / NOTE
@@ -2699,3 +2744,236 @@ async function deletePhoto(coloId, photoId) {
         showToast("Erreur lors de la suppression.", "error");
     }
 }
+
+// ================================================================
+// ACTIONS DE MASSE (Bulk Actions — admin uniquement)
+// ================================================================
+
+let selectedParticipantIds = new Set(); // IDs sélectionnés
+let currentBulkAction = null;           // 'group' | 'genre' | 'age' | 'note'
+
+// --- Mettre à jour l'affichage de la barre de sélection ---
+function updateBulkBar() {
+    const bar = document.getElementById('bulkActionBar');
+    const countEl = document.getElementById('bulkCount');
+    if (!bar || !countEl) return;
+
+    const n = selectedParticipantIds.size;
+    countEl.textContent = n;
+
+    if (n > 0 && currentRole === 'admin') {
+        bar.classList.remove('hidden');
+    } else {
+        bar.classList.add('hidden');
+    }
+
+    // Mettre à jour le checkbox select-all dans l'en-tête #
+    const selectAllCb = document.getElementById('checkboxSelectAll');
+    if (selectAllCb) {
+        const total = (window.currentFilteredParticipants || []).length;
+        selectAllCb.checked = n > 0 && n === total;
+        selectAllCb.indeterminate = n > 0 && n < total;
+    }
+}
+
+// --- Basculer la sélection d'une ligne ---
+function toggleParticipantSelection(id, checked, trEl) {
+    if (checked) {
+        selectedParticipantIds.add(id);
+        if (trEl) {
+            trEl.classList.add('es-row--selected');
+            const numTd = trEl.querySelector('.es-td-num--admin');
+            if (numTd) {
+                numTd.classList.add('es-td-num--selected');
+                const label = numTd.querySelector('.es-num-label');
+                const icon = numTd.querySelector('.es-num-cb-icon');
+                if (label) label.textContent = '';
+                if (icon) { icon.className = 'bi bi-check-circle-fill es-num-cb-icon'; }
+            }
+        }
+    } else {
+        selectedParticipantIds.delete(id);
+        if (trEl) {
+            trEl.classList.remove('es-row--selected');
+            const numTd = trEl.querySelector('.es-td-num--admin');
+            if (numTd) {
+                numTd.classList.remove('es-td-num--selected');
+                // Retrouver l'index de la ligne pour restaurer le numéro
+                const allRows = document.querySelectorAll('#participantsTbody tr');
+                let rowIdx = Array.from(allRows).indexOf(trEl) + 1;
+                const label = numTd.querySelector('.es-num-label');
+                const icon = numTd.querySelector('.es-num-cb-icon');
+                if (label) label.textContent = rowIdx;
+                if (icon) { icon.className = 'bi bi-circle es-num-cb-icon'; }
+            }
+        }
+    }
+    updateBulkBar();
+}
+
+// --- Tout sélectionner / désélectionner (depuis le checkbox d'en-tête) ---
+function toggleSelectAllParticipants(checked) {
+    const list = window.currentFilteredParticipants || [];
+    list.forEach(p => {
+        if (checked) {
+            selectedParticipantIds.add(p.id);
+        } else {
+            selectedParticipantIds.delete(p.id);
+        }
+    });
+
+    // Re-render le tableau pour mettre à jour les cellules #
+    renderParticipantsTable(currentRole);
+    updateBulkBar();
+}
+
+// --- Ouvrir la modal d'action de masse ---
+function openBulkModal(action) {
+    currentBulkAction = action;
+
+    const titles = {
+        group: 'Changer le groupe',
+        genre: 'Changer le genre',
+        age:   'Changer l\'âge',
+        note:  'Ajouter une remarque',
+    };
+
+    const n = selectedParticipantIds.size;
+    document.getElementById('bulkModalTitle').textContent = titles[action] || 'Action de masse';
+    document.getElementById('bulkModalCount').textContent = n;
+    document.getElementById('bulkActionError')?.classList.add('hidden');
+
+    // Cacher tous les panneaux
+    document.querySelectorAll('.bulk-panel').forEach(p => p.classList.add('hidden'));
+
+    // Afficher le panneau correspondant
+    const panelMap = { group: 'bulkPanelGroup', genre: 'bulkPanelGenre', age: 'bulkPanelAge', note: 'bulkPanelNote' };
+    const panelEl = document.getElementById(panelMap[action]);
+    if (panelEl) panelEl.classList.remove('hidden');
+
+    // Peupler le select groupes si nécessaire
+    if (action === 'group') {
+        const sel = document.getElementById('bulkGroupSelect');
+        if (sel) {
+            sel.innerHTML = '<option value="">-- Aucun groupe --</option>' +
+                currentGroups.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
+        }
+    }
+
+    // Vider les champs
+    if (action === 'age') document.getElementById('bulkAgeInput').value = '';
+    if (action === 'note') document.getElementById('bulkNoteInput').value = '';
+
+    openModal('overlayBulkAction');
+}
+
+// --- Appliquer l'action de masse ---
+document.getElementById('btnApplyBulkAction')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnApplyBulkAction');
+    const errEl = document.getElementById('bulkActionError');
+    const errMsg = document.getElementById('bulkActionErrorMsg');
+
+    if (!currentBulkAction || selectedParticipantIds.size === 0) return;
+
+    // Récupérer la valeur selon l'action
+    let updateData = null;
+
+    if (currentBulkAction === 'group') {
+        const val = document.getElementById('bulkGroupSelect')?.value || null;
+        updateData = { groupeId: val || null };
+    } else if (currentBulkAction === 'genre') {
+        const val = document.getElementById('bulkGenreSelect')?.value;
+        if (!val) { showBulkError(errMsg, errEl, 'Veuillez choisir un genre.'); return; }
+        updateData = { genre: val };
+    } else if (currentBulkAction === 'age') {
+        const val = parseInt(document.getElementById('bulkAgeInput')?.value);
+        if (isNaN(val) || val < 4 || val > 25) { showBulkError(errMsg, errEl, 'Veuillez saisir un âge valide (4–25).'); return; }
+        updateData = { age: val };
+    } else if (currentBulkAction === 'note') {
+        const val = document.getElementById('bulkNoteInput')?.value.trim();
+        if (!val) { showBulkError(errMsg, errEl, 'Veuillez saisir un texte à ajouter en remarque.'); return; }
+        // Pour la note, on l'ajoute à la suite : on doit lire participant par participant
+        updateData = { _appendNote: val };
+    }
+
+    errEl?.classList.add('hidden');
+    btnLoading(btn, true);
+
+    try {
+        const colRef = db.collection('espaces').doc(espaceId).collection('participants');
+        const ids = [...selectedParticipantIds];
+
+        if (updateData._appendNote !== undefined) {
+            // Mode ajout de remarque : lecture individuelle puis batch write
+            const appendText = updateData._appendNote;
+            const chunks = [];
+            // Traiter par lots de 10 (limite Firestore "in")
+            for (let i = 0; i < ids.length; i += 10) {
+                chunks.push(ids.slice(i, i + 10));
+            }
+
+            for (const chunk of chunks) {
+                const docsSnap = await Promise.all(chunk.map(id => colRef.doc(id).get()));
+                const batch = db.batch();
+                docsSnap.forEach(docSnap => {
+                    if (!docSnap.exists) return;
+                    const existingNote = docSnap.data().note || '';
+                    const newNote = existingNote
+                        ? existingNote + '\n' + appendText
+                        : appendText;
+                    batch.update(docSnap.ref, { note: newNote });
+                });
+                await batch.commit();
+            }
+        } else {
+            // Mode update simple : batch direct
+            const batchSize = 500;
+            for (let i = 0; i < ids.length; i += batchSize) {
+                const batch = db.batch();
+                ids.slice(i, i + batchSize).forEach(id => {
+                    batch.update(colRef.doc(id), updateData);
+                });
+                await batch.commit();
+            }
+        }
+
+        const n = ids.length;
+        showToast(`✓ ${n} participant${n > 1 ? 's' : ''} mis à jour.`, 'success');
+        closeModal('overlayBulkAction');
+
+        // Réinitialiser la sélection
+        selectedParticipantIds.clear();
+        updateBulkBar();
+
+        // Recharger
+        await loadParticipants(espaceId, currentRole);
+
+    } catch (err) {
+        console.error('bulkAction error:', err);
+        showBulkError(errMsg, errEl, 'Erreur lors de la mise à jour. Réessayez.');
+    } finally {
+        btnLoading(btn, false);
+    }
+});
+
+function showBulkError(msgEl, containerEl, msg) {
+    if (msgEl) msgEl.textContent = msg;
+    if (containerEl) containerEl.classList.remove('hidden');
+}
+
+// Listeners des boutons de la barre de sélection
+document.getElementById('btnBulkGroup')?.addEventListener('click', () => openBulkModal('group'));
+document.getElementById('btnBulkGenre')?.addEventListener('click', () => openBulkModal('genre'));
+document.getElementById('btnBulkAge')?.addEventListener('click',   () => openBulkModal('age'));
+document.getElementById('btnBulkNote')?.addEventListener('click',  () => openBulkModal('note'));
+
+document.getElementById('btnBulkSelectAll')?.addEventListener('click', () => {
+    toggleSelectAllParticipants(true);
+});
+
+document.getElementById('btnBulkClear')?.addEventListener('click', () => {
+    toggleSelectAllParticipants(false);
+    selectedParticipantIds.clear();
+    updateBulkBar();
+});
+

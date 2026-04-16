@@ -487,6 +487,35 @@
               </button>
             </div>
 
+            <!-- Barre d'actions de masse (admin uniquement, visible si sélection) -->
+            <div id="bulkActionBar" class="es-bulk-bar hidden admin-only" data-html2canvas-ignore="true">
+              <div class="es-bulk-bar__info">
+                <i class="bi bi-check2-square"></i>
+                <span id="bulkCount">0</span> sélectionné(s)
+              </div>
+              <div class="es-bulk-bar__actions">
+                <button class="es-btn es-btn--sm" id="btnBulkGroup" title="Changer de groupe">
+                  <i class="bi bi-people"></i> <span class="brand-label">Groupe</span>
+                </button>
+                <button class="es-btn es-btn--sm" id="btnBulkGenre" title="Changer le genre">
+                  <i class="bi bi-gender-ambiguous"></i> <span class="brand-label">Genre</span>
+                </button>
+                <button class="es-btn es-btn--sm" id="btnBulkAge" title="Changer l'âge">
+                  <i class="bi bi-calendar3"></i> <span class="brand-label">Âge</span>
+                </button>
+                <button class="es-btn es-btn--sm" id="btnBulkNote" title="Ajouter une remarque">
+                  <i class="bi bi-chat-left-text"></i> <span class="brand-label">Remarque</span>
+                </button>
+                <div class="es-bulk-bar__sep"></div>
+                <button class="es-btn es-btn--sm es-btn--ghost" id="btnBulkSelectAll" title="Tout sélectionner">
+                  <i class="bi bi-check-all"></i>
+                </button>
+                <button class="es-btn es-btn--sm es-btn--ghost" id="btnBulkClear" title="Désélectionner tout">
+                  <i class="bi bi-x"></i> Désélectionner
+                </button>
+              </div>
+            </div>
+
             <!-- Compteur participants -->
             <div id="participantsCounter"
               style="font-size:0.82rem; color:var(--clr-text-muted); margin-bottom:8px; text-align:right; min-height:1.2em;">
@@ -502,8 +531,9 @@
               <table class="es-table" id="participantsTable">
                 <thead>
                   <tr>
-                    <th class="es-th-reset"
-                      style="width:36px;text-align:center;color:var(--clr-text-muted);font-size:0.75rem;"
+                    <!-- Cellule # — pour admin : checkbox select-all insérée par JS -->
+                    <th class="es-th-reset" id="thRowNum"
+                      style="width:44px;text-align:center;color:var(--clr-text-muted);font-size:0.75rem;"
                       onclick="setSortColumn(null)" title="Réinitialiser le tri">#</th>
                     <th class="es-th-sortable" data-sort="prenom" onclick="setSortColumn('prenom')">
                       Prénom <i class="bi bi-arrow-down-up sort-icon"></i></th>
@@ -1067,6 +1097,81 @@
             </div>
         </div>
     </div>
+
+  <!-- ================================================
+       Modal : Actions de masse (Admin)
+       ================================================ -->
+  <div class="es-overlay hidden" id="overlayBulkAction" role="dialog" aria-modal="true">
+    <div class="es-modal" style="max-width:460px;">
+      <div class="es-modal__header">
+        <h2 class="es-modal__title" id="bulkModalTitle">Actions de masse</h2>
+        <button class="es-modal__close" onclick="closeModal('overlayBulkAction')"><i class="bi bi-x"></i></button>
+      </div>
+      <div class="es-modal__body">
+        <div class="es-alert es-alert--info" style="margin-bottom:16px;">
+          <i class="bi bi-info-circle"></i>
+          <span>Action appliquée à <strong id="bulkModalCount">0</strong> participant(s) sélectionné(s).</span>
+        </div>
+
+        <!-- Changer le groupe -->
+        <div id="bulkPanelGroup" class="bulk-panel hidden">
+          <div class="es-field">
+            <label class="es-field__label" for="bulkGroupSelect">Nouveau groupe</label>
+            <select class="es-select" id="bulkGroupSelect">
+              <option value="">-- Aucun groupe --</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Changer le genre -->
+        <div id="bulkPanelGenre" class="bulk-panel hidden">
+          <div class="es-field">
+            <label class="es-field__label" for="bulkGenreSelect">Nouveau genre</label>
+            <select class="es-select" id="bulkGenreSelect">
+              <option value="masculin">♂ Garçon</option>
+              <option value="feminin">♀ Fille</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Changer l'âge -->
+        <div id="bulkPanelAge" class="bulk-panel hidden">
+          <div class="es-field">
+            <label class="es-field__label" for="bulkAgeInput">Nouvel âge</label>
+            <input type="number" class="es-input" id="bulkAgeInput" min="4" max="25" placeholder="Ex : 12">
+          </div>
+        </div>
+
+        <!-- Ajouter une remarque -->
+        <div id="bulkPanelNote" class="bulk-panel hidden">
+          <div class="es-field">
+            <label class="es-field__label" for="bulkNoteInput">
+              <i class="bi bi-chat-left-text" style="color:var(--clr-primary)"></i>
+              Texte à ajouter en remarque
+            </label>
+            <textarea class="es-textarea es-textarea--note" id="bulkNoteInput" rows="3"
+              placeholder="Ce texte sera ajouté à la suite des remarques existantes…"></textarea>
+            <p style="font-size:0.78rem;color:var(--clr-text-muted);margin-top:6px;">
+              <i class="bi bi-info-circle"></i> S'ajoute après la remarque existante, séparé par un saut de ligne.
+            </p>
+          </div>
+        </div>
+
+        <div class="es-alert es-alert--error hidden" id="bulkActionError">
+          <i class="bi bi-exclamation-circle"></i>
+          <span id="bulkActionErrorMsg"></span>
+        </div>
+      </div>
+      <div class="es-modal__footer">
+        <button class="es-btn es-btn--ghost" onclick="closeModal('overlayBulkAction')">Annuler</button>
+        <button class="es-btn es-btn--primary" id="btnApplyBulkAction">
+          <i class="bi bi-check-lg"></i>
+          <span class="es-btn__text">Appliquer</span>
+          <span class="es-btn__spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Toast container -->
   <div class="es-toast-container" id="toastContainer"></div>

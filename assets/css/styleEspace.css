@@ -2512,3 +2512,160 @@ input:checked+.es-slider:before {
     opacity: 0.85;
   }
 }
+
+/* ================================================================
+   ACTIONS DE MASSE (BULK ACTIONS — admin only)
+   ================================================================ */
+.es-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--clr-bg-dark), var(--clr-bg-mid));
+  border: 1px solid rgba(166, 216, 102, 0.3);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  animation: slide-up 0.2s ease;
+  box-shadow: 0 4px 18px rgba(166, 216, 102, 0.12);
+}
+
+.es-bulk-bar__info {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--clr-primary);
+  white-space: nowrap;
+}
+
+.es-bulk-bar__info i {
+  font-size: 1.1rem;
+}
+
+.es-bulk-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.es-bulk-bar .es-btn--sm {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 0.8rem;
+}
+
+.es-bulk-bar .es-btn--sm:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.es-bulk-bar .es-btn--ghost {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.es-bulk-bar .es-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.es-bulk-bar__sep {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0 2px;
+}
+
+/* Ligne sélectionnée dans le tableau */
+.es-table tr.es-row--selected td {
+  background: rgba(166, 216, 102, 0.1) !important;
+}
+
+.es-table tr.es-row--selected:hover td {
+  background: rgba(166, 216, 102, 0.16) !important;
+}
+
+/* Checkbox dans le tableau (compatibilité ancienne) */
+.es-table td .row-checkbox,
+.es-table th .row-checkbox {
+  accent-color: var(--clr-primary);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+/* Cellule # interactive pour sélection admin */
+.es-td-num--admin {
+  width: 44px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  user-select: none;
+  padding: 0 4px;
+  transition: background 0.15s;
+}
+
+/* Par défaut : numéro visible, icône cachée */
+.es-td-num--admin .es-num-label {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--clr-text-muted);
+  transition: opacity 0.15s;
+}
+
+.es-td-num--admin .es-num-cb-icon {
+  display: none;
+  font-size: 0.95rem;
+  color: var(--clr-text-muted);
+  transition: color 0.15s;
+}
+
+/* Au hover : masquer le numéro, montrer l'icône */
+.es-td-num--admin:hover .es-num-label {
+  display: none;
+}
+
+.es-td-num--admin:hover .es-num-cb-icon {
+  display: inline-block;
+  color: var(--clr-primary-dark);
+}
+
+.es-td-num--admin:hover {
+  background: rgba(166, 216, 102, 0.08) !important;
+  border-radius: 4px;
+}
+
+/* État sélectionné : afficher icône check colorée */
+.es-td-num--selected .es-num-label {
+  display: none;
+}
+
+.es-td-num--selected .es-num-cb-icon {
+  display: inline-block;
+  color: var(--clr-primary);
+}
+
+.es-td-num--selected:hover .es-num-cb-icon {
+  color: var(--clr-danger) !important; /* hover sur sélectionné = désélection */
+}
+
+
+/* Responsive bulk bar */
+@media (max-width: 600px) {
+  .es-bulk-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .es-bulk-bar__actions {
+    width: 100%;
+  }
+}
