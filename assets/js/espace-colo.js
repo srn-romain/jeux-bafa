@@ -2836,6 +2836,7 @@ function openBulkModal(action) {
         genre: 'Changer le genre',
         age:   'Changer l\'âge',
         note:  'Ajouter une remarque',
+        spec:  'Ajouter des spécificités',
     };
 
     const n = selectedParticipantIds.size;
@@ -2847,7 +2848,7 @@ function openBulkModal(action) {
     document.querySelectorAll('.bulk-panel').forEach(p => p.classList.add('hidden'));
 
     // Afficher le panneau correspondant
-    const panelMap = { group: 'bulkPanelGroup', genre: 'bulkPanelGenre', age: 'bulkPanelAge', note: 'bulkPanelNote' };
+    const panelMap = { group: 'bulkPanelGroup', genre: 'bulkPanelGenre', age: 'bulkPanelAge', note: 'bulkPanelNote', spec: 'bulkPanelSpec' };
     const panelEl = document.getElementById(panelMap[action]);
     if (panelEl) panelEl.classList.remove('hidden');
 
@@ -2861,8 +2862,9 @@ function openBulkModal(action) {
     }
 
     // Vider les champs
-    if (action === 'age') document.getElementById('bulkAgeInput').value = '';
+    if (action === 'age')  document.getElementById('bulkAgeInput').value  = '';
     if (action === 'note') document.getElementById('bulkNoteInput').value = '';
+    if (action === 'spec') document.getElementById('bulkSpecInput').value = '';
 
     openModal('overlayBulkAction');
 }
@@ -2892,8 +2894,13 @@ document.getElementById('btnApplyBulkAction')?.addEventListener('click', async (
     } else if (currentBulkAction === 'note') {
         const val = document.getElementById('bulkNoteInput')?.value.trim();
         if (!val) { showBulkError(errMsg, errEl, 'Veuillez saisir un texte à ajouter en remarque.'); return; }
-        // Pour la note, on l'ajoute à la suite : on doit lire participant par participant
         updateData = { _appendNote: val };
+    } else if (currentBulkAction === 'spec') {
+        const raw = document.getElementById('bulkSpecInput')?.value.trim();
+        if (!raw) { showBulkError(errMsg, errEl, 'Veuillez saisir au moins une spécificité.'); return; }
+        const newSpecs = raw.split(',').map(s => s.trim().toLowerCase()).filter(s => s);
+        if (newSpecs.length === 0) { showBulkError(errMsg, errEl, 'Aucune spécificité valide détectée.'); return; }
+        updateData = { _appendSpec: newSpecs };
     }
 
     errEl?.classList.add('hidden');
@@ -2904,13 +2911,10 @@ document.getElementById('btnApplyBulkAction')?.addEventListener('click', async (
         const ids = [...selectedParticipantIds];
 
         if (updateData._appendNote !== undefined) {
-            // Mode ajout de remarque : lecture individuelle puis batch write
+            // Mode ajout de remarque : lecture individuelle pour concat
             const appendText = updateData._appendNote;
             const chunks = [];
-            // Traiter par lots de 10 (limite Firestore "in")
-            for (let i = 0; i < ids.length; i += 10) {
-                chunks.push(ids.slice(i, i + 10));
-            }
+            for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
 
             for (const chunk of chunks) {
                 const docsSnap = await Promise.all(chunk.map(id => colRef.doc(id).get()));
@@ -2918,13 +2922,31 @@ document.getElementById('btnApplyBulkAction')?.addEventListener('click', async (
                 docsSnap.forEach(docSnap => {
                     if (!docSnap.exists) return;
                     const existingNote = docSnap.data().note || '';
-                    const newNote = existingNote
-                        ? existingNote + '\n' + appendText
-                        : appendText;
-                    batch.update(docSnap.ref, { note: newNote });
+                    batch.update(docSnap.ref, { note: existingNote ? existingNote + '\n' + appendText : appendText });
                 });
                 await batch.commit();
             }
+
+        } else if (updateData._appendSpec !== undefined) {
+            // Mode ajout de spécificités : lecture individuelle pour merge sans doublon
+            const newSpecs = updateData._appendSpec;
+            const chunks = [];
+            for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+
+            for (const chunk of chunks) {
+                const docsSnap = await Promise.all(chunk.map(id => colRef.doc(id).get()));
+                const batch = db.batch();
+                docsSnap.forEach(docSnap => {
+                    if (!docSnap.exists) return;
+                    const existingSpec = Array.isArray(docSnap.data().spec) ? docSnap.data().spec : [];
+                    // Fusionner sans doublon (case-insensitive)
+                    const merged = [...existingSpec];
+                    newSpecs.forEach(s => { if (!merged.includes(s)) merged.push(s); });
+                    batch.update(docSnap.ref, { spec: merged });
+                });
+                await batch.commit();
+            }
+
         } else {
             // Mode update simple : batch direct
             const batchSize = 500;
@@ -2966,10 +2988,7 @@ document.getElementById('btnBulkGroup')?.addEventListener('click', () => openBul
 document.getElementById('btnBulkGenre')?.addEventListener('click', () => openBulkModal('genre'));
 document.getElementById('btnBulkAge')?.addEventListener('click',   () => openBulkModal('age'));
 document.getElementById('btnBulkNote')?.addEventListener('click',  () => openBulkModal('note'));
-
-document.getElementById('btnBulkSelectAll')?.addEventListener('click', () => {
-    toggleSelectAllParticipants(true);
-});
+document.getElementById('btnBulkSpec')?.addEventListener('click',  () => openBulkModal('spec'));
 
 document.getElementById('btnBulkClear')?.addEventListener('click', () => {
     toggleSelectAllParticipants(false);

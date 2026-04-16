@@ -506,10 +506,10 @@
                 <button class="es-btn es-btn--sm" id="btnBulkNote" title="Ajouter une remarque">
                   <i class="bi bi-chat-left-text"></i> <span class="brand-label">Remarque</span>
                 </button>
-                <div class="es-bulk-bar__sep"></div>
-                <button class="es-btn es-btn--sm es-btn--ghost" id="btnBulkSelectAll" title="Tout sélectionner">
-                  <i class="bi bi-check-all"></i>
+                <button class="es-btn es-btn--sm" id="btnBulkSpec" title="Ajouter des spécificités">
+                  <i class="bi bi-tag"></i> <span class="brand-label">Spécificités</span>
                 </button>
+                <div class="es-bulk-bar__sep"></div>
                 <button class="es-btn es-btn--sm es-btn--ghost" id="btnBulkClear" title="Désélectionner tout">
                   <i class="bi bi-x"></i> Désélectionner
                 </button>
@@ -1139,6 +1139,21 @@
           <div class="es-field">
             <label class="es-field__label" for="bulkAgeInput">Nouvel âge</label>
             <input type="number" class="es-input" id="bulkAgeInput" min="4" max="25" placeholder="Ex : 12">
+          </div>
+        </div>
+
+        <!-- Ajouter des spécificités -->
+        <div id="bulkPanelSpec" class="bulk-panel hidden">
+          <div class="es-field">
+            <label class="es-field__label" for="bulkSpecInput">
+              <i class="bi bi-tag" style="color:var(--clr-primary)"></i>
+              Spécificités à ajouter
+            </label>
+            <input type="text" class="es-input" id="bulkSpecInput"
+              placeholder="Ex : diabétique, hyperactif (séparez par virgules)">
+            <p style="font-size:0.78rem;color:var(--clr-text-muted);margin-top:6px;">
+              <i class="bi bi-info-circle"></i> S'ajoute aux spécificités existantes, sans doublon.
+            </p>
           </div>
         </div>
 
