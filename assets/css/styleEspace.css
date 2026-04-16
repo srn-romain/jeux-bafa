@@ -2518,70 +2518,224 @@ input:checked+.es-slider:before {
    ================================================================ */
 .es-bulk-bar {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: linear-gradient(135deg, var(--clr-bg-dark) 0%, rgba(28, 37, 20, 0.97) 100%);
+  border: 1px solid rgba(166, 216, 102, 0.28);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  animation: slide-up 0.2s ease;
+  box-shadow: 0 6px 24px rgba(166, 216, 102, 0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+/* --- Ligne du haut : info + désélectionner --- */
+.es-bulk-bar__top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-  background: linear-gradient(135deg, var(--clr-bg-dark), var(--clr-bg-mid));
-  border: 1px solid rgba(166, 216, 102, 0.3);
-  border-radius: var(--radius-md);
-  padding: 10px 14px;
-  margin-bottom: 12px;
-  animation: slide-up 0.2s ease;
-  box-shadow: 0 4px 18px rgba(166, 216, 102, 0.12);
+  gap: 8px;
 }
 
 .es-bulk-bar__info {
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 0.88rem;
+  gap: 6px;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--clr-primary);
-  white-space: nowrap;
 }
 
 .es-bulk-bar__info i {
   font-size: 1.1rem;
 }
 
+.es-bulk-bar__info-label {
+  font-weight: 400;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.82rem;
+}
+
+/* Bouton désélectionner */
+.es-bulk-deselect {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.6);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.es-bulk-deselect:hover {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border-color: rgba(255,255,255,0.4);
+}
+
+/* --- Ligne des actions --- */
 .es-bulk-bar__actions {
   display: flex;
-  align-items: center;
+  flex-direction: column;  /* empilé sur mobile */
+  align-items: stretch;
   gap: 6px;
-  flex-wrap: wrap;
+  width: 100%;
 }
 
-.es-bulk-bar .es-btn--sm {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  font-size: 0.8rem;
+/* Groupe de boutons */
+.es-bulk-btngroup {
+  display: flex;
+  gap: 4px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius-md);
+  padding: 3px;
 }
 
-.es-bulk-bar .es-btn--sm:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.35);
+.es-bulk-btngroup--danger {
+  background: rgba(239,68,68,0.06);
+  border-color: rgba(239,68,68,0.2);
 }
 
-.es-bulk-bar .es-btn--ghost {
+/* Bouton individuel */
+.es-bulk-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
   background: transparent;
-  color: rgba(255, 255, 255, 0.55);
-  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1;
+  min-width: 46px;
 }
 
-.es-bulk-bar .es-btn--ghost:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.85);
+.es-bulk-btn i {
+  font-size: 1rem;
+  margin-bottom: 1px;
 }
 
+.es-bulk-btn:hover {
+  background: rgba(255,255,255,0.14);
+  color: #fff;
+}
+
+.es-bulk-btn--danger {
+  color: rgba(239,120,120,0.9);
+}
+
+.es-bulk-btn--danger:hover {
+  background: rgba(239,68,68,0.18);
+  color: #f87171;
+}
+
+/* Labels : par défaut on affiche __short, on cache __long */
+.es-bulk-btn__long {
+  display: none;
+}
+.es-bulk-btn__short {
+  display: inline;
+}
+
+/* Séparateur vertical — masqué sur mobile, visible sur desktop */
 .es-bulk-bar__sep {
+  display: none; /* masqué par défaut (mobile) */
   width: 1px;
-  height: 24px;
-  background: rgba(255, 255, 255, 0.15);
-  margin: 0 2px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
 }
+
+/* Sur mobile : groupes en pleine largeur, boutons qui s'étirent */
+.es-bulk-btngroup {
+  width: 100%;
+}
+
+.es-bulk-btngroup .es-bulk-btn {
+  flex: 1;
+}
+
+/* Desktop (≥600px) : labels longs, layout horizontal, séparateur visible */
+@media (min-width: 600px) {
+  .es-bulk-btn__short {
+    display: none;
+  }
+  .es-bulk-btn__long {
+    display: inline;
+  }
+  .es-bulk-btn {
+    min-width: 68px;
+    padding: 6px 12px;
+    font-size: 0.72rem;
+    flex: initial; /* annuler le flex:1 du mobile */
+  }
+  .es-bulk-btngroup {
+    width: auto; /* annuler le width:100% du mobile */
+  }
+  .es-bulk-bar__sep {
+    display: block; /* réafficher le séparateur sur desktop */
+  }
+  .es-bulk-bar__actions {
+    flex-direction: row;   /* horizontal sur desktop */
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: center;
+    width: auto;
+  }
+}
+
+/* ================================================================
+   BARRE DE FILTRES (recherche + filtres + export)
+   ================================================================ */
+.es-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.es-filters-bar .es-input-wrap {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* ================================================================
+   GROUPE EXPORT IMAGE / PDF (barre de filtres participants)
+   ================================================================ */
+.es-export-btngroup {
+  display: flex;
+  gap: 6px;
+  width: 100%; /* pleine largeur sur mobile */
+}
+
+.es-export-btngroup .es-btn {
+  flex: 1; /* boutons identiques, pleine largeur partagée */
+  justify-content: center;
+}
+
+/* Sur desktop : largeur auto, côte à côte sans stretch */
+@media (min-width: 600px) {
+  .es-export-btngroup {
+    width: auto;
+  }
+  .es-export-btngroup .es-btn {
+    flex: initial;
+  }
+}
+
 
 /* Ligne sélectionnée dans le tableau */
 .es-table tr.es-row--selected td {

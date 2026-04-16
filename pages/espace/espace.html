@@ -477,53 +477,86 @@
                 <option value="">Tous âges</option>
               </select>
 
-              <button class="es-btn es-btn--secondary" id="btnExportImage" style="margin-right: 8px;">
-                <span class="es-btn__text"><i class="bi bi-camera"></i> Image</span>
-                <span class="es-btn__spinner"></span>
-              </button>
-              <button class="es-btn es-btn--secondary" id="btnExportPdf">
-                <span class="es-btn__text"><i class="bi bi-file-pdf"></i> PDF</span>
-                <span class="es-btn__spinner"></span>
-              </button>
+              <div class="es-export-btngroup">
+                <button class="es-btn es-btn--secondary" id="btnExportImage">
+                  <span class="es-btn__text"><i class="bi bi-camera"></i> Image</span>
+                  <span class="es-btn__spinner"></span>
+                </button>
+                <button class="es-btn es-btn--secondary" id="btnExportPdf">
+                  <span class="es-btn__text"><i class="bi bi-file-pdf"></i> PDF</span>
+                  <span class="es-btn__spinner"></span>
+                </button>
+              </div>
             </div>
 
             <!-- Barre d'actions de masse (admin uniquement, visible si sélection) -->
             <div id="bulkActionBar" class="es-bulk-bar hidden admin-only" data-html2canvas-ignore="true">
-              <div class="es-bulk-bar__info">
-                <i class="bi bi-check2-square"></i>
-                <span id="bulkCount">0</span> sélectionné(s)
+
+              <!-- Ligne 1 : info + désélectionner -->
+              <div class="es-bulk-bar__top">
+                <div class="es-bulk-bar__info">
+                  <i class="bi bi-check2-square"></i>
+                  <strong id="bulkCount">0</strong>
+                  <span class="es-bulk-bar__info-label"> participant(s) sélectionné(s)</span>
+                </div>
+                <button class="es-bulk-deselect" id="btnBulkClear" title="Désélectionner tout">
+                  <i class="bi bi-x-circle"></i>
+                  <span>Désélectionner</span>
+                </button>
               </div>
+
+              <!-- Ligne 2 : boutons d'actions, séparés en deux groupes -->
               <div class="es-bulk-bar__actions">
-                <button class="es-btn es-btn--sm" id="btnBulkGroup" title="Changer de groupe">
-                  <i class="bi bi-people"></i> <span class="brand-label">Groupe</span>
-                </button>
-                <button class="es-btn es-btn--sm" id="btnBulkGenre" title="Changer le genre">
-                  <i class="bi bi-gender-ambiguous"></i> <span class="brand-label">Genre</span>
-                </button>
-                <button class="es-btn es-btn--sm" id="btnBulkAge" title="Changer l'âge">
-                  <i class="bi bi-calendar3"></i> <span class="brand-label">Âge</span>
-                </button>
-                <button class="es-btn es-btn--sm" id="btnBulkNote" title="Ajouter une remarque">
-                  <i class="bi bi-chat-left-text"></i> <span class="brand-label">Remarque</span>
-                </button>
-                <button class="es-btn es-btn--sm" id="btnBulkSpec" title="Ajouter des spécificités">
-                  <i class="bi bi-tag"></i> <span class="brand-label">Spécificités</span>
-                </button>
+
+                <!-- Groupe 1 : modifier -->
+                <div class="es-bulk-btngroup">
+                  <button class="es-bulk-btn" id="btnBulkGroup" title="Changer de groupe">
+                    <i class="bi bi-people-fill"></i>
+                    <span class="es-bulk-btn__short">Groupe</span>
+                    <span class="es-bulk-btn__long">Groupe</span>
+                  </button>
+                  <button class="es-bulk-btn" id="btnBulkGenre" title="Changer le genre">
+                    <i class="bi bi-gender-ambiguous"></i>
+                    <span class="es-bulk-btn__short">Genre</span>
+                    <span class="es-bulk-btn__long">Genre</span>
+                  </button>
+                  <button class="es-bulk-btn" id="btnBulkAge" title="Changer l'âge">
+                    <i class="bi bi-calendar3"></i>
+                    <span class="es-bulk-btn__short">Âge</span>
+                    <span class="es-bulk-btn__long">Âge</span>
+                  </button>
+                  <button class="es-bulk-btn" id="btnBulkNote" title="Ajouter une remarque">
+                    <i class="bi bi-chat-left-text-fill"></i>
+                    <span class="es-bulk-btn__short">Note</span>
+                    <span class="es-bulk-btn__long">Remarque</span>
+                  </button>
+                  <button class="es-bulk-btn" id="btnBulkSpec" title="Ajouter des spécificités">
+                    <i class="bi bi-tag-fill"></i>
+                    <span class="es-bulk-btn__short">Spéc.</span>
+                    <span class="es-bulk-btn__long">Spécificités</span>
+                  </button>
+                </div>
+
+                <!-- Séparateur -->
                 <div class="es-bulk-bar__sep"></div>
-                <button class="es-btn es-btn--sm" id="btnBulkClearNote" title="Vider les remarques"
-                  style="border-color:rgba(239,68,68,0.35);color:rgba(239,68,68,0.85);">
-                  <i class="bi bi-eraser"></i> <span class="brand-label">Vider remarques</span>
-                </button>
-                <button class="es-btn es-btn--sm" id="btnBulkClearSpec" title="Vider les spécificités"
-                  style="border-color:rgba(239,68,68,0.35);color:rgba(239,68,68,0.85);">
-                  <i class="bi bi-eraser"></i> <span class="brand-label">Vider spécificités</span>
-                </button>
-                <div class="es-bulk-bar__sep"></div>
-                <button class="es-btn es-btn--sm es-btn--ghost" id="btnBulkClear" title="Désélectionner tout">
-                  <i class="bi bi-x"></i> Désélectionner
-                </button>
+
+                <!-- Groupe 2 : vider (destructif) -->
+                <div class="es-bulk-btngroup es-bulk-btngroup--danger">
+                  <button class="es-bulk-btn es-bulk-btn--danger" id="btnBulkClearNote" title="Effacer les remarques">
+                    <i class="bi bi-eraser-fill"></i>
+                    <span class="es-bulk-btn__short">Note</span>
+                    <span class="es-bulk-btn__long">Notes</span>
+                  </button>
+                  <button class="es-bulk-btn es-bulk-btn--danger" id="btnBulkClearSpec" title="Effacer les spécificités">
+                    <i class="bi bi-eraser-fill"></i>
+                    <span class="es-bulk-btn__short">Spéc.</span>
+                    <span class="es-bulk-btn__long">Spéc.</span>
+                  </button>
+                </div>
+
               </div>
             </div>
+
 
             <!-- Compteur participants -->
             <div id="participantsCounter"
