@@ -152,8 +152,9 @@ async function initColoContent(colo, role) {
     if (isColoFormation) {
         if (btnAppr) btnAppr.classList.remove('hidden');
         if (btnInfoD) btnInfoD.classList.remove('hidden');
-        // Révéler le bouton bulk "Effacer appréciations"
+        // Révéler les boutons bulk liés aux formations
         document.getElementById('btnBulkClearAppreciation')?.classList.remove('hidden');
+        document.getElementById('btnBulkAppreciation')?.classList.remove('hidden');
 
         // Mise à jour des labels spécifiques "Formation"
         const statTotalLabel = document.getElementById('statTotal')?.parentElement;
@@ -168,6 +169,7 @@ async function initColoContent(colo, role) {
         if (btnAppr) btnAppr.classList.add('hidden');
         if (btnInfoD) btnInfoD.classList.add('hidden');
         document.getElementById('btnBulkClearAppreciation')?.classList.add('hidden');
+        document.getElementById('btnBulkAppreciation')?.classList.add('hidden');
     }
 
     // Drive
@@ -2837,12 +2839,13 @@ function openBulkModal(action) {
     const titles = {
         group:             'Changer le groupe',
         genre:             'Changer le genre',
-        age:               'Changer l\'âge',
+        age:               'Changer l\'\u00e2ge',
         note:              'Ajouter une remarque',
-        spec:              'Ajouter des spécificités',
+        spec:              'Ajouter des sp\u00e9cificit\u00e9s',
+        appreciation:      'Ajouter une appréciation',
         clearNote:         'Vider les remarques',
-        clearSpec:         'Vider les spécificités',
-        clearAppreciation: 'Vider les appréciations',
+        clearSpec:         'Vider les sp\u00e9cificit\u00e9s',
+        clearAppreciation: 'Vider les appr\u00e9ciations',
     };
 
     const n = selectedParticipantIds.size;
@@ -2854,7 +2857,7 @@ function openBulkModal(action) {
     document.querySelectorAll('.bulk-panel').forEach(p => p.classList.add('hidden'));
 
     // Afficher le panneau correspondant
-    const panelMap = { group: 'bulkPanelGroup', genre: 'bulkPanelGenre', age: 'bulkPanelAge', note: 'bulkPanelNote', spec: 'bulkPanelSpec', clearNote: 'bulkPanelClearNote', clearSpec: 'bulkPanelClearSpec', clearAppreciation: 'bulkPanelClearAppreciation' };
+    const panelMap = { group: 'bulkPanelGroup', genre: 'bulkPanelGenre', age: 'bulkPanelAge', note: 'bulkPanelNote', spec: 'bulkPanelSpec', appreciation: 'bulkPanelAppreciation', clearNote: 'bulkPanelClearNote', clearSpec: 'bulkPanelClearSpec', clearAppreciation: 'bulkPanelClearAppreciation' };
     const panelEl = document.getElementById(panelMap[action]);
     if (panelEl) panelEl.classList.remove('hidden');
 
@@ -2868,9 +2871,10 @@ function openBulkModal(action) {
     }
 
     // Vider les champs
-    if (action === 'age')  document.getElementById('bulkAgeInput').value  = '';
-    if (action === 'note') document.getElementById('bulkNoteInput').value = '';
-    if (action === 'spec') document.getElementById('bulkSpecInput').value = '';
+    if (action === 'age')          document.getElementById('bulkAgeInput').value          = '';
+    if (action === 'note')         document.getElementById('bulkNoteInput').value         = '';
+    if (action === 'spec')         document.getElementById('bulkSpecInput').value         = '';
+    if (action === 'appreciation') document.getElementById('bulkAppreciationInput').value = '';
 
     openModal('overlayBulkAction');
 }
@@ -2899,8 +2903,12 @@ document.getElementById('btnApplyBulkAction')?.addEventListener('click', async (
         updateData = { age: val };
     } else if (currentBulkAction === 'note') {
         const val = document.getElementById('bulkNoteInput')?.value.trim();
-        if (!val) { showBulkError(errMsg, errEl, 'Veuillez saisir un texte à ajouter en remarque.'); return; }
+        if (!val) { showBulkError(errMsg, errEl, 'Veuillez saisir un texte \u00e0 ajouter en remarque.'); return; }
         updateData = { _appendNote: val };
+    } else if (currentBulkAction === 'appreciation') {
+        const val = document.getElementById('bulkAppreciationInput')?.value.trim();
+        if (!val) { showBulkError(errMsg, errEl, 'Veuillez saisir un texte \u00e0 ajouter en appr\u00e9ciation.'); return; }
+        updateData = { _appendAppreciation: val };
     } else if (currentBulkAction === 'spec') {
         const raw = document.getElementById('bulkSpecInput')?.value.trim();
         if (!raw) { showBulkError(errMsg, errEl, 'Veuillez saisir au moins une spécificité.'); return; }
@@ -2959,6 +2967,23 @@ document.getElementById('btnApplyBulkAction')?.addEventListener('click', async (
                 await batch.commit();
             }
 
+        } else if (updateData._appendAppreciation !== undefined) {
+            // Mode ajout d'appréciation : même mécanique que la note
+            const appendText = updateData._appendAppreciation;
+            const chunks = [];
+            for (let i = 0; i < ids.length; i += 10) chunks.push(ids.slice(i, i + 10));
+
+            for (const chunk of chunks) {
+                const docsSnap = await Promise.all(chunk.map(id => colRef.doc(id).get()));
+                const batch = db.batch();
+                docsSnap.forEach(docSnap => {
+                    if (!docSnap.exists) return;
+                    const existingApp = docSnap.data().appreciation || '';
+                    batch.update(docSnap.ref, { appreciation: existingApp ? existingApp + '\n' + appendText : appendText });
+                });
+                await batch.commit();
+            }
+
         } else {
             // Mode update simple : batch direct
             const batchSize = 500;
@@ -3001,6 +3026,7 @@ document.getElementById('btnBulkGenre')?.addEventListener('click',             (
 document.getElementById('btnBulkAge')?.addEventListener('click',               () => openBulkModal('age'));
 document.getElementById('btnBulkNote')?.addEventListener('click',              () => openBulkModal('note'));
 document.getElementById('btnBulkSpec')?.addEventListener('click',              () => openBulkModal('spec'));
+document.getElementById('btnBulkAppreciation')?.addEventListener('click',      () => openBulkModal('appreciation'));
 document.getElementById('btnBulkClearNote')?.addEventListener('click',         () => openBulkModal('clearNote'));
 document.getElementById('btnBulkClearSpec')?.addEventListener('click',         () => openBulkModal('clearSpec'));
 document.getElementById('btnBulkClearAppreciation')?.addEventListener('click', () => openBulkModal('clearAppreciation'));

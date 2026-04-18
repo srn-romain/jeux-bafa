@@ -535,6 +535,12 @@
                     <span class="es-bulk-btn__short">Spéc.</span>
                     <span class="es-bulk-btn__long">Spécificités</span>
                   </button>
+                  <!-- Visible uniquement en mode Formation -->
+                  <button class="es-bulk-btn hidden" id="btnBulkAppreciation" title="Ajouter une appréciation">
+                    <i class="bi bi-star-fill"></i>
+                    <span class="es-bulk-btn__short">Appr.</span>
+                    <span class="es-bulk-btn__long">Appréciation</span>
+                  </button>
                 </div>
 
                 <!-- Séparateur -->
@@ -1216,6 +1222,21 @@
               placeholder="Ce texte sera ajouté à la suite des remarques existantes…"></textarea>
             <p style="font-size:0.78rem;color:var(--clr-text-muted);margin-top:6px;">
               <i class="bi bi-info-circle"></i> S'ajoute après la remarque existante, séparé par un saut de ligne.
+            </p>
+          </div>
+        </div>
+
+        <!-- Ajouter une appréciation (Formation uniquement) -->
+        <div id="bulkPanelAppreciation" class="bulk-panel hidden">
+          <div class="es-field">
+            <label class="es-field__label" for="bulkAppreciationInput">
+              <i class="bi bi-star" style="color:var(--clr-primary)"></i>
+              Texte à ajouter en appréciation
+            </label>
+            <textarea class="es-textarea es-textarea--note" id="bulkAppreciationInput" rows="3"
+              placeholder="Ce texte sera ajouté à la suite des appréciations existantes…"></textarea>
+            <p style="font-size:0.78rem;color:var(--clr-text-muted);margin-top:6px;">
+              <i class="bi bi-info-circle"></i> S'ajoute après l'appréciation existante, séparé par un saut de ligne.
             </p>
           </div>
         </div>
