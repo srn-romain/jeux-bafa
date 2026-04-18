@@ -552,6 +552,12 @@
                     <span class="es-bulk-btn__short">Spéc.</span>
                     <span class="es-bulk-btn__long">Spéc.</span>
                   </button>
+                  <!-- Visible uniquement en mode Formation -->
+                  <button class="es-bulk-btn es-bulk-btn--danger hidden" id="btnBulkClearAppreciation" title="Effacer les appréciations">
+                    <i class="bi bi-eraser-fill"></i>
+                    <span class="es-bulk-btn__short">Appr.</span>
+                    <span class="es-bulk-btn__long">Appréc.</span>
+                  </button>
                 </div>
 
               </div>
@@ -1227,6 +1233,14 @@
           <div class="es-alert es-alert--warning" style="margin-bottom:0;">
             <i class="bi bi-exclamation-triangle-fill"></i>
             <span>Cette action effacera <strong>définitivement</strong> tous les tags Spécificités des participants sélectionnés. Cette opération est irréversible.</span>
+          </div>
+        </div>
+
+        <!-- Vider les appréciations (Formation uniquement) -->
+        <div id="bulkPanelClearAppreciation" class="bulk-panel hidden">
+          <div class="es-alert es-alert--warning" style="margin-bottom:0;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span>Cette action effacera <strong>définitivement</strong> le champ Appréciation de tous les stagiaires sélectionnés. Cette opération est irréversible.</span>
           </div>
         </div>
 

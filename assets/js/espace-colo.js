@@ -152,7 +152,9 @@ async function initColoContent(colo, role) {
     if (isColoFormation) {
         if (btnAppr) btnAppr.classList.remove('hidden');
         if (btnInfoD) btnInfoD.classList.remove('hidden');
-        
+        // Révéler le bouton bulk "Effacer appréciations"
+        document.getElementById('btnBulkClearAppreciation')?.classList.remove('hidden');
+
         // Mise à jour des labels spécifiques "Formation"
         const statTotalLabel = document.getElementById('statTotal')?.parentElement;
         if (statTotalLabel) statTotalLabel.innerHTML = statTotalLabel.innerHTML.replace('participants', 'stagiaires');
@@ -165,6 +167,7 @@ async function initColoContent(colo, role) {
     } else {
         if (btnAppr) btnAppr.classList.add('hidden');
         if (btnInfoD) btnInfoD.classList.add('hidden');
+        document.getElementById('btnBulkClearAppreciation')?.classList.add('hidden');
     }
 
     // Drive
@@ -863,9 +866,9 @@ document.getElementById('btnExportPdf')?.addEventListener('click', () => {
         doc.setFontSize(10);
         const finalY = doc.lastAutoTable.finalY || 35;
 
-        const part1 = "Document généré ";
-        const linkText = "par l'app";
-        const part2 = " de votre directeur préféré aka Romain ! Bisous";
+        const part1 = "Document généré via ";
+        const linkText = "cette application web";
+        const part2 = " (© Romain SIEURIN)";
 
         let cursorX = 14;
         const textY = finalY + 15;
@@ -2832,13 +2835,14 @@ function openBulkModal(action) {
     currentBulkAction = action;
 
     const titles = {
-        group:     'Changer le groupe',
-        genre:     'Changer le genre',
-        age:       'Changer l\'âge',
-        note:      'Ajouter une remarque',
-        spec:      'Ajouter des spécificités',
-        clearNote: 'Vider les remarques',
-        clearSpec: 'Vider les spécificités',
+        group:             'Changer le groupe',
+        genre:             'Changer le genre',
+        age:               'Changer l\'âge',
+        note:              'Ajouter une remarque',
+        spec:              'Ajouter des spécificités',
+        clearNote:         'Vider les remarques',
+        clearSpec:         'Vider les spécificités',
+        clearAppreciation: 'Vider les appréciations',
     };
 
     const n = selectedParticipantIds.size;
@@ -2850,7 +2854,7 @@ function openBulkModal(action) {
     document.querySelectorAll('.bulk-panel').forEach(p => p.classList.add('hidden'));
 
     // Afficher le panneau correspondant
-    const panelMap = { group: 'bulkPanelGroup', genre: 'bulkPanelGenre', age: 'bulkPanelAge', note: 'bulkPanelNote', spec: 'bulkPanelSpec', clearNote: 'bulkPanelClearNote', clearSpec: 'bulkPanelClearSpec' };
+    const panelMap = { group: 'bulkPanelGroup', genre: 'bulkPanelGenre', age: 'bulkPanelAge', note: 'bulkPanelNote', spec: 'bulkPanelSpec', clearNote: 'bulkPanelClearNote', clearSpec: 'bulkPanelClearSpec', clearAppreciation: 'bulkPanelClearAppreciation' };
     const panelEl = document.getElementById(panelMap[action]);
     if (panelEl) panelEl.classList.remove('hidden');
 
@@ -2907,6 +2911,8 @@ document.getElementById('btnApplyBulkAction')?.addEventListener('click', async (
         updateData = { note: '' };
     } else if (currentBulkAction === 'clearSpec') {
         updateData = { spec: [] };
+    } else if (currentBulkAction === 'clearAppreciation') {
+        updateData = { appreciation: '' };
     }
 
     errEl?.classList.add('hidden');
@@ -2990,13 +2996,14 @@ function showBulkError(msgEl, containerEl, msg) {
 }
 
 // Listeners des boutons de la barre de sélection
-document.getElementById('btnBulkGroup')?.addEventListener('click',     () => openBulkModal('group'));
-document.getElementById('btnBulkGenre')?.addEventListener('click',     () => openBulkModal('genre'));
-document.getElementById('btnBulkAge')?.addEventListener('click',       () => openBulkModal('age'));
-document.getElementById('btnBulkNote')?.addEventListener('click',      () => openBulkModal('note'));
-document.getElementById('btnBulkSpec')?.addEventListener('click',      () => openBulkModal('spec'));
-document.getElementById('btnBulkClearNote')?.addEventListener('click', () => openBulkModal('clearNote'));
-document.getElementById('btnBulkClearSpec')?.addEventListener('click', () => openBulkModal('clearSpec'));
+document.getElementById('btnBulkGroup')?.addEventListener('click',             () => openBulkModal('group'));
+document.getElementById('btnBulkGenre')?.addEventListener('click',             () => openBulkModal('genre'));
+document.getElementById('btnBulkAge')?.addEventListener('click',               () => openBulkModal('age'));
+document.getElementById('btnBulkNote')?.addEventListener('click',              () => openBulkModal('note'));
+document.getElementById('btnBulkSpec')?.addEventListener('click',              () => openBulkModal('spec'));
+document.getElementById('btnBulkClearNote')?.addEventListener('click',         () => openBulkModal('clearNote'));
+document.getElementById('btnBulkClearSpec')?.addEventListener('click',         () => openBulkModal('clearSpec'));
+document.getElementById('btnBulkClearAppreciation')?.addEventListener('click', () => openBulkModal('clearAppreciation'));
 
 document.getElementById('btnBulkClear')?.addEventListener('click', () => {
     toggleSelectAllParticipants(false);
