@@ -755,25 +755,39 @@ document.getElementById('btnExportPdf')?.addEventListener('click', () => {
         doc.setFontSize(10);
         doc.text(`Généré le: ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}`, 14, 28);
 
+        let dynamicColName = '';
+        let tagColIndex = -1;
+        
+        if (participantColView === 'spec') {
+            dynamicColName = 'Spécificités';
+            tagColIndex = hasGroups ? 5 : 4;
+        } else if (participantColView === 'note') {
+            dynamicColName = 'Remarques';
+        } else if (participantColView === 'appreciation') {
+            dynamicColName = 'Appréciation';
+        }
+
         const dataList = window.currentFilteredParticipants || participants || [];
         const tableData = dataList.map(p => {
             const g = hasGroups ? currentGroups.find(x => x.id === p.groupeId) : null;
+            let dynamicVal = '';
+            if (participantColView === 'spec') dynamicVal = p.spec || [];
+            else if (participantColView === 'note') dynamicVal = p.note || '';
+            else if (participantColView === 'appreciation') dynamicVal = p.appreciation || '';
+
             return [
                 p.prenom || '',
                 p.nom || '',
                 `${p.age} ans`,
                 p.genre === 'masculin' ? 'Garçon' : 'Fille',
                 ...(hasGroups ? [g ? g.name : ''] : []),
-                p.spec || [],
-                p.note || ''
+                dynamicVal
             ];
         });
 
         const head = [
-            ['Prénom', 'Nom', 'Âge', 'Genre', ...(hasGroups ? ['Groupe'] : []), 'Spécificités', 'Remarques']
+            ['Prénom', 'Nom', 'Âge', 'Genre', ...(hasGroups ? ['Groupe'] : []), dynamicColName]
         ];
-
-        let tagColIndex = hasGroups ? 5 : 4;
 
         doc.autoTable({
             startY: 35,
