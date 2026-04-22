@@ -122,11 +122,11 @@
 
         <!-- Onglets internes -->
         <div class="es-nav-tabs" role="tablist">
-          <button class="es-nav-tab active" data-tab="groupes" role="tab">
-            <i class="bi bi-grid-3x3-gap"></i> Fonctions
-          </button>
-          <button class="es-nav-tab" data-tab="participants" role="tab">
+          <button class="es-nav-tab active" data-tab="participants" role="tab">
             <i class="bi bi-people"></i> Participants
+          </button>
+          <button class="es-nav-tab" data-tab="groupes" role="tab">
+            <i class="bi bi-grid-3x3-gap"></i> Fonctions
           </button>
           <button class="es-nav-tab" data-tab="animateurs" role="tab" style="position:relative;">
             <i class="bi bi-person-badge"></i> Animateurs
@@ -138,7 +138,7 @@
         </div>
 
         <!-- === ONGLET GROUPES === -->
-        <div id="tab-groupes">
+        <div id="tab-groupes" class="hidden">
 
           <div class="es-section">
             <h3 class="es-section__title">
@@ -150,6 +150,7 @@
             </p>
 
             <div class="es-section__content">
+
               <!-- Stats bar inside for context -->
               <div class="es-card es-stats-bar" id="statsBar"
                 style="margin-bottom:14px; background:var(--clr-bg-deep); border:1px solid var(--clr-surface-3);">
@@ -400,7 +401,8 @@
         </div>
 
         <!-- === ONGLET PARTICIPANTS === -->
-        <div id="tab-participants" class="hidden">
+        <div id="tab-participants">
+
           <div class="es-card">
             <!-- Ligne 1 : Titre + Bouton Ajouter -->
             <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
@@ -411,6 +413,31 @@
                 <i class="bi bi-plus-lg"></i> <span class="brand-label">Ajouter</span>
               </button>
             </div>
+
+              <!-- Configuration IA (Directeur uniquement) -->
+              <div class="admin-only hidden" style="margin-bottom: 24px;">
+                  <div class="es-card" style="border: 1px solid rgba(166, 216, 102, 0.3); background: rgba(166, 216, 102, 0.03);">
+                      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+                          <div style="flex:1; min-width:280px;">
+                              <h4 style="margin:0 0 8px 0; font-size:0.9rem; color:var(--clr-primary); display:flex; align-items:center; gap:8px;">
+                                  <i class="bi bi-robot"></i> Configuration de l'Assistant IA
+                              </h4>
+                              <p style="font-size:0.8rem; color:var(--clr-text-muted); margin:0;">
+                                  En renseignant votre clé API ici, vous permettez à tous les animateurs de cette session d'utiliser l'assistant de rédaction sans qu'ils n'aient à configurer quoi que ce soit.
+                              </p>
+                          </div>
+                          <div style="display:flex; gap:8px;">
+                              <button class="es-btn es-btn--secondary es-btn--sm" id="btnConfigIA" style="background:var(--clr-primary); color:white; border:none;">
+                                  <i class="bi bi-gear-fill"></i> Configurer la clé
+                              </button>
+                          </div>
+                      </div>
+                      <div id="iaStatusInfo" class="hidden" style="margin-top:12px; font-size:0.75rem; display:flex; align-items:center; gap:15px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);">
+                          <span style="color:var(--clr-success);"><i class="bi bi-check-circle-fill"></i> IA Activée pour la session</span>
+                          <span style="opacity:0.7;"><i class="bi bi-bar-chart-steps"></i> Usage estimé : <strong id="iaUsageCounter">0</strong> / 1500 (Gratuit)</span>
+                      </div>
+                  </div>
+              </div>
 
             <!-- Ligne 2 : Actions secondaires + toggle pill -->
             <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
@@ -740,8 +767,13 @@
               placeholder="Ex: Allergie au gluten, traitement asthme..."></textarea>
           </div>
           <div class="es-field hidden" id="fieldParticipantAppreciation">
-            <label class="es-field__label" for="pAppreciation"><i class="bi bi-star"
-                style="color:var(--clr-primary)"></i> Appréciation / Évaluation</label>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+              <label class="es-field__label" for="pAppreciation" style="margin-bottom:0;"><i class="bi bi-star"
+                  style="color:var(--clr-primary)"></i> Appréciation / Évaluation</label>
+              <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnOpenAIGenerator" style="padding: 2px 8px; font-size: 0.75rem; color: var(--clr-primary);">
+                <i class="bi bi-magic"></i> Générer par IA
+              </button>
+            </div>
             <textarea class="es-textarea es-textarea--note" id="pAppreciation" rows="3"
               placeholder="Ex: Très bonne progression, participe activement..."></textarea>
           </div>
@@ -1277,6 +1309,111 @@
           <span class="es-btn__text">Appliquer</span>
           <span class="es-btn__spinner"></span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal : Générateur d'appréciation IA -->
+  <div class="es-overlay hidden" id="overlayAIGenerator" role="dialog" aria-modal="true" style="z-index: 1100;">
+    <div class="es-modal" style="max-width:550px;">
+      <div class="es-modal__header">
+        <h2 class="es-modal__title"><i class="bi bi-magic"></i> Assistant Rédaction IA</h2>
+        <button class="es-modal__close" onclick="closeModal('overlayAIGenerator')"><i class="bi bi-x"></i></button>
+      </div>
+      <div class="es-modal__body">
+        <p style="font-size:0.85rem; color:var(--clr-text-muted); margin-bottom:15px;">
+          L'IA va rédiger une appréciation personnalisée en respectant les consignes de la DRAJES.
+        </p>
+
+        <div class="es-field">
+          <label class="es-field__label">Type de session BAFA</label>
+          <div style="display:flex; gap:12px; margin-top:4px;">
+            <label class="es-checkbox-label" style="display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; flex:1; border:1px solid rgba(255,255,255,0.1);">
+              <input type="radio" name="aiStageType" value="base" checked>
+              <span>Session de Base</span>
+            </label>
+            <label class="es-checkbox-label" style="display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; flex:1; border:1px solid rgba(255,255,255,0.1);">
+              <input type="radio" name="aiStageType" value="approfondissement">
+              <span>Approfondissement</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="es-field">
+          <label class="es-field__label" for="aiNotes">Vos notes sur le stagiaire (mots-clés, faits observés...)</label>
+          <textarea class="es-textarea" id="aiNotes" rows="4" placeholder="Ex: Stagiaire ponctuel, a mené un grand jeu sur les pirates, écoute active lors des bilans, un peu réservé au début mais a bien progressé..."></textarea>
+          <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:4px;">
+            <i class="bi bi-info-circle"></i> Plus vous donnez de détails factuels, meilleure sera l'appréciation.
+          </p>
+        </div>
+
+        <div id="aiResultArea" class="hidden" style="margin-top:20px; padding:15px; background:rgba(166, 216, 102, 0.08); border:1px solid rgba(166, 216, 102, 0.2); border-radius:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h4 style="font-size:0.85rem; text-transform:uppercase; color:var(--clr-primary); font-weight:700; margin:0;">Proposition de l'IA</h4>
+            <button class="es-btn es-btn--ghost es-btn--sm" id="btnCopyAIResult" style="padding:2px 8px;">
+              <i class="bi bi-clipboard"></i> Copier
+            </button>
+          </div>
+          <div id="aiResultText" style="font-size:0.9rem; line-height:1.5; color:var(--clr-text); white-space:pre-wrap;"></div>
+        </div>
+
+        <div class="es-alert es-alert--error hidden mt-3" id="aiGeneratorError">
+          <i class="bi bi-exclamation-circle"></i> <span id="aiGeneratorErrorMsg"></span>
+        </div>
+      </div>
+      <div class="es-modal__footer">
+        <button class="es-btn es-btn--ghost" onclick="closeModal('overlayAIGenerator')">Annuler</button>
+        <div style="display:flex; gap:8px;">
+            <button class="es-btn es-btn--primary" id="btnGenerateAI">
+              <i class="bi bi-magic"></i>
+              <span class="es-btn__text">Générer</span>
+              <span class="es-btn__spinner"></span>
+            </button>
+            <button class="es-btn es-btn--success hidden" id="btnApplyAI" style="background:var(--clr-success); border-color:var(--clr-success);">
+              <i class="bi bi-check2"></i> Utiliser cette version
+            </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal : Configuration IA (Directeur) -->
+  <div class="es-overlay hidden" id="overlayIASettings" role="dialog" aria-modal="true">
+    <div class="es-modal" style="max-width:500px;">
+      <div class="es-modal__header">
+        <h2 class="es-modal__title"><i class="bi bi-gear"></i> Paramètres IA de la session</h2>
+        <button class="es-modal__close" onclick="closeModal('overlayIASettings')"><i class="bi bi-x"></i></button>
+      </div>
+      <div class="es-modal__body">
+        <div class="es-field">
+          <label class="es-field__label" for="espaceGeminiKey">Clé API Google Gemini</label>
+          <div style="position:relative; display:flex; gap:8px;">
+            <input type="password" class="es-input" id="espaceGeminiKey" placeholder="AIzaSy..." style="padding-right: 40px;">
+            <button type="button" id="btnToggleKeyVisibility" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--clr-text-muted); cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center;">
+              <i class="bi bi-eye"></i>
+            </button>
+            <button type="button" id="btnCopySpaceKey" class="es-btn es-btn--secondary" style="padding: 0 12px; min-width: auto;" title="Copier la clé">
+              <i class="bi bi-clipboard"></i>
+            </button>
+          </div>
+          <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:8px;">
+            <i class="bi bi-info-circle"></i> Cette clé est stockée pour cette session et permet la génération d'appréciations.
+          </p>
+        </div>
+
+        <div class="es-field" style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
+          <label class="es-checkbox-label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+            <input type="checkbox" id="allowAnimAI" checked>
+            <span style="font-weight:600;">Autoriser les animateurs à utiliser l'IA</span>
+          </label>
+          <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:5px; margin-left:26px;">
+            Si décoché, seul le directeur pourra voir le bouton "Générer par IA" dans les fiches stagiaires.
+          </p>
+        </div>
+      </div>
+      <div class="es-modal__footer">
+        <button class="es-btn es-btn--ghost" onclick="closeModal('overlayIASettings')">Annuler</button>
+        <button class="es-btn es-btn--primary" id="btnSaveIASettings">Enregistrer la clé</button>
       </div>
     </div>
   </div>

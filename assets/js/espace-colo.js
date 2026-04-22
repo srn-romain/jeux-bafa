@@ -22,6 +22,8 @@ let sortColumn    = 'nom';      // Colonne de tri active ('prenom'|'nom'|'age'|'
 let sortDirection = 'asc';       // 'asc' | 'desc'
 let isColoFormation = false;     // Si la colo est marquée comme "Formation"
 let currentColoDateFin = null;   // Date de fin de la colo
+let currentGeminiKey = "";       // Clé API Gemini de la session (depuis Firestore)
+let isAIGeneratorEnabled = true; // Si les anims ont le droit d'utiliser l'IA
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -219,6 +221,18 @@ async function initColoContent(colo, role) {
     loadWeather(colo.id, role);
     // Charger la bibliothèque
     loadPhotos(colo, role);
+
+    // IA - Chargement de la config session
+    currentGeminiKey = colo.geminiKey || "";
+    isAIGeneratorEnabled = colo.allowAnimAI !== false; // true par défaut
+    const usageCount = colo.iaUsageCount || 0;
+    if (currentGeminiKey) {
+        document.getElementById('iaStatusInfo')?.classList.remove('hidden');
+        const usageEl = document.getElementById('iaUsageCounter');
+        if (usageEl) usageEl.textContent = usageCount;
+    } else {
+        document.getElementById('iaStatusInfo')?.classList.add('hidden');
+    }
 
     // Onglets
     initTabs();
@@ -1106,6 +1120,9 @@ document.getElementById('btnAddParticipant')?.addEventListener('click', () => {
     const fieldAppreciation = document.getElementById('fieldParticipantAppreciation');
     if (fieldAppreciation) {
         fieldAppreciation.classList.toggle('hidden', !isColoFormation);
+        // Visibilité du bouton IA selon les droits
+        const canUseAI = (currentRole === 'admin') || isAIGeneratorEnabled;
+        document.getElementById('btnOpenAIGenerator')?.classList.toggle('hidden', !canUseAI);
     }
 
     document.getElementById('participantError')?.classList.add('hidden');
@@ -1139,6 +1156,9 @@ function editParticipant(id) {
     if (isColoFormation) {
         const pAppreciationEl = document.getElementById('pAppreciation');
         if (pAppreciationEl) pAppreciationEl.value = p.appreciation || '';
+        // Visibilité du bouton IA selon les droits
+        const canUseAI = (currentRole === 'admin') || isAIGeneratorEnabled;
+        document.getElementById('btnOpenAIGenerator')?.classList.toggle('hidden', !canUseAI);
     }
 
     const groupSelect = document.getElementById('pGroup');
@@ -1226,6 +1246,294 @@ async function deleteParticipant(id, nom) {
         showToast('Erreur lors de la suppression.', 'error');
     }
 }
+
+// ================================================================
+// GÉNÉRATEUR D'APPRÉCIATION IA (BAFA)
+// ================================================================
+
+// Variable pour stocker la clé API Gemini (Placeholder à remplir par l'utilisateur)
+// Une meilleure pratique serait de la stocker dans Firestore (config) ou une variable d'env
+let GEMINI_API_KEY = ""; 
+
+document.getElementById('btnOpenAIGenerator')?.addEventListener('click', () => {
+    // Pré-remplir les notes avec la remarque actuelle (pNote)
+    const currentNote = document.getElementById('pNote')?.value.trim();
+    const aiNotes = document.getElementById('aiNotes');
+    if (aiNotes) aiNotes.value = currentNote || "";
+    
+    // Auto-détection du type de stage via le nom de la colo
+    const coloTitle = document.getElementById('coloTitle')?.textContent.toLowerCase() || "";
+    const isBase = coloTitle.includes('base') || coloTitle.includes('générale');
+    const isAppro = coloTitle.includes('appro') || coloTitle.includes('qualif');
+    
+    if (isBase) document.querySelector('input[name="aiStageType"][value="base"]').checked = true;
+    if (isAppro) document.querySelector('input[name="aiStageType"][value="approfondissement"]').checked = true;
+
+    // Réinitialiser la zone de résultat
+    document.getElementById('aiResultArea')?.classList.add('hidden');
+    document.getElementById('btnApplyAI')?.classList.add('hidden');
+    document.getElementById('aiGeneratorError')?.classList.add('hidden');
+    
+    openModal('overlayAIGenerator');
+});
+
+document.getElementById('btnGenerateAI')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnGenerateAI');
+    const notes = document.getElementById('aiNotes')?.value.trim();
+    const stageType = document.querySelector('input[name="aiStageType"]:checked')?.value;
+    const errorEl = document.getElementById('aiGeneratorError');
+    const resultArea = document.getElementById('aiResultArea');
+    const resultText = document.getElementById('aiResultText');
+
+    if (!notes) {
+        _showAIError("Veuillez saisir quelques remarques ou mots-clés sur le stagiaire.");
+        return;
+    }
+
+    // Choix de la clé : Priorité à la clé de session (Directeur), sinon clé personnelle
+    let effectiveKey = currentGeminiKey || GEMINI_API_KEY;
+
+    if (!effectiveKey) {
+        const savedKey = localStorage.getItem('GEMINI_API_KEY');
+        if (savedKey) {
+            effectiveKey = savedKey.trim();
+            GEMINI_API_KEY = effectiveKey;
+        } else {
+            const key = prompt("Aucune clé IA n'est configurée pour cette session. Veuillez saisir votre clé personnelle Google AI (Gemini) :");
+            if (key) {
+                effectiveKey = key.trim();
+                GEMINI_API_KEY = effectiveKey;
+                localStorage.setItem('GEMINI_API_KEY', effectiveKey);
+            } else {
+                _showAIError("Clé API manquante. Impossible de générer l'appréciation.");
+                return;
+            }
+        }
+    }
+
+    btnLoading(btn, true);
+    errorEl.classList.add('hidden');
+    resultArea.classList.add('hidden');
+
+    try {
+        const context = _getDRAJESContext();
+        const pPrenom = document.getElementById('pPrenom')?.value || "Le stagiaire";
+        const pGenre = document.getElementById('pGenre')?.value || "feminin";
+        
+        const prompt = `Tu es un formateur BAFA expert. Ta mission est de rédiger l'appréciation finale de stage BAFA pour ${pPrenom} (${pGenre === 'masculin' ? 'un homme' : 'une femme'}).
+        
+        CONTEXTE DU STAGE :
+        - Type de session : ${stageType === 'base' ? 'Session de Formation Générale (Base)' : 'Session d\'Approfondissement'}
+        - Remarques de l'équipe : ${notes}
+        
+        CADRE RÉGLEMENTAIRE DRAJES (Contexte) :
+        ${context}
+        
+        CONSIGNES DE RÉDACTION :
+        1. Rédige l'appréciation à la 3ème personne exclusivement.
+        2. Sois factuel : décris ce que le stagiaire a FAIT et ACQUIS, et dans quel CONTEXTE.
+        3. Longueur : environ 4 à 5 phrases (une par grand critère).
+        4. INTERDIT : Jugements de valeur (dynamique, sérieux, bienveillant...), conseils ("il devra veiller à..."), félicitations, ou mention de noms de jeux précis.
+        5. L'appréciation doit être parfaitement cohérente avec un AVIS FAVORABLE (aucune réserve).
+        
+        RÉPONSE ATTENDUE : Uniquement le texte de l'appréciation, sans introduction ni conclusion.`;
+
+        const response = await _callGemini(prompt, effectiveKey);
+        
+        if (response) {
+            resultText.innerText = response.trim();
+            resultArea.classList.remove('hidden');
+            document.getElementById('btnApplyAI')?.classList.remove('hidden');
+
+            // Incrémenter le compteur d'usage session dans Firestore (si clé session active)
+            if (currentGeminiKey) {
+                db.collection('espaces').doc(espaceId).update({
+                    iaUsageCount: firebase.firestore.FieldValue.increment(1)
+                });
+                const usageEl = document.getElementById('iaUsageCounter');
+                if (usageEl) usageEl.textContent = parseInt(usageEl.textContent || "0") + 1;
+            }
+        } else {
+            throw new Error("L'IA n'a pas renvoyé de réponse exploitable.");
+        }
+    } catch (err) {
+        console.error('AI Generation Error:', err);
+        let errorMsg = err.message;
+        
+        // Diagnostic si "Not Found"
+        if (errorMsg.includes('not found')) {
+            try {
+                const diagUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
+                const diagResp = await fetch(diagUrl);
+                const diagData = await diagResp.json();
+                const availableModels = diagData.models ? diagData.models.map(m => m.name.replace('models/', '')) : [];
+                
+                if (availableModels.length > 0) {
+                    errorMsg += "\n\nModèles réellement dispos sur votre clé : " + availableModels.join(', ');
+                } else {
+                    errorMsg += "\n\nAucun modèle n'est associé à cette clé. Vérifiez que 'Generative Language API' est activée dans votre console Google Cloud.";
+                }
+            } catch (diagErr) {
+                console.error("Erreur diagnostic:", diagErr);
+            }
+        }
+        
+        _showAIError("Erreur : " + errorMsg);
+    } finally {
+        btnLoading(btn, false);
+    }
+});
+
+document.getElementById('btnApplyAI')?.addEventListener('click', () => {
+    const result = document.getElementById('aiResultText').innerText;
+    const pAppreciation = document.getElementById('pAppreciation');
+    if (pAppreciation) {
+        pAppreciation.value = result;
+        showToast("Appréciation importée !", "success");
+        closeModal('overlayAIGenerator');
+    }
+});
+
+document.getElementById('btnCopyAIResult')?.addEventListener('click', () => {
+    const text = document.getElementById('aiResultText').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        showToast("Texte copié.", "success");
+    });
+});
+
+function _showAIError(msg) {
+    const errorEl = document.getElementById('aiGeneratorError');
+    const errorMsg = document.getElementById('aiGeneratorErrorMsg');
+    if (errorEl && errorMsg) {
+        errorMsg.textContent = msg;
+        errorEl.classList.remove('hidden');
+    }
+}
+
+function _getDRAJESContext() {
+    const modal = document.getElementById('overlayInfoDRAJES');
+    if (!modal) return "Respecter les règles de rédaction BAFA (3ème personne, factuel, pas de jugement).";
+    // On récupère les règles d'or et erreurs à éviter
+    const body = modal.querySelector('.es-modal__body');
+    if (!body) return "";
+    // On prend les premiers paragraphes et listes (jusqu'aux modèles)
+    let content = "";
+    const children = Array.from(body.children);
+    for (const child of children) {
+        if (child.tagName === 'H4' && child.innerText.includes('Modèles')) break;
+        content += child.innerText + "\n";
+    }
+    return content;
+}
+
+async function _callGemini(prompt, apiKey) {
+    // Liste des modèles mis à jour selon les disponibilités réelles de votre clé (2026)
+    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest', 'gemini-pro-latest'];
+    let lastError = "";
+
+    for (const model of models) {
+        try {
+            // Utilisation de v1beta pour ces modèles récents
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    return data.candidates[0].content.parts[0].text;
+                }
+            } else {
+                const errData = await response.json();
+                lastError = errData.error?.message || "Erreur inconnue";
+                // Si c'est une erreur de clé API, on s'arrête tout de suite
+                if (lastError.includes('API key not valid')) {
+                    throw new Error("Clé API non valide.");
+                }
+                // Sinon on continue la boucle pour essayer le modèle suivant
+                console.warn(`Modèle ${model} non trouvé ou non supporté, essai suivant...`);
+            }
+        } catch (e) {
+            lastError = e.message;
+            console.error(`Erreur avec le modèle ${model}:`, e);
+        }
+    }
+
+    throw new Error(lastError || "Impossible de trouver un modèle compatible sur votre compte Google AI.");
+}
+
+// ----------------------------------------------------------------
+// CONFIGURATION IA SESSION (Directeur)
+// ----------------------------------------------------------------
+document.getElementById('btnConfigIA')?.addEventListener('click', () => {
+    document.getElementById('espaceGeminiKey').value = currentGeminiKey || "";
+    document.getElementById('allowAnimAI').checked = isAIGeneratorEnabled;
+    // Reset visibility to password
+    document.getElementById('espaceGeminiKey').type = 'password';
+    document.querySelector('#btnToggleKeyVisibility i').className = 'bi bi-eye';
+    openModal('overlayIASettings');
+});
+
+// Toggle visibilité clé
+document.getElementById('btnToggleKeyVisibility')?.addEventListener('click', () => {
+    const input = document.getElementById('espaceGeminiKey');
+    const icon = document.querySelector('#btnToggleKeyVisibility i');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+});
+
+// Copier la clé
+document.getElementById('btnCopySpaceKey')?.addEventListener('click', () => {
+    const key = document.getElementById('espaceGeminiKey').value;
+    if (!key) return;
+    navigator.clipboard.writeText(key).then(() => {
+        showToast("Clé copiée !", "success");
+    });
+});
+
+document.getElementById('btnSaveIASettings')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveIASettings');
+    const keyInput = document.getElementById('espaceGeminiKey');
+    const allowAnimCheck = document.getElementById('allowAnimAI');
+    const newKey = keyInput.value.trim();
+    const allowAnim = allowAnimCheck.checked;
+
+    btnLoading(btn, true);
+    try {
+        await db.collection('espaces').doc(espaceId).update({
+            geminiKey: newKey,
+            allowAnimAI: allowAnim
+        });
+        currentGeminiKey = newKey;
+        isAIGeneratorEnabled = allowAnim;
+        showToast("Paramètres IA mis à jour.", "success");
+        
+        // Update UI
+        if (newKey) {
+            document.getElementById('iaStatusInfo')?.classList.remove('hidden');
+        } else {
+            document.getElementById('iaStatusInfo')?.classList.add('hidden');
+        }
+        
+        closeModal('overlayIASettings');
+    } catch (err) {
+        console.error('saveIASettings:', err);
+        showToast("Erreur lors de l'enregistrement.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
+});
 
 // ----------------------------------------------------------------
 // RÉINITIALISATION MASSIVE (Admin seulement)
