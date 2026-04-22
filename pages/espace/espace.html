@@ -702,11 +702,33 @@
             </div>
 
             <div class="es-field" style="margin-top:15px;">
-              <label class="es-field__label">Tranche d'âge</label>
-              <select id="activityAgeRange" class="es-select">
-                <option value="6-12 ans">🧒 6-12 ans</option>
-                <option value="13-17 ans">🧑 13-17 ans</option>
-                <option value="mixte">👨‍👩‍👧‍👦 Tous âges</option>
+              <label class="es-field__label">Tranches d'âge (multi-sélection)</label>
+              <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:8px;">
+                <label class="es-radio-label" style="padding:6px 10px; font-size:0.8rem;">
+                  <input type="checkbox" name="activityAge" value="3-5 ans"> <span>3-5 ans</span>
+                </label>
+                <label class="es-radio-label" style="padding:6px 10px; font-size:0.8rem;">
+                  <input type="checkbox" name="activityAge" value="6-9 ans"> <span>6-9 ans</span>
+                </label>
+                <label class="es-radio-label" style="padding:6px 10px; font-size:0.8rem;">
+                  <input type="checkbox" name="activityAge" value="10-12 ans"> <span>10-12 ans</span>
+                </label>
+                <label class="es-radio-label" style="padding:6px 10px; font-size:0.8rem;">
+                  <input type="checkbox" name="activityAge" value="12-14 ans"> <span>12-14 ans</span>
+                </label>
+                <label class="es-radio-label" style="padding:6px 10px; font-size:0.8rem;">
+                  <input type="checkbox" name="activityAge" value="14-17 ans"> <span>14-17 ans</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="es-field" style="margin-top:15px;">
+              <label class="es-field__label">Matériel disponible</label>
+              <select id="activityMaterial" class="es-select">
+                <option value="aucun matériel">❌ Aucun matos</option>
+                <option value="peu de matériel">⚠️ Peu de matériel</option>
+                <option value="du matériel à disposition" selected>📦 Du matos à disposition</option>
+                <option value="autant de matériel que nécessaire">💎 Autant de matos que tu veux</option>
               </select>
             </div>
 

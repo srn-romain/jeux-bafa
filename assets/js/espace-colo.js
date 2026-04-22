@@ -1704,10 +1704,16 @@ document.getElementById('btnGenerateActivity')?.addEventListener('click', async 
     const type = document.querySelector('input[name="activityType"]:checked')?.value;
     const location = document.getElementById('activityLocation')?.value;
     const season = document.getElementById('activitySeason')?.value;
-    const age = document.getElementById('activityAgeRange')?.value;
+    const material = document.getElementById('activityMaterial')?.value;
+    
+    // Récupérer les tranches d'âge (multiples)
+    const ageEls = document.querySelectorAll('input[name="activityAge"]:checked');
+    const ages = Array.from(ageEls).map(el => el.value).join(', ') || "tous âges";
+    
     const resultArea = document.getElementById('activityResultArea');
     const resultContent = document.getElementById('activityResultContent');
 
+    // ... (Vérification crédits et clé identique) ...
     // Vérification des crédits (si anim)
     if (currentRole !== 'admin' && currentAICredits <= 0) {
         showToast("Vous avez épuisé vos crédits IA pour cette session.", "error");
@@ -1729,7 +1735,8 @@ CRITÈRES :
 - Type : ${type}
 - Lieu : ${location}
 - Saison : ${season}
-- Tranche d'âge : ${age}
+- Tranches d'âge : ${ages}
+- Matériel disponible : ${material}
 
 CONTEXTE : 
 Tu dois t'appuyer sur l'esprit des activités proposées sur le site "Jeux-BAFA", qui contient des sections sur les grands jeux (activites.html), les veillées (veillees.html), les chants (musique.html), la réglementation (reglementation.html) et les manuels de formation.
@@ -1737,7 +1744,7 @@ Tu dois t'appuyer sur l'esprit des activités proposées sur le site "Jeux-BAFA"
 RÉPONSE ATTENDUE (en français, ton enthousiaste et professionnel, format Markdown léger) :
 1. **Titre accrocheur**
 2. **Objectif pédagogique / But du jeu**
-3. **Matériel nécessaire**
+3. **Matériel nécessaire** (respecte impérativement la contrainte : ${material})
 4. **Déroulement détaillé** (Préparation, Lancement, Jeu, Retour au calme)
 5. **Conseils d'animateur** (Sécurité, variantes, ou lien vers un site externe comme 'Planet'Anim' ou 'Le Journal de l'Animation' si pertinent).
 
