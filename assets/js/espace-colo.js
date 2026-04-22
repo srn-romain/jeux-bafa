@@ -1738,23 +1738,30 @@ CRITÈRES :
 - Tranches d'âge : ${ages}
 - Matériel disponible : ${material}
 
-CONTEXTE : 
-Tu dois t'appuyer sur l'esprit des activités proposées sur le site "Jeux-BAFA", qui contient des sections sur les grands jeux (activites.html), les veillées (veillees.html), les chants (musique.html), la réglementation (reglementation.html) et les manuels de formation.
+CONTEXTE & RESSOURCES INTERNES : 
+Tu dois IMPÉRATIVEMENT t'appuyer sur l'esprit et les ressources du site "Jeux-BAFA". 
+Si ta proposition se rapproche d'un thème existant, invite l'utilisateur à consulter les pages dédiées de l'application pour plus de détails (fiches PDF, schémas, chants) :
+- Pour les activités : ../activites.html
+- Pour les veillées : ../veillees.html
+- Pour les chants et musiques : ../musique.html
+- Pour les manuels techniques : ../manuels.html
 
-RÉPONSE ATTENDUE (en français, ton enthousiaste et professionnel, format Markdown léger) :
+RÉPONSE ATTENDUE (en français, ton enthousiaste, format Markdown) :
 1. **Titre accrocheur**
 2. **Objectif pédagogique / But du jeu**
-3. **Matériel nécessaire** (respecte impérativement la contrainte : ${material})
+3. **Matériel nécessaire** (en respectant la contrainte : ${material})
 4. **Déroulement détaillé** (Préparation, Lancement, Jeu, Retour au calme)
-5. **Conseils d'animateur** (Sécurité, variantes, ou lien vers un site externe comme 'Planet'Anim' ou 'Le Journal de l'Animation' si pertinent).
+5. **Conseils d'animateur** (Sécurité, variantes).
+6. **Ressources Jeux-BAFA** : Propose un lien vers la page la plus pertinente de l'app (ex: [Voir les fiches veillées détaillées](../veillees.html)) et mentionne qu'ils peuvent y trouver des PDF complets.
 
-Sois précis et assure-toi que l'activité est réalisable avec les critères donnés.`;
+Sois précis, créatif et assure-toi que l'activité est réalisable.`;
 
         const result = await _callGemini(effectiveKey, prompt);
         
-        // Conversion basique markdown vers HTML pour les étoiles et gras
+        // Conversion basique markdown vers HTML (gras, liens, sauts de ligne)
         let htmlResult = result
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color:var(--clr-primary); font-weight:700;">$1</a>')
             .replace(/\n/g, '<br>');
             
         resultContent.innerHTML = htmlResult;
