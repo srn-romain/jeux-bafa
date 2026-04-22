@@ -133,6 +133,7 @@ function showAccessDenied(icon, title, text, isPending = false, isRefused = fals
 // INITIALISER LE CONTENU DE LA COLO
 // ----------------------------------------------------------------
 async function initColoContent(colo, role) {
+    currentRole = role;
     document.getElementById('pageLoader').classList.add('hidden');
     document.getElementById('accessDenied').classList.add('hidden');
     document.getElementById('coloContent').classList.remove('hidden');
@@ -235,6 +236,26 @@ async function initColoContent(colo, role) {
     currentGeminiKey = colo.geminiKey || "";
     isAIGeneratorEnabled = colo.allowAnimAI !== false; // true par défaut
     defaultAICredits = colo.defaultAICredits || 5;
+
+    // Mise à jour visuelle des boutons IA (si blocage)
+    if (role !== 'admin') {
+        const btnAI = document.getElementById('btnGenerateAI');
+        const btnActivity = document.getElementById('btnGenerateActivity');
+        const msgAI = document.getElementById('aiBlockMessage');
+        const msgActivity = document.getElementById('activityAIBlockMessage');
+
+        if (!isAIGeneratorEnabled) {
+            btnAI?.setAttribute('disabled', 'true');
+            btnActivity?.setAttribute('disabled', 'true');
+            msgAI?.classList.remove('hidden');
+            msgActivity?.classList.remove('hidden');
+        } else {
+            btnAI?.removeAttribute('disabled');
+            btnActivity?.removeAttribute('disabled');
+            msgAI?.classList.add('hidden');
+            msgActivity?.classList.add('hidden');
+        }
+    }
     
     const usageCount = colo.iaUsageCount || 0;
     if (currentGeminiKey) {
@@ -1331,10 +1352,16 @@ document.getElementById('btnGenerateAI')?.addEventListener('click', async () => 
         return;
     }
 
-    // Vérification des crédits (si anim)
-    if (currentRole !== 'admin' && currentAICredits <= 0) {
-        _showAIError("Vous avez épuisé vos crédits IA pour cette session. Contactez le directeur pour en obtenir de nouveaux.");
-        return;
+    // Vérification des droits (si anim)
+    if (currentRole !== 'admin') {
+        if (!isAIGeneratorEnabled) {
+            _showAIError("L'utilisation de l'assistant IA est actuellement désactivée par le directeur.");
+            return;
+        }
+        if (currentAICredits <= 0) {
+            _showAIError("Vous avez épuisé vos crédits IA pour cette session. Contactez le directeur pour en obtenir de nouveaux.");
+            return;
+        }
     }
 
     // Choix de la clé : Priorité à la clé de session (Directeur), sinon clé personnelle
@@ -1664,17 +1691,22 @@ async function _testGeminiKey(key) {
 async function _decrementAICredits() {
     // 1. Toujours incrémenter l'usage global de la session si on utilise la clé du directeur
     if (currentGeminiKey) {
+        // Mise à jour visuelle immédiate (Réactif)
+        const usageEl = document.getElementById('iaUsageCounter');
+        if (usageEl) {
+            const currentVal = parseInt(usageEl.textContent || "0");
+            usageEl.textContent = currentVal + 1;
+        }
+
         try {
+            // Tentative de mise à jour Firestore
             await db.collection('espaces').doc(espaceId).update({
                 iaUsageCount: firebase.firestore.FieldValue.increment(1)
             });
-            const usageEl = document.getElementById('iaUsageCounter');
-            if (usageEl) {
-                const currentVal = parseInt(usageEl.textContent || "0");
-                usageEl.textContent = currentVal + 1;
-            }
         } catch (err) {
-            console.warn("Usage counter update failed:", err);
+            // Note : Si l'animateur n'a pas les droits d'écriture sur l'espace, 
+            // le compteur Firestore ne bougera pas, mais son crédit perso si.
+            console.warn("Usage counter Firestore update skipped (permissions):", err);
         }
     }
 
@@ -1704,6 +1736,7 @@ document.getElementById('btnGenerateActivity')?.addEventListener('click', async 
     const type = document.querySelector('input[name="activityType"]:checked')?.value;
     const location = document.getElementById('activityLocation')?.value;
     const season = document.getElementById('activitySeason')?.value;
+    const environment = document.getElementById('activityEnvironment')?.value;
     const material = document.getElementById('activityMaterial')?.value;
     
     // Récupérer les tranches d'âge (multiples)
@@ -1714,10 +1747,16 @@ document.getElementById('btnGenerateActivity')?.addEventListener('click', async 
     const resultContent = document.getElementById('activityResultContent');
 
     // ... (Vérification crédits et clé identique) ...
-    // Vérification des crédits (si anim)
-    if (currentRole !== 'admin' && currentAICredits <= 0) {
-        showToast("Vous avez épuisé vos crédits IA pour cette session.", "error");
-        return;
+    // Vérification des droits (si anim)
+    if (currentRole !== 'admin') {
+        if (!isAIGeneratorEnabled) {
+            showToast("L'utilisation de l'IA est désactivée par le directeur.", "error");
+            return;
+        }
+        if (currentAICredits <= 0) {
+            showToast("Vous avez épuisé vos crédits IA pour cette session.", "error");
+            return;
+        }
     }
 
     let effectiveKey = currentGeminiKey || GEMINI_API_KEY;
@@ -1735,6 +1774,7 @@ CRITÈRES :
 - Type : ${type}
 - Lieu : ${location}
 - Saison : ${season}
+- Environnement : ${environment}
 - Tranches d'âge : ${ages}
 - Matériel disponible : ${material}
 
@@ -1744,6 +1784,7 @@ Si ta proposition se rapproche d'un thème existant, invite l'utilisateur à con
 - Pour les activités : ../activites.html
 - Pour les veillées : ../veillees.html
 - Pour les chants et musiques : ../musique.html
+- Pour les gages et défis : ../gage.html
 - Pour les manuels techniques : ../manuels.html
 
 RÉPONSE ATTENDUE (en français, ton enthousiaste, format Markdown) :
@@ -1752,9 +1793,9 @@ RÉPONSE ATTENDUE (en français, ton enthousiaste, format Markdown) :
 3. **Matériel nécessaire** (en respectant la contrainte : ${material})
 4. **Déroulement détaillé** (Préparation, Lancement, Jeu, Retour au calme)
 5. **Conseils d'animateur** (Sécurité, variantes).
-6. **Ressources Jeux-BAFA** : Propose un lien vers la page la plus pertinente de l'app (ex: [Voir les fiches veillées détaillées](../veillees.html)) et mentionne qu'ils peuvent y trouver des PDF complets.
+6. **Ressources Jeux-BAFA** : Propose un lien vers la page la plus pertinente de l'app (ex: [Voir la liste des gages](../gage.html) ou [Les fiches veillées](../veillees.html)) et mentionne qu'ils peuvent y trouver des idées complémentaires.
 
-Sois précis, créatif et assure-toi que l'activité est réalisable.`;
+Sois précis, créatif et assure-toi que l'activité est réalisable dans le cadre de l'environnement (${environment}).`;
 
         const result = await _callGemini(effectiveKey, prompt);
         
@@ -1770,12 +1811,32 @@ Sois précis, créatif et assure-toi que l'activité est réalisable.`;
         // Décompte des crédits et usage
         await _decrementAICredits();
         
+        // Mise à jour de l'affichage des crédits dans le résultat
+        const creditRemainEl = document.getElementById('activityCreditRemain');
+        const creditStatusEl = document.getElementById('activityCreditStatus');
+        if (currentRole === 'admin') {
+            if (creditStatusEl) creditStatusEl.classList.add('hidden');
+        } else {
+            if (creditStatusEl) creditStatusEl.classList.remove('hidden');
+            if (creditRemainEl) creditRemainEl.textContent = currentAICredits;
+        }
+
         showToast("Idée générée !", "success");
     } catch (err) {
         console.error("AI Activity error:", err);
         showToast("Erreur lors de la génération. " + err.message, "error");
     } finally {
         btnLoading(btn, false);
+    }
+});
+
+// Bouton Copier l'idée d'animation
+document.getElementById('btnCopyActivity')?.addEventListener('click', () => {
+    const text = document.getElementById('activityResultContent')?.innerText;
+    if (text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showToast("Copié dans le presse-papier !", "success");
+        });
     }
 });
 

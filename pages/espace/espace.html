@@ -670,14 +670,26 @@
             
             <div class="es-field">
               <label class="es-field__label">Type d'animation</label>
-              <div style="display:flex; gap:10px;">
-                <label class="es-radio-label" style="flex:1;">
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
+                <label class="es-radio-label">
                   <input type="radio" name="activityType" value="activité" checked>
                   <span>Activité</span>
                 </label>
-                <label class="es-radio-label" style="flex:1;">
+                <label class="es-radio-label">
                   <input type="radio" name="activityType" value="veillée">
                   <span>Veillée</span>
+                </label>
+                <label class="es-radio-label">
+                  <input type="radio" name="activityType" value="fil rouge">
+                  <span>Fil rouge (semaine)</span>
+                </label>
+                <label class="es-radio-label">
+                  <input type="radio" name="activityType" value="animation repas">
+                  <span>Animation repas</span>
+                </label>
+                <label class="es-radio-label">
+                  <input type="radio" name="activityType" value="gage">
+                  <span>Gage / Petit défi</span>
                 </label>
               </div>
             </div>
@@ -697,6 +709,29 @@
                   <option value="été">☀️ Été</option>
                   <option value="hiver">❄️ Hiver</option>
                   <option value="printemps/automne">🍂 Mi-saison</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:15px;">
+              <div class="es-field">
+                <label class="es-field__label">Environnement / Cadre</label>
+                <select id="activityEnvironment" class="es-select">
+                  <option value="campagne">🚜 Campagne / Nature</option>
+                  <option value="montagne">🏔️ Montagne</option>
+                  <option value="mer">🌊 Mer / Océan</option>
+                  <option value="ville">🏙️ Ville / Urbain</option>
+                  <option value="pays étranger">✈️ Pays étranger</option>
+                  <option value="autre">❓ Autre / Indifférent</option>
+                </select>
+              </div>
+              <div class="es-field">
+                <label class="es-field__label">Matériel disponible</label>
+                <select id="activityMaterial" class="es-select">
+                  <option value="aucun matériel">❌ Aucun matos</option>
+                  <option value="peu de matériel">⚠️ Peu de matériel</option>
+                  <option value="du matériel à disposition" selected>📦 Du matos à disposition</option>
+                  <option value="autant de matériel que nécessaire">💎 Autant de matos que tu veux</option>
                 </select>
               </div>
             </div>
@@ -722,24 +757,36 @@
               </div>
             </div>
 
-            <div class="es-field" style="margin-top:15px;">
-              <label class="es-field__label">Matériel disponible</label>
-              <select id="activityMaterial" class="es-select">
-                <option value="aucun matériel">❌ Aucun matos</option>
-                <option value="peu de matériel">⚠️ Peu de matériel</option>
-                <option value="du matériel à disposition" selected>📦 Du matos à disposition</option>
-                <option value="autant de matériel que nécessaire">💎 Autant de matos que tu veux</option>
-              </select>
-            </div>
 
+
+            <div id="activityAIBlockMessage" class="hidden" style="background:rgba(212,0,0,0.1); color:var(--clr-danger); padding:10px; border-radius:8px; font-size:0.8rem; margin-top:20px; text-align:center; border:1px solid rgba(212,0,0,0.2);">
+              <i class="bi bi-lock-fill"></i> L'assistant IA est désactivé par le directeur.
+            </div>
             <button id="btnGenerateActivity" class="es-btn es-btn--primary" style="width:100%; margin-top:20px;">
               <i class="bi bi-stars"></i> Générer une idée
             </button>
 
             <!-- Zone de résultat -->
             <div id="activityResultArea" class="hidden" style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.05);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <h4 style="font-size:0.8rem; text-transform:uppercase; color:var(--clr-primary); font-weight:700; margin:0;">Proposition de l'IA</h4>
+                <button class="es-btn es-btn--ghost es-btn--sm" id="btnCopyActivity" style="padding:4px 10px; font-size:0.75rem;">
+                  <i class="bi bi-clipboard"></i> Copier l'idée
+                </button>
+              </div>
+
               <div id="activityResultContent" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:15px; line-height:1.5; font-size:0.9rem; color:var(--clr-text-light); white-space: pre-wrap;">
                 <!-- Injecté par JS -->
+              </div>
+
+              <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
+                <div class="es-alert es-alert--warning" style="margin:0; padding:8px 12px; font-size:0.75rem;">
+                  <i class="bi bi-exclamation-triangle"></i>
+                  <span><strong>Attention :</strong> Enregistrez cette réponse. Elle disparaîtra si vous rechargez la page.</span>
+                </div>
+                <div id="activityCreditStatus" style="font-size:0.75rem; color:var(--clr-text-muted); text-align:right;">
+                  <i class="bi bi-coin"></i> <span id="activityCreditUsed">1</span> crédit utilisé | Restant : <strong id="activityCreditRemain">--</strong>
+                </div>
               </div>
             </div>
           </div>
@@ -1446,9 +1493,13 @@
           <i class="bi bi-exclamation-circle"></i> <span id="aiGeneratorErrorMsg"></span>
         </div>
       </div>
-      <div class="es-modal__footer">
-        <button class="es-btn es-btn--ghost" onclick="closeModal('overlayAIGenerator')">Annuler</button>
-        <div style="display:flex; gap:8px;">
+      <div class="es-modal__footer" style="flex-direction:column; gap:12px;">
+        <div id="aiBlockMessage" class="hidden" style="width:100%; background:rgba(212,0,0,0.1); color:var(--clr-danger); padding:10px; border-radius:8px; font-size:0.8rem; text-align:center; border:1px solid rgba(212,0,0,0.2);">
+          <i class="bi bi-lock-fill"></i> L'assistant IA est désactivé par le directeur.
+        </div>
+        <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
+          <button class="es-btn es-btn--ghost" onclick="closeModal('overlayAIGenerator')">Annuler</button>
+          <div style="display:flex; gap:8px;">
             <button class="es-btn es-btn--primary" id="btnGenerateAI">
               <i class="bi bi-magic"></i>
               <span class="es-btn__text">Générer</span>
@@ -1457,6 +1508,7 @@
             <button class="es-btn es-btn--success hidden" id="btnApplyAI" style="background:var(--clr-success); border-color:var(--clr-success);">
               <i class="bi bi-check2"></i> Utiliser cette version
             </button>
+          </div>
         </div>
       </div>
     </div>
