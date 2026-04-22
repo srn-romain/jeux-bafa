@@ -415,7 +415,7 @@
             </div>
 
               <!-- Configuration IA (Directeur uniquement) -->
-              <div class="admin-only hidden" style="margin-bottom: 24px;">
+              <div class="director-only hidden" style="margin-bottom: 24px;">
                   <div class="es-card" style="border: 1px solid rgba(166, 216, 102, 0.3); background: rgba(166, 216, 102, 0.03);">
                       <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
                           <div style="flex:1; min-width:280px;">
@@ -1387,18 +1387,38 @@
       <div class="es-modal__body">
         <div class="es-field">
           <label class="es-field__label" for="espaceGeminiKey">Clé API Google Gemini</label>
-          <div style="position:relative; display:flex; gap:8px;">
-            <input type="password" class="es-input" id="espaceGeminiKey" placeholder="AIzaSy..." style="padding-right: 40px;">
-            <button type="button" id="btnToggleKeyVisibility" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--clr-text-muted); cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center;">
-              <i class="bi bi-eye"></i>
-            </button>
-            <button type="button" id="btnCopySpaceKey" class="es-btn es-btn--secondary" style="padding: 0 12px; min-width: auto;" title="Copier la clé">
+          <div style="display:flex; gap:8px;">
+            <div style="position:relative; flex:1;">
+              <input type="password" class="es-input" id="espaceGeminiKey" placeholder="AIzaSy..." style="padding-right: 40px; width:100%;">
+              <button type="button" id="btnToggleKeyVisibility" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--clr-text-muted); cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; z-index:2;">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+            <button type="button" id="btnCopySpaceKey" class="es-btn es-btn--secondary" style="padding: 0 12px; min-width: auto; height: 42px;" title="Copier la clé">
               <i class="bi bi-clipboard"></i>
             </button>
           </div>
           <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:8px;">
             <i class="bi bi-info-circle"></i> Cette clé est stockée pour cette session et permet la génération d'appréciations.
           </p>
+        </div>
+
+        <div class="es-field" style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
+          <label class="es-field__label" for="defaultAICredits">Crédits IA par défaut (par animateur)</label>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <input type="number" class="es-input" id="defaultAICredits" value="5" min="0" style="max-width:80px;">
+            <span style="font-size:0.8rem; color:var(--clr-text-muted);">appréciations / session</span>
+          </div>
+          <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:5px;">
+            Quota accordé à chaque nouvel animateur rejoignant l'espace.
+          </p>
+        </div>
+
+        <div class="es-field" style="margin-top:10px;">
+          <label class="es-checkbox-label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+            <input type="checkbox" id="resetAllCredits">
+            <span style="font-size:0.85rem; color:var(--clr-danger); font-weight:600;">Réinitialiser tous les animateurs à ce quota</span>
+          </label>
         </div>
 
         <div class="es-field" style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
@@ -1435,6 +1455,55 @@
   <script src="../../assets/js/firebase-config.js"></script>
   <script src="../../assets/js/espace-auth.js"></script>
   <script src="../../assets/js/espace-colo.js"></script>
+  <!-- MODALE : CONFIRMER DROITS ADMIN -->
+  <div id="overlayConfirmAdmin" class="es-overlay hidden">
+    <div class="es-modal es-modal--sm">
+      <div class="es-modal__header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:40px; height:40px; border-radius:10px; background:rgba(var(--clr-primary-rgb),0.1); display:flex; align-items:center; justify-content:center;">
+            <i class="bi bi-shield-lock" style="color:var(--clr-primary); font-size:1.2rem;"></i>
+          </div>
+          <h2 class="es-modal__title">Modifier les droits</h2>
+        </div>
+        <button class="es-modal__close" onclick="closeModal('overlayConfirmAdmin')">&times;</button>
+      </div>
+      <div class="es-modal__body">
+        <p id="confirmAdminMsg" style="line-height:1.5; color:var(--clr-text-light);">Voulez-vous modifier les droits d'accès de cet animateur ?</p>
+      </div>
+      <div class="es-modal__footer" style="gap:12px;">
+        <button class="es-btn es-btn--secondary" onclick="closeModal('overlayConfirmAdmin')">Annuler</button>
+        <button id="btnConfirmAdminAction" class="es-btn es-btn--primary">Confirmer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE : AJUSTER CRÉDITS IA -->
+  <div id="overlayEditCredits" class="es-overlay hidden">
+    <div class="es-modal es-modal--sm">
+      <div class="es-modal__header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:40px; height:40px; border-radius:10px; background:rgba(var(--clr-primary-rgb),0.1); display:flex; align-items:center; justify-content:center;">
+            <i class="bi bi-robot" style="color:var(--clr-primary); font-size:1.2rem;"></i>
+          </div>
+          <h2 class="es-modal__title">Crédits IA</h2>
+        </div>
+        <button class="es-modal__close" onclick="closeModal('overlayEditCredits')">&times;</button>
+      </div>
+      <div class="es-modal__body">
+        <div class="es-field">
+          <label class="es-field__label" for="inputEditCredits">Nouveau quota pour cet animateur</label>
+          <input type="number" id="inputEditCredits" class="es-input" min="0" value="5">
+          <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:8px;">
+            Ce quota est spécifique à cette session et sera débité à chaque génération.
+          </p>
+        </div>
+      </div>
+      <div class="es-modal__footer" style="gap:12px;">
+        <button class="es-btn es-btn--secondary" onclick="closeModal('overlayEditCredits')">Annuler</button>
+        <button id="btnSaveEditCredits" class="es-btn es-btn--primary">Enregistrer</button>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>
