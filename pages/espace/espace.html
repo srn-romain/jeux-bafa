@@ -658,6 +658,69 @@
               <div class="text-center text-muted" style="padding:24px;">Chargement…</div>
             </div>
           </div>
+
+          <!-- Générateur d'idées d'animation (IA) - Visible uniquement si PAS Formation -->
+          <div id="aiActivityGeneratorSection" class="es-card hidden" style="margin-top:24px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <h3 style="font-weight:700;font-size:1rem;color:var(--clr-text);margin:0;">
+                <i class="bi bi-magic" style="color:var(--clr-primary)"></i> Idée d'animation générée
+              </h3>
+              <div class="es-badge es-badge--primary" style="font-size:0.7rem;">IA Assistant</div>
+            </div>
+            
+            <div class="es-field">
+              <label class="es-field__label">Type d'animation</label>
+              <div style="display:flex; gap:10px;">
+                <label class="es-radio-label" style="flex:1;">
+                  <input type="radio" name="activityType" value="activité" checked>
+                  <span>Activité</span>
+                </label>
+                <label class="es-radio-label" style="flex:1;">
+                  <input type="radio" name="activityType" value="veillée">
+                  <span>Veillée</span>
+                </label>
+              </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:15px;">
+              <div class="es-field">
+                <label class="es-field__label">Lieu</label>
+                <select id="activityLocation" class="es-select">
+                  <option value="intérieur">🏠 Dedans</option>
+                  <option value="extérieur">🌳 Dehors</option>
+                  <option value="mixte">🌗 Les deux</option>
+                </select>
+              </div>
+              <div class="es-field">
+                <label class="es-field__label">Saison</label>
+                <select id="activitySeason" class="es-select">
+                  <option value="été">☀️ Été</option>
+                  <option value="hiver">❄️ Hiver</option>
+                  <option value="printemps/automne">🍂 Mi-saison</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="es-field" style="margin-top:15px;">
+              <label class="es-field__label">Tranche d'âge</label>
+              <select id="activityAgeRange" class="es-select">
+                <option value="6-12 ans">🧒 6-12 ans</option>
+                <option value="13-17 ans">🧑 13-17 ans</option>
+                <option value="mixte">👨‍👩‍👧‍👦 Tous âges</option>
+              </select>
+            </div>
+
+            <button id="btnGenerateActivity" class="es-btn es-btn--primary" style="width:100%; margin-top:20px;">
+              <i class="bi bi-stars"></i> Générer une idée
+            </button>
+
+            <!-- Zone de résultat -->
+            <div id="activityResultArea" class="hidden" style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.05);">
+              <div id="activityResultContent" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:15px; line-height:1.5; font-size:0.9rem; color:var(--clr-text-light); white-space: pre-wrap;">
+                <!-- Injecté par JS -->
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- === ONGLET BIBLIOTHEQUE === -->
@@ -1501,6 +1564,58 @@
       <div class="es-modal__footer" style="gap:12px;">
         <button class="es-btn es-btn--secondary" onclick="closeModal('overlayEditCredits')">Annuler</button>
         <button id="btnSaveEditCredits" class="es-btn es-btn--primary">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+  <!-- MODALE : CONFIRMER SUPPRESSION PARTICIPANT -->
+  <div id="overlayConfirmDelete" class="es-overlay hidden">
+    <div class="es-modal es-modal--sm">
+      <div class="es-modal__header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:40px; height:40px; border-radius:10px; background:rgba(212, 0, 0, 0.1); display:flex; align-items:center; justify-content:center;">
+            <i class="bi bi-trash3" style="color:var(--clr-danger); font-size:1.2rem;"></i>
+          </div>
+          <h2 class="es-modal__title">Supprimer ?</h2>
+        </div>
+        <button class="es-modal__close" onclick="closeModal('overlayConfirmDelete')">&times;</button>
+      </div>
+      <div class="es-modal__body">
+        <p id="confirmDeleteMsg" style="line-height:1.5; color:var(--clr-text-light);">Êtes-vous sûr de vouloir supprimer ce participant ? Cette action est irréversible.</p>
+      </div>
+      <div class="es-modal__footer" style="gap:12px;">
+        <button class="es-btn es-btn--secondary" onclick="closeModal('overlayConfirmDelete')">Annuler</button>
+        <button id="btnConfirmDeleteAction" class="es-btn es-btn--danger">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE : RÉINITIALISATION MASSIVE -->
+  <div id="overlayMassReset" class="es-overlay hidden">
+    <div class="es-modal es-modal--sm">
+      <div class="es-modal__header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:40px; height:40px; border-radius:10px; background:rgba(212, 0, 0, 0.1); display:flex; align-items:center; justify-content:center;">
+            <i class="bi bi-exclamation-triangle" style="color:var(--clr-danger); font-size:1.2rem;"></i>
+          </div>
+          <h2 class="es-modal__title">Zone de danger</h2>
+        </div>
+        <button class="es-modal__close" onclick="closeModal('overlayMassReset')">&times;</button>
+      </div>
+      <div class="es-modal__body">
+        <p style="line-height:1.5; color:var(--clr-text); font-weight:700; margin-bottom:12px;">
+          ⚠️ Action irréversible
+        </p>
+        <p style="line-height:1.4; color:var(--clr-text-light); font-size:0.9rem; margin-bottom:20px;">
+          Vous allez supprimer <strong>tous les participants</strong> de cet espace. Il est conseillé d'exporter les données avant de continuer.
+        </p>
+        <div class="es-field">
+          <label class="es-field__label" for="inputResetConfirmText">Tapez <strong>SUPPRIMER</strong> pour valider</label>
+          <input type="text" id="inputResetConfirmText" class="es-input" placeholder="Ecrivez ici...">
+        </div>
+      </div>
+      <div class="es-modal__footer" style="gap:12px;">
+        <button class="es-btn es-btn--secondary" onclick="closeModal('overlayMassReset')">Annuler</button>
+        <button id="btnExecuteMassReset" class="es-btn es-btn--danger" disabled>Réinitialiser tout</button>
       </div>
     </div>
   </div>

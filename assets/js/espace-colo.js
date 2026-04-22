@@ -169,11 +169,16 @@ async function initColoContent(colo, role) {
 
         const searchInput = document.getElementById('searchParticipant');
         if (searchInput) searchInput.placeholder = searchInput.placeholder.replace('participant', 'stagiaire');
+        
+        document.getElementById('aiActivityGeneratorSection')?.classList.add('hidden');
     } else {
         if (btnAppr) btnAppr.classList.add('hidden');
         if (btnInfoD) btnInfoD.classList.add('hidden');
         document.getElementById('btnBulkClearAppreciation')?.classList.add('hidden');
         document.getElementById('btnBulkAppreciation')?.classList.add('hidden');
+        
+        // Afficher le générateur d'activités pour les colos
+        document.getElementById('aiActivityGeneratorSection')?.classList.remove('hidden');
     }
 
     // Drive
@@ -1258,15 +1263,29 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
 
 async function deleteParticipant(id, nom) {
     const pLabel = isColoFormation ? 'le stagiaire' : 'le participant';
-    if (!confirm(`Supprimer ${pLabel} "${nom}" ? Cette action est irréversible.`)) return;
-    try {
-        await db.collection('espaces').doc(espaceId).collection('participants').doc(id).delete();
-        showToast('Participant supprimé.', 'success');
-        await loadParticipants(espaceId, currentRole);
-    } catch (err) {
-        console.error('deleteParticipant:', err);
-        showToast('Erreur lors de la suppression.', 'error');
-    }
+    const msgEl = document.getElementById('confirmDeleteMsg');
+    if (msgEl) msgEl.textContent = `Voulez-vous vraiment supprimer ${pLabel} "${nom}" ? Cette action est irréversible.`;
+
+    const btn = document.getElementById('btnConfirmDeleteAction');
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+
+    newBtn.addEventListener('click', async () => {
+        btnLoading(newBtn, true);
+        try {
+            await db.collection('espaces').doc(espaceId).collection('participants').doc(id).delete();
+            showToast('Participant supprimé.', 'success');
+            closeModal('overlayConfirmDelete');
+            await loadParticipants(espaceId, currentRole);
+        } catch (err) {
+            console.error('deleteParticipant:', err);
+            showToast('Erreur lors de la suppression.', 'error');
+        } finally {
+            btnLoading(newBtn, false);
+        }
+    });
+
+    openModal('overlayConfirmDelete');
 }
 
 // ================================================================
@@ -1366,34 +1385,15 @@ document.getElementById('btnGenerateAI')?.addEventListener('click', async () => 
         
         RÉPONSE ATTENDUE : Uniquement le texte de l'appréciation, sans introduction ni conclusion.`;
 
-        const response = await _callGemini(prompt, effectiveKey);
+        const response = await _callGemini(effectiveKey, prompt);
         
         if (response) {
             resultText.innerText = response.trim();
             resultArea.classList.remove('hidden');
             document.getElementById('btnApplyAI')?.classList.remove('hidden');
 
-            // Incrémenter le compteur d'usage session dans Firestore (si clé session active)
-            if (currentGeminiKey) {
-                db.collection('espaces').doc(espaceId).update({
-                    iaUsageCount: firebase.firestore.FieldValue.increment(1)
-                });
-                const usageEl = document.getElementById('iaUsageCounter');
-                if (usageEl) usageEl.textContent = parseInt(usageEl.textContent || "0") + 1;
-            }
-
-            // Décrémenter les crédits de l'animateur (si applicable)
-            if (currentRole !== 'admin' && currentAICredits < 9000) {
-                currentAICredits--;
-                // Mise à jour Firestore
-                const reqSnap = await db.collection('accessRequests')
-                    .where('userId', '==', currentUser.uid)
-                    .where('espaceId', '==', espaceId)
-                    .get();
-                if (!reqSnap.empty) {
-                    await reqSnap.docs[0].ref.update({ aiCredits: currentAICredits });
-                }
-            }
+            // Décompte des crédits et usage
+            await _decrementAICredits();
         } else {
             throw new Error("L'IA n'a pas renvoyé de réponse exploitable.");
         }
@@ -1467,7 +1467,7 @@ function _getDRAJESContext() {
     return content;
 }
 
-async function _callGemini(prompt, apiKey) {
+async function _callGemini(apiKey, prompt) {
     // Liste des modèles mis à jour selon les disponibilités réelles de votre clé (2026)
     const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest', 'gemini-pro-latest'];
     let lastError = "";
@@ -1559,6 +1559,17 @@ document.getElementById('btnSaveIASettings')?.addEventListener('click', async ()
 
     btnLoading(btn, true);
     try {
+        // Validation de la clé si elle est modifiée et non vide
+        if (newKey && newKey !== currentGeminiKey) {
+            try {
+                await _testGeminiKey(newKey);
+            } catch (err) {
+                showToast("Clé API invalide ou non supportée : " + err.message, "error");
+                btnLoading(btn, false);
+                return;
+            }
+        }
+
         const updateData = {
             geminiKey: newKey,
             allowAnimAI: allowAnim,
@@ -1634,50 +1645,174 @@ async function editAnimCredits(requestId, currentCredits) {
     openModal('overlayEditCredits');
 }
 
+/**
+ * Teste la validité d'une clé Gemini via un appel minimal
+ */
+async function _testGeminiKey(key) {
+    const prompt = "Réponds simplement par 'OK' si tu reçois ce message.";
+    try {
+        await _callGemini(key, prompt);
+        return true;
+    } catch (err) {
+        throw err;
+    }
+}
+
+/**
+ * Décrémente les crédits de l'utilisateur actuel
+ */
+async function _decrementAICredits() {
+    // 1. Toujours incrémenter l'usage global de la session si on utilise la clé du directeur
+    if (currentGeminiKey) {
+        try {
+            await db.collection('espaces').doc(espaceId).update({
+                iaUsageCount: firebase.firestore.FieldValue.increment(1)
+            });
+            const usageEl = document.getElementById('iaUsageCounter');
+            if (usageEl) {
+                const currentVal = parseInt(usageEl.textContent || "0");
+                usageEl.textContent = currentVal + 1;
+            }
+        } catch (err) {
+            console.warn("Usage counter update failed:", err);
+        }
+    }
+
+    // 2. Décrémenter les crédits personnels si l'utilisateur est un animateur
+    if (currentRole !== 'admin' && currentAICredits < 9000) {
+        currentAICredits--;
+        try {
+            const reqSnap = await db.collection('accessRequests')
+                .where('userId', '==', currentUser.uid)
+                .where('espaceId', '==', espaceId)
+                .get();
+            if (!reqSnap.empty) {
+                await reqSnap.docs[0].ref.update({ aiCredits: currentAICredits });
+            }
+        } catch (err) {
+            console.error("Error decrementing credits:", err);
+        }
+    }
+}
+
 // ----------------------------------------------------------------
-// RÉINITIALISATION MASSIVE (Admin seulement)
+// GÉNÉRATEUR D'IDÉES D'ANIMATION IA
 // ----------------------------------------------------------------
-document.getElementById('btnDeleteAllParticipants')?.addEventListener('click', async () => {
-    // Étape 1 : Confirmation avec suggestion d'export
-    const msg = "⚠️ ATTENTION : Cette action supprimera DÉFINITIVEMENT tous les participants de cet espace.\n\n" +
-                "Il est vivement conseillé d'EXPORTER les données avant de continuer (bouton 'Export' en haut de la liste).\n\n" +
-                "Souhaitez-vous quand même passer à l'étape finale de suppression ?";
-    if (!confirm(msg)) return;
-    
-    // Étape 2 : Confirmation finale par texte
-    const confirmationText = prompt("Pour confirmer définitivement la destruction des données, tapez 'SUPPRIMER' en majuscules :");
-    if (confirmationText !== 'SUPPRIMER') {
-        showToast("Action annulée.", "info");
+
+document.getElementById('btnGenerateActivity')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnGenerateActivity');
+    const type = document.querySelector('input[name="activityType"]:checked')?.value;
+    const location = document.getElementById('activityLocation')?.value;
+    const season = document.getElementById('activitySeason')?.value;
+    const age = document.getElementById('activityAgeRange')?.value;
+    const resultArea = document.getElementById('activityResultArea');
+    const resultContent = document.getElementById('activityResultContent');
+
+    // Vérification des crédits (si anim)
+    if (currentRole !== 'admin' && currentAICredits <= 0) {
+        showToast("Vous avez épuisé vos crédits IA pour cette session.", "error");
         return;
     }
 
-    const btn = document.getElementById('btnDeleteAllParticipants');
+    let effectiveKey = currentGeminiKey || GEMINI_API_KEY;
+    if (!effectiveKey) {
+        showToast("Aucune clé API configurée pour la session.", "error");
+        return;
+    }
+
     btnLoading(btn, true);
-
     try {
-        const snap = await db.collection('espaces').doc(espaceId).collection('participants').get();
-        if (snap.empty) {
-            showToast("Il n'y a aucun participant à supprimer.", "info");
-            return;
-        }
+        const prompt = `Tu es un assistant expert en animation socioculturelle (BAFA). 
+Ta mission est de proposer une idée d'animation unique et pertinente pour une colonie de vacances.
 
-        const batchSize = 500;
-        let docs = [...snap.docs];
-        while (docs.length > 0) {
-            const batch = db.batch();
-            const chunk = docs.splice(0, batchSize);
-            chunk.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-        }
+CRITÈRES :
+- Type : ${type}
+- Lieu : ${location}
+- Saison : ${season}
+- Tranche d'âge : ${age}
 
-        showToast("Liste des participants réinitialisée.", "success");
-        await loadParticipants(espaceId, currentRole);
+CONTEXTE : 
+Tu dois t'appuyer sur l'esprit des activités proposées sur le site "Jeux-BAFA", qui contient des sections sur les grands jeux (activites.html), les veillées (veillees.html), les chants (musique.html), la réglementation (reglementation.html) et les manuels de formation.
+
+RÉPONSE ATTENDUE (en français, ton enthousiaste et professionnel, format Markdown léger) :
+1. **Titre accrocheur**
+2. **Objectif pédagogique / But du jeu**
+3. **Matériel nécessaire**
+4. **Déroulement détaillé** (Préparation, Lancement, Jeu, Retour au calme)
+5. **Conseils d'animateur** (Sécurité, variantes, ou lien vers un site externe comme 'Planet'Anim' ou 'Le Journal de l'Animation' si pertinent).
+
+Sois précis et assure-toi que l'activité est réalisable avec les critères donnés.`;
+
+        const result = await _callGemini(effectiveKey, prompt);
+        
+        // Conversion basique markdown vers HTML pour les étoiles et gras
+        let htmlResult = result
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br>');
+            
+        resultContent.innerHTML = htmlResult;
+        resultArea.classList.remove('hidden');
+
+        // Décompte des crédits et usage
+        await _decrementAICredits();
+        
+        showToast("Idée générée !", "success");
     } catch (err) {
-        console.error('Delete all participants error:', err);
-        showToast("Erreur lors de la suppression.", "error");
+        console.error("AI Activity error:", err);
+        showToast("Erreur lors de la génération. " + err.message, "error");
     } finally {
         btnLoading(btn, false);
     }
+});
+
+// ----------------------------------------------------------------
+// RÉINITIALISATION MASSIVE (Admin seulement)
+// ----------------------------------------------------------------
+document.getElementById('btnDeleteAllParticipants')?.addEventListener('click', () => {
+    const input = document.getElementById('inputResetConfirmText');
+    const btn = document.getElementById('btnExecuteMassReset');
+    if (input) {
+        input.value = '';
+        input.oninput = (e) => {
+            btn.disabled = e.target.value !== 'SUPPRIMER';
+        };
+    }
+    
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    newBtn.disabled = true;
+
+    newBtn.addEventListener('click', async () => {
+        btnLoading(newBtn, true);
+        try {
+            const snap = await db.collection('espaces').doc(espaceId).collection('participants').get();
+            if (snap.empty) {
+                showToast("Il n'y a aucun participant à supprimer.", "info");
+                closeModal('overlayMassReset');
+                return;
+            }
+
+            const batchSize = 500;
+            let docs = [...snap.docs];
+            while (docs.length > 0) {
+                const batch = db.batch();
+                const chunk = docs.splice(0, batchSize);
+                chunk.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+            }
+
+            showToast("Liste des participants réinitialisée.", "success");
+            closeModal('overlayMassReset');
+            await loadParticipants(espaceId, currentRole);
+        } catch (err) {
+            console.error('Delete all participants error:', err);
+            showToast("Erreur lors de la suppression.", "error");
+        } finally {
+            btnLoading(newBtn, false);
+        }
+    });
+
+    openModal('overlayMassReset');
 });
 
 // ----------------------------------------------------------------
