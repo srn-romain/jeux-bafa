@@ -2311,6 +2311,17 @@ input:checked+.es-slider:before {
   #driveLinkBtn span {
     display: none;
   }
+
+  /* Amélioration Onglets Mobile */
+  .es-nav-tabs {
+    padding-right: 30px; /* Espace pour suggérer la suite */
+    gap: 4px;
+  }
+  .es-nav-tab {
+    flex: 0 0 auto; /* Ne s'étire pas, garde sa largeur naturelle */
+    min-width: 110px;
+    padding: 8px 20px; /* Plus d'espace interne */
+  }
 }
 
 /* ================================================================
