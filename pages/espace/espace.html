@@ -704,26 +704,14 @@
             
             <div class="es-field">
               <label class="es-field__label">Type d'animation</label>
-              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
+              <div style="display:flex; flex-wrap:wrap; gap:12px;">
                 <label class="es-radio-label">
                   <input type="radio" name="activityType" value="activité" checked>
-                  <span>Activité</span>
+                  <span>Activité / Grand Jeu</span>
                 </label>
                 <label class="es-radio-label">
                   <input type="radio" name="activityType" value="veillée">
                   <span>Veillée</span>
-                </label>
-                <label class="es-radio-label">
-                  <input type="radio" name="activityType" value="fil rouge">
-                  <span>Fil rouge (semaine)</span>
-                </label>
-                <label class="es-radio-label">
-                  <input type="radio" name="activityType" value="animation repas">
-                  <span>Animation repas</span>
-                </label>
-                <label class="es-radio-label">
-                  <input type="radio" name="activityType" value="gage">
-                  <span>Gage / Petit défi</span>
                 </label>
               </div>
             </div>
@@ -801,25 +789,24 @@
             </button>
 
             <!-- Zone de résultat -->
-            <div id="activityResultArea" class="hidden" style="margin-top:20px; padding-top:20px; border-top:1px solid rgba(255,255,255,0.05);">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                <h4 style="font-size:0.8rem; text-transform:uppercase; color:var(--clr-primary); font-weight:700; margin:0;">Proposition de l'IA</h4>
-                <button class="es-btn es-btn--ghost es-btn--sm" id="btnCopyActivity" style="padding:4px 10px; font-size:0.75rem;">
-                  <i class="bi bi-clipboard"></i> Copier l'idée
+            <div id="activityResultArea" class="hidden" style="margin-top:24px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.06);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <h4 style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--clr-primary); font-weight:800; margin:0;">
+                  <i class="bi bi-stars"></i> Proposition de l'IA
+                </h4>
+                <button class="es-btn es-btn--ghost es-btn--sm" id="btnCopyActivity" style="padding:4px 12px; font-size:0.75rem; border-radius:var(--radius-full);">
+                  <i class="bi bi-clipboard"></i> Copier
                 </button>
               </div>
 
-              <div id="activityResultContent" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:12px; padding:15px; line-height:1.5; font-size:0.9rem; color:var(--clr-text-light); white-space: pre-wrap;">
+              <div id="activityResultContent" class="es-activity-result">
                 <!-- Injecté par JS -->
               </div>
 
-              <div style="margin-top:12px; display:flex; flex-direction:column; gap:8px;">
-                <div class="es-alert es-alert--warning" style="margin:0; padding:8px 12px; font-size:0.75rem;">
-                  <i class="bi bi-exclamation-triangle"></i>
-                  <span><strong>Attention :</strong> Enregistrez cette réponse. Elle disparaîtra si vous rechargez la page.</span>
-                </div>
-                <div id="activityCreditStatus" style="font-size:0.75rem; color:var(--clr-text-muted); text-align:right;">
-                  <i class="bi bi-coin"></i> <span id="activityCreditUsed">1</span> crédit utilisé | Restant : <strong id="activityCreditRemain">--</strong>
+              <div style="margin-top:14px;">
+                <div class="es-alert es-alert--warning" style="margin:0; padding:8px 12px; font-size:0.75rem; background:rgba(255, 165, 0, 0.05); border:1px solid rgba(255, 165, 0, 0.1);">
+                  <i class="bi bi-info-circle"></i>
+                  <span>Enregistrez cette réponse. Elle disparaîtra si vous rechargez la page</span>
                 </div>
               </div>
             </div>

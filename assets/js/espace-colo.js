@@ -1810,11 +1810,20 @@ Sois précis, créatif et assure-toi que l'activité est réalisable dans le cad
 
         const result = await _callGemini(effectiveKey, prompt);
         
-        // Conversion basique markdown vers HTML (gras, liens, sauts de ligne)
+        // Conversion Markdown vers HTML améliorée
         let htmlResult = result
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" style="color:var(--clr-primary); font-weight:700;">$1</a>')
-            .replace(/\n/g, '<br>');
+            .split('\n').map(line => {
+                line = line.trim();
+                if (line.startsWith('- ') || line.startsWith('* ')) {
+                    return `<li>${line.substring(2)}</li>`;
+                }
+                return line ? `<p>${line}</p>` : '';
+            }).join('');
+
+        // Englober les <li> consécutifs dans des <ul>
+        htmlResult = htmlResult.replace(/(<li>.*?<\/li>)+/g, '<ul>$&</ul>');
             
         resultContent.innerHTML = htmlResult;
         resultArea.classList.remove('hidden');
