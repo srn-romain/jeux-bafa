@@ -2125,7 +2125,7 @@ async function loadAnimateurs(coloId) {
                 </div>
                 
                 ${anim.isPending ? `
-                    <div style="display:flex; gap:6px;">
+                    <div class="es-anim-item__actions" style="display:flex; gap:6px;">
                         <button class="es-btn es-btn--sm" style="background:var(--clr-success); color:#fff; padding:4px 8px;" 
                                 onclick="handleRequestStatus('${anim.requestId}', 'approved')">
                             <i class="bi bi-check-lg"></i>
@@ -2136,7 +2136,7 @@ async function loadAnimateurs(coloId) {
                         </button>
                     </div>
                 ` : `
-                    <div style="display:flex; align-items:center; gap:8px;">
+                    <div class="es-anim-item__actions" style="display:flex; align-items:center; gap:8px;">
                         <div class="es-badge ${anim.role === 'admin' || anim.espaceRole === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}" style="white-space:nowrap;">
                             ${anim.role === 'admin' || anim.espaceRole === 'admin' ? 'Directeur' : (anim.espaceRole === 'anim-admin' ? 'Anim Admin' : 'Animateur')}
                         </div>

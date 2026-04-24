@@ -2314,13 +2314,28 @@ input:checked+.es-slider:before {
 
   /* Amélioration Onglets Mobile */
   .es-nav-tabs {
-    padding-right: 30px; /* Espace pour suggérer la suite */
+    padding-right: 4px;
     gap: 4px;
   }
   .es-nav-tab {
     flex: 0 0 auto; /* Ne s'étire pas, garde sa largeur naturelle */
     min-width: 110px;
     padding: 8px 20px; /* Plus d'espace interne */
+  }
+
+  .es-anim-item {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .es-anim-item__info {
+    min-width: 120px;
+  }
+  .es-anim-item__actions {
+    width: 100%;
+    margin-top: 2px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    justify-content: flex-start;
   }
 }
 
