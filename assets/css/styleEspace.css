@@ -1997,11 +1997,6 @@ input:checked+.es-slider:before {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  transition: transform 0.2s;
-}
-
-.es-stat-card:hover {
-  border-color: var(--clr-primary-light);
 }
 
 .es-stat-card__icon {
@@ -2018,6 +2013,16 @@ input:checked+.es-slider:before {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* Effet Hover sur le bouton Drive */
+#driveLinkBtn {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+#driveLinkBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(166, 216, 102, 0.3);
 }
 
 .es-stat-card__value {
