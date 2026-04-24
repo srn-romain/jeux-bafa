@@ -345,13 +345,64 @@ function renderColoSwitchList(colos, currentId) {
         return;
     }
 
-    listEl.innerHTML = colos.map(c => `
-        <a href="espace.html?id=${c.id}" class="es-topbar__colos-item ${c.id === currentId ? 'active' : ''}">
-            <span class="es-topbar__colos-item-emoji">${c.emoji || '🏕️'}</span>
-            <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.nom}</span>
-            ${c.id === currentId ? '<i class="bi bi-check-lg"></i>' : ''}
-        </a>
-    `).join('');
+    const pinnedIds = JSON.parse(localStorage.getItem('pinnedColos') || '[]');
+
+    // Trier : épinglés en haut, puis par nom
+    const sorted = [...colos].sort((a, b) => {
+        const aPinned = pinnedIds.includes(a.id);
+        const bPinned = pinnedIds.includes(b.id);
+        if (aPinned && !bPinned) return -1;
+        if (!aPinned && bPinned) return 1;
+        return 0; // Garder l'ordre alphabétique initial
+    });
+
+    listEl.innerHTML = sorted.map(c => {
+        const year = c.dateDebut ? new Date(c.dateDebut).getFullYear() : null;
+        const isPinned = pinnedIds.includes(c.id);
+        return `
+            <div class="es-topbar__colos-item-wrap" style="position:relative; display:flex; align-items:center;">
+                <a href="espace.html?id=${c.id}" class="es-topbar__colos-item ${c.id === currentId ? 'active' : ''}" style="flex:1;">
+                    <span class="es-topbar__colos-item-emoji">${c.emoji || '🏕️'}</span>
+                    <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        ${c.nom} ${year ? `<span style="opacity:0.45; font-size:0.85em; font-weight:400; margin-left:4px;">(${year})</span>` : ''}
+                    </span>
+                    ${c.id === currentId ? '<i class="bi bi-check-lg"></i>' : ''}
+                </a>
+                <div class="es-topbar__colos-pin ${isPinned ? 'active' : ''}" 
+                     onclick="togglePinColo(event, '${c.id}', '${currentId}')" 
+                     title="${isPinned ? 'Désépingler' : 'Épingler (max 3)'}">
+                    <i class="bi bi-pin-angle${isPinned ? '-fill' : ''}"></i>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function togglePinColo(event, coloId, currentId) {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    let pinnedIds = JSON.parse(localStorage.getItem('pinnedColos') || '[]');
+    
+    if (pinnedIds.includes(coloId)) {
+        pinnedIds = pinnedIds.filter(id => id !== coloId);
+    } else {
+        if (pinnedIds.length >= 3) {
+            showToast("Tu ne peux épingler que 3 espaces maximum.", "warning");
+            return;
+        }
+        pinnedIds.push(coloId);
+    }
+    
+    localStorage.setItem('pinnedColos', JSON.stringify(pinnedIds));
+    
+    // Rafraîchir la liste sans recharger Firestore
+    // On récupère la liste actuelle via les éléments DOM ou en gardant allColos global
+    // Pour simplifier, on déclenche une recherche vide
+    const searchInput = document.getElementById('inputSearchColoSwitch');
+    if (searchInput) {
+        searchInput.dispatchEvent(new Event('input'));
+    }
 }
 
 // ----------------------------------------------------------------

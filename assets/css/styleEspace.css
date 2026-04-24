@@ -257,6 +257,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 12px;
+  color: #ffffff; /* Assure la visibilité du titre */
 }
 
 .es-topbar__brand-trigger {
@@ -344,6 +345,31 @@ textarea {
   background: rgba(166, 216, 102, 0.1);
   color: var(--clr-primary);
   font-weight: 700;
+}
+
+.es-topbar__colos-pin {
+  padding: 6px;
+  font-size: 0.85rem;
+  color: #000000; /* Noir pour le contraste sur fond clair */
+  opacity: 0.25;
+  transition: all 0.2s;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.es-topbar__colos-item:hover .es-topbar__colos-pin {
+  opacity: 0.6;
+}
+
+.es-topbar__colos-pin:hover {
+  transform: scale(1.2);
+  opacity: 1 !important;
+  color: var(--clr-accent);
+}
+
+.es-topbar__colos-pin.active {
+  opacity: 1 !important;
+  color: var(--clr-accent);
 }
 
 .es-topbar__colos-item-emoji {
