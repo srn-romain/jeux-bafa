@@ -18,10 +18,22 @@
   <!-- Topbar -->
   <header class="es-topbar">
     <div class="es-topbar__inner">
-      <a href="index.html" class="es-topbar__brand">
-        <div class="es-topbar__brand-icon">🏕️</div>
-        <span class="brand-label" id="coloNameTopbar">Colo</span>
-      </a>
+      <div class="es-topbar__brand" id="topoColoDropdownWrap">
+        <div class="es-topbar__brand-trigger" id="coloNameTopbarTrigger">
+          <div class="es-topbar__brand-icon" id="coloEmojiTopbar">🏕️</div>
+          <span class="brand-label" id="coloNameTopbar">Chargement...</span>
+          <i class="bi bi-chevron-down admin-only hidden" style="font-size: 0.7rem; margin-left: 4px; opacity: 0.6;"></i>
+        </div>
+        <div class="es-topbar__colos-dropdown hidden" id="colosDropdown">
+          <div class="es-topbar__colos-search">
+            <i class="bi bi-search"></i>
+            <input type="text" id="inputSearchColoSwitch" placeholder="Chercher une colo...">
+          </div>
+          <div class="es-topbar__colos-list" id="colosDropdownList">
+            <!-- Rempli par JS -->
+          </div>
+        </div>
+      </div>
       <div class="es-topbar__actions">
         <a href="../../index.html" class="es-btn es-btn--sm es-btn--ghost">
           <i class="bi bi-house"></i> <span class="brand-label">Site</span>

@@ -253,14 +253,106 @@ textarea {
 }
 
 .es-topbar__brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.es-topbar__brand-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border-radius: var(--radius-md);
+  transition: background 0.2s;
+  color: #ffffff; /* Texte blanc pour lisibilité */
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: -0.02em;
+}
+
+.es-topbar__brand-trigger:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.es-topbar__colos-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 280px;
+  background: var(--clr-surface);
+  border: 1px solid var(--clr-surface-3);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: 1000;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: esFadeInDown 0.2s ease-out;
+}
+
+.es-topbar__colos-search {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--clr-surface-3);
   display: flex;
   align-items: center;
   gap: 8px;
+  background: var(--clr-surface-2);
+}
+
+.es-topbar__colos-search i {
+  font-size: 0.85rem;
+  opacity: 0.5;
+}
+
+.es-topbar__colos-search input {
+  background: transparent;
+  border: none;
+  color: var(--clr-text);
+  font-size: 0.85rem;
+  width: 100%;
+  outline: none;
+}
+
+.es-topbar__colos-list {
+  max-height: 350px;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+.es-topbar__colos-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  text-decoration: none;
+  color: var(--clr-text);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.es-topbar__colos-item:hover {
+  background: var(--clr-surface-2);
+  color: var(--clr-primary);
+}
+
+.es-topbar__colos-item.active {
+  background: rgba(166, 216, 102, 0.1);
+  color: var(--clr-primary);
   font-weight: 700;
-  font-size: 0.95rem;
-  color: #fff;
-  min-width: 0;
-  flex-shrink: 0;
+}
+
+.es-topbar__colos-item-emoji {
+  font-size: 1.1rem;
+}
+
+@keyframes esFadeInDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .es-topbar__brand-icon {

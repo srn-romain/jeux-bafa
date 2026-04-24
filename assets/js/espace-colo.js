@@ -209,6 +209,9 @@ async function initColoContent(colo, role) {
     // Gestion du verrou participants
     currentLocked = colo.participantsLocked !== false; // true par défaut
 
+    // Quick Switch (Sélecteur de colo)
+    initColoQuickSwitch(colo.id, role);
+
     if (role === 'admin' || isAnimAdmin) {
         document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
     }
@@ -278,6 +281,77 @@ async function initColoContent(colo, role) {
 
     // Onglets
     initTabs();
+}
+
+// ----------------------------------------------------------------
+// QUICK SWITCH : Passer d'une colo à l'autre sans dashboard
+// ----------------------------------------------------------------
+async function initColoQuickSwitch(currentId, role) {
+    const trigger = document.getElementById('coloNameTopbarTrigger');
+    const dropdown = document.getElementById('colosDropdown');
+    const listEl = document.getElementById('colosDropdownList');
+    const searchInput = document.getElementById('inputSearchColoSwitch');
+    
+    if (!trigger || !dropdown || role !== 'admin') {
+        // Simple lien pour les non-admins
+        trigger?.addEventListener('click', () => window.location.href = 'index.html');
+        return;
+    }
+
+    let allColos = [];
+
+    // Toggle menu
+    trigger.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const isHidden = dropdown.classList.contains('hidden');
+        
+        // Fermer les autres dropdowns si besoin
+        document.querySelectorAll('.es-topbar__colos-dropdown, .es-user-dropdown').forEach(d => d.classList.add('hidden'));
+
+        if (isHidden) {
+            dropdown.classList.remove('hidden');
+            if (allColos.length === 0) {
+                listEl.innerHTML = '<div style="padding:20px;text-align:center;opacity:0.5;"><div class="es-spinner es-spinner--sm"></div></div>';
+                try {
+                    const snap = await db.collection('espaces').orderBy('nom').get();
+                    allColos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderColoSwitchList(allColos, currentId);
+                } catch (err) {
+                    listEl.innerHTML = '<div style="padding:15px;color:var(--clr-danger);font-size:0.8rem;">Erreur de chargement.</div>';
+                }
+            }
+            searchInput?.focus();
+        }
+    });
+
+    // Fermer au clic extérieur
+    document.addEventListener('click', () => dropdown.classList.add('hidden'));
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+    // Recherche
+    searchInput?.addEventListener('input', (e) => {
+        const val = e.target.value.toLowerCase();
+        const filtered = allColos.filter(c => c.nom.toLowerCase().includes(val));
+        renderColoSwitchList(filtered, currentId);
+    });
+}
+
+function renderColoSwitchList(colos, currentId) {
+    const listEl = document.getElementById('colosDropdownList');
+    if (!listEl) return;
+    
+    if (colos.length === 0) {
+        listEl.innerHTML = '<div style="padding:15px;text-align:center;opacity:0.5;font-size:0.8rem;">Aucun résultat.</div>';
+        return;
+    }
+
+    listEl.innerHTML = colos.map(c => `
+        <a href="espace.html?id=${c.id}" class="es-topbar__colos-item ${c.id === currentId ? 'active' : ''}">
+            <span class="es-topbar__colos-item-emoji">${c.emoji || '🏕️'}</span>
+            <span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${c.nom}</span>
+            ${c.id === currentId ? '<i class="bi bi-check-lg"></i>' : ''}
+        </a>
+    `).join('');
 }
 
 // ----------------------------------------------------------------
