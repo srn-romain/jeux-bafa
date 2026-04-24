@@ -215,6 +215,7 @@ async function initColoContent(colo, role) {
     
     if (role === 'admin') {
         document.querySelectorAll('.director-only').forEach(el => el.classList.remove('hidden'));
+        document.getElementById('btnAdminLink')?.classList.remove('hidden');
     }
 
     if (role === 'admin' || isAnimAdmin) {

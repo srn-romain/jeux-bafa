@@ -113,9 +113,13 @@ function updateTopbarUser(user, role, userData = null) {
 
     // Gérer la visibilité du lien admin
     const linkAdmin = document.getElementById('linkAdmin');
-    if (linkAdmin) {
-        if (role === 'admin') linkAdmin.classList.remove('hidden');
-        else linkAdmin.classList.add('hidden');
+    const btnAdminLink = document.getElementById('btnAdminLink');
+    if (role === 'admin') {
+        linkAdmin?.classList.remove('hidden');
+        btnAdminLink?.classList.remove('hidden');
+    } else {
+        linkAdmin?.classList.add('hidden');
+        btnAdminLink?.classList.add('hidden');
     }
 }
 
