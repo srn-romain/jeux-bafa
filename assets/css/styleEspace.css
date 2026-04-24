@@ -1861,6 +1861,21 @@ input:checked+.es-slider:before {
 /* ================================================================
    POPUP / MODAL
    ================================================================ */
+body.modal-open {
+  overflow: hidden;
+}
+
+body.modal-open .es-page,
+body.modal-open .es-topbar {
+  filter: blur(5px) grayscale(20%);
+  pointer-events: none;
+  transition: filter 0.3s ease;
+}
+
+.es-page, .es-topbar {
+  transition: filter 0.3s ease;
+}
+
 .es-overlay {
   position: fixed;
   inset: 0;

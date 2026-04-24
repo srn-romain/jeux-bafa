@@ -43,8 +43,16 @@ function formatFullDate(date) {
         d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function openModal(id) { document.getElementById(id)?.classList.remove('hidden'); }
-function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
+function openModal(id) { 
+    document.getElementById(id)?.classList.remove('hidden'); 
+    document.body.classList.add('modal-open');
+}
+function closeModal(id) { 
+    document.getElementById(id)?.classList.add('hidden'); 
+    if (!document.querySelector('.es-overlay:not(.hidden)')) {
+        document.body.classList.remove('modal-open');
+    }
+}
 
 function escapeHtml(text) {
     if (!text) return "";
@@ -67,6 +75,9 @@ function togglePwd(inputId, btn) {
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('es-overlay')) {
         e.target.classList.add('hidden');
+        if (!document.querySelector('.es-overlay:not(.hidden)')) {
+            document.body.classList.remove('modal-open');
+        }
     }
 });
 
