@@ -3383,18 +3383,19 @@ document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
             }
 
             try {
-                let pseudo = currentUser.displayName || currentUser.email;
+                let authorName = currentUser.displayName || currentUser.email;
                 try {
                     const uDoc = await db.collection('users').doc(currentUser.uid).get();
-                    if (uDoc.exists && uDoc.data().displayName) {
-                        pseudo = uDoc.data().displayName;
+                    if (uDoc.exists) {
+                        const uData = uDoc.data();
+                        authorName = uData.firstName || uData.displayName || currentUser.email;
                     }
                 } catch (ignored) { }
 
                 await db.collection('espaces').doc(espaceId).collection('photos').add({
                     base64: base64,
                     authorId: currentUser.uid,
-                    authorName: pseudo,
+                    authorName: authorName,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 showToast('Photo ajoutée !', 'success');

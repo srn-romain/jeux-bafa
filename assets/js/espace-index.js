@@ -76,9 +76,11 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
     const errorEl = document.getElementById('signupError');
     const msgEl = document.getElementById('signupErrorMsg');
 
-    const name = document.getElementById('nameSignup').value.trim();
-    if (!name) {
-        msgEl.textContent = "Le nom / pseudo est obligatoire.";
+    const firstName = document.getElementById('firstNameSignup').value.trim();
+    const lastName = document.getElementById('lastNameSignup').value.trim();
+
+    if (!firstName || !lastName) {
+        msgEl.textContent = "Le prénom et le nom sont obligatoires.";
         errorEl.classList.remove('hidden');
         return;
     }
@@ -93,7 +95,9 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
         );
         await db.collection('users').doc(cred.user.uid).set({
             email: cred.user.email,
-            displayName: name,
+            firstName: firstName,
+            lastName: lastName,
+            displayName: `${firstName} ${lastName}`,
             role: 'anim',
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });

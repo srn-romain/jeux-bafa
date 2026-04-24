@@ -97,12 +97,22 @@
             <!-- Formulaire Inscription -->
             <div id="signupForm" class="hidden" role="tabpanel">
                 <form id="signupFormEl" novalidate>
-                    <div class="es-field">
-                        <label class="es-field__label es-field__label--light" for="nameSignup">Nom / Pseudo</label>
-                        <div class="es-input-wrap">
-                            <i class="bi bi-person es-input-icon"></i>
-                            <input class="es-input es-input--icon es-input--dark" type="text" id="nameSignup"
-                                placeholder="Ton nom ou pseudo" required>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="es-field">
+                            <label class="es-field__label es-field__label--light" for="firstNameSignup">Prénom</label>
+                            <div class="es-input-wrap">
+                                <i class="bi bi-person es-input-icon"></i>
+                                <input class="es-input es-input--icon es-input--dark" type="text" id="firstNameSignup"
+                                    placeholder="Ex: Jean" required>
+                            </div>
+                        </div>
+                        <div class="es-field">
+                            <label class="es-field__label es-field__label--light" for="lastNameSignup">Nom</label>
+                            <div class="es-input-wrap">
+                                <i class="bi bi-person es-input-icon" style="opacity:0;"></i>
+                                <input class="es-input es-input--dark" type="text" id="lastNameSignup"
+                                    placeholder="Ex: Dupont" required style="padding-left:14px;">
+                            </div>
                         </div>
                     </div>
                     <div class="es-field">
@@ -176,7 +186,7 @@
             <div class="es-topbar__inner">
                 <div class="es-topbar__brand">
                     <div class="es-topbar__brand-icon">🏕️</div>
-                    <span class="brand-label">Espace Anim</span>
+                    <span class="brand-label" id="brandName">Dashboard de Nom Prenom</span>
                 </div>
                 <div class="es-topbar__actions">
                     <a href="../../index.html" class="es-btn es-btn--sm es-btn--ghost"
@@ -220,7 +230,8 @@
             <div class="es-container">
                 <div class="es-page__header">
                     <div>
-                        <h1 class="es-page__title">Mes colonies</h1>
+                        <h1 class="es-page__title">Colonie du directeur <span id="pageDirectorName"
+                                style="color:var(--clr-accent);">Nom Prenom</span></h1>
                         <p class="es-page__subtitle" id="dashSubtitle">Sélectionne une colonie pour accéder à son
                             espace.</p>
                     </div>
@@ -350,9 +361,15 @@
                 </div>
 
                 <form id="settingsForm" style="margin-top:20px;">
-                    <div class="es-field">
-                        <label class="es-field__label" for="settingsDisplayName">Pseudo / Nom d'affichage</label>
-                        <input class="es-input" type="text" id="settingsDisplayName" placeholder="Ex: Romain">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="es-field">
+                            <label class="es-field__label" for="settingsFirstName">Prénom</label>
+                            <input class="es-input" type="text" id="settingsFirstName" placeholder="Jean">
+                        </div>
+                        <div class="es-field">
+                            <label class="es-field__label" for="settingsLastName">Nom</label>
+                            <input class="es-input" type="text" id="settingsLastName" placeholder="Dupont">
+                        </div>
                     </div>
                 </form>
 

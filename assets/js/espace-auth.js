@@ -105,21 +105,42 @@ function updateTopbarUser(user, role, userData = null) {
     const nameEl = document.getElementById('userDisplayName');
     const badgeEl = document.getElementById('userBadge');
     const avatarEl = document.getElementById('userAvatar');
+    const brandNameEl = document.getElementById('brandName');
+    const pageDirectorNameEl = document.getElementById('pageDirectorName');
 
-    const displayName = userData?.displayName || user.displayName || user.email || '';
-    const photoURL = userData?.photoURL || user.photoURL || '';
+    const firstName = userData?.firstName || '';
+    const lastName = userData?.lastName || '';
+    const fullName = (firstName && lastName) ? `${firstName} ${lastName}` : (userData?.displayName || user.displayName || user.email || '');
+    const displayFirstName = userData?.firstName || userData?.displayName?.split(' ')[0] || user.displayName?.split(' ')[0] || user.email || '';
 
-    if (nameEl) nameEl.textContent = displayName;
+    if (nameEl) nameEl.textContent = displayFirstName;
     if (badgeEl) {
         badgeEl.textContent = role === 'admin' ? '👑 Admin' : '🎨 Anim';
         badgeEl.className = `es-badge ${role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}`;
     }
     if (avatarEl) {
-        if (photoURL) {
-            avatarEl.innerHTML = `<img src="${photoURL}" alt="">`;
+        if (userData?.photoURL || user.photoURL) {
+            avatarEl.innerHTML = `<img src="${userData?.photoURL || user.photoURL}" alt="">`;
         } else {
             avatarEl.innerHTML = `<i class="bi bi-person-circle"></i>`;
         }
+    }
+
+    // Mise à jour dynamique du nom du directeur (si admin) ou de l'utilisateur
+    if (role === 'admin') {
+        if (brandNameEl) brandNameEl.textContent = `dashboard ${firstName.toLowerCase()} ${lastName.toLowerCase()} dirlo`;
+        if (pageDirectorNameEl) pageDirectorNameEl.textContent = fullName;
+    } else {
+        // Si c'est un animateur, on cherche le nom d'un directeur (admin) pour l'afficher
+        firebase.firestore().collection('users').where('role', '==', 'admin').limit(1).get()
+            .then(snap => {
+                if (!snap.empty) {
+                    const adminData = snap.docs[0].data();
+                    const adminFullName = `${adminData.firstName || ''} ${adminData.lastName || ''}`.trim() || adminData.displayName || 'Directeur';
+                    if (brandNameEl) brandNameEl.textContent = `dashboard ${adminData.firstName?.toLowerCase() || ''} ${adminData.lastName?.toLowerCase() || ''} dirlo`;
+                    if (pageDirectorNameEl) pageDirectorNameEl.textContent = adminFullName;
+                }
+            }).catch(err => console.error("Erreur fetch admin info:", err));
     }
 
     // Gérer la visibilité du lien admin
@@ -164,11 +185,13 @@ document.getElementById('btnOpenSettings')?.addEventListener('click', async () =
 
     const emailEl = document.getElementById('settingsUserEmail');
     const roleEl = document.getElementById('settingsUserRole');
-    const nameInput = document.getElementById('settingsDisplayName');
+    const firstNameInput = document.getElementById('settingsFirstName');
+    const lastNameInput = document.getElementById('settingsLastName');
 
     if (emailEl) emailEl.textContent = user.email;
     if (roleEl) roleEl.textContent = data.role === 'admin' ? 'Directeur' : 'Animateur';
-    if (nameInput) nameInput.value = data.displayName || '';
+    if (firstNameInput) firstNameInput.value = data.firstName || data.displayName || '';
+    if (lastNameInput) lastNameInput.value = data.lastName || '';
 
     const img = document.getElementById('settingsAvatarImg');
     const placeholder = document.getElementById('settingsAvatarPlaceholder');
@@ -192,13 +215,14 @@ document.getElementById('btnCancelSettings')?.addEventListener('click', () => cl
 // Sauvegarder paramètres
 document.getElementById('btnSaveSettings')?.addEventListener('click', async () => {
     const btn = document.getElementById('btnSaveSettings');
-    const name = document.getElementById('settingsDisplayName')?.value.trim();
+    const firstName = document.getElementById('settingsFirstName')?.value.trim();
+    const lastName = document.getElementById('settingsLastName')?.value.trim();
     const errorEl = document.getElementById('settingsError');
     const msgEl = document.getElementById('settingsErrorMsg');
 
-    if (!name) {
+    if (!firstName || !lastName) {
         if (msgEl && errorEl) {
-            msgEl.textContent = "Le pseudo ne peut pas être vide.";
+            msgEl.textContent = "Le prénom et le nom ne peuvent pas être vides.";
             errorEl.classList.remove('hidden');
         }
         return;
@@ -210,7 +234,9 @@ document.getElementById('btnSaveSettings')?.addEventListener('click', async () =
     try {
         const uid = firebase.auth().currentUser.uid;
         await firebase.firestore().collection('users').doc(uid).update({
-            displayName: name
+            firstName: firstName,
+            lastName: lastName,
+            displayName: `${firstName} ${lastName}`
         });
         showToast("Profil mis à jour !", "success");
         closeModal('overlaySettings');
