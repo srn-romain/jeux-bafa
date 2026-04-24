@@ -1541,24 +1541,6 @@
         </div>
 
         <div class="es-field" style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
-          <label class="es-field__label" for="defaultAICredits">Crédits IA par défaut (par animateur)</label>
-          <div style="display:flex; gap:10px; align-items:center;">
-            <input type="number" class="es-input" id="defaultAICredits" value="5" min="0" style="max-width:80px;">
-            <span style="font-size:0.8rem; color:var(--clr-text-muted);">appréciations / session</span>
-          </div>
-          <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:5px;">
-            Quota accordé à chaque nouvel animateur rejoignant l'espace.
-          </p>
-        </div>
-
-        <div class="es-field" style="margin-top:10px;">
-          <label class="es-checkbox-label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-            <input type="checkbox" id="resetAllCredits">
-            <span style="font-size:0.85rem; color:var(--clr-danger); font-weight:600;">Réinitialiser tous les animateurs à ce quota</span>
-          </label>
-        </div>
-
-        <div class="es-field" style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
           <label class="es-checkbox-label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
             <input type="checkbox" id="allowAnimAI" checked>
             <span style="font-weight:600;">Autoriser les animateurs à utiliser l'IA</span>
@@ -1614,33 +1596,6 @@
     </div>
   </div>
 
-  <!-- MODALE : AJUSTER CRÉDITS IA -->
-  <div id="overlayEditCredits" class="es-overlay hidden">
-    <div class="es-modal es-modal--sm">
-      <div class="es-modal__header">
-        <div style="display:flex; align-items:center; gap:12px;">
-          <div style="width:40px; height:40px; border-radius:10px; background:rgba(var(--clr-primary-rgb),0.1); display:flex; align-items:center; justify-content:center;">
-            <i class="bi bi-robot" style="color:var(--clr-primary); font-size:1.2rem;"></i>
-          </div>
-          <h2 class="es-modal__title">Crédits IA</h2>
-        </div>
-        <button class="es-modal__close" onclick="closeModal('overlayEditCredits')">&times;</button>
-      </div>
-      <div class="es-modal__body">
-        <div class="es-field">
-          <label class="es-field__label" for="inputEditCredits">Nouveau quota pour cet animateur</label>
-          <input type="number" id="inputEditCredits" class="es-input" min="0" value="5">
-          <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:8px;">
-            Ce quota est spécifique à cette session et sera débité à chaque génération.
-          </p>
-        </div>
-      </div>
-      <div class="es-modal__footer" style="gap:12px;">
-        <button class="es-btn es-btn--secondary" onclick="closeModal('overlayEditCredits')">Annuler</button>
-        <button id="btnSaveEditCredits" class="es-btn es-btn--primary">Enregistrer</button>
-      </div>
-    </div>
-  </div>
   <!-- MODALE : CONFIRMER SUPPRESSION PARTICIPANT -->
   <div id="overlayConfirmDelete" class="es-overlay hidden">
     <div class="es-modal es-modal--sm">

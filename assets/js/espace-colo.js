@@ -24,8 +24,6 @@ let isColoFormation = false;     // Si la colo est marquée comme "Formation"
 let currentColoDateFin = null;   // Date de fin de la colo
 let currentGeminiKey = "";       // Clé API Gemini de la session (depuis Firestore)
 let isAIGeneratorEnabled = true; // Si les anims ont le droit d'utiliser l'IA
-let currentAICredits = 0;        // Crédits IA restants pour l'utilisateur actuel
-let defaultAICredits = 5;        // Crédits par défaut configurés pour l'espace
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -235,7 +233,6 @@ async function initColoContent(colo, role) {
     // IA - Chargement de la config session
     currentGeminiKey = colo.geminiKey || "";
     isAIGeneratorEnabled = colo.allowAnimAI !== false; // true par défaut
-    defaultAICredits = colo.defaultAICredits || 5;
 
     // Mise à jour visuelle des boutons IA (si blocage)
     if (role !== 'admin') {
@@ -264,22 +261,6 @@ async function initColoContent(colo, role) {
         if (usageEl) usageEl.textContent = usageCount;
     } else {
         document.getElementById('iaStatusInfo')?.classList.add('hidden');
-    }
-
-    // Charger les crédits IA de l'utilisateur actuel (si anim)
-    if (role === 'anim' || isAnimAdmin) {
-        try {
-            const reqSnap = await db.collection('accessRequests')
-                .where('userId', '==', currentUser.uid)
-                .where('espaceId', '==', colo.id)
-                .get();
-            if (!reqSnap.empty) {
-                const reqData = reqSnap.docs[0].data();
-                currentAICredits = (reqData.aiCredits !== undefined) ? reqData.aiCredits : defaultAICredits;
-            }
-        } catch (e) { console.error("Err credits:", e); }
-    } else if (role === 'admin') {
-        currentAICredits = 9999; // Illimité pour le directeur
     }
 
     // Onglets
@@ -1357,15 +1338,9 @@ document.getElementById('btnGenerateAI')?.addEventListener('click', async () => 
     }
 
     // Vérification des droits (si anim)
-    if (currentRole !== 'admin') {
-        if (!isAIGeneratorEnabled) {
-            _showAIError("L'utilisation de l'assistant IA est actuellement désactivée par le directeur.");
-            return;
-        }
-        if (currentAICredits <= 0) {
-            _showAIError("Vous avez épuisé vos crédits IA pour cette session. Contactez le directeur pour en obtenir de nouveaux.");
-            return;
-        }
+    if (currentRole !== 'admin' && !isAIGeneratorEnabled) {
+        _showAIError("L'utilisation de l'assistant IA est actuellement désactivée par le directeur.");
+        return;
     }
 
     // Choix de la clé : Priorité à la clé de session (Directeur), sinon clé personnelle
@@ -1423,8 +1398,6 @@ document.getElementById('btnGenerateAI')?.addEventListener('click', async () => 
             resultArea.classList.remove('hidden');
             document.getElementById('btnApplyAI')?.classList.remove('hidden');
 
-            // Décompte des crédits et usage
-            await _decrementAICredits();
         } else {
             throw new Error("L'IA n'a pas renvoyé de réponse exploitable.");
         }
@@ -1546,8 +1519,6 @@ async function _callGemini(apiKey, prompt) {
 document.getElementById('btnConfigIA')?.addEventListener('click', () => {
     document.getElementById('espaceGeminiKey').value = currentGeminiKey || "";
     document.getElementById('allowAnimAI').checked = isAIGeneratorEnabled;
-    document.getElementById('defaultAICredits').value = defaultAICredits;
-    document.getElementById('resetAllCredits').checked = false;
     // Reset visibility to password
     document.getElementById('espaceGeminiKey').type = 'password';
     document.querySelector('#btnToggleKeyVisibility i').className = 'bi bi-eye';
@@ -1580,13 +1551,8 @@ document.getElementById('btnSaveIASettings')?.addEventListener('click', async ()
     const btn = document.getElementById('btnSaveIASettings');
     const keyInput = document.getElementById('espaceGeminiKey');
     const allowAnimCheck = document.getElementById('allowAnimAI');
-    const defaultCreditsInput = document.getElementById('defaultAICredits');
-    const resetCreditsCheck = document.getElementById('resetAllCredits');
-
     const newKey = keyInput.value.trim();
     const allowAnim = allowAnimCheck.checked;
-    const newDefaultCredits = parseInt(defaultCreditsInput.value) || 0;
-    const doReset = resetCreditsCheck.checked;
 
     btnLoading(btn, true);
     try {
@@ -1603,31 +1569,14 @@ document.getElementById('btnSaveIASettings')?.addEventListener('click', async ()
 
         const updateData = {
             geminiKey: newKey,
-            allowAnimAI: allowAnim,
-            defaultAICredits: newDefaultCredits
+            allowAnimAI: allowAnim
         };
         await db.collection('espaces').doc(espaceId).update(updateData);
         
         currentGeminiKey = newKey;
         isAIGeneratorEnabled = allowAnim;
-        defaultAICredits = newDefaultCredits;
 
-        // Réinitialisation massive si demandée
-        if (doReset) {
-            const snap = await db.collection('accessRequests')
-                .where('espaceId', '==', espaceId)
-                .where('status', '==', 'approved')
-                .get();
-            
-            const batch = db.batch();
-            snap.docs.forEach(doc => {
-                batch.update(doc.ref, { aiCredits: newDefaultCredits });
-            });
-            await batch.commit();
-            showToast("Paramètres et crédits réinitialisés.", "success");
-        } else {
-            showToast("Paramètres IA mis à jour.", "success");
-        }
+        showToast("Paramètres IA mis à jour.", "success");
         
         // Update UI
         if (newKey) {
@@ -1637,7 +1586,6 @@ document.getElementById('btnSaveIASettings')?.addEventListener('click', async ()
         }
         
         closeModal('overlayIASettings');
-        if (doReset) loadAnimateurs(espaceId);
     } catch (err) {
         console.error('saveIASettings:', err);
         showToast("Erreur lors de l'enregistrement.", "error");
@@ -1645,36 +1593,6 @@ document.getElementById('btnSaveIASettings')?.addEventListener('click', async ()
         btnLoading(btn, false);
     }
 });
-
-async function editAnimCredits(requestId, currentCredits) {
-    const input = document.getElementById('inputEditCredits');
-    if (input) input.value = currentCredits;
-    
-    const btn = document.getElementById('btnSaveEditCredits');
-    // On remplace le bouton par un clone pour supprimer les anciens event listeners
-    const newBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
-
-    newBtn.addEventListener('click', async () => {
-        const credits = parseInt(input.value);
-        if (isNaN(credits)) return;
-
-        btnLoading(newBtn, true);
-        try {
-            await db.collection('accessRequests').doc(requestId).update({ aiCredits: credits });
-            showToast("Crédits mis à jour.", "success");
-            closeModal('overlayEditCredits');
-            loadAnimateurs(espaceId);
-        } catch (err) {
-            console.error("editAnimCredits:", err);
-            showToast("Erreur lors de la mise à jour.", "error");
-        } finally {
-            btnLoading(newBtn, false);
-        }
-    });
-
-    openModal('overlayEditCredits');
-}
 
 /**
  * Teste la validité d'une clé Gemini via un appel minimal
@@ -1686,48 +1604,6 @@ async function _testGeminiKey(key) {
         return true;
     } catch (err) {
         throw err;
-    }
-}
-
-/**
- * Décrémente les crédits de l'utilisateur actuel
- */
-async function _decrementAICredits() {
-    // 1. Toujours incrémenter l'usage global de la session si on utilise la clé du directeur
-    if (currentGeminiKey) {
-        // Mise à jour visuelle immédiate (Réactif)
-        const usageEl = document.getElementById('iaUsageCounter');
-        if (usageEl) {
-            const currentVal = parseInt(usageEl.textContent || "0");
-            usageEl.textContent = currentVal + 1;
-        }
-
-        try {
-            // Tentative de mise à jour Firestore
-            await db.collection('espaces').doc(espaceId).update({
-                iaUsageCount: firebase.firestore.FieldValue.increment(1)
-            });
-        } catch (err) {
-            // Note : Si l'animateur n'a pas les droits d'écriture sur l'espace, 
-            // le compteur Firestore ne bougera pas, mais son crédit perso si.
-            console.warn("Usage counter Firestore update skipped (permissions):", err);
-        }
-    }
-
-    // 2. Décrémenter les crédits personnels si l'utilisateur est un animateur
-    if (currentRole !== 'admin' && currentAICredits < 9000) {
-        currentAICredits--;
-        try {
-            const reqSnap = await db.collection('accessRequests')
-                .where('userId', '==', currentUser.uid)
-                .where('espaceId', '==', espaceId)
-                .get();
-            if (!reqSnap.empty) {
-                await reqSnap.docs[0].ref.update({ aiCredits: currentAICredits });
-            }
-        } catch (err) {
-            console.error("Error decrementing credits:", err);
-        }
     }
 }
 
@@ -1750,17 +1626,10 @@ document.getElementById('btnGenerateActivity')?.addEventListener('click', async 
     const resultArea = document.getElementById('activityResultArea');
     const resultContent = document.getElementById('activityResultContent');
 
-    // ... (Vérification crédits et clé identique) ...
     // Vérification des droits (si anim)
-    if (currentRole !== 'admin') {
-        if (!isAIGeneratorEnabled) {
-            showToast("L'utilisation de l'IA est désactivée par le directeur.", "error");
-            return;
-        }
-        if (currentAICredits <= 0) {
-            showToast("Vous avez épuisé vos crédits IA pour cette session.", "error");
-            return;
-        }
+    if (currentRole !== 'admin' && !isAIGeneratorEnabled) {
+        showToast("L'utilisation de l'IA est désactivée par le directeur.", "error");
+        return;
     }
 
     let effectiveKey = currentGeminiKey || GEMINI_API_KEY;
@@ -1811,19 +1680,6 @@ Sois précis, créatif et assure-toi que l'activité est réalisable dans le cad
             
         resultContent.innerHTML = htmlResult;
         resultArea.classList.remove('hidden');
-
-        // Décompte des crédits et usage
-        await _decrementAICredits();
-        
-        // Mise à jour de l'affichage des crédits dans le résultat
-        const creditRemainEl = document.getElementById('activityCreditRemain');
-        const creditStatusEl = document.getElementById('activityCreditStatus');
-        if (currentRole === 'admin') {
-            if (creditStatusEl) creditStatusEl.classList.add('hidden');
-        } else {
-            if (creditStatusEl) creditStatusEl.classList.remove('hidden');
-            if (creditRemainEl) creditRemainEl.textContent = currentAICredits;
-        }
 
         showToast("Idée générée !", "success");
     } catch (err) {
@@ -2068,22 +1924,12 @@ async function loadAnimateurs(coloId) {
             const uDoc = await db.collection('users').doc(uid).get();
             if (uDoc.exists) {
                 const req = reqMap[uid];
-                // Récupérer les crédits IA depuis la demande d'accès
-                let animCredits = defaultAICredits;
-                if (req.requestId) {
-                    const rDoc = await db.collection('accessRequests').doc(req.requestId).get();
-                    if (rDoc.exists && rDoc.data().aiCredits !== undefined) {
-                        animCredits = rDoc.data().aiCredits;
-                    }
-                }
-
                 approvedAnimsData.push({ 
                     id: uDoc.id, 
                     isPending: false, 
                     requestId: req.requestId,
                     espaceRole: req.espaceRole || 'anim',
-                    aiCredits: animCredits,
-                    ...uDoc.data() 
+                    ...uDoc.data()
                 });
             }
         }
@@ -2141,17 +1987,7 @@ async function loadAnimateurs(coloId) {
                             ${anim.role === 'admin' || anim.espaceRole === 'admin' ? 'Directeur' : (anim.espaceRole === 'anim-admin' ? 'Anim Admin' : 'Animateur')}
                         </div>
 
-                        ${currentGeminiKey && anim.espaceRole !== 'admin' ? `
-                            <div class="es-credits-badge" style="display:flex; align-items:center; gap:8px; background:rgba(var(--clr-primary-rgb), 0.1); padding:4px 10px; border-radius:8px; border:1px solid rgba(var(--clr-primary-rgb), 0.2); font-size:0.85rem; font-weight:600;">
-                                <i class="bi bi-robot" style="color:var(--clr-primary);"></i>
-                                <span style="color:var(--clr-text);">${anim.aiCredits}</span>
-                                ${currentRole === 'admin' ? `
-                                    <button class="es-btn es-btn--ghost es-btn--sm" style="padding:0; min-width:24px; height:24px; font-size:0.75rem; margin-left:2px; color:var(--clr-primary);" onclick="editAnimCredits('${anim.requestId}', ${anim.aiCredits})" title="Ajuster les crédits">
-                                        <i class="bi bi-pencil-square"></i>
-                                    </button>
-                                ` : ''}
-                            </div>
-                        ` : ''}
+
 
                         ${(currentRole === 'admin' && anim.role !== 'admin' && anim.espaceRole !== 'admin' && anim.requestId) ? `
                             <button class="es-btn es-btn--sm es-btn--secondary" 
