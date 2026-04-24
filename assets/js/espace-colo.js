@@ -25,6 +25,25 @@ let currentColoDateFin = null;   // Date de fin de la colo
 let currentGeminiKey = "";       // Clé API Gemini de la session (depuis Firestore)
 let isAIGeneratorEnabled = true; // Si les anims ont le droit d'utiliser l'IA
 
+// Mise à jour de l'affichage de l'état de l'IA (Activée / Non configurée)
+function updateAIStatusUI() {
+    const labelEl = document.getElementById('iaStatusLabel');
+    if (!labelEl) return;
+    
+    if (!currentGeminiKey) {
+        labelEl.style.color = 'var(--clr-danger)';
+        labelEl.innerHTML = '<i class="bi bi-x-circle"></i> L\'IA est désactivée pour cette session.';
+    } else {
+        if (isAIGeneratorEnabled) {
+            labelEl.style.color = 'var(--clr-success)';
+            labelEl.innerHTML = '<i class="bi bi-check-circle"></i> L\'IA est activé pour la session et les anims.';
+        } else {
+            labelEl.style.color = 'var(--clr-warning)';
+            labelEl.innerHTML = '<i class="bi bi-info-circle"></i> L\'IA est activé mais désactivé pour les anims.';
+        }
+    }
+}
+
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
     let hash = 0;
@@ -254,14 +273,7 @@ async function initColoContent(colo, role) {
         }
     }
     
-    const usageCount = colo.iaUsageCount || 0;
-    if (currentGeminiKey) {
-        document.getElementById('iaStatusInfo')?.classList.remove('hidden');
-        const usageEl = document.getElementById('iaUsageCounter');
-        if (usageEl) usageEl.textContent = usageCount;
-    } else {
-        document.getElementById('iaStatusInfo')?.classList.add('hidden');
-    }
+    updateAIStatusUI();
 
     // Onglets
     initTabs();
@@ -1583,11 +1595,7 @@ document.getElementById('btnSaveIASettings')?.addEventListener('click', async ()
         showToast("Paramètres IA mis à jour.", "success");
         
         // Update UI
-        if (newKey) {
-            document.getElementById('iaStatusInfo')?.classList.remove('hidden');
-        } else {
-            document.getElementById('iaStatusInfo')?.classList.add('hidden');
-        }
+        updateAIStatusUI();
         
         closeModal('overlayIASettings');
     } catch (err) {
