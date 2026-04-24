@@ -1186,7 +1186,10 @@ function createBalancedGroups() {
     return groups.map(g => shuffleArray(g));
 }
 
+let lastGeneratedGroups = [];
+
 function displayGroups(groups) {
+    lastGeneratedGroups = groups.filter(g => g.length > 0);
     const container = document.getElementById('groupsContainer');
     if (!container) return;
 
@@ -1212,7 +1215,8 @@ function displayGroups(groups) {
         <div class="es-group-card">
             <div class="es-group-card__header">
                 <div class="es-group-card__title">
-                    <i class="bi bi-collection"></i> Groupe ${i + 1}
+                    <i class="bi bi-clipboard-plus es-group-copy-btn" onclick="copyGroupNames(${i})" title="Copier la liste des noms"></i> 
+                    Groupe ${i + 1}
                 </div>
                 <div class="es-group-card__stats">
                     <i class="bi bi-people"></i> ${group.length} ${pLabel} · 
@@ -1237,6 +1241,18 @@ function displayGroups(groups) {
             </ul>
         </div>`;
     }).join('');
+}
+
+function copyGroupNames(index) {
+    const group = lastGeneratedGroups[index];
+    if (!group) return;
+    
+    const text = group.map(p => `${p.prenom} ${p.nom}`).join('\n');
+    navigator.clipboard.writeText(text).then(() => {
+        showToast(`Liste du groupe ${index + 1} copiée !`, "success");
+    }).catch(err => {
+        console.error('Erreur copie groupe:', err);
+    });
 }
 
 function updateStats() {
