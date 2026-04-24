@@ -128,7 +128,7 @@ function updateTopbarUser(user, role, userData = null) {
 
     // Mise à jour dynamique du nom du directeur (si admin) ou de l'utilisateur
     if (role === 'admin') {
-        if (brandNameEl) brandNameEl.textContent = `dashboard ${firstName.toLowerCase()} ${lastName.toLowerCase()} dirlo`;
+        if (brandNameEl) brandNameEl.textContent = `Dashboard de ${firstName}`;
         if (pageDirectorNameEl) pageDirectorNameEl.textContent = fullName;
     } else {
         // Si c'est un animateur, on cherche le nom d'un directeur (admin) pour l'afficher
@@ -137,7 +137,8 @@ function updateTopbarUser(user, role, userData = null) {
                 if (!snap.empty) {
                     const adminData = snap.docs[0].data();
                     const adminFullName = `${adminData.firstName || ''} ${adminData.lastName || ''}`.trim() || adminData.displayName || 'Directeur';
-                    if (brandNameEl) brandNameEl.textContent = `dashboard ${adminData.firstName?.toLowerCase() || ''} ${adminData.lastName?.toLowerCase() || ''} dirlo`;
+                    const adminFirstName = adminData.firstName || adminData.displayName?.split(' ')[0] || 'Directeur';
+                    if (brandNameEl) brandNameEl.textContent = `Dashboard de ${adminFirstName}`;
                     if (pageDirectorNameEl) pageDirectorNameEl.textContent = adminFullName;
                 }
             }).catch(err => console.error("Erreur fetch admin info:", err));

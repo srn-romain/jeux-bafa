@@ -188,7 +188,7 @@ function buildColoAdminCard(colo, nbParticipants) {
         </div>
         <div class="es-colo-admin-card__body" style="font-size:0.87rem;color:var(--clr-text-muted); display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
             <div style="flex:1;">
-                ${colo.description ? colo.description : '<span style="opacity:0.5;font-style:italic;">Aucune description.</span>'}
+                ${(colo.organisme || colo.description) ? (colo.organisme || colo.description) : '<span style="opacity:0.5;font-style:italic;">Organisme non défini.</span>'}
             </div>
             <div class="es-colo-admin-card__actions" style="display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; flex-wrap: wrap; flex-shrink: 0;">
                 <button class="es-btn es-btn--sm es-btn--secondary"
@@ -297,7 +297,7 @@ document.getElementById('btnNewColo')?.addEventListener('click', () => openColoF
 function openColoForm(colo = null) {
     document.getElementById('coloId').value = colo?.id || '';
     document.getElementById('coloNom').value = colo?.nom || '';
-    document.getElementById('coloDesc').value = colo?.description || '';
+    document.getElementById('coloOrganisme').value = colo?.organisme || colo?.description || '';
     document.getElementById('coloDateDebut').value = colo?.dateDebut || '';
     document.getElementById('coloDateFin').value = colo?.dateFin || '';
     document.getElementById('coloDriveId').value = colo?.driveId || '';
@@ -420,7 +420,7 @@ document.getElementById('btnSaveColoForm')?.addEventListener('click', async () =
 
     const data = {
         nom,
-        description: document.getElementById('coloDesc')?.value.trim() || '',
+        organisme: document.getElementById('coloOrganisme')?.value.trim() || '',
         dateDebut: document.getElementById('coloDateDebut')?.value || '',
         dateFin: document.getElementById('coloDateFin')?.value || '',
         driveId: document.getElementById('coloDriveId')?.value.trim() || '',

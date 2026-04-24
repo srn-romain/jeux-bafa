@@ -398,7 +398,7 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
             ` : ''}
         </div>
         <div class="es-colo-card__body">
-            <div class="es-colo-card__desc">${colo.description || 'Aucune description.'}</div>
+            <div class="es-colo-card__desc">${colo.organisme || colo.description || 'Organisme non défini.'}</div>
             <div class="es-colo-card__stats ${!showStats ? 'es-stats--hidden' : ''}">
                 <div class="es-colo-card__stat">
                     <i class="bi bi-people"></i> 
