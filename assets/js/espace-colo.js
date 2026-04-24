@@ -1073,10 +1073,14 @@ function displayGroups(groups) {
         return `
         <div class="es-group-card">
             <div class="es-group-card__header">
-                Groupe ${i + 1}
-                <span style="font-weight:400;color:var(--clr-text-muted);font-size:0.83rem;margin-left:8px;">
-                    ${group.length} ${pLabel} · ${boys}♂ ${girls}♀ · moy. ${avgAge} ans
-                </span>
+                <div class="es-group-card__title">
+                    <i class="bi bi-collection"></i> Groupe ${i + 1}
+                </div>
+                <div class="es-group-card__stats">
+                    <i class="bi bi-people"></i> ${group.length} ${pLabel} · 
+                    <span style="color:#3b82f6;">${boys}♂</span> <span style="color:#ec4899;">${girls}♀</span> · 
+                    <i class="bi bi-calendar3"></i> ${avgAge} ans
+                </div>
             </div>
             <ul class="es-group-card__list">
                 ${group.map(p => `
@@ -1990,11 +1994,10 @@ async function loadAnimateurs(coloId) {
 
 
                         ${(currentRole === 'admin' && anim.role !== 'admin' && anim.espaceRole !== 'admin' && anim.requestId) ? `
-                            <button class="es-btn es-btn--sm es-btn--secondary" 
+                            <button class="es-btn-promote ${anim.espaceRole === 'anim-admin' ? 'es-btn-promote--active' : ''}" 
                                     onclick="toggleAnimAdmin('${anim.requestId}', '${anim.espaceRole === 'anim-admin' ? 'anim' : 'anim-admin'}')"
-                                    title="${anim.espaceRole === 'anim-admin' ? 'Retirer les droits Admin' : 'Donner les droits Admin'}"
-                                    style="padding:2px 6px; font-size:0.7rem;">
-                                ${anim.espaceRole === 'anim-admin' ? '<i class="bi bi-arrow-down-circle"></i>' : '<i class="bi bi-arrow-up-circle"></i>'}
+                                    title="${anim.espaceRole === 'anim-admin' ? 'Retirer les droits Admin' : 'Donner les droits Admin'}">
+                                ${anim.espaceRole === 'anim-admin' ? '<i class="bi bi-shield-slash"></i>' : '<i class="bi bi-shield-plus"></i>'}
                             </button>
                         ` : ''}
                     </div>

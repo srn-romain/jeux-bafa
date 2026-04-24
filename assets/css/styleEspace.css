@@ -1862,32 +1862,51 @@ input:checked+.es-slider:before {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  border-left: 4px solid var(--clr-primary);
+  border: 1px solid rgba(0, 0, 0, 0.08); /* Contour noir très léger */
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.es-group-card:nth-child(2) {
-  border-left-color: var(--clr-accent);
-}
-
-.es-group-card:nth-child(3) {
-  border-left-color: #2980b9;
-}
-
-.es-group-card:nth-child(4) {
-  border-left-color: #8e44ad;
-}
-
-.es-group-card:nth-child(5) {
-  border-left-color: #16a085;
+.es-group-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
 }
 
 .es-group-card__header {
-  padding: 12px 16px;
+  padding: 16px;
   background: var(--clr-surface-2);
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--clr-text);
   border-bottom: 1px solid var(--clr-surface-3);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.es-group-card__title {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--clr-text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.es-group-card__title i {
+  color: var(--clr-primary-dark);
+  font-size: 1.2rem;
+}
+
+.es-group-card__stats {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.es-group-card__stats i {
+  opacity: 0.7;
 }
 
 .es-group-card__list {
@@ -2905,4 +2924,103 @@ input:checked+.es-slider:before {
   .es-bulk-bar__actions {
     width: 100%;
   }
+}
+
+/* Bouton Spécial : Utiliser l'appréciation générée */
+#btnApplyAI {
+  background: linear-gradient(135deg, #6366f1 0%, #10b981 100%) !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-size: 0.82rem;
+  border: none !important;
+  padding: 10px 18px !important;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+  transition: all 0.25s ease !important;
+  position: relative;
+  overflow: hidden;
+  color: #fff !important;
+}
+
+#btnApplyAI::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: all 0.6s;
+}
+
+#btnApplyAI:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+  filter: brightness(1.1);
+}
+
+#btnApplyAI:hover::before {
+  left: 100%;
+}
+
+#btnApplyAI i {
+  font-size: 1.1rem;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* Bouton de promotion (Accès Admin) */
+.es-btn-promote {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(166, 216, 102, 0.3);
+  background: rgba(166, 216, 102, 0.05);
+  color: var(--clr-primary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.es-btn-promote i {
+  font-size: 1.1rem;
+}
+
+.es-btn-promote:hover {
+  background: var(--clr-primary);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(166, 216, 102, 0.35);
+  border-color: var(--clr-primary);
+}
+
+.es-btn-promote--active {
+  background: rgba(166, 216, 102, 0.15);
+  border-color: var(--clr-primary);
+  border-width: 1.5px;
+}
+
+.es-btn-promote--active i {
+  color: var(--clr-primary);
+}
+
+.es-btn-promote--active:hover {
+  background: var(--clr-danger);
+  border-color: var(--clr-danger);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.3);
+}
+
+.es-btn-promote--active:hover i {
+  color: #fff;
 }
