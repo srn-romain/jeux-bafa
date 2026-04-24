@@ -1951,31 +1951,76 @@ input:checked+.es-slider:before {
   background: #fce7f3;
   color: #9d174d;
 }
-
-/* Statistiques */
-.es-stats-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  justify-content: center;
-  padding: 14px;
+/* Statistiques : 4 Petites Cases (1 ligne desktop, 2x2 mobile) */
+.es-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
 }
 
-.es-stat-chip {
+@media (min-width: 600px) {
+  .es-stats-grid {
+    grid-template-columns: repeat(4, 1fr);
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    gap: 12px;
+  }
+}
+
+.es-stat-card {
+  background: var(--clr-surface-2);
+  border: 1px solid var(--clr-surface-3);
+  border-radius: 12px;
+  padding: 12px 8px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 6px 14px;
-  background: var(--clr-surface-2);
-  border-radius: var(--radius-full);
-  font-size: 0.83rem;
-  color: var(--clr-text-muted);
+  transition: transform 0.2s;
 }
 
-.es-stat-chip strong {
-  color: var(--clr-text);
-  font-size: 1rem;
+.es-stat-card:hover {
+  border-color: var(--clr-primary-light);
 }
+
+.es-stat-card__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.es-stat-card__info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.es-stat-card__value {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  line-height: 1;
+}
+
+.es-stat-card__label {
+  font-size: 0.6rem;
+  color: var(--clr-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 700;
+}
+
+/* Couleurs spécifiques (plus subtiles) */
+.es-stat-card--total .es-stat-card__icon { background: rgba(var(--clr-primary-rgb), 0.1); color: var(--clr-primary); }
+.es-stat-card--boys .es-stat-card__icon { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.es-stat-card--girls .es-stat-card__icon { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
+.es-stat-card--age .es-stat-card__icon { background: rgba(245, 158, 11, 0.1); color: #f59e0b; }
 
 /* Panneau d'options */
 .es-options-panel {

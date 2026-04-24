@@ -151,15 +151,36 @@
 
             <div class="es-section__content">
 
-              <!-- Stats bar inside for context -->
-              <div class="es-card es-stats-bar" id="statsBar"
-                style="margin-bottom:14px; background:var(--clr-bg-deep); border:1px solid var(--clr-surface-3);">
-                <div class="es-stat-chip"><i class="bi bi-people" style="color:var(--clr-primary)"></i> <strong
-                    id="statTotal">0</strong> participants</div>
-                <div class="es-stat-chip">♂ <strong id="statBoys">0</strong> garçons</div>
-                <div class="es-stat-chip">♀ <strong id="statGirls">0</strong> filles</div>
-                <div class="es-stat-chip"><i class="bi bi-calendar3" style="color:var(--clr-accent)"></i> Moy. <strong
-                    id="statAge">–</strong> ans</div>
+              <!-- Statistiques Discrètes -->
+              <div class="es-stats-grid" id="statsBar">
+                <div class="es-stat-card es-stat-card--total">
+                  <div class="es-stat-card__icon"><i class="bi bi-people"></i></div>
+                  <div class="es-stat-card__info">
+                    <div class="es-stat-card__value" id="statTotal">0</div>
+                    <div class="es-stat-card__label">Participants</div>
+                  </div>
+                </div>
+                <div class="es-stat-card es-stat-card--boys">
+                  <div class="es-stat-card__icon"><i class="bi bi-gender-male"></i></div>
+                  <div class="es-stat-card__info">
+                    <div class="es-stat-card__value" id="statBoys">0</div>
+                    <div class="es-stat-card__label">Garçons</div>
+                  </div>
+                </div>
+                <div class="es-stat-card es-stat-card--girls">
+                  <div class="es-stat-card__icon"><i class="bi bi-gender-female"></i></div>
+                  <div class="es-stat-card__info">
+                    <div class="es-stat-card__value" id="statGirls">0</div>
+                    <div class="es-stat-card__label">Filles</div>
+                  </div>
+                </div>
+                <div class="es-stat-card es-stat-card--age">
+                  <div class="es-stat-card__icon"><i class="bi bi-calendar3"></i></div>
+                  <div class="es-stat-card__info">
+                    <div class="es-stat-card__value" id="statAge">–</div>
+                    <div class="es-stat-card__label">Âge moyen</div>
+                  </div>
+                </div>
               </div>
 
               <!-- Options -->

@@ -1111,7 +1111,7 @@ function updateStats() {
     document.getElementById('statTotal').textContent = filtered.length;
     document.getElementById('statBoys').textContent = boys;
     document.getElementById('statGirls').textContent = girls;
-    document.getElementById('statAge').textContent = avg;
+    document.getElementById('statAge').textContent = avg + (avg !== '–' ? ' ans' : '');
 }
 
 function regenerateGroups() {
