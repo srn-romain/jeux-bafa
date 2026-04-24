@@ -150,7 +150,7 @@ auth.onAuthStateChanged(async (user) => {
     // Éléments Admin Only
     if (role === 'admin') {
         document.getElementById('linkAdmin')?.classList.remove('hidden');
-        document.getElementById('adminStatsToggle')?.classList.remove('hidden');
+        document.getElementById('adminColoActions')?.classList.remove('hidden');
     }
 
     // Écouter le réglage global d'affichage des stats
@@ -389,12 +389,20 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
                 <div class="es-colo-card__dates">${dateStr}</div>
             </div>
             ${role === 'admin' ? `
-                <button class="es-btn es-btn--sm es-btn--ghost" 
-                        title="Changer la visibilité pour les animateurs"
-                        style="margin-left:auto; z-index:10; padding:4px 8px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05);"
-                        onclick="event.stopPropagation(); toggleColoVisibility('${colo.id}', ${visible})">
-                    <i class="bi bi-${visible ? 'eye' : 'eye-slash'}" style="color:${visible ? 'var(--clr-success)' : '#ff9f43'}"></i>
-                </button>
+                <div style="margin-left:auto;display:flex;align-items:center;gap:4px;z-index:10;">
+                    <button class="es-btn es-btn--sm es-btn--ghost" 
+                            title="Modifier la colonie"
+                            style="padding:4px 8px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05);"
+                            onclick="event.stopPropagation(); openEditColoIndex('${colo.id}')">
+                        <i class="bi bi-pencil" style="color:var(--clr-primary)"></i>
+                    </button>
+                    <button class="es-btn es-btn--sm es-btn--ghost" 
+                            title="Changer la visibilité pour les animateurs"
+                            style="padding:4px 8px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05);"
+                            onclick="event.stopPropagation(); toggleColoVisibility('${colo.id}', ${visible})">
+                        <i class="bi bi-${visible ? 'eye' : 'eye-slash'}" style="color:${visible ? 'var(--clr-success)' : '#ff9f43'}"></i>
+                    </button>
+                </div>
             ` : ''}
         </div>
         <div class="es-colo-card__body">
@@ -511,10 +519,190 @@ async function toggleColoVisibility(coloId, currentVisible) {
     try {
         await db.collection('espaces').doc(coloId).update({ visible: newVisible });
         showToast(newVisible ? "La colonie est maintenant visible pour les animateurs." : "La colonie est désormais cachée pour les animateurs.", "success");
-        // Recharger le dashboard
         loadColos(currentUser, currentRole);
     } catch (err) {
         console.error('toggleColoVisibility dashboard:', err);
         showToast('Erreur lors du changement de visibilité.', 'error');
     }
 }
+
+// ================================================================
+// GESTION COLO (Créer / Modifier) - INDEX
+// ================================================================
+
+const AVAILABLE_EMOJIS_INDEX = [
+    { emoji: '🏖️', desc: 'plage' }, { emoji: '🏔️', desc: 'montagne' },
+    { emoji: '🌲', desc: 'forêt' }, { emoji: '🌳', desc: 'campagne' },
+    { emoji: '🌊', desc: 'mer' }, { emoji: '🏕️', desc: 'camping' },
+    { emoji: '🏥️', desc: 'randonnée' }, { emoji: '⛷️', desc: 'ski' },
+    { emoji: '🏄', desc: 'surf' }, { emoji: '🧗', desc: 'escalade' },
+    { emoji: '🚣', desc: 'kayak' }, { emoji: '🏹', desc: 'tir à l\'arc' },
+    { emoji: '⚽', desc: 'football' }, { emoji: '🏀', desc: 'basket' },
+    { emoji: '🏐', desc: 'volley' }, { emoji: '🎨', desc: 'peinture' },
+    { emoji: '🎠', desc: 'parc attraction' }, { emoji: '🎓', desc: 'formation BAFA' },
+    { emoji: '🎤', desc: 'musique' }, { emoji: '💃', desc: 'danse' },
+    { emoji: '🐴', desc: 'équitation' }, { emoji: '✈️', desc: 'voyage' },
+    { emoji: '🌍', desc: 'culture' }, { emoji: '🏗️', desc: 'ALSH' },
+    { emoji: '🎩', desc: 'jeux' }, { emoji: '🎒', desc: 'itinérance' },
+    { emoji: '🚲', desc: 'vélo' }, { emoji: '🍳', desc: 'cuisine' },
+];
+
+document.getElementById('btnNewColoIndex')?.addEventListener('click', () => openColoFormIndex());
+document.getElementById('btnCloseColoFormIndex')?.addEventListener('click', () => closeModal('overlayColoFormIndex'));
+document.getElementById('btnCancelColoFormIndex')?.addEventListener('click', () => closeModal('overlayColoFormIndex'));
+
+function openColoFormIndex(colo = null) {
+    document.getElementById('coloIndexId').value = colo?.id || '';
+    document.getElementById('coloIndexNom').value = colo?.nom || '';
+    document.getElementById('coloIndexOrganisme').value = colo?.organisme || colo?.description || '';
+    document.getElementById('coloIndexDateDebut').value = colo?.dateDebut || '';
+    document.getElementById('coloIndexDateFin').value = colo?.dateFin || '';
+    document.getElementById('coloIndexDriveId').value = colo?.driveId || '';
+    document.getElementById('coloIndexPPId').value = colo?.ppId || '';
+    
+    const cbFormation = document.getElementById('coloIndexIsFormation');
+    if (cbFormation) cbFormation.checked = colo?.isFormation === true;
+
+    // Image de fond
+    const bgInput = document.getElementById('coloIndexBgInput');
+    const bgBase64 = document.getElementById('coloIndexBgBase64');
+    const bgPreview = document.getElementById('coloIndexBgPreview');
+    const bgPreviewContainer = document.getElementById('coloIndexBgPreviewContainer');
+    if (bgInput) bgInput.value = '';
+    if (bgBase64) bgBase64.value = colo?.bgImage || '';
+    if (bgPreview && bgPreviewContainer) {
+        if (colo?.bgImage) {
+            bgPreview.src = colo.bgImage;
+            bgPreviewContainer.classList.remove('hidden');
+        } else {
+            bgPreview.src = '';
+            bgPreviewContainer.classList.add('hidden');
+        }
+    }
+
+    // Emoji
+    const currentEmoji = colo?.emoji || '🏕️';
+    document.getElementById('coloIndexEmoji').value = currentEmoji;
+    const emojiSelector = document.getElementById('coloIndexEmojiSelector');
+    if (emojiSelector) {
+        emojiSelector.innerHTML = AVAILABLE_EMOJIS_INDEX.map(item =>
+            `<button type="button" title="${item.desc}" class="${item.emoji === currentEmoji ? 'selected' : ''}" onclick="selectColoEmojiIndex('${item.emoji}', this)">${item.emoji}</button>`
+        ).join('');
+    }
+
+    // Dates
+    const dateInfoEl = document.getElementById('coloIndexDateInfo');
+    const createdEl = document.getElementById('coloIndexCreatedAtInfo');
+    const updatedEl = document.getElementById('coloIndexUpdatedAtInfo');
+    if (colo && (colo.createdAt || colo.updatedAt)) {
+        dateInfoEl?.classList.remove('hidden');
+        if (createdEl) createdEl.innerHTML = colo.createdAt ? `<i class="bi bi-plus-circle"></i> Créé le ${formatFullDate(colo.createdAt)}` : '';
+        if (updatedEl) updatedEl.innerHTML = colo.updatedAt ? `<i class="bi bi-pencil-square"></i> Modifié le ${formatFullDate(colo.updatedAt)}` : '';
+    } else {
+        dateInfoEl?.classList.add('hidden');
+    }
+
+    document.getElementById('coloFormIndexTitle').textContent = colo ? 'Modifier la colonie' : 'Nouvelle colonie';
+    document.getElementById('coloFormIndexError')?.classList.add('hidden');
+    openModal('overlayColoFormIndex');
+}
+
+function selectColoEmojiIndex(emoji, btnEl) {
+    document.getElementById('coloIndexEmoji').value = emoji;
+    document.getElementById('coloIndexEmojiSelector').querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+    btnEl.classList.add('selected');
+}
+
+async function openEditColoIndex(id) {
+    try {
+        const doc = await db.collection('espaces').doc(id).get();
+        if (doc.exists) openColoFormIndex({ id: doc.id, ...doc.data() });
+    } catch (err) {
+        showToast('Erreur lors du chargement.', 'error');
+    }
+}
+
+// Image upload
+document.getElementById('coloIndexBgInput')?.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { showToast('Seules les images sont acceptées.', 'error'); return; }
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+        const base64 = reader.result;
+        if (base64.length > 5500000) { showToast('Image trop lourde (max ~4Mo).', 'error'); return; }
+        document.getElementById('coloIndexBgBase64').value = base64;
+        const bgPreview = document.getElementById('coloIndexBgPreview');
+        const bgPreviewContainer = document.getElementById('coloIndexBgPreviewContainer');
+        if (bgPreview && bgPreviewContainer) { bgPreview.src = base64; bgPreviewContainer.classList.remove('hidden'); }
+    };
+    reader.onerror = () => showToast('Erreur de lecture de l\'image.', 'error');
+});
+
+document.getElementById('btnRemoveColoIndexBg')?.addEventListener('click', () => {
+    document.getElementById('coloIndexBgInput').value = '';
+    document.getElementById('coloIndexBgBase64').value = '';
+    document.getElementById('coloIndexBgPreview').src = '';
+    document.getElementById('coloIndexBgPreviewContainer').classList.add('hidden');
+});
+
+// Sauvegarde
+document.getElementById('btnSaveColoFormIndex')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveColoFormIndex');
+    const errEl = document.getElementById('coloFormIndexError');
+    const errMsg = document.getElementById('coloFormIndexErrorMsg');
+
+    const nom = document.getElementById('coloIndexNom')?.value.trim();
+    if (!nom) {
+        errMsg.textContent = 'Le nom de la colonie est obligatoire.';
+        errEl.classList.remove('hidden');
+        return;
+    }
+
+    const dateDebut = document.getElementById('coloIndexDateDebut')?.value;
+    const dateFin = document.getElementById('coloIndexDateFin')?.value;
+    if (dateDebut && dateFin && new Date(dateFin) <= new Date(dateDebut)) {
+        errMsg.textContent = 'La date de fin doit être après la date de début.';
+        errEl.classList.remove('hidden');
+        return;
+    }
+
+    errEl.classList.add('hidden');
+    btnLoading(btn, true);
+
+    const data = {
+        nom,
+        organisme: document.getElementById('coloIndexOrganisme')?.value.trim() || '',
+        dateDebut: dateDebut || '',
+        dateFin: dateFin || '',
+        driveId: document.getElementById('coloIndexDriveId')?.value.trim() || '',
+        ppId: document.getElementById('coloIndexPPId')?.value.trim() || '',
+        isFormation: document.getElementById('coloIndexIsFormation')?.checked || false,
+        bgImage: document.getElementById('coloIndexBgBase64')?.value || '',
+        emoji: document.getElementById('coloIndexEmoji')?.value.trim() || '🏕️',
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    const coloId = document.getElementById('coloIndexId')?.value;
+
+    try {
+        if (coloId) {
+            await db.collection('espaces').doc(coloId).update(data);
+            showToast('Colonie mise à jour.', 'success');
+        } else {
+            data.createdBy = currentUser.uid;
+            data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            await db.collection('espaces').add(data);
+            showToast('Colonie créée !', 'success');
+        }
+        closeModal('overlayColoFormIndex');
+        loadColos(currentUser, currentRole);
+    } catch (err) {
+        console.error('saveColoIndex:', err);
+        errMsg.textContent = 'Erreur lors de l\'enregistrement.';
+        errEl.classList.remove('hidden');
+    } finally {
+        btnLoading(btn, false);
+    }
+});
