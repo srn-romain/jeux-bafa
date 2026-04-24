@@ -100,7 +100,7 @@
                     <i class="bi bi-people"></i> Utilisateurs
                 </button>
                 <button class="es-nav-tab" data-tab="config" role="tab">
-                    <i class="bi bi-gear"></i> Configuration
+                    <i class="bi bi-gear"></i> Configuration IA
                 </button>
             </div>
 
@@ -354,138 +354,6 @@
     </div>
 
 
-    <!-- ===================================================
-     MODAL : Gestion des participants d'une colo (admin)
-     =================================================== -->
-    <div class="es-overlay hidden" id="overlayParticipantsAdmin" role="dialog" aria-modal="true">
-        <div class="es-modal" style="max-width:640px;">
-            <div class="es-modal__header">
-                <h2 class="es-modal__title" id="participantsAdminTitle">Participants</h2>
-                <button class="es-modal__close" id="btnCloseParticipantsAdmin"><i class="bi bi-x"></i></button>
-            </div>
-            <div class="es-modal__body">
-                <div style="display:flex;justify-content:flex-end;margin-bottom:12px;gap:8px;flex-wrap:wrap;">
-                    <button class="es-btn es-btn--ghost es-btn--sm" id="btnManageGroupsAdmin">
-                        <i class="bi bi-tags"></i> Groupes
-                    </button>
-                    <button class="es-btn es-btn--ghost es-btn--sm" id="btnExportParticipants">
-                        <i class="bi bi-download"></i> Export JSON
-                    </button>
-                    <button class="es-btn es-btn--ghost es-btn--sm" id="btnImportParticipants">
-                        <i class="bi bi-upload"></i> Import JSON
-                    </button>
-                    <input type="file" id="inputImportParticipants" class="hidden" accept=".json">
-                    <!-- Sélecteur colonne Spécificités / Remarques -->
-                    <div style="display:inline-flex;border-radius:20px;border:1px solid rgba(255,255,255,0.12);background:rgba(0,0,0,0.25);padding:2px;">
-                        <button id="btnAdminShowSpec" onclick="setAdminParticipantColView('spec')"
-                            style="padding:4px 11px;font-size:0.78rem;border:none;cursor:pointer;transition:all 0.18s;background:transparent;color:rgba(255,255,255,0.45);font-weight:500;border-radius:16px;display:flex;align-items:center;gap:4px;">
-                            <i class="bi bi-tag"></i> Spécificités
-                        </button>
-                        <button id="btnAdminShowNote" onclick="setAdminParticipantColView('note')"
-                            style="padding:4px 11px;font-size:0.78rem;border:none;cursor:pointer;transition:all 0.18s;background:var(--clr-primary);color:#fff;font-weight:700;border-radius:16px;display:flex;align-items:center;gap:4px;">
-                            <i class="bi bi-chat-left-text"></i> Remarques
-                        </button>
-                    </div>
-                    <button class="es-btn es-btn--primary es-btn--sm" id="btnAddParticipantAdmin">
-                        <i class="bi bi-plus-lg"></i> Ajouter
-                    </button>
-                </div>
-                <div class="es-table-wrap">
-                    <table class="es-table">
-                        <thead>
-                            <tr>
-                                <th>Prénom</th>
-                                <th>Nom</th>
-                                <th>Âge</th>
-                                <th>Genre</th>
-                                <th class="col-groupe hidden">Groupe</th>
-                                <th class="col-spec-admin hidden">Spécificités</th>
-                                <th class="col-note-admin">Remarque</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="participantsAdminTbody">
-                            <tr>
-                                <td colspan="5" class="text-center text-muted" style="padding:20px;">Chargement…</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="es-modal__footer">
-                <button class="es-btn es-btn--ghost" id="btnCloseParticipantsAdmin2">Fermer</button>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ===================================================
-     MODAL : Ajouter/Modifier un participant (admin)
-     =================================================== -->
-    <div class="es-overlay hidden" id="overlayParticipantForm" role="dialog" aria-modal="true">
-        <div class="es-modal" style="max-width:440px;">
-            <div class="es-modal__header">
-                <h2 class="es-modal__title" id="participantFormTitle">Ajouter un participant</h2>
-                <button class="es-modal__close" id="btnCloseParticipantForm"><i class="bi bi-x"></i></button>
-            </div>
-            <div class="es-modal__body">
-                <form id="participantFormAdmin" novalidate>
-                    <input type="hidden" id="pAdminId">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                        <div class="es-field">
-                            <label class="es-field__label" for="pAdminPrenom">Prénom *</label>
-                            <input class="es-input" type="text" id="pAdminPrenom" required placeholder="Louisa">
-                        </div>
-                        <div class="es-field">
-                            <label class="es-field__label" for="pAdminNom">Nom *</label>
-                            <input class="es-input" type="text" id="pAdminNom" required placeholder="DUPONT">
-                        </div>
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;">
-                        <div class="es-field">
-                            <label class="es-field__label" for="pAdminAge">Âge *</label>
-                            <input class="es-input" type="number" id="pAdminAge" min="6" max="18" required
-                                placeholder="11">
-                        </div>
-                        <div class="es-field">
-                            <label class="es-field__label" for="pAdminGenre">Genre</label>
-                            <select class="es-select" id="pAdminGenre">
-                                <option value="feminin">Fille ♀</option>
-                                <option value="masculin">Garçon ♂</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="es-field hidden" id="fieldAdminParticipantGroup">
-                        <label class="es-field__label" for="pAdminGroup">Groupe thématique</label>
-                        <select class="es-select" id="pAdminGroup">
-                            <option value="">-- Aucun groupe --</option>
-                        </select>
-                    </div>
-                    <div class="es-field">
-                        <label class="es-field__label" for="pAdminSpec"><i class="bi bi-tag"
-                                style="color:var(--clr-primary)"></i> Spécificités (diabétique, hyperactif...)</label>
-                        <input class="es-input" type="text" id="pAdminSpec" placeholder="Ex: diabétique, hyperactif">
-                    </div>
-                    <div class="es-field">
-                        <label class="es-field__label" for="pAdminNote"><i class="bi bi-info-circle"
-                                style="color:var(--clr-primary)"></i> Remarques</label>
-                        <textarea class="es-textarea es-textarea--note" id="pAdminNote" rows="2"
-                            placeholder="Infos..."></textarea>
-                    </div>
-                </form>
-                <div class="es-alert es-alert--error hidden mt-3" id="pAdminError">
-                    <i class="bi bi-exclamation-circle"></i><span id="pAdminErrorMsg"></span>
-                </div>
-            </div>
-            <div class="es-modal__footer">
-                <button class="es-btn es-btn--ghost" id="btnCancelParticipantForm">Annuler</button>
-                <button class="es-btn es-btn--primary" id="btnSaveParticipantForm">
-                    <span class="es-btn__text">Enregistrer</span>
-                    <span class="es-btn__spinner"></span>
-                </button>
-            </div>
-        </div>
-    </div>
 
 
     <!-- ===================================================

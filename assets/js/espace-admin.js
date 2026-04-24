@@ -175,13 +175,7 @@ async function loadColos() {
 
         for (const doc of snap.docs) {
             const colo = { id: doc.id, ...doc.data() };
-            // Compter participants
-            let nbP = 0;
-            try {
-                const pSnap = await db.collection('espaces').doc(colo.id).collection('participants').get();
-                nbP = pSnap.size;
-            } catch (_) { }
-            list.appendChild(buildColoAdminCard(colo, nbP));
+            list.appendChild(buildColoAdminCard(colo));
         }
     } catch (err) {
         loader?.classList.add('hidden');
@@ -190,7 +184,7 @@ async function loadColos() {
     }
 }
 
-function buildColoAdminCard(colo, nbParticipants) {
+function buildColoAdminCard(colo) {
     const div = document.createElement('div');
     div.className = 'es-colo-admin-card';
     const dateStr = (colo.dateDebut && colo.dateFin)
@@ -226,7 +220,7 @@ function buildColoAdminCard(colo, nbParticipants) {
                     ` : ''}
                 </div>
                 <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:2px;display:flex;align-items:center;gap:8px;">
-                    ${dateStr} · ${nbParticipants} ${colo.isFormation ? 'stagiaire' : 'participant'}${nbParticipants !== 1 ? 's' : ''}
+                    ${dateStr}
                     <span style="
                         padding:1px 7px;border-radius:20px;font-size:0.7rem;font-weight:700;
                         ${locked
@@ -257,10 +251,6 @@ function buildColoAdminCard(colo, nbParticipants) {
                         onclick="toggleParticipantsLock('${colo.id}', ${locked})">
                     <i class="bi bi-${locked ? 'unlock' : 'lock'}"></i>
                     <span class="brand-label">${locked ? 'Déverrouiller' : 'Verrouiller'}</span>
-                </button>
-                <button class="es-btn es-btn--sm es-btn--secondary"
-                        onclick="openParticipantsModal('${colo.id}', ${escapeHtml(JSON.stringify(colo.nom || ''))})">
-                    <i class="bi bi-people"></i> <span class="brand-label">Participants</span>
                 </button>
                 <button class="es-btn es-btn--sm" style="background:rgba(166,216,102,0.12);color:#a6d866;border:1px solid rgba(166,216,102,0.25);"
                         onclick="openEditColo('${colo.id}')">
@@ -558,11 +548,6 @@ document.getElementById('btnConfirmDelete')?.addEventListener('click', async () 
             closeModal('overlayConfirmDelete');
             loadColos();
 
-        } else if (deleteTarget.type === 'participant') {
-            await db.collection('espaces').doc(deleteTarget.coloId).collection('participants').doc(deleteTarget.id).delete();
-            showToast('Participant supprimé.', 'success');
-            closeModal('overlayConfirmDelete');
-            loadParticipantsAdmin(deleteTarget.coloId);
         }
     } catch (err) {
         console.error('delete:', err);
@@ -573,310 +558,6 @@ document.getElementById('btnConfirmDelete')?.addEventListener('click', async () 
     }
 });
 
-// ================================================================
-// GESTION PARTICIPANTS (modal admin)
-// ================================================================
-
-let adminEditingParticipantId = null;
-
-async function openParticipantsModal(coloId, coloNom) {
-    currentColoId = coloId;
-    currentColoNom = coloNom;
-    document.getElementById('participantsAdminTitle').textContent = `Participants – ${coloNom}`;
-    openModal('overlayParticipantsAdmin');
-    loadAdminGroups(coloId);
-    loadParticipantsAdmin(coloId);
-}
-
-async function loadParticipantsAdmin(coloId) {
-    const tbody = document.getElementById('participantsAdminTbody');
-    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">Chargement…</td></tr>`;
-
-    try {
-        const snap = await db.collection('espaces').doc(coloId).collection('participants').orderBy('nom').get();
-        const participants = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        if (participants.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted" style="padding:20px;">Aucun participant.</td></tr>`;
-            return;
-        }
-
-        const hasGroups = currentAdminGroups.length > 0;
-        document.querySelectorAll('#overlayParticipantsAdmin .col-groupe').forEach(el => el.classList.toggle('hidden', !hasGroups));
-
-        // Mettre à jour la visibilité des th
-        document.querySelectorAll('.col-spec-admin').forEach(el => el.classList.toggle('hidden', adminParticipantColView !== 'spec'));
-        document.querySelectorAll('.col-note-admin').forEach(el => el.classList.toggle('hidden', adminParticipantColView !== 'note'));
-
-        tbody.innerHTML = participants.map(p => {
-            const g = hasGroups ? currentAdminGroups.find(x => x.id === p.groupeId) : null;
-            const note = p.note || '';
-            const isLong = note.length > 45;
-
-            const specIsVisible = adminParticipantColView === 'spec';
-            const noteIsVisible = adminParticipantColView === 'note';
-
-            return `
-            <tr>
-                <td><strong>${escapeHtml(p.prenom || '')}</strong></td>
-                <td>${escapeHtml(p.nom || '')}</td>
-                <td><span class="es-pill es-pill--age">${p.age} ans</span></td>
-                <td><span class="es-pill ${p.genre === 'masculin' ? 'es-pill--m' : 'es-pill--f'}">
-                    ${p.genre === 'masculin' ? '♂' : '♀'}
-                </span></td>
-                <td class="col-groupe ${!hasGroups ? 'hidden' : ''}">
-                    ${g ? `<span class="es-badge es-badge--anim" style="background:var(--clr-surface-3); border:1px solid var(--clr-surface-4); color:var(--clr-text);">${escapeHtml(g.name)}</span>` : '<span class="text-muted">–</span>'}
-                </td>
-                <td class="col-spec-admin${!specIsVisible ? ' hidden' : ''}">
-                    ${(p.spec || []).length > 0 ? p.spec.map(s => `<span class="es-tag" style="${getStringColorStyle(s)}">${escapeHtml(s)}</span>`).join('') : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
-                </td>
-                <td class="col-note-admin${!noteIsVisible ? ' hidden' : ''}">
-                    ${note ? `
-                        <div style="display:flex;align-items:center;gap:0;width:100%;min-width:0;">
-                            <span class="es-note-text">${escapeHtml(note)}</span>
-                            <span style="flex-shrink:0;width:22px;height:20px;display:inline-flex;align-items:center;justify-content:center;">
-                                ${isLong ? `<button style="padding:0;height:18px;width:18px;border:none;color:var(--clr-primary);background:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px;" onclick="showAdminNote(${escapeHtml(JSON.stringify(note))})"><i class="bi bi-eye" style="font-size:0.82rem;"></i></button>` : ''}
-                            </span>
-                        </div>
-                    ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
-                </td>
-                <td class="es-table__actions">
-                    <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier" onclick="editParticipantAdmin('${p.id}', ${escapeHtml(JSON.stringify(JSON.stringify(p)))})"><i class="bi bi-pencil"></i></button>
-                    <button class="es-btn es-btn--danger es-btn--sm" title="Supprimer" onclick="confirmDeleteParticipant('${p.id}', ${escapeHtml(JSON.stringify(p.prenom + ' ' + p.nom))})"><i class="bi bi-trash3"></i></button>
-                </td>
-            </tr>`;
-        }).join('');
-    } catch (err) {
-        console.error('loadParticipantsAdmin:', err);
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center" style="color:var(--clr-danger);padding:20px;">Erreur de chargement.</td></tr>`;
-    }
-}
-
-function setAdminParticipantColView(view) {
-    adminParticipantColView = view;
-
-    // Mettre à jour les styles des boutons du segmented control
-    const btnSpec = document.getElementById('btnAdminShowSpec');
-    const btnNote = document.getElementById('btnAdminShowNote');
-    if (btnSpec && btnNote) {
-        if (view === 'spec') {
-            btnSpec.style.background = 'var(--clr-primary)';
-            btnSpec.style.color = '#fff';
-            btnSpec.style.fontWeight = '700';
-            btnNote.style.background = 'transparent';
-            btnNote.style.color = 'rgba(255,255,255,0.45)';
-            btnNote.style.fontWeight = '500';
-        } else {
-            btnNote.style.background = 'var(--clr-primary)';
-            btnNote.style.color = '#fff';
-            btnNote.style.fontWeight = '700';
-            btnSpec.style.background = 'transparent';
-            btnSpec.style.color = 'rgba(255,255,255,0.45)';
-            btnSpec.style.fontWeight = '500';
-        }
-    }
-
-    loadParticipantsAdmin(currentColoId);
-}
-
-document.getElementById('btnCloseParticipantsAdmin')?.addEventListener('click', () => closeModal('overlayParticipantsAdmin'));
-document.getElementById('btnCloseParticipantsAdmin2')?.addEventListener('click', () => closeModal('overlayParticipantsAdmin'));
-
-document.getElementById('btnAddParticipantAdmin')?.addEventListener('click', () => {
-    adminEditingParticipantId = null;
-    document.getElementById('participantFormTitle').textContent = 'Ajouter un participant';
-    document.getElementById('participantFormAdmin')?.reset();
-    document.getElementById('pAdminError')?.classList.add('hidden');
-    openModal('overlayParticipantForm');
-});
-
-function editParticipantAdmin(id, pJson) {
-    try {
-        const p = JSON.parse(pJson);
-        adminEditingParticipantId = id;
-        document.getElementById('participantFormTitle').textContent = 'Modifier le participant';
-        document.getElementById('pAdminPrenom').value = p.prenom || '';
-        document.getElementById('pAdminNom').value = p.nom || '';
-        document.getElementById('pAdminAge').value = p.age || '';
-        document.getElementById('pAdminGenre').value = p.genre || 'feminin';
-        document.getElementById('pAdminSpec').value = Array.isArray(p.spec) ? p.spec.join(', ') : (p.spec || '');
-        document.getElementById('pAdminNote').value = p.note || '';
-
-        const groupSelect = document.getElementById('pAdminGroup');
-        if (groupSelect) groupSelect.value = p.groupeId || '';
-
-        document.getElementById('pAdminError')?.classList.add('hidden');
-        openModal('overlayParticipantForm');
-    } catch (_) { }
-}
-
-function confirmDeleteParticipant(id, nom) {
-    deleteTarget = { type: 'participant', id, coloId: currentColoId };
-    document.getElementById('confirmDeleteText').textContent = `Supprimer le participant "${nom}" ? Action irréversible.`;
-    openModal('overlayConfirmDelete');
-}
-
-document.getElementById('btnCloseParticipantForm')?.addEventListener('click', () => closeModal('overlayParticipantForm'));
-document.getElementById('btnCancelParticipantForm')?.addEventListener('click', () => closeModal('overlayParticipantForm'));
-
-document.getElementById('btnSaveParticipantForm')?.addEventListener('click', async () => {
-    const btn = document.getElementById('btnSaveParticipantForm');
-    const errEl = document.getElementById('pAdminError');
-    const errMsg = document.getElementById('pAdminErrorMsg');
-
-    const prenom = document.getElementById('pAdminPrenom')?.value.trim();
-    const nom = document.getElementById('pAdminNom')?.value.trim();
-    const age = parseInt(document.getElementById('pAdminAge')?.value);
-    const genre = document.getElementById('pAdminGenre')?.value;
-    const specRaw = document.getElementById('pAdminSpec')?.value.trim() || '';
-
-    const spec = specRaw ? specRaw.split(',').map(s => s.trim().toLowerCase()).filter(s => s) : [];
-
-    if (!prenom || !nom || isNaN(age)) {
-        errMsg.textContent = 'Prénom, nom et âge sont obligatoires.';
-        errEl.classList.remove('hidden');
-        return;
-    }
-
-    errEl.classList.add('hidden');
-    btnLoading(btn, true);
-
-    try {
-        const colRef = db.collection('espaces').doc(currentColoId).collection('participants');
-        const groupeId = document.getElementById('pAdminGroup')?.value || null;
-        const note = document.getElementById('pAdminNote')?.value.trim();
-        const data = { prenom, nom, age, genre, groupeId, spec, note };
-
-        if (adminEditingParticipantId) {
-            await colRef.doc(adminEditingParticipantId).update(data);
-            showToast('Participant modifié.', 'success');
-        } else {
-            await colRef.add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-            showToast('Participant ajouté.', 'success');
-        }
-
-        closeModal('overlayParticipantForm');
-        loadParticipantsAdmin(currentColoId);
-    } catch (err) {
-        console.error('saveParticipantAdmin:', err);
-        errMsg.textContent = 'Erreur lors de l\'enregistrement.';
-        errEl.classList.remove('hidden');
-    } finally {
-        btnLoading(btn, false);
-    }
-});
-
-// ----------------------------------------------------------------
-// IMPORT / EXPORT JSON
-// ----------------------------------------------------------------
-
-document.getElementById('btnExportParticipants')?.addEventListener('click', () => {
-    if (!currentColoId) return;
-    exportParticipantsData(currentColoId, currentColoNom);
-});
-
-async function exportParticipantsData(coloId, coloNom) {
-    try {
-        const snap = await db.collection('espaces').doc(coloId).collection('participants').get();
-        const participants = snap.docs.map(d => {
-            const data = d.data();
-            return {
-                prenom: data.prenom,
-                nom: data.nom,
-                age: data.age,
-                genre: data.genre,
-                groupeId: data.groupeId || null,
-                note: data.note || '',
-                appreciation: data.appreciation || '',
-                spec: data.spec || []
-            };
-        });
-
-        const exportData = {
-            coloId,
-            coloNom,
-            exportDate: new Date().toISOString(),
-            participants
-        };
-
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `participants_${coloNom.replace(/\s+/g, '_').toLowerCase()}_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        showToast('Export réussi !', 'success');
-    } catch (err) {
-        console.error('export error:', err);
-        showToast("Erreur lors de l'export.", 'error');
-    }
-}
-
-document.getElementById('btnImportParticipants')?.addEventListener('click', () => {
-    document.getElementById('inputImportParticipants')?.click();
-});
-
-document.getElementById('inputImportParticipants')?.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) handleImportJSON(file);
-});
-
-async function handleImportJSON(file) {
-    if (!file || !currentColoId) return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const data = JSON.parse(e.target.result);
-            // On accepte soit un tableau direct, soit l'objet exporté par l'appli
-            const list = Array.isArray(data) ? data : data.participants;
-
-            if (!list || !Array.isArray(list)) {
-                throw new Error("Format invalide (attendu : tableau JSON)");
-            }
-
-            if (!confirm(`Importer ${list.length} participants dans cette colonie ?`)) {
-                document.getElementById('inputImportParticipants').value = '';
-                return;
-            }
-
-            const colRef = db.collection('espaces').doc(currentColoId).collection('participants');
-            let added = 0;
-            let errors = 0;
-
-            for (const p of list) {
-                if (p.prenom && p.nom && p.age) {
-                    await colRef.add({
-                        prenom: p.prenom.trim(),
-                        nom: p.nom.trim(),
-                        age: parseInt(p.age),
-                        genre: p.genre || 'feminin',
-                        groupeId: p.groupeId || null,
-                        note: p.note || '',
-                        appreciation: p.appreciation || '',
-                        spec: Array.isArray(p.spec) ? p.spec : (p.spec ? p.spec.split(',').map(s=>s.trim()) : []),
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                    added++;
-                } else {
-                    errors++;
-                }
-            }
-
-            showToast(`${added} importés ! ${errors > 0 ? `(${errors} erreurs)` : ''}`, added > 0 ? 'success' : 'error');
-            loadParticipantsAdmin(currentColoId);
-        } catch (err) {
-            console.error('import error:', err);
-            showToast("Fichier JSON invalide.", 'error');
-        } finally {
-            document.getElementById('inputImportParticipants').value = '';
-        }
-    };
-    reader.readAsText(file);
-}
 
 // ================================================================
 // ONGLET DEMANDES D'ACCÈS

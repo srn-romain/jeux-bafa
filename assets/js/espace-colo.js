@@ -45,6 +45,54 @@ function updateAIStatusUI() {
     }
 }
 
+// Mise à jour visuelle du bouton de verrouillage des participants (Directeur)
+function updateParticipantsLockUI() {
+    const btn = document.getElementById('btnToggleParticipantsLock');
+    if (!btn) return;
+
+    if (currentLocked) {
+        btn.innerHTML = '<i class="bi bi-lock-fill"></i> <span class="brand-label">Verrouillé</span>';
+        btn.style.background = 'rgba(231, 76, 60, 0.12)';
+        btn.style.color = '#e74c3c';
+        btn.style.borderColor = 'rgba(231, 76, 60, 0.3)';
+    } else {
+        btn.innerHTML = '<i class="bi bi-unlock-fill"></i> <span class="brand-label">Ouvert</span>';
+        btn.style.background = 'rgba(39, 174, 96, 0.12)';
+        btn.style.color = '#27ae60';
+        btn.style.borderColor = 'rgba(39, 174, 96, 0.3)';
+    }
+}
+
+async function toggleParticipantsLock() {
+    if (currentRole !== 'admin') return;
+    
+    const newLocked = !currentLocked;
+    const btn = document.getElementById('btnToggleParticipantsLock');
+    if (!btn) return;
+    
+    btnLoading(btn, true);
+
+    try {
+        await db.collection('espaces').doc(espaceId).update({
+            participantsLocked: newLocked,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        currentLocked = newLocked;
+        updateParticipantsLockUI();
+        showToast(newLocked ? 'Gestion des participants verrouillée.' : 'Gestion des participants ouverte.', 'success');
+        
+        // Rafraîchir les participants pour mettre à jour les boutons "Ajouter" etc.
+        loadParticipants(espaceId, currentRole);
+    } catch (err) {
+        console.error('toggleParticipantsLock:', err);
+        showToast('Erreur lors du changement de verrouillage.', 'error');
+    } finally {
+        btnLoading(btn, false);
+    }
+}
+
+document.getElementById('btnToggleParticipantsLock')?.addEventListener('click', toggleParticipantsLock);
+
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
     let hash = 0;
@@ -289,6 +337,7 @@ async function initColoContent(colo, role) {
         }
     }
     
+    updateParticipantsLockUI();
     updateAIStatusUI();
 
     // Onglets
