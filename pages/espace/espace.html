@@ -33,7 +33,7 @@
             <!-- Rempli par JS -->
           </div>
           <div class="es-topbar__colos-footer">
-            <a href="dashboard.html" class="es-topbar__colos-item es-topbar__colos-item--dashboard">
+            <a href="index.html" class="es-topbar__colos-item es-topbar__colos-item--dashboard">
               <span class="es-topbar__colos-item-emoji">📊</span>
               <span style="flex:1; font-weight:700; color:var(--clr-text);">Retour au Dashboard</span>
             </a>
@@ -280,7 +280,7 @@
                       placeholder="Ex: Prise de médicament Léo (après repas)" required></textarea>
                   </div>
 
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px;">
                     <div class="es-field">
                       <label class="es-field__label" for="alertType">Type d'alerte</label>
                       <select id="alertType" class="es-select">
@@ -313,7 +313,7 @@
                   </div>
 
                   <div id="scheduleInputs" class="hidden"
-                    style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px; padding:10px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px dashed rgba(255,255,255,0.1);">
+                    style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-top:8px; padding:12px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px dashed rgba(255,255,255,0.1);">
                     <div class="es-field">
                       <label class="es-field__label" for="alertDate">Date</label>
                       <input type="date" id="alertDate" class="es-input es-input--sm">

@@ -347,13 +347,16 @@ function renderColoSwitchList(colos, currentId) {
 
     const pinnedIds = JSON.parse(localStorage.getItem('pinnedColos') || '[]');
 
-    // Trier : épinglés en haut, puis par nom
+    // Trier : épinglés en haut, puis par date (plus récent en haut)
     const sorted = [...colos].sort((a, b) => {
         const aPinned = pinnedIds.includes(a.id);
         const bPinned = pinnedIds.includes(b.id);
         if (aPinned && !bPinned) return -1;
         if (!aPinned && bPinned) return 1;
-        return 0; // Garder l'ordre alphabétique initial
+
+        const dateA = a.dateDebut ? new Date(a.dateDebut) : new Date(0);
+        const dateB = b.dateDebut ? new Date(b.dateDebut) : new Date(0);
+        return dateB - dateA; // Décroissant : récent d'abord
     });
 
     listEl.innerHTML = sorted.map(c => {
