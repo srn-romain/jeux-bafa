@@ -294,6 +294,10 @@ function initTabs() {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.es-nav-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+            
+            // Faire défiler l'onglet pour le centrer (utile sur mobile)
+            btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+
             const tab = btn.getAttribute('data-tab');
             document.getElementById('tab-groupes').classList.toggle('hidden', tab !== 'groupes');
             document.getElementById('tab-participants').classList.toggle('hidden', tab !== 'participants');
