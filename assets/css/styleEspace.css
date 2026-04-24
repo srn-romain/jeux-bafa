@@ -938,9 +938,9 @@ textarea {
 }
 
 .es-tabs__btn.active {
-  background: rgba(255, 255, 255, 0.11);
+  background: var(--clr-primary-dark);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Séparateur */
@@ -2224,9 +2224,9 @@ input:checked+.es-slider:before {
 }
 
 .es-nav-tab.active {
-  background: var(--clr-surface);
-  color: var(--clr-text);
-  box-shadow: var(--shadow-sm);
+  background: var(--clr-bg-dark);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* ================================================================
