@@ -2299,6 +2299,18 @@ input:checked+.es-slider:before {
   .es-topbar__brand span.brand-label {
     display: none;
   }
+
+  /* Optimisation Drive Mobile */
+  #driveLinkBtn {
+    padding: 8px;
+    min-width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    justify-content: center;
+  }
+  #driveLinkBtn span {
+    display: none;
+  }
 }
 
 /* ================================================================
