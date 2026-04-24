@@ -455,26 +455,22 @@
               </button>
             </div>
 
-              <!-- Configuration IA (Directeur uniquement) -->
+              <!-- Activation IA (Directeur uniquement) -->
               <div class="director-only hidden" style="margin-bottom: 24px;">
-                  <div class="es-card" style="border: 1px solid rgba(166, 216, 102, 0.3); background: rgba(166, 216, 102, 0.03);">
-                      <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
-                          <div style="flex:1; min-width:280px;">
-                              <h4 style="margin:0 0 8px 0; font-size:0.9rem; color:var(--clr-primary); display:flex; align-items:center; gap:8px;">
-                                  <i class="bi bi-robot"></i> Configuration de l'Assistant IA
-                              </h4>
-                              <p style="font-size:0.8rem; color:var(--clr-text-muted); margin:0;">
-                                  En renseignant votre clé API ici, vous permettez à tous les animateurs de cette session d'utiliser l'assistant de rédaction sans qu'ils n'aient à configurer quoi que ce soit.
-                              </p>
-                          </div>
-                          <div style="display:flex; gap:8px;">
-                              <button class="es-btn es-btn--secondary es-btn--sm" id="btnConfigIA" style="background:var(--clr-primary); color:white; border:none;">
-                                  <i class="bi bi-gear-fill"></i> Configurer la clé
-                              </button>
-                          </div>
+                  <div class="es-card" style="border: 1px solid rgba(166, 216, 102, 0.2); background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 20px;">
+                      <div style="flex:1;">
+                          <h4 style="margin:0 0 6px 0; font-size:1rem; color:var(--clr-primary); display:flex; align-items:center; gap:10px; font-weight: 800; letter-spacing: -0.01em;">
+                              <i class="bi bi-robot" style="font-size: 1.2rem;"></i> Assistant IA
+                          </h4>
+                          <p style="font-size:0.82rem; color:var(--clr-text-muted); margin:0; line-height: 1.5;" id="iaStatusLabel">
+                              Permettre aux animateurs d'utiliser l'IA pour cet espace.
+                          </p>
                       </div>
-                      <div id="iaStatusInfo" style="margin-top:12px; font-size:0.75rem; display:flex; align-items:center; gap:15px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.05);">
-                          <span id="iaStatusLabel"></span>
+                      <div style="display:flex; align-items:center;">
+                          <label class="es-switch">
+                              <input type="checkbox" id="toggleIASwitch">
+                              <span class="es-switch__slider"></span>
+                          </label>
                       </div>
                   </div>
               </div>
@@ -1541,67 +1537,6 @@
     </div>
   </div>
 
-  <!-- Modal : Configuration IA (Directeur) -->
-  <div class="es-overlay hidden" id="overlayIASettings" role="dialog" aria-modal="true">
-    <div class="es-modal" style="max-width:500px;">
-      <div class="es-modal__header">
-        <h2 class="es-modal__title"><i class="bi bi-gear"></i> Paramètres IA de la session</h2>
-        <button class="es-modal__close" onclick="closeModal('overlayIASettings')"><i class="bi bi-x"></i></button>
-      </div>
-      <div class="es-modal__body">
-        <div class="es-field">
-          <label class="es-field__label" for="espaceGeminiKey">Clé API Google Gemini</label>
-          <div style="display:flex; gap:8px;">
-            <div style="position:relative; flex:1;">
-              <input type="password" class="es-input" id="espaceGeminiKey" placeholder="AIzaSy..." style="padding-right: 40px; width:100%;">
-              <button type="button" id="btnToggleKeyVisibility" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--clr-text-muted); cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; z-index:2;">
-                <i class="bi bi-eye"></i>
-              </button>
-            </div>
-            <button type="button" id="btnCopySpaceKey" class="es-btn es-btn--secondary" style="padding: 0 12px; min-width: auto; height: 42px;" title="Copier la clé">
-              <i class="bi bi-clipboard"></i>
-            </button>
-          </div>
-          <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:8px;">
-            <i class="bi bi-info-circle"></i> Cette clé est stockée pour cette session et permet la génération d'appréciations.
-          </p>
-
-          <details style="margin-top: 15px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0;">
-            <summary style="padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--clr-primary); list-style: none; display: flex; align-items: center; gap: 8px;">
-              <i class="bi bi-question-circle"></i> Comment obtenir cette clé gratuitement ?
-              <i class="bi bi-chevron-down" style="margin-left: auto; font-size: 0.7rem;"></i>
-            </summary>
-            <div style="padding: 0 14px 14px; font-size: 0.8rem; color: var(--clr-text-muted); line-height: 1.5;">
-              <ol style="padding-left: 18px; margin: 10px 0;">
-                <li>Rendez-vous sur <a href="https://aistudio.google.com/" target="_blank" style="color:var(--clr-primary); text-decoration:underline;">Google AI Studio</a>.</li>
-                <li>Connectez-vous avec votre compte Google (Gmail).</li>
-                <li>Cliquez sur <strong>"Get API key"</strong> dans le menu à gauche.</li>
-                <li>Cliquez sur le bouton bleu <strong>"Create API key"</strong>.</li>
-                <li>Copiez le code (il commence par <code>AIzaSy...</code>) et collez-le ici.</li>
-              </ol>
-              <p style="font-style: italic; font-size: 0.75rem;">
-                Note : L'utilisation est entièrement gratuite et sécurisée. Ne partagez jamais cette clé.
-              </p>
-            </div>
-          </details>
-        </div>
-
-        <div class="es-field" style="margin-top:20px; padding-top:15px; border-top:1px solid rgba(255,255,255,0.05);">
-          <label class="es-checkbox-label" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-            <input type="checkbox" id="allowAnimAI" checked>
-            <span style="font-weight:600;">Autoriser les animateurs à utiliser l'IA</span>
-          </label>
-          <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:5px; margin-left:26px;">
-            Si décoché, seul le directeur pourra voir le bouton "Générer par IA" dans les fiches stagiaires.
-          </p>
-        </div>
-      </div>
-      <div class="es-modal__footer">
-        <button class="es-btn es-btn--ghost" onclick="closeModal('overlayIASettings')">Annuler</button>
-        <button class="es-btn es-btn--primary" id="btnSaveIASettings">Enregistrer la clé</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Toast container -->
   <div class="es-toast-container" id="toastContainer"></div>

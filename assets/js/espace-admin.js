@@ -61,12 +61,13 @@ function initAdminTabs() {
             document.querySelectorAll('#adminTabs .es-nav-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const tab = btn.getAttribute('data-tab');
-            ['colos', 'demandes', 'utilisateurs'].forEach(t => {
+            ['colos', 'demandes', 'utilisateurs', 'config'].forEach(t => {
                 document.getElementById(`tab-${t}`)?.classList.toggle('hidden', t !== tab);
             });
             // Charger les données de l'onglet sélectionné à la demande
             if (tab === 'demandes') loadDemandes();
             if (tab === 'utilisateurs') loadUsers();
+            if (tab === 'config') loadConfig();
         });
     });
 }
@@ -97,6 +98,57 @@ function loadPendingBadge() {
             console.error('loadPendingBadge snapshot:', err);
         });
 }
+// ----------------------------------------------------------------
+// ONGLET CONFIGURATION (Gemini Key)
+// ----------------------------------------------------------------
+async function loadConfig() {
+    if (!currentAdminUser) return;
+    try {
+        const doc = await db.collection('users').doc(currentAdminUser.uid).get();
+        if (doc.exists) {
+            const data = doc.data();
+            const input = document.getElementById('adminGeminiKey');
+            if (input) input.value = data.geminiKey || '';
+        }
+    } catch (err) {
+        console.error("loadConfig error:", err);
+    }
+}
+
+document.getElementById('btnSaveAdminKey')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveAdminKey');
+    const input = document.getElementById('adminGeminiKey');
+    const key = input?.value.trim() || '';
+
+    btnLoading(btn, true);
+    try {
+        await db.collection('users').doc(currentAdminUser.uid).update({
+            geminiKey: key,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast("Clé API enregistrée avec succès.", "success");
+    } catch (err) {
+        console.error("Save admin key error:", err);
+        showToast("Erreur lors de l'enregistrement.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
+});
+
+document.getElementById('btnToggleAdminKeyVisibility')?.addEventListener('click', () => {
+    const input = document.getElementById('adminGeminiKey');
+    const icon = document.querySelector('#btnToggleAdminKeyVisibility i');
+    if (input) {
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye';
+        }
+    }
+});
+
 
 // ================================================================
 // ONGLET COLONIES
@@ -330,6 +382,19 @@ function openColoForm(colo = null) {
         emojiSelector.innerHTML = AVAILABLE_EMOJIS.map(item =>
             `<button type="button" title="${item.desc}" class="${item.emoji === currentEmoji ? 'selected' : ''}" onclick="selectColoEmoji('${item.emoji}', this)">${item.emoji}</button>`
         ).join('');
+    }
+
+    // Dates de création/modification
+    const dateInfoEl = document.getElementById('coloDateInfo');
+    const createdEl = document.getElementById('coloCreatedAtInfo');
+    const updatedEl = document.getElementById('coloUpdatedAtInfo');
+    
+    if (colo && (colo.createdAt || colo.updatedAt)) {
+        dateInfoEl?.classList.remove('hidden');
+        if (createdEl) createdEl.innerHTML = colo.createdAt ? `<i class="bi bi-plus-circle"></i> Créé le ${formatFullDate(colo.createdAt)}` : '';
+        if (updatedEl) updatedEl.innerHTML = colo.updatedAt ? `<i class="bi bi-pencil-square"></i> Modifié le ${formatFullDate(colo.updatedAt)}` : '';
+    } else {
+        dateInfoEl?.classList.add('hidden');
     }
 
     document.getElementById('coloFormTitle').textContent = colo ? 'Modifier la colonie' : 'Nouvelle colonie';

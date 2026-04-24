@@ -28,19 +28,20 @@ let isAIGeneratorEnabled = true; // Si les anims ont le droit d'utiliser l'IA
 // Mise à jour de l'affichage de l'état de l'IA (Activée / Non configurée)
 function updateAIStatusUI() {
     const labelEl = document.getElementById('iaStatusLabel');
+    const switchEl = document.getElementById('toggleIASwitch');
     if (!labelEl) return;
     
-    if (!currentGeminiKey) {
-        labelEl.style.color = 'var(--clr-danger)';
-        labelEl.innerHTML = '<i class="bi bi-x-circle"></i> L\'IA est désactivée pour cette session.';
+    if (switchEl) switchEl.checked = isAIGeneratorEnabled;
+
+    if (!isAIGeneratorEnabled) {
+        labelEl.style.color = 'var(--clr-text-muted)';
+        labelEl.innerHTML = '<i class="bi bi-slash-circle"></i> Assistant IA désactivé pour cette session.';
+    } else if (!currentGeminiKey) {
+        labelEl.style.color = 'var(--clr-warning)';
+        labelEl.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Assistant IA activé (clé API manquante dans l\'Admin).';
     } else {
-        if (isAIGeneratorEnabled) {
-            labelEl.style.color = 'var(--clr-success)';
-            labelEl.innerHTML = '<i class="bi bi-check-circle"></i> L\'IA est activé pour la session et les anims.';
-        } else {
-            labelEl.style.color = 'var(--clr-warning)';
-            labelEl.innerHTML = '<i class="bi bi-info-circle"></i> L\'IA est activé mais désactivé pour les anims.';
-        }
+        labelEl.style.color = 'var(--clr-success)';
+        labelEl.innerHTML = '<i class="bi bi-check-circle"></i> Assistant IA activé et prêt.';
     }
 }
 
@@ -254,8 +255,19 @@ async function initColoContent(colo, role) {
     loadPhotos(colo, role);
 
     // IA - Chargement de la config session
-    currentGeminiKey = colo.geminiKey || "";
     isAIGeneratorEnabled = colo.allowAnimAI !== false; // true par défaut
+
+    // On récupère la clé du créateur de l'espace (le directeur)
+    if (colo.createdBy) {
+        try {
+            const creatorDoc = await db.collection('users').doc(colo.createdBy).get();
+            if (creatorDoc.exists) {
+                currentGeminiKey = creatorDoc.data().geminiKey || "";
+            }
+        } catch (err) {
+            console.error("Erreur chargement geminiKey du créateur:", err);
+        }
+    }
 
     // Mise à jour visuelle des boutons IA (si blocage)
     if (role !== 'admin') {
@@ -1677,79 +1689,23 @@ async function _callGemini(apiKey, prompt) {
 // ----------------------------------------------------------------
 // CONFIGURATION IA SESSION (Directeur)
 // ----------------------------------------------------------------
-document.getElementById('btnConfigIA')?.addEventListener('click', () => {
-    document.getElementById('espaceGeminiKey').value = currentGeminiKey || "";
-    document.getElementById('allowAnimAI').checked = isAIGeneratorEnabled;
-    // Reset visibility to password
-    document.getElementById('espaceGeminiKey').type = 'password';
-    document.querySelector('#btnToggleKeyVisibility i').className = 'bi bi-eye';
-    openModal('overlayIASettings');
-});
-
-// Toggle visibilité clé
-document.getElementById('btnToggleKeyVisibility')?.addEventListener('click', () => {
-    const input = document.getElementById('espaceGeminiKey');
-    const icon = document.querySelector('#btnToggleKeyVisibility i');
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.className = 'bi bi-eye-slash';
-    } else {
-        input.type = 'password';
-        icon.className = 'bi bi-eye';
-    }
-});
-
-// Copier la clé
-document.getElementById('btnCopySpaceKey')?.addEventListener('click', () => {
-    const key = document.getElementById('espaceGeminiKey').value;
-    if (!key) return;
-    navigator.clipboard.writeText(key).then(() => {
-        showToast("Clé copiée !", "success");
-    });
-});
-
-document.getElementById('btnSaveIASettings')?.addEventListener('click', async () => {
-    const btn = document.getElementById('btnSaveIASettings');
-    const keyInput = document.getElementById('espaceGeminiKey');
-    const allowAnimCheck = document.getElementById('allowAnimAI');
-    const newKey = keyInput.value.trim();
-    const allowAnim = allowAnimCheck.checked;
-
-    btnLoading(btn, true);
+document.getElementById('toggleIASwitch')?.addEventListener('change', async (e) => {
+    const enabled = e.target.checked;
     try {
-        // Validation de la clé si elle est modifiée et non vide
-        if (newKey && newKey !== currentGeminiKey) {
-            try {
-                await _testGeminiKey(newKey);
-            } catch (err) {
-                showToast("Clé API invalide ou non supportée : " + err.message, "error");
-                btnLoading(btn, false);
-                return;
-            }
-        }
-
-        const updateData = {
-            geminiKey: newKey,
-            allowAnimAI: allowAnim
-        };
-        await db.collection('espaces').doc(espaceId).update(updateData);
-        
-        currentGeminiKey = newKey;
-        isAIGeneratorEnabled = allowAnim;
-
-        showToast("Paramètres IA mis à jour.", "success");
-        
-        // Update UI
+        await db.collection('espaces').doc(espaceId).update({
+            allowAnimAI: enabled
+        });
+        isAIGeneratorEnabled = enabled;
+        showToast(enabled ? "Assistant IA activé." : "Assistant IA désactivé.", "success");
         updateAIStatusUI();
-        
-        closeModal('overlayIASettings');
     } catch (err) {
-        console.error('saveIASettings:', err);
-        showToast("Erreur lors de l'enregistrement.", "error");
-    } finally {
-        btnLoading(btn, false);
+        console.error('toggleIASwitch error:', err);
+        showToast("Erreur lors de la modification.", "error");
+        // Revert UI
+        e.target.checked = !enabled;
     }
 });
+
 
 /**
  * Teste la validité d'une clé Gemini via un appel minimal

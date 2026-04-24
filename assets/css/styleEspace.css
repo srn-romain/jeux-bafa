@@ -765,6 +765,70 @@ textarea {
   background: var(--clr-danger-soft);
 }
 
+/* Premium Switch UI Component */
+.es-switch {
+  position: relative;
+  display: inline-block;
+  width: 52px;
+  height: 28px;
+  vertical-align: middle;
+}
+
+.es-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.es-switch__slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  border-radius: 30px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.es-switch__slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background: #ffffff;
+  transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+}
+
+input:checked + .es-switch__slider {
+  background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-dark));
+  border-color: rgba(166, 216, 102, 0.3);
+  box-shadow: 0 0 12px rgba(166, 216, 102, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+input:checked + .es-switch__slider:before {
+  transform: translateX(24px);
+  background: #ffffff;
+  box-shadow: -2px 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Hover effect */
+.es-switch:hover .es-switch__slider {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+input:focus + .es-switch__slider {
+  outline: 2px solid rgba(166, 216, 102, 0.4);
+  outline-offset: 2px;
+}
+
 /* ================================================================
    CHAMPS DE FORMULAIRE
    ================================================================ */

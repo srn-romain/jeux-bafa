@@ -99,6 +99,9 @@
                 <button class="es-nav-tab" data-tab="utilisateurs" role="tab">
                     <i class="bi bi-people"></i> Utilisateurs
                 </button>
+                <button class="es-nav-tab" data-tab="config" role="tab">
+                    <i class="bi bi-gear"></i> Configuration
+                </button>
             </div>
 
 
@@ -199,6 +202,54 @@
                 </div>
             </div>
 
+            <!-- ===================================================
+                 ONGLET CONFIGURATION
+                 =================================================== -->
+            <div id="tab-config" class="hidden">
+                <div class="es-card" style="max-width: 600px; margin: 0 auto; padding: 24px;">
+                    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="bi bi-robot" style="color: var(--clr-primary);"></i> Intelligence Artificielle (Gemini)
+                    </h2>
+                    
+                    <div class="es-field">
+                        <label class="es-field__label" for="adminGeminiKey">Ma Clé API Google Gemini</label>
+                        <div style="display:flex; gap:8px;">
+                            <div style="position:relative; flex:1;">
+                                <input type="password" class="es-input" id="adminGeminiKey" placeholder="AIzaSy..." style="padding-right: 40px; width:100%;">
+                                <button type="button" id="btnToggleAdminKeyVisibility" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--clr-text-muted); cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; z-index:2;">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <button type="button" id="btnSaveAdminKey" class="es-btn es-btn--primary" style="padding: 0 16px;">
+                                <i class="bi bi-check2"></i> Enregistrer
+                            </button>
+                        </div>
+                        <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:8px;">
+                            <i class="bi bi-info-circle"></i> Cette clé est personnelle et sera utilisée pour l'assistant IA sur tous vos espaces de session.
+                        </p>
+                    </div>
+
+                    <details style="margin-top: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0;">
+                        <summary style="padding: 12px 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--clr-primary); list-style: none; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-question-circle"></i> Comment obtenir cette clé gratuitement ?
+                            <i class="bi bi-chevron-down" style="margin-left: auto; font-size: 0.7rem;"></i>
+                        </summary>
+                        <div style="padding: 0 16px 16px; font-size: 0.8rem; color: var(--clr-text-muted); line-height: 1.6;">
+                            <ol style="padding-left: 20px; margin: 10px 0;">
+                                <li>Rendez-vous sur <a href="https://aistudio.google.com/" target="_blank" style="color:var(--clr-primary); text-decoration:underline;">Google AI Studio</a>.</li>
+                                <li>Connectez-vous avec votre compte Google (Gmail).</li>
+                                <li>Cliquez sur <strong>"Get API key"</strong> dans le menu à gauche.</li>
+                                <li>Cliquez sur le bouton bleu <strong>"Create API key"</strong>.</li>
+                                <li>Copiez le code (il commence par <code>AIzaSy...</code>) et collez-la ici.</li>
+                            </ol>
+                            <p style="font-style: italic; font-size: 0.75rem;">
+                                Note : L'utilisation est gratuite et sécurisée. Ne partagez jamais cette clé avec des personnes de confiance.
+                            </p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
         </div>
     </main>
 
@@ -285,6 +336,10 @@
                 </form>
                 <div class="es-alert es-alert--error hidden mt-3" id="coloFormError">
                     <i class="bi bi-exclamation-circle"></i><span id="coloFormErrorMsg"></span>
+                </div>
+                <div id="coloDateInfo" class="hidden" style="margin-top:20px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); font-size:0.75rem; color:var(--clr-text-light); display:flex; flex-direction:column; gap:4px; opacity:0.6;">
+                    <div id="coloCreatedAtInfo"></div>
+                    <div id="coloUpdatedAtInfo"></div>
                 </div>
             </div>
             <div class="es-modal__footer">
