@@ -295,18 +295,35 @@ textarea {
   animation: esFadeInDown 0.2s ease-out;
 }
 
+.es-topbar__colos-item--dashboard {
+  background: rgba(166, 216, 102, 0.04) !important;
+  border-radius: 0 !important;
+  padding: 12px 16px !important;
+}
+
+.es-topbar__colos-item--dashboard:hover {
+  background: rgba(166, 216, 102, 0.1) !important;
+}
+
+.es-topbar__colos-footer {
+  border-top: 1px solid var(--clr-surface-3);
+  background: var(--clr-surface-2);
+  margin-top: auto; /* Pousse vers le bas si besoin */
+}
+
 .es-topbar__colos-search {
-  padding: 10px 12px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--clr-surface-3);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--clr-surface-2);
 }
 
 .es-topbar__colos-search i {
-  font-size: 0.85rem;
-  opacity: 0.5;
+  font-size: 0.9rem;
+  color: var(--clr-primary);
+  opacity: 0.7;
 }
 
 .es-topbar__colos-search input {
