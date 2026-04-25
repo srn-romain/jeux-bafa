@@ -153,8 +153,12 @@ auth.onAuthStateChanged(async (user) => {
         document.getElementById('adminColoActions')?.classList.remove('hidden');
     }
 
+    // Gérer les désabonnements pour éviter les doublons
+    if (window.dashStatsUnsub) window.dashStatsUnsub();
+    if (window.dashMsgUnsub) window.dashMsgUnsub();
+
     // Écouter le réglage global d'affichage des stats
-    db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
+    window.dashStatsUnsub = db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
         if (doc.exists) {
             showStats = doc.data().showColoStats !== false;
         } else {
@@ -172,7 +176,7 @@ auth.onAuthStateChanged(async (user) => {
     });
 
     // Écouter le message global du directeur
-    db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
+    window.dashMsgUnsub = db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
         const wrap = document.getElementById('dashDirectorMsgWrap');
         const viewAdmin = document.getElementById('dashDirectorMsgAdmin');
         const viewAnim = document.getElementById('dashDirectorMsgAnim');
@@ -305,12 +309,9 @@ async function loadColos(user, role) {
             let accessStatus = role === 'admin' ? 'admin' : (accessMap[colo.id] || 'none');
             const nbAnims = animCounts[colo.id] || 0;
 
-            // Compter participants (sous-collection)
-            let nbParticipants = 0;
-            try {
-                const pSnap = await db.collection('espaces').doc(colo.id).collection('participants').get();
-                nbParticipants = pSnap.size;
-            } catch (_) { }
+            // Compter participants (Utilise le champ 'nbParticipants' s'il existe, sinon 0 pour éviter N+1 reads)
+            // Note: Pour une optimisation totale, incrémenter ce champ lors de l'ajout d'un participant.
+            let nbParticipants = colo.nbParticipants || 0;
 
             grid.appendChild(buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role));
         }

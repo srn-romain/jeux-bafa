@@ -100,7 +100,7 @@
                     <i class="bi bi-people"></i> Utilisateurs
                 </button>
                 <button class="es-nav-tab" data-tab="config" role="tab">
-                    <i class="bi bi-gear"></i> Configuration IA
+                    <i class="bi bi-gear"></i> Configuration
                 </button>
             </div>
 
@@ -247,6 +247,25 @@
                             </p>
                         </div>
                     </details>
+                </div>
+                <!-- Section Maintenance -->
+                <div class="es-card" style="max-width: 600px; margin: 20px auto 0; padding: 24px; border-top: 4px solid var(--clr-warning);">
+                    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                        <i class="bi bi-tools" style="color: var(--clr-warning);"></i> Maintenance & Optimisation
+                    </h2>
+                    
+                    <p style="font-size: 0.85rem; color: var(--clr-text-muted); margin-bottom: 15px;">
+                        Si les compteurs de participants sur le tableau de bord semblent incorrects, vous pouvez les recalculer globalement.
+                    </p>
+
+                    <button type="button" id="btnResyncCounters" class="es-btn" style="background: rgba(241,196,15,0.15); color: #f1c40f; border: 1px solid rgba(241,196,15,0.3); width: 100%; justify-content: center;">
+                        <i class="bi bi-arrow-repeat"></i> Recalculer tous les compteurs de participants
+                        <span class="es-btn__spinner"></span>
+                    </button>
+                    
+                    <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:12px;">
+                        <i class="bi bi-info-circle"></i> Cette action scanne toutes les colonies pour mettre à jour les statistiques stockées. À faire une seule fois après la mise à jour.
+                    </p>
                 </div>
             </div>
 

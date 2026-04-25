@@ -75,16 +75,14 @@ function initAdminTabs() {
 // ----------------------------------------------------------------
 // BADGE DEMANDES EN ATTENTE (temps réel dès l'init)
 // ----------------------------------------------------------------
-let pendingBadgeUnsub = null;
-
 function loadPendingBadge() {
-    if (pendingBadgeUnsub) pendingBadgeUnsub(); // détacher l'ancien listener
+    if (window.pendingBadgeUnsub) window.pendingBadgeUnsub(); // détacher l'ancien listener
 
     const badge = document.getElementById('badgePending');
     if (!badge) return;
 
     // Écoute en temps réel : se met à jour automatiquement
-    pendingBadgeUnsub = db.collection('accessRequests')
+    window.pendingBadgeUnsub = db.collection('accessRequests')
         .where('status', '==', 'pending')
         .onSnapshot(snapshot => {
             const count = snapshot.size;
@@ -1119,3 +1117,34 @@ async function migrateOldAccessRequests() {
 
 // Lancement automatique à l'ouverture de la page admin (ou une seule fois)
 setTimeout(migrateOldAccessRequests, 2000);
+// ----------------------------------------------------------------
+// MAINTENANCE : RECALCULER LES COMPTEURS
+// ----------------------------------------------------------------
+document.getElementById('btnResyncCounters')?.addEventListener('click', async () => {
+    if (!confirm("Voulez-vous recalculer le nombre de participants pour TOUTES les colonies ? (Cela peut prendre quelques secondes)")) return;
+    
+    const btn = document.getElementById('btnResyncCounters');
+    btnLoading(btn, true);
+
+    try {
+        const colosSnap = await db.collection('espaces').get();
+        let updatedCount = 0;
+
+        for (const coloDoc of colosSnap.docs) {
+            const participantsSnap = await db.collection('espaces').doc(coloDoc.id).collection('participants').get();
+            const count = participantsSnap.size;
+            
+            await db.collection('espaces').doc(coloDoc.id).update({
+                nbParticipants: count
+            });
+            updatedCount++;
+        }
+
+        showToast(`Succès : ${updatedCount} colonies mises à jour.`, "success");
+    } catch (err) {
+        console.error("Resync counters error:", err);
+        showToast("Erreur lors du recalcul.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
+});

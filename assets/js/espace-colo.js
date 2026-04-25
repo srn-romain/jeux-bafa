@@ -1474,6 +1474,10 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
                 throw new Error("La création est verrouillée par le directeur.");
             }
             await colRef.add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+            // Incrémenter le compteur global
+            await db.collection('espaces').doc(espaceId).update({
+                nbParticipants: firebase.firestore.FieldValue.increment(1)
+            });
             showToast('Participant ajouté.', 'success');
         }
 
@@ -1502,6 +1506,10 @@ async function deleteParticipant(id, nom) {
         btnLoading(newBtn, true);
         try {
             await db.collection('espaces').doc(espaceId).collection('participants').doc(id).delete();
+            // Décrémenter le compteur global
+            await db.collection('espaces').doc(espaceId).update({
+                nbParticipants: firebase.firestore.FieldValue.increment(-1)
+            });
             showToast('Participant supprimé.', 'success');
             closeModal('overlayConfirmDelete');
             await loadParticipants(espaceId, currentRole);
@@ -1907,6 +1915,9 @@ document.getElementById('btnDeleteAllParticipants')?.addEventListener('click', (
                 await batch.commit();
             }
 
+            // Réinitialiser compteur global
+            await db.collection('espaces').doc(espaceId).update({ nbParticipants: 0 });
+
             showToast("Liste des participants réinitialisée.", "success");
             closeModal('overlayMassReset');
             await loadParticipants(espaceId, currentRole);
@@ -2023,6 +2034,12 @@ async function handleImportJSONColo(file) {
                 }
             }
 
+            if (added > 0) {
+                await db.collection('espaces').doc(espaceId).update({
+                    nbParticipants: firebase.firestore.FieldValue.increment(added)
+                });
+            }
+
             showToast(`${added} importés ! ${errors > 0 ? `(${errors} erreurs)` : ''}`, added > 0 ? 'success' : 'error');
             loadParticipants(espaceId, currentRole);
         } catch (err) {
@@ -2091,8 +2108,11 @@ async function loadAnimateurs(coloId) {
 
         // 3. Récupérer les données de chaque utilisateur APPROUVÉ
         const approvedAnimsData = [];
-        for (const uid of userIds) {
-            const uDoc = await db.collection('users').doc(uid).get();
+        // Optimisation : On utilise un cache ou on fait des requêtes parallèles limitées
+        const userDocs = await Promise.all(userIds.map(uid => db.collection('users').doc(uid).get()));
+        
+        userDocs.forEach((uDoc, index) => {
+            const uid = userIds[index];
             if (uDoc.exists) {
                 const req = reqMap[uid];
                 approvedAnimsData.push({ 
@@ -2103,7 +2123,7 @@ async function loadAnimateurs(coloId) {
                     ...uDoc.data()
                 });
             }
-        }
+        });
 
         const allAnims = [...pendingAnimsData, ...approvedAnimsData];
 
@@ -2448,12 +2468,12 @@ function sendLocalPush(alert) {
 
 function loadAlerts(coloId, role) {
     lastUserRole = role;
-    if (alertsUnsubscribe) alertsUnsubscribe();
+    if (window.alertsUnsubscribe) window.alertsUnsubscribe();
 
     requestNotificationPermission();
     let isInitialLoad = true;
 
-    alertsUnsubscribe = db.collection('espaces').doc(coloId).collection('alerts')
+    window.alertsUnsubscribe = db.collection('espaces').doc(coloId).collection('alerts')
         .orderBy('createdAt', 'desc')
         .onSnapshot(snap => {
             const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -2737,7 +2757,9 @@ async function deleteAlert(alertId) {
 let currentMeteoParams = { lat: null, lon: null, locationName: null };
 
 async function loadWeather(coloId, role) {
-    db.collection('espaces').doc(coloId).onSnapshot(async snap => {
+    if (window.weatherUnsubscribe) window.weatherUnsubscribe();
+
+    window.weatherUnsubscribe = db.collection('espaces').doc(coloId).onSnapshot(async snap => {
         if (!snap.exists) return;
         const data = snap.data();
         if (role === 'admin' || isAnimAdmin) {
@@ -2910,6 +2932,12 @@ async function checkAndCreateWeatherAlerts(weatherData, locationName, role) {
     const hourly = weatherData.hourly;
     let newlyCreated = 0;
 
+    // OPTIMISATION : On récupère toutes les alertes "Météo Auto" d'un coup pour éviter N+1 lectures dans la boucle
+    const existingAlertsSnap = await db.collection('espaces').doc(espaceId).collection('alerts')
+        .where('createdBy', '==', 'Météo Auto')
+        .get();
+    const existingAlerts = existingAlertsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
     for (let i = 0; i < daily.time.length; i++) {
         const dateStr = daily.time[i];
         const code = daily.weathercode[i];
@@ -2953,21 +2981,16 @@ async function checkAndCreateWeatherAlerts(weatherData, locationName, role) {
             scheduledAt.setDate(scheduledAt.getDate() - 1);
             scheduledAt.setHours(12, 0, 0, 0);
 
-            // Important : on vérifie si une alerte existe déjà pour cette DATE météo
-            const existingSnap = await db.collection('espaces').doc(espaceId).collection('alerts')
-                .where('weatherDate', '==', dateStr)
-                .where('createdBy', '==', 'Météo Auto')
-                .get();
-
+            // Vérification dans le cache local
+            const existing = existingAlerts.find(a => a.weatherDate === dateStr);
             let shouldCreate = false;
-            if (existingSnap.empty) {
+
+            if (!existing) {
                 shouldCreate = true;
             } else {
                 // Si l'alerte existe mais que le LIEU a changé, on la remplace
-                const existingDoc = existingSnap.docs[0];
-                const existingData = existingDoc.data();
-                if (!existingData.message.includes(`à ${location}`)) {
-                    await existingDoc.ref.delete();
+                if (!existing.message.includes(`à ${location}`)) {
+                    await db.collection('espaces').doc(espaceId).collection('alerts').doc(existing.id).delete();
                     shouldCreate = true;
                 }
             }
@@ -3265,8 +3288,10 @@ function loadPhotos(colo, role) {
     // Render once immediately for the background image
     renderPhotos(colo, role);
 
+    if (window.photosUnsubscribe) window.photosUnsubscribe();
+
     try {
-        db.collection('espaces').doc(colo.id).collection('photos')
+        window.photosUnsubscribe = db.collection('espaces').doc(colo.id).collection('photos')
             .orderBy('createdAt', 'desc')
             .onSnapshot(snap => {
                 currentPhotos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
