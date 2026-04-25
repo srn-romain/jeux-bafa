@@ -94,7 +94,7 @@
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-reu">[16h30] Réunion + Gestion de conflits</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-sigle">[16h30] Liberté, autorité & sanction</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[16h30] Quiz Kahoot finale</a></td>
-            <td><a href="../index.html">[14h] Départ</a></td>
+            <td class="no-link">[14h] Départ</td>
           </tr>
           <!-- VEILLEES -->
           <tr>
@@ -194,9 +194,11 @@
           <tr>
             <td class="row-header bg-veillee">SOIR</td>
             <td class="time-label">18h30</td>
-            <td colspan="3"></td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-sigle">[18h30] VSS : Violences Sexistes et Sexuelles</a></td>
-            <td colspan="2"></td>
+            <td class="no-link">[18h30] Temps de Prépa</td>
+            <td class="no-link">[18h30] Temps de Prépa</td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-vhss">[18h30] VHSS : Violences Sexistes et Sexuelles</a></td>
+            <td class="no-link">[18h30] Temps de Prépa</td>
+            <td class="no-link">[18h30] Temps de Prépa</td>
           </tr>
           <tr>
             <td class="row-header bg-veillee">SOIR</td>
@@ -522,32 +524,75 @@
         <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
             <h1 id="reu">Réunions du soir</h1>
+                <p>Chaque soir, APRES le coucher des enfants, les animateurs se réunissent pour faire le point sur la journée.
+                    (L'heure dépend donc de la tranche d'âge)</p>
             <ul>
-                <li>Chaque soir, APRES le coucher des enfants, les animateurs se réunissent pour faire le point sur la journée.
-                    (L'heure dépend donc de la tranche d'âge)</li>
-                <li style="list-style-type: none;"><strong>Objectifs</strong>
+                <li style="list-style-type: none;"><strong>Partie 1 : Debrief journée</strong>
                     <ul>
-                        <li>Analyser ce qui s'est bien passé et les difficultés rencontrées.</li>
-                        <li>Préparer les activités et l'organisation du lendemain.</li>
-                        <li>Partager les observations sur les enfants (fatigue, conflits, besoins particuliers).</li>
-                        <li>Répartir les rôles et responsabilités pour la suite du séjour.</li>
+                        <li>Retour sur les activités (points forts, points faibles).</li>
+                        <li>Échange sur le comportement des enfants (cas particuliers, fatigue, petits bobos).</li>
+                        <li>Analyse du fonctionnement de l'équipe (cohésion, communication).</li>
                     </ul>
                 </li>
-                <li style="list-style-type: none;"><strong>Déroulement</strong>
+                <li style="list-style-type: none;"><strong>Partie 2 : Infos diverses</strong>
                     <ul>
-                        <li>Le directeur anime la réunion et veille au respect.</li>
-                        <li>Chacun peut s'exprimer sur son ressenti, ses idées ou ses besoins.</li>
-                        <li>Les décisions sont prises collectivement, en tenant compte des contraintes et des avis de tous.</li>
-                        <li>Un temps est prévu pour aborder les points urgents ou sensibles (santé, sécurité, organisation).</li>
-                        <li>La réunion doit rester constructive et éviter de s'éterniser pour permettre à chacun de se reposer.</li>
+                        <li>Rappels de sécurité ou d'hygiène si nécessaire.</li>
+                        <li>Logistique (matériel cassé, besoins spécifiques).</li>
+                        <li>Informations de la direction (SDJES, parents, organismes).</li>
                     </ul>
                 </li>
-                <li style="list-style-type: none;"><strong>Conseils</strong>
+                <li style="list-style-type: none;"><strong>Partie 3 : Programmation</strong>
                     <ul>
-                        <li>Noter les points importants pour garder une trace et suivre les actions décidées.</li>
-                        <li>Terminer sur une note positive ou une astuce pour améliorer le travail d'équipe.</li>
+                        <li>Validation du planning détaillé du lendemain.</li>
+                        <li>Répartition précise des rôles (qui gère quoi ?).</li>
+                        <li>Préparation du matériel et anticipation des imprévus.</li>
                     </ul>
                 </li>
+                <li style="list-style-type: none;"><strong>Partie 4 : Cinquième repas</strong>
+                    <ul>
+                        <li>Partie facultative pour les anims !</li>
+                        <li>Moment de détente et de cohésion pour l'équipe d'animation.</li>
+                        <li>Débriefing informel et convivialité (=> moment potin).</li>
+                        <li>Vigilance sur le sommeil !</li>
+                    </ul>
+                </li>
+                <button class="openModalBtn back-button" data-modal="modal1">Petit jeu simulation réunion</button>
+
+                <!-- Modale 1 -->
+                <div id="modal1" class="modalspe">
+                    <div class="modal__contentspe">
+                        <button class="modal__closespe">&times;</button>
+                        <p><strong>JEU - SIMULATION D'UNE RÉUNION :</strong></p>
+                        <div>
+                            <p>
+                                <b>Objectif :</b> Simuler une réunion du soir entre animateurs pour expérimenter les dynamiques de groupe
+                                et la prise de décision.<br>
+                                Chaque participant reçoit un rôle à jouer pour rendre la réunion vivante et pédagogique.
+                            </p><br>
+                            <ul>
+                                <li><b>Le bavard :</b> Parle beaucoup, coupe la parole, discute avec ses voisins.</li>
+                                <li><b>Le suiveur :</b> Toujours d'accord avec tout le monde, ne propose rien.</li>
+                                <li><b>L'imposant :</b> Veut imposer ses idées, ne laisse pas les autres s'exprimer.</li>
+                                <li><b>Le fatigué :</b> Veut écourter la réunion, propose d'improvisé le lendemain.</li>
+                                <li><b>Le perdu :</b> Ne comprend rien, pose des questions hors sujet.</li>
+                                <li><b>Le répétitif :</b> Revient sans cesse sur un point déjà traité.</li>
+                                <li><b>Le participant classique :</b> S'exprime normalement, propose des idées, écoute les autres.</li>
+                                <li><b>Le maître de réunion :</b> Anime, distribue la parole, recentre le débat, veille au respect du
+                                    temps.</li>
+                            </ul><br>
+                            <b>Déroulement :</b> Chacun tire un rôle au hasard. Le maître de réunion lance un sujet à discuter (ex :
+                            organisation d'une activité, gestion d'un problème du jour).<br>
+                            <b>L'objectif</b> est d'observer les interactions, de repérer les difficultés et de réfléchir ensemble à des
+                            solutions pour améliorer la communication et la prise de décision en équipe.
+                            <br><br>
+                            <p>
+                                <i>Astuce : À la fin, faire un petit bilan sur le ressenti de chacun et les points à améliorer pour les
+                                    vraies réunions !</i>
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
             </ul>
         </div>
       </div>
@@ -602,24 +647,44 @@
         <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
           <h1>Gestion du blog</h1>
-          <ul>
-            <li>Contenu : privilégier la qualité, raconter une histoire.</li>
-            <li>Droit à l'image : vérifier les autorisations, éviter les photos dégradantes.</li>
-            <li>Organisation : créneau de rédaction, participation des enfants.</li>
-          </ul>
-        </div>
-      </div>
+          <p>Le blog est bien plus qu'un simple journal de bord : c'est l'une des <strong>3 vitrines du séjour</strong> qui permettent aux parents de juger la qualité de l'encadrement :</p>
+          <ol>
+            <li><strong>L'état de la valise :</strong> Au retour, une valise rangée et propre = un enfant soigné.</li>
+            <li><strong>Le point de contact :</strong> L'accueil au début et l'échange au départ du séjour.</li>
+            <li><strong>Le blog / courrier :</strong> Le lien quotidien qui rassure et valorise le vécu de l'enfant.</li>
+          </ol>
 
-      <!-- Section Réunions -->
-      <div id="modal-reu" class="modalspe">
-        <div class="modal__contentspe modal-large">
-          <button class="modal__closespe">&times;</button>
-          <h1>Réunions du soir</h1>
+          <hr>
+
+          <h3>Logistique du blog :</h3>
           <ul>
-            <li>Bilan de la journée et préparation du lendemain.</li>
-            <li>Cohésion d'équipe et échange sur les enfants.</li>
+            <li><strong>Qui poste ?</strong> Idéalement un roulement entre animateurs. Il est aussi très formateur de faire participer les enfants à la rédaction (dictée à l'adulte ou article écrit par eux).</li>
+            <li><strong>Quoi mettre ?</strong> Le menu du jour, les activités phares, des citations d'enfants, et surtout de belles photos d'ambiance.</li>
+            <li><strong>Quelles plateformes ?</strong> OnDonneDesNouvelles, OnLoge, blogs internes aux organismes, ou réseaux sociaux privés (Facebook group, Instagram privé).</li>
           </ul>
-          <button class="openModalBtn back-button" data-modal="modal1">Simulation réunion</button>
+
+          <hr>
+
+          <h3><i class="bi bi-lightbulb-fill" style="color: #f1c40f;"></i> Quand poster ? Deux modes :</h3>
+          <ul>
+            <li><strong>Mode "Fil Rouge" :</strong> On poste un message court après chaque activité majeure. 
+                <br><em>Exemple : "On revient de l'accrobranche, c'était super ! Direction la piscine cette aprèm !"</em> 
+                Cela donne une impression de direct très appréciée des parents.</li>
+            <li><strong>Mode "Journal de bord" :</strong> On fait un seul gros poste à la fin de la journée (pendant la réunion ou après le coucher). 
+                <br>Cela permet de faire un récit complet et structuré de la journée écoulée.</li>
+          </ul>
+
+          <hr>
+
+          <div class="alert alert-warning" style="background: rgba(241, 196, 15, 0.1); border-left: 5px solid #f1c40f; padding: 15px; border-radius: 5px;">
+            <h3><i class="bi bi-exclamation-triangle-fill"></i> Point sur le droit à l'image :</h3>
+            <p>Le droit à l'image dépend strictement de l'organisme :</p>
+            <ul>
+              <li>Certains organismes incluent un accord obligatoire à l'inscription.</li>
+              <li>D'autres laissent le choix aux parents.</li>
+            </ul>
+            <p><strong>Règle d'or :</strong> Vérifiez toujours la liste des refus avant de prendre des photos. Si un enfant n'a pas le droit à l'image, <strong>ne le mettez jamais sur la photo</strong>, même si vous prévoyez de le flouter !</p>
+          </div>
         </div>
       </div>
 
