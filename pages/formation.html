@@ -173,7 +173,7 @@
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[15h] GA 1 : Thématique</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[15h] GA 2 : Séjours Vacances</a></td>
             <td class="no-link">[15h] GA 2 : Ados / Préados</td>
-            <td><a href="../index.html">[16h] Administratif + Départ</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-bilan">[16h] Administratif + Départ</a></td>
           </tr>
           <!-- GOÛTER -->
           <tr class="bg-gouter">
@@ -1053,20 +1053,28 @@
 
           <h3>📂 Ressources et exemples :</h3>
           <p>Retrouvez ci-dessous les documents d'aide à la rédaction :</p>
-          <test style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
-            <a href="../public/pdfs/appreciation/appréciation.pdf" target="_blank" class="back-button" style="text-align: center; text-decoration: none;">
-              <i class="bi bi-file-earmark-pdf-fill"></i> Modèles appréciations
+          <test class="custom-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 20px;">
+            <a href="../public/pdfs/appreciation/appréciation.pdf" target="_blank" class="back-button" style="text-align: center; text-decoration: none; width: 100%; margin: 0; padding: 10px 5px; font-size: 0.85rem;">
+              <i class="bi bi-file-earmark-pdf-fill"></i> Modèles
             </a>
-            <a href="../public/pdfs/appreciation/guide_apress.pdf" target="_blank" class="back-button" style="text-align: center; text-decoration: none;">
+            <a href="../public/pdfs/appreciation/guide_apress.pdf" target="_blank" class="back-button" style="text-align: center; text-decoration: none; width: 100%; margin: 0; padding: 10px 5px; font-size: 0.85rem;">
               <i class="bi bi-file-earmark-pdf-fill"></i> Guide complet
             </a>
-            <a href="../public/pdfs/appreciation/recap_appress.pdf" target="_blank" class="back-button" style="text-align: center; text-decoration: none;">
-              <i class="bi bi-file-earmark-pdf-fill"></i> Récapitulatif utile
+            <a href="../public/pdfs/appreciation/recap_appress.pdf" target="_blank" class="back-button" style="text-align: center; text-decoration: none; width: 100%; margin: 0; padding: 10px 5px; font-size: 0.85rem;">
+              <i class="bi bi-file-earmark-pdf-fill"></i> Récapitulatif
             </a>
-            <a href="../public/pdfs/appreciation/illustration_apress.png" target="_blank" class="back-button" style="text-align: center; text-decoration: none;">
-              <i class="bi bi-image"></i> Illustration visuelle
+            <a href="../public/pdfs/appreciation/illustration_apress.png" target="_blank" class="back-button" style="text-align: center; text-decoration: none; width: 100%; margin: 0; padding: 10px 5px; font-size: 0.85rem;">
+              <i class="bi bi-image"></i> Illustration
             </a>
           </test>
+
+          <style>
+            @media (max-width: 768px) {
+              test.custom-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+              }
+            }
+          </style>
         </div>
       </div>
 
