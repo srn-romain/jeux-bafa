@@ -1,14 +1,20 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ressources BAFA & BAFD</title>
-    <meta name="description" content="Découvrez une multitude de ressources BAFA et BAFD classées par thèmes : activités, veillées, vie quotidienne, manuels, musique, formation et plus !">
+  <title>Ressources BAFA & BAFD</title>
+  <meta name="description" content="Découvrez une multitude de ressources BAFA et BAFD classées par thèmes : activités, veillées, vie quotidienne, manuels, musique, formation et plus !">
   <link href="../public/images/favicon.webp" rel="icon">
   <link rel="stylesheet" href="../assets/css/style.css">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <style>
+    .check-list { list-style: none; padding-left: 0; }
+    .check-list li { position: relative; padding-left: 25px; margin-bottom: 5px; }
+    .check-list li::before { content: "\F26A"; font-family: "bootstrap-icons"; position: absolute; left: 0; color: #a6d866; }
+    .no-p-style { text-align: left !important; margin-left: 0 !important; max-width: 100% !important; }
+  </style>
 </head>
 <body>
 <div class="container">
@@ -24,43 +30,28 @@
     <button class="back-button" onclick="location.href='../index.html'">Retour</button>
   </contain>
 
+  <!-- SECTION 1: ANIMATEUR BAFA -->
   <h1 id="anim-bafa">Pour un animateur BAFA</h1>
   <div class="categories">
-    <h1>Encadrements</h1>
-
-    <p class="no-p-style">L'animateur BAFA travaille sous la supervision du directeur d'un Accueil Collectif de Mineurs (ACM), qui est responsable de l'organisation générale. Il peut aussi être supervisé par un coordinateur ou un responsable d'activité.</p>
-
-    <p class="no-p-style">L'animateur est responsable d'un groupe d'enfants, et un ratio d'animateurs par rapport aux enfants doit être respecté :</p>
+    <h3>Encadrements & Taux</h3>
+    <p class="no-p-style">L'animateur travaille sous la supervision du directeur. Ratios minimaux :</p>
     <ul>
       <li>1 animateur pour 8 enfants de moins de 6 ans.</li>
       <li>1 animateur pour 12 enfants de plus de 6 ans.</li>
-    </ul><br>
+    </ul>
+    <p class="no-p-style"><b>Équipe :</b> Min. 50% diplômés (BAFA), Max. 20% non-qualifiés, Max. 50% stagiaires.</p>
 
-    <h1>Responsabilités</h1>
-
-    <h4>Responsabilité physique :</h4>
+    <h3>Responsabilités</h3>
     <ul>
-      <li>Assurer la sécurité des enfants (prévenir les accidents, gérer les premiers secours, respecter les normes de sécurité).</li>
-      <li>Veiller à l’utilisation d’équipements adaptés et à l'organisation d’activités sécurisées.</li>
-    </ul><br>
+      <li><b>Physique :</b> Sécurité des mineurs, prévention des accidents, premiers secours.</li>
+      <li><b>Morale :</b> Climat de respect, gestion des conflits, cadre de vie.</li>
+      <li><b>Affective :</b> Écoute, réponse aux besoins émotionnels, prise en charge adaptée.</li>
+      <li><b>Pénale :</b> Responsabilité personnelle en cas d'infraction à la loi.</li>
+    </ul>
 
-    <h4>Responsabilité morale :</h4>
-    <ul>
-      <li>Garantir un climat de confiance et de respect dans le groupe.</li>
-      <li>Gérer les conflits et maintenir un cadre de vie respectueux (règlement intérieur, respect des règles de vie).</li>
-    </ul><br>
-
-    <h4>Responsabilité affective :</h4>
-    <ul>
-      <li>Être à l'écoute des enfants, repérer leurs besoins affectifs et répondre aux attentes émotionnelles.</li>
-      <li>Offrir une prise en charge adaptée en fonction des difficultés et des besoins de chaque enfant.</li>
-    </ul><br>
-
-    <h1>Dans la valise :</h1>
-
-    <!-- Documents importants -->
+    <h3>Dans la valise :</h3>
     <h4>📑 Documents & Administratif</h4>
-    <ul>
+    <ul class="check-list">
       <li><label><input type="checkbox"> Papiers (CNI, Vital, Permis, CEAM)</label></li>
       <li><label><input type="checkbox"> Carte étudiante personnelle (réduction des prix d'activitées...)</label></li>
       <li><label><input type="checkbox"> Documents importants imprimés (fiches san, liste des jeunes...)</label></li>
@@ -68,9 +59,8 @@
       <li><label><input type="checkbox"> Étiquettes bagages</label></li>
     </ul>
 
-    <!-- Animation et divertissement -->
     <h4>🎮 Animation & Divertissement</h4>
-    <ul>
+    <ul class="check-list">
       <li><label><input type="checkbox"> Clé USB avec films BAFA</label></li>
       <li><label><input type="checkbox"> Carnet de souvenir + carnet reglementation ucpa bafa</label></li>
       <li><label><input type="checkbox"> Pochette avec jeux de veillées</label></li>
@@ -80,9 +70,8 @@
       <li><label><input type="checkbox"> Téléchargez du contenu (ex: film Nos jours heureux...)</label></li>
     </ul>
 
-    <!-- Équipement personnel et vêtements -->
     <h4>👕 Vêtements & Équipement personnel</h4>
-    <ul>
+    <ul class="check-list">
       <li><label><input type="checkbox"> Tenues de sport et de ville</label></li>
       <li><label><input type="checkbox"> Tenue pour la Boom (Thème ?)</label></li>
       <li><label><input type="checkbox"> Casquette/bob</label></li>
@@ -92,9 +81,8 @@
       <li><label><input type="checkbox"> T-shirt de l'organisme</label></li>
     </ul>
 
-    <!-- Électronique et fournitures -->
     <h4>📱 Électronique & Fournitures</h4>
-    <ul>
+    <ul class="check-list">
       <li><label><input type="checkbox"> Ordinateur</label></li>
       <li><label><input type="checkbox"> Enceinte portable</label></li>
       <li><label><input type="checkbox"> Batterie externe</label></li>
@@ -104,60 +92,34 @@
       <li><label><input type="checkbox"> Blanco, stylos, quelques feuilles</label></li>
     </ul>
 
-    <!-- Santé et urgence -->
     <h4>🩹 Santé & Bien-être</h4>
-    <ul>
+    <ul class="check-list">
       <li><label><input type="checkbox"> Trousse de premiers soins</label></li>
       <li><label><input type="checkbox"> Aspirine ou Doliprane</label></li>
       <li><label><input type="checkbox"> Pastilles pour la gorge (Strepsil, Lysopaïne)</label></li>
       <li><label><input type="checkbox"> Sac banane</label></li>
-    </ul><br>
-
+    </ul>
     <button class="back-button"><a href="../public/pdfs/reglementation/docBAFA.pdf" style="color: white">Voir la doc</a></button>
-
   </div>
+
+  <!-- SECTION 2: ANIMATEUR SB -->
   <br><br>
   <h1 id="anim-sb">Pour un animateur SB</h1>
   <div class="categories">
     <section>
-      <h4>Lieux Surveillés :</h4>
+      <h3>Sécurité des Baignades</h3>
+      <p class="no-p-style"><b>Lieux non surveillés :</b> 1 titulaire qualification SB (BSB, BNSSA, MNS).</p>
       <ul>
-        <li>1 encadrant qualifié (MNS ou BNSSA) responsable de la sécurité.</li>
-        <li>Pour des groupes de 8 mineurs de 12 ans et plus, la baignade en piscine surveillée peut se faire sans animateur avec accord préalable.</li>
-      </ul><br>
-
-      <h4>Lieux NON Surveillés :</h4>
-      <ul>
-      <li>Encadrant titulaire d’un diplôme de surveillance aquatique (BAFA surveillant de baignade, BSB, BNSSA, MNS, etc.).</li>
-      <li>Encadrement obligatoire :</li>
-      <ul class="regles-vie">
-        <li>1 animateur pour 5 enfants &lt; 6 ans (max 20 enfants).</li>
-        <li>1 animateur pour 8 enfants ≥ 6 ans (max 40 enfants).</li>
-        <li>Pour les mineurs de +14 ans : possible avec un membre de l'équipe pédagogique permanente.</li>
+        <li><b>Moins de 6 ans :</b> 1 animateur / 5 enfants dans l'eau (Max 20 enfants).</li>
+        <li><b>6 ans et plus :</b> 1 animateur / 8 enfants dans l'eau (Max 40 enfants).</li>
       </ul>
-      </ul>
-    </section><br>
-
-    <section>
-      <h3>Matérialisation</h3>
-      <ul>
-        <li>Moins de 12 ans : Bouées reliées par filin.</li>
-        <li>12 ans et plus : Balises.</li>
-      </ul>
-    </section><br>
-
-    <section>
-      <h3>Piscine privative</h3>
-      <ul>
-        <li>Élaboration d’un plan de surveillance et de secours (prévention, alerte, secours).</li>
-        <li>Exercice périodique de simulation recommandé.</li>
-        <li>Identification du matériel de premier secours.</li>
-      </ul>
-    </section><br>
+      <p class="no-p-style"><b>Matérialisation :</b> Bouées + filin (-12 ans) ou Balises (+12 ans).</p>
+      <p class="no-p-style"><b>Lieux surveillés :</b> Signalement du groupe au MNS. Ratios d'encadrement identiques dans l'eau.</p>
+    </section>
 
     <section>
       <h3>Kit de baignade :</h3>
-      <ul>
+      <ul class="check-list">
         <li>Tee-shirt</li>
         <li>Chapeau/Casquette</li>
         <li>Crème solaire toute les 2h</li>
@@ -172,180 +134,129 @@
         <li>Tente/abri anti UV</li>
         <li>Balisage ou filin</li>
       </ul>
-    </section><br>
-
-    <section>
-      <h3>Recommandations générales</h3>
-      <ul>
-        <li>Le directeur reste responsable même en présence d’un service de surveillance externe.</li>
-        <li>Signaler la présence du groupe au surveillant du site.</li>
-        <li>Attention aux plongeon, coup de soleil, ancrage des boués, surveillance sur la plage des non baigneurs</li>
-        <li>Chaussures adaptées en cas de sol dangereux (roche, coquillages, etc.).</li>
-          <li>Pour revoir le cadre reglementaire avant un séjour - réaliser ce quiz <a href="https://www.sauveteurs-charente.fr/QCM/QCM-BSB-1.1.1-Evaluation/"><u>ici</u></a>.</li>
-      </ul>
     </section>
-
     <button class="back-button"><a href="../public/pdfs/reglementation/docSB.pdf" style="color: white">Voir la doc</a></button>
-
   </div>
 
+  <!-- SECTION 3: ANIMATEUR AS -->
   <br><br>
   <h1 id="anim-as">Pour un animateur AS</h1>
   <div class="categories">
     <section>
-      <p class="no-p-style">La trousse de secours doit être adaptée en fonction du nombre d’enfants accueillis, du milieu environnant (montagne, mer, campagne, etc.), des conditions d’hébergement et des activités proposées. Elle ne doit contenir que des produits et du matériel pouvant être utilisés pour soigner les égratignures et les petites plaies.</p>
-    </section><br>
-
-    <section>
-      <h3>Organisation de l’armoire à pharmacie</h3>
-      <p class="no-p-style">L’armoire à pharmacie doit être facilement accessible aux adultes, et inaccessible pour les enfants. Elle doit donc être située en hauteur et fermée à clé (clé facilement trouvable). Idéalement à proximité, prévoir une chaise, un fauteuil relax voire un lit. Elle sera située si possible près d’un point d’eau avec à portée de mains :</p>
+      <h3>Suivi Sanitaire</h3>
+      <p class="no-p-style">L'assistant sanitaire doit être désigné par le directeur et posséder le <b>PSC1</b>.</p>
       <ul>
-        <li>Du savon de Marseille (liquide de préférence)</li>
-        <li>Des essuie-mains jetables</li>
-        <li>Une poubelle munie de sac plastique avec lien de fermeture</li>
+        <li><b>Fiches sanitaires :</b> Vérification et centralisation obligatoire.</li>
+        <li><b>Médicaments :</b> Stockés dans un lieu fermé à clé. Administration <b>uniquement</b> sur ordonnance.</li>
+        <li><b>Registre de soins :</b> Tout acte ou soin doit être noté dans le cahier d'infirmerie.</li>
       </ul>
-    </section><br>
+    </section>
 
     <section>
-      <h3>Contenu minimum au centre</h3>
-      <ul>
-        <li>Gants à usage unique</li>
-        <li>1 rouleaux de sparadrap</li>
-        <li>Une boîte de compresses stériles</li>
-        <li>Antiseptique desinfectant :</li>
-        <li>Pansements prédécoupés</li>
-        <li>Sérum phy en dosettes</li>
-        <li>Une pince à épiler</li>
-        <li>Une paire de ciseaux</li>
-        <li>Des carré de sucre</li>
-        <li>Un thermomètre (frontal)</li>
-        <li>Lampe de poche</li>
-        <li>Serviettes hygiéniques</li>
-        <li>Aspi-venin</li>
-        <li>Anti-poux</li>
-        <li>Tire-tiques</li>
-        <li>Paracétamol/Doliprane : uniquement après accord du SAMU.</li>
-      </ul>
-    </section><br>
-
-    <section>
-      <h3>Ajouts recommandés</h3>
-      <ul>
-        <li>Pansements compressifs</li>
-        <li>1 bande extensible</li>
-        <li>1 couvertures de survie</li>
-        <li>Un masque de protection</li>
-        <li>Un coussin réfrigérant ou des glaçons à conserver au réfrigérateur</li>
-      </ul>
-    </section><br>
-
-    <section>
-      <h3>Gestion des médicaments</h3>
-      <p class="no-p-style">Avant tout soin, il est impératif de consulter la fiche sanitaire de l’enfant afin de vérifier l’existence d’une éventuelle allergie médicamenteuse. Tout soin doit faire l’objet d’une transmission écrite dans le cahier d’infirmerie.</p>
-      <p class="no-p-style">La prise de médicaments (y compris les médicaments anti-douleur type paracétamol, aspirine) n’est autorisée que sur prescription médicale.</p>
-      <ul>
-        <li>Les médicaments de l’enfant ayant des problèmes de santé doivent être stockés à part avec l’ordonnance du médecin traitant.</li>
-        <li>Les médicaments destinés aux adultes doivent être rangés dans un autre lieu.</li>
-      </ul>
-    </section><br>
-
-    <section>
-      <h3>Trousse de secours pour les déplacements</h3>
-      <ul>
-        <li>Numéros de téléphone d’urgence</li>
-        <li>Gel antibactérien</li>
-        <li>Gants jetables en latex</li>
-        <li>Un antiseptique</li>
-        <li>Sérum phy en dosettes (ou collyre sinon)</li>
-        <li>Pansements prédécoupés assortis</li>
-        <li>Compresses stériles</li>
-        <li>Bandes extensibles</li>
-        <li>Ciseaux</li>
-        <li>Thermomètre</li>
-        <li>Couvertures de survie</li>
-        <li>Morceaux de sucre emballés</li>
-        <li>Bombe ou bande de froid</li>
-        <li>Mouchoirs et essuie-tout</li>
+      <h3>Armoire à pharmacie (Au centre)</h3>
+      <ul class="check-list">
+        <li>Savon de Marseille (lavage des mains)</li>
+        <li>Gants à usage unique (vinyle ou nitrile)</li>
+        <li>Antiseptique local non coloré (type Chlorhexidine)</li>
+        <li>Compresses stériles individuelles</li>
+        <li>Pansements prédécoupés (différentes tailles)</li>
+        <li>Sparadrap hypoallergénique</li>
+        <li>Sérum physiologique (dosettes individuelles)</li>
+        <li>Ciseaux à bouts ronds</li>
         <li>Pince à épiler</li>
-        <li>Tire-tiques</li>
-        <li>Copies des PAI des enfants concernés</li>
-        <li>Un carnet/stylo (pour répertorier dans cahier d'infirmerie ensuite)</li>
-        <li>(Crème solaire)</li>
+        <li>Thermomètre (sans contact ou frontal)</li>
+        <li>Sucre en morceaux (hypoglycémie)</li>
+        <li>Couverture de survie</li>
+        <li>Coussin réfrigérant (au frigo)</li>
+        <li>Serviettes hygiéniques</li>
       </ul>
-    </section><br>
+    </section>
 
     <section>
-      <h3>Contraception d’urgence</h3>
-      <p class="no-p-style">Il est possible pour les mineures de disposer sans prescription obligatoire d’une contraception d’urgence. En cas de détresse d’une jeune fille, cette information peut être donnée par l’assistant sanitaire ou le directeur qui propose systématiquement un contact avec un médecin, un pharmacien ou un centre de planification.</p>
-      <p class="no-p-style">Une démarche auprès de l’autorité parentale sera proposée mais peut être refusée par la jeune mineure. Dans tous les cas, il faut veiller à un accompagnement psychologique et à un suivi médical.</p>
-    </section><br>
+      <h3>Trousse de secours (En sortie)</h3>
+      <ul class="check-list">
+        <li>Numéros d'urgence (SAMU 15, Pompiers 18, Urgence 112)</li>
+        <li>Gel hydroalcoolique</li>
+        <li>Gants jetables</li>
+        <li>Antiseptique + Compresses + Pansements</li>
+        <li>Sérum physiologique</li>
+        <li>Bande extensible (type Velpeau)</li>
+        <li>Couverture de survie</li>
+        <li>Sucre emballé individuellement</li>
+        <li>Pince à épiler</li>
+        <li>Masque de protection (bouche-à-bouche)</li>
+        <li>Copies des PAI des enfants concernés</li>
+        <li>Carnet et stylo (pour noter les incidents)</li>
+      </ul>
+    </section>
 
-    <p>
-      Attention : tout usage de "Placebo" (pseudo-medoc), de préparations "Do it yourself" ou de "Recettes de grand-mère"
-      est strictement interdit pour les soins. Ces activités peuvent être proposées en animation, mais en aucun cas
-      utilisées sur les jeunes.
-    </p>
-
+    <p class="no-p-style"><i>Note : Les traitements adultes et enfants doivent être séparés. Interdiction d'utiliser des placebos ou remèdes "maison". Tout ce qui n'est pas mentionné dans cette liste est soit interdit d'utilisation, soit possible uniquement après accord d'un médecin après avoir composé le 15.</i></p>
     <button class="back-button"><a href="../public/pdfs/reglementation/docAS.pdf" style="color: white">Voir la doc</a></button>
-
   </div>
 
+  <!-- SECTION 4: RECAP ENCADREMENT -->
   <br><br>
   <h1 id="recap-encadrement">Récapitulatif encadrement</h1>
-    <section>
-      <div id="mobile-message" class="mobile-notification">
-        Le tableau est réduit. Faites défiler horizontalement pour voir l'intégralité du contenu.
-      </div>
-      <div class="table-container" style="display: flex; justify-content: center;">
-        <table>
-          <thead>
-          <tr>
-            <th><strong>Type d'accueil / Activité</strong></th>
-            <th><strong>Moins de 6 ans</strong></th>
-            <th><strong>6 ans et plus</strong></th>
-          </tr>
-          </thead>
-          <tbody>
-          <!-- Colonie -->
-          <tr>
-            <td>🏕️ <strong>Colo, ALSH, Scoutisme...</strong></td>
-            <td>1 animateur / 8 enfants</td>
-            <td>1 animateur / 12 enfants</td>
-          </tr>
-          <!-- Perisco -->
-          <tr>
-            <td rowspan="2">🏫 <strong>Périscolaire</strong></td>
-            <td><em>Standart :</em>1 animateur / 10 enfants</td>
-            <td><em>Standart :</em>1 animateur / 14 enfants</td>
-          </tr>
-          <tr>
-            <td><em>Avec PEDT :</em>1 animateur / 14 enfants</td>
-            <td><em>Avec PEDT :</em>1 animateur / 18 enfants</td>
-          </tr>
-          <!-- Baignade -->
-          <tr>
-            <td>🏊 <strong>Baignade en ACM</strong></td>
-            <td>1 surveillant pour 5 enfants</td>
-            <td>1 surveillant pour 8 enfants</td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-
-    </section>
+  <section>
+    <div id="mobile-message" class="mobile-notification">
+      Le tableau est réduit. Faites défiler horizontalement pour voir l'intégralité du contenu.
+    </div>
+    <div class="table-container" style="display: flex; justify-content: center;">
+      <table>
+        <thead>
+        <tr>
+          <th><strong>Type d'accueil / Activité</strong></th>
+          <th><strong>Moins de 6 ans</strong></th>
+          <th><strong>6 ans et plus</strong></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td>🏕️ <strong>Colo, ALSH, Scoutisme...</strong></td>
+          <td>1 animateur / 8 enfants</td>
+          <td>1 animateur / 12 enfants</td>
+        </tr>
+        <tr>
+          <td rowspan="2">🏫 <strong>Périscolaire</strong></td>
+          <td><em>Standart :</em>1 animateur / 10 enfants</td>
+          <td><em>Standart :</em>1 animateur / 14 enfants</td>
+        </tr>
+        <tr>
+          <td><em>Avec PEDT :</em>1 animateur / 14 enfants</td>
+          <td><em>Avec PEDT :</em>1 animateur / 18 enfants</td>
+        </tr>
+        <tr>
+          <td>🏊 <strong>Baignade en ACM</strong></td>
+          <td>1 surveillant pour 5 enfants</td>
+          <td>1 surveillant pour 8 enfants</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
   <a href="../index.html" class="back-button">Retour</a>
 </div>
 
-  <footer id="footer">
-    <br>
-    <p style="color: white; text-align: center"> &copy; Ressources BAFA/BAFD - By <a
-            href="https://www.instagram.com/romain_colo/" target="_blank"
-            style="color:#f39c12; font-weight:bold;">@romain_colo</a>
-    </p>
-    <p style="text-align: center; margin-top: 8px; margin-bottom: 4px;">
-      <a href="https://macollectiondebafa.web.app/index.html" target="_blank" class="other-site-link">
-        <i class="bi bi-controller"></i> D&eacute;couvrir le RECAP BAFA/BAFD
+<footer id="footer">
+  <br>
+  <p style="color: white; text-align: center"> &copy; Ressources BAFA/BAFD - By <a
+          href="https://www.instagram.com/romain_colo/" target="_blank"
+          style="color:#f39c12; font-weight:bold;">@romain_colo</a>
+  </p>
+  <p style="text-align: center; margin-top: 8px; margin-bottom: 4px;">
+    <a href="https://macollectiondebafa.web.app/index.html" target="_blank" class="other-site-link">
+      <i class="bi bi-controller"></i> D&eacute;couvrir le RECAP BAFA/BAFD
+    </a>
+  </p>
+</footer>
+
+<a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
+
+<script src="../assets/js/main.js"></script>
+<script src="../assets/js/navigation.js"></script>
+</body>
+</html>RECAP BAFA/BAFD
       </a>
     </p>
   </footer>
