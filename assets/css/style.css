@@ -490,7 +490,14 @@ p:not(.no-p-style) {
   margin: 100px auto;
   padding: 20px;
   border-radius: 10px;
+  max-height: 80vh;
+  overflow-y: auto;
 }
+
+.modal-large {
+  max-width: 900px;
+}
+
 
 .modal__closespe {
   float: right;
@@ -1104,7 +1111,7 @@ em {
 }
 
 /*--------------------------------------------------------------
-# Formation Grid Alignment
+# Formation Grid & Planning Table
 --------------------------------------------------------------*/
 .formation-grid {
   display: grid;
@@ -1123,6 +1130,85 @@ em {
   .formation-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.planning-container {
+  overflow-x: auto;
+  margin: 20px 0;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  background: #fff;
+}
+
+.planning-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  min-width: 900px;
+}
+
+.planning-table th, .planning-table td {
+  border: 1px solid #ddd;
+  padding: 10px 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.planning-table th {
+  background: #f8f9fa;
+  color: #2c3e50;
+  font-weight: 700;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.planning-table .time-label {
+  font-weight: bold;
+  background: #f1f1f1;
+  width: 60px;
+}
+
+.planning-table .row-header {
+  font-weight: 800;
+  color: white;
+  width: 25px;
+  text-transform: uppercase;
+  writing-mode: vertical-lr;
+  transform: rotate(180deg);
+  padding: 15px 5px;
+}
+
+.bg-matin { background-color: #2ecc71 !important; }
+.bg-repas { background-color: #f1c40f !important; }
+.bg-aprem { background-color: #3498db !important; }
+.bg-gouter { background-color: #9b59b6 !important; }
+.bg-veillee { background-color: #e74c3c !important; }
+
+.planning-table td a {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s;
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.planning-table td a:hover {
+  background: rgba(243, 156, 18, 0.1);
+  color: #f39c12;
+  transform: scale(1.02);
+}
+
+.planning-table .no-link {
+  color: #7f8c8d;
+  font-style: italic;
+  cursor: default;
+}
+
+.planning-table .repas-cell, .planning-table .gouter-cell {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 2px;
 }
 
 /*--------------------------------------------------------------

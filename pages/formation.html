@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 
 <head>
@@ -18,1148 +18,312 @@
     <h2>BAFA & BAFD</h2>
     <p><b>FORMATION</b></p>
 
-    <contain class="button-group formation-grid">
-      <button class="back-button" onclick="location.href='#psad'">O PSAADRASUFRA</button>
-      <button class="back-button" onclick="location.href='#transport'">Transports</button>
-      <button class="back-button" onclick="location.href='#vie'">Vie quotidienne</button>
-      <button class="back-button" onclick="location.href='#entre'">Entretien individuels</button>
-      <button class="back-button" onclick="location.href='#handi'">Handicap</button>
-      <button class="back-button" onclick="location.href='#ados'">Ados & Préados</button>
-      <button class="back-button" onclick="location.href='#room'">Plan des chambres</button>
-      <button class="back-button" onclick="location.href='#blog'">Le blog</button>
-      <button class="back-button" onclick="location.href='#veillee'">La Veillée</button>
-      <button class="back-button" onclick="location.href='#reu'">Les Réunions</button>
-      <button class="back-button" onclick="location.href='#sigle'">Rappel des sigles utiles</button>
-      <button class="back-button" onclick="location.href='#acm'">Différents types d’ACM</button>
-      <button class="back-button" onclick="location.href='#organismes'">Organismes</button>
-      <button class="back-button" onclick="location.href='../index.html'">Retour</button>
-    </contain>
-    <br>
+    <div class="planning-container">
+      <table class="planning-table">
+        <thead>
+          <tr>
+            <th></th>
+            <th></th>
+            <th>04/04<br>SAMEDI</th>
+            <th>05/04<br>DIMANCHE</th>
+            <th>06/04<br>LUNDI</th>
+            <th>07/04<br>MARDI</th>
+            <th>08/04<br>MERCREDI</th>
+            <th>09/04<br>JEUDI</th>
+            <th>10/04<br>VENDREDI</th>
+            <th>11/04<br>SAMEDI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- MATIN -->
+          <tr>
+            <td rowspan="2" class="row-header bg-matin">MATIN</td>
+            <td class="time-label">9h</td>
+            <td class="no-link">[9h] Pot d'accueil + Brise-glace</td>
+            <td class="no-link">[9h] Petits jeux</td>
+            <td class="no-link">[9h] Vitamine par les stagiaires</td>
+            <td class="no-link">[9h] Vitamine par les stagiaires</td>
+            <td class="no-link">[9h] Vitamine par les stagiaires</td>
+            <td class="no-link">[9h] Vitamine par les stagiaires</td>
+            <td class="no-link">Grasse matinée</td>
+            <td class="no-link">[9h] Vitamine par les stagiaires</td>
+          </tr>
+          <tr>
+            <td class="time-label">10h</td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[10h] Investissement des locaux</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[10h] Projets, ACM, Acteurs & Contrats</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-sigle">[10h] Réglementation</a></td>
+            <td class="no-link">[10h] Handicap / Inclusion et accessibilité</td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[10h] Grand jeu grp 1</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-blog">[10h] Gestion du blog + Laïcité</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-organismes">[9h30] Création CV, LM & Stage</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-entre">[10h] Fin film & Entretiens (3)</a></td>
+          </tr>
+          <!-- REPAS -->
+          <tr class="bg-repas">
+            <td colspan="2" class="repas-cell">REPAS</td>
+            <td colspan="8"></td>
+          </tr>
+          <!-- APREM 1 -->
+          <tr>
+            <td class="row-header bg-aprem">APREM</td>
+            <td class="time-label">13h30</td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-transport">[13h30] Rôle de l'animateur & cursus BAFA</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-ados">[13h30] Connaissance des publics</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-sigle">[13h30] Responsabilités civile & pénale</a></td>
+            <td class="no-link">[13h30] Grand jeu grp 3 (Enquête)</td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[13h30] Relationnel & Dynamique</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[13h30] Grand jeu groupe 2</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[13h30] Grand jeu grp 4</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-entre">[13h00] Bilan collectif de la session</a></td>
+          </tr>
+          <!-- GOÛTER -->
+          <tr class="bg-gouter">
+            <td colspan="2" class="gouter-cell">GOÛTER</td>
+            <td colspan="8"></td>
+          </tr>
+          <!-- APREM 2 -->
+          <tr>
+            <td class="row-header bg-aprem">APREM</td>
+            <td class="time-label">16h30</td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-transport">[16h30] Rôle de l'animateur & cursus BAFA</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-ados">[16h30] Restitution partie 2</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[16h30] Vie quotidienne</a></td>
+            <td class="no-link">[16h30] Harcèlement / Conduite à risque</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-reu">[16h30] Réunion + Gestion de conflits</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-sigle">[16h30] Liberté, autorité & sanction</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[16h30] Quiz Kahoot finale</a></td>
+            <td><a href="../index.html">[14h] Départ</a></td>
+          </tr>
+          <!-- VEILLEES -->
+          <tr>
+            <td class="row-header bg-veillee">VEILLEES</td>
+            <td class="time-label">20h30</td>
+            <td class="no-link">[20h30] Prepa jeux (Entretiens 1)</td>
+            <td class="no-link">[20h30] Prepa grd jeux / veillées</td>
+            <td class="no-link">[20h30] Veillées grp 4 (Casino)</td>
+            <td class="no-link">[20h30] Veillées grp 2 (Conte)</td>
+            <td class="no-link">[20h30] Prepa jeux (Entretiens 2)</td>
+            <td class="no-link">[20h30] Veillées grp 3 (Musicaux)</td>
+            <td class="no-link">[20h30] Veillées grp 1 (Cabaret)</td>
+            <td class="no-link"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="button-container">
+        <button class="back-button" onclick="location.href='../index.html'">Retour au menu</button>
+    </div>
 
     <div class="categories">
-
-      <h1 id="psad"><a href="../public/pdfs/formation/PSAADRAFRA.pdf" class="orange"><u>O PSAADRASUFRA</u></a></h1>
-      <ul>
-        <li style="list-style-type: none;"><b>O</b>bjectifs
-          <ul>
-            <li>Quels sont les buts précis de l’activité ou du projet ?</li>
-            <li>Quels apprentissages, valeurs ou compétences souhaite-t-on développer ?</li>
-            <li>Comment cette activité s’insère-t-elle dans le projet global du séjour ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>P</b>réparation
-          <ul>
-            <li>Quels matériels, lieux, documents sont nécessaires ?</li>
-            <li>Quelle organisation préalable est requise (réservations, autorisations) ?</li>
-            <li>Quels rôles et responsabilités pour chaque animateur ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>S</b>ensibilisation
-          <ul>
-            <li>Comment informer et motiver les jeunes avant l’activité ?</li>
-            <li>Quels supports ou messages utiliser pour capter leur attention ?</li>
-            <li>Y a-t-il des préjugés ou peurs à lever ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>A</b>ménagement
-          <ul>
-            <li>Comment adapter l’espace et le matériel pour l’activité ?</li>
-            <li>Faut-il prévoir des zones spécifiques pour différents groupes ou étapes ?</li>
-            <li>Comment assurer l’accessibilité pour tous (handicap, âge, niveau) ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>A</b>ccueil
-          <ul>
-            <li>Comment accueillir les participants (rythme, ambiance, consignes) ?</li>
-            <li>Comment présenter l’activité pour susciter l’intérêt et la confiance ?</li>
-            <li>Comment gérer les éventuelles appréhensions ou réticences ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>D</b>éroulement
-          <ul>
-            <li>Quelles sont les différentes étapes de l’activité ?</li>
-            <li>Comment gérer le temps pour respecter le planning ?</li>
-            <li>Comment adapter en cas d’imprévu (météo, matériel manquant, groupe difficile) ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>R</b>ythme
-          <ul>
-            <li>Comment alterner moments calmes et temps d’action ?</li>
-            <li>Quelle durée pour chaque phase pour maintenir l’attention ?</li>
-            <li>Comment prévoir des pauses adaptées aux besoins des jeunes ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>A</b>nimation
-          <ul>
-            <li>Quelles techniques d’animation privilégier (jeux, discussions, mises en situation) ?</li>
-            <li>Comment encourager la participation et la coopération ?</li>
-            <li>Comment gérer les conflits ou difficultés relationnelles ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>S</b>écurité / Urgence
-          <ul>
-            <li>Quels sont les risques liés à l’activité ?</li>
-            <li>Quelles mesures de sécurité mettre en place ?</li>
-            <li>Qui est responsable en cas d’incident ?</li>
-            <li>Comment réagir en situation d’urgence (contact secours, premiers soins) ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>F</b>in
-          <ul>
-            <li>Comment clôturer l’activité de manière positive ?</li>
-            <li>Prévoir un temps de bilan ou de débriefing collectif.</li>
-            <li>Comment remercier et valoriser les participants ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>R</b>angement
-          <ul>
-            <li>Comment organiser le rangement du matériel et de l’espace ?</li>
-            <li>Qui est responsable de cette phase ?</li>
-            <li>Comment sensibiliser les jeunes à l’importance du rangement ?</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><b>A</b>nalyse
-          <ul>
-            <li>Quels points ont bien fonctionné ?</li>
-            <li>Quelles difficultés ont été rencontrées ?</li>
-            <li>Quelles améliorations envisager pour la prochaine fois ?</li>
-            <li>Comment recueillir le retour des participants et des animateurs ?</li>
-          </ul>
-        </li>
-      </ul>
-
-      <br>
-
-      <h1 id="transport">Transports</h1>
-      <ul>
-        <li>Brainstorming : À quoi pensez-vous en entendant « transport » ? (Bus, car, train, avion, vomi, ceinture...)
-        </li>
-        <li>À l’arrivée du car, vérifier l’état général (vitres, carrosserie, etc.). En cas de problème, prévenir le
-          conducteur. La sécurité des enfants (et des animateurs !) est une priorité, votre responsabilité pénale est
-          engagée. Vérifier aussi la présence de la trousse de secours et du gilet jaune au besoin. Regarder également
-          l'état de santé du chauffeur, s'il est fatigué, ou ivre, il ne doit évidemment pas conduire -> refuser de
-          faire
-          monter les enfants.
-        </li>
-        <li>Organisation des bagages : qui met les valises dans le car ? Les jeunes ou les animateurs ? -> En fonction
-          de
-          tranche d'âge.
-        </li>
-        <li>Les enfants cherchent souvent la meilleure place et rangent leurs valises sans attention. Leur rappeler de
-          faire attention ou laisser les animateurs s’en charger.
-        </li>
-        <li>Le chauffeur peut demander la liste des jeunes et le nombre d’enfants/animateurs présents.</li>
-        <li>Que prennent les jeunes dans le bus ? Boissons, nourriture ? À adapter selon la durée du trajet. Pour une
-          sortie piscine, rien à prendre ; pour un long trajet, prévoir eau et pique-nique si un arrêt est prévu.
-        </li>
-        <li>Placement dans le car : où s’installent les animateurs ? -> Doivent être répartis dans le car ! Éviter pour
-          les jeunes le centre au fond, près des portes et les places sans fauteuils devant :ce sont des places
-          déconseillé mais pas interdit. Strapontins par contre interdits.
-        </li>
-        <li style="list-style-type: none; padding-left: 0; text-align: center"><img src="../public/images/bus.png"
-            alt="Bus" style="max-width:100%; width:100%; height:auto; display:block; margin:0 auto;"></li>
-        <li>L’animateur au fond du bus remonte l’ensemble du groupe. Idéalement, les animateurs sont répartis partout.
-        </li>
-        <li>Avant de partir, vérifier que tout le monde a bien attaché sa ceinture de sécurité. C’est obligatoire et
-          fondamental.
-        </li>
-        <li>En cas de mal des transports, placer les jeunes sujets à ce problème à l’avant et prévoir des sacs
-          plastiques à garder sur sois !
-        </li>
-        <li>Attention à la hauteur de la marche lors de la montée et descente, surtout pour les enfants de moins de 10
-          ans.
-          Toujours placer un animateur pour compter les enfants à la montée et à la descente.
-        </li>
-        <li>Toilettes dans le bus : les chauffeurs préfèrent souvent qu’on ne les utilise pas. Prévoir un passage aux
-          toilettes avant le départ.
-        </li>
-        <li>Attention à la hauteur de la soute, les enfants peuvent se cogner.</li>
-        <li>Organisation de la soute : selon la configuration du car, adapter la disposition des animateurs. Parfois les
-          soutes communiquent, parfois non. Pour les petits, placer les valises à l’avant de la soute.
-        </li>
-        <li>Caler les bagages pour éviter qu’ils ne basculent en cas de freinage brusque.</li>
-        <li>Des valises bien alignées donnent une bonne image du séjour. Des valises mal rangées donnent une mauvaise
-          impression. (Cela fait parties des vitrines du séjour !)
-        </li>
-        <li>À l’approche de l’arrivée, réveiller les animateurs qui dorment.</li>
-        <li>Avant de descendre, faire un point avec les animateurs et donner les consignes aux jeunes, car une fois
-          dehors
-          ils courent vers leurs parents.
-        </li>
-        <li>À l’arrivée, placer un animateur pour compter les enfants à la descente, un autre pour sortir les valises
-          (surtout pour les petits), et un autre pour surveiller ceux qui partent et les noter.
-        </li>
-        <li>En fin de trajet, faire un tour du bus pour vérifier qu’aucune affaire ou enfant n’a été oublié. Dans les
-          bus
-          modernes, une alarme signale si un enfant est resté à bord.
-        </li>
-        <li>Compter systématiquement les enfants en montant et en descendant du bus.</li>
-      </ul>
-
-      <br>
-
-      <h1 id="vie">Vie quotidienne</h1>
-      <ul>
-        <li>Brainstorming : À quoi pensez-vous en entendant « vie quotidienne » ? (Petit-déj’, douches, linge, chambres,
-          ménage, plannings, rangement, lessive, disputes, brossage de dents, pyjamas, chaussettes orphelines, “j’ai
-          perdu
-          mon maillot”, “j’aime pas la purée”, chaussettes qui sentent le fauve…)
-        </li>
-
-        <li>La vie quotidienne, c’est :
-          <ul>
-            <li>Les moments hors activités “formelles” → lever, repas, toilette, rangement, coucher.</li>
-            <li>Le lien fort avec la sécurité physique et affective des enfants.</li>
-            <li>Un temps éducatif à part entière (autonomie, vivre-ensemble, règles de vie).</li>
-            <li>L’image du séjour (parents, direction, enfants) se joue beaucoup là-dessus.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Lever</strong>
-          <ul>
-            <li>Se lever à l’heure… mais en douceur (éviter la trompette à 6h30 sauf thème militaire).</li>
-            <li>Vérifier que tout le monde est réveillé (pas juste un “debout” lancé dans le couloir).</li>
-            <li>Observer l’état de forme ou de fatigue des enfants : noter s’il y a fièvre, blessure, tristesse.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Petit-déjeuner</strong>
-          <ul>
-            <li>Vérifier que tout le monde mange quelque chose (même petit).</li>
-            <li>Gérer les régimes alimentaires et allergies.</li>
-            <li>Prévenir le gaspillage → petites quantités, resservice possible.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Hygiène & toilette</strong>
-          <ul>
-            <li>Organiser les passages aux sanitaires pour éviter l’effet “bouchon”.</li>
-            <li>Contrôler discrètement brossage des dents, lavage des mains.</li>
-            <li>Vérifier que tout le monde se douche au moins tous les deux jours (plus selon chaleur/activités).</li>
-            <li>Prévoir un animateur référent pour accompagner les plus jeunes.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Rangement & propreté</strong>
-          <ul>
-            <li>Faire participer les enfants : pas d’animateur “bonne à tout faire”.</li>
-            <li>Vérifier chambres/tentes : sécurité + hygiène.</li>
-            <li>Mettre en place des défis ludiques (concours de chambre la plus propre).</li>
-            <li>Contrôler les zones collectives.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Gestion du linge</strong>
-          <ul>
-            <li>Repérer les enfants qui ne changent jamais de t-shirt ou laissent traîner leur maillot mouillé.</li>
-            <li>Prévoir des moments “lessive” ou aide au pliage.</li>
-            <li>Gérer les objets trouvés avec une boîte dédiée et présentation régulière.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Repas</strong>
-          <ul>
-            <li>Placement réfléchi pour éviter les tables explosives.</li>
-            <li>Répartir les animateurs dans la salle.</li>
-            <li>Faire respecter un minimum de calme.</li>
-            <li>Respecter régimes spécifiques et vérifier les repas adaptés.</li>
-            <li>Sensibiliser au gaspillage et à la politesse.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Coucher</strong>
-          <ul>
-            <li>Anticiper : proposer un temps calme avant dodo.</li>
-            <li>Vérifier que tout le monde est dans son lit.</li>
-            <li>Rassurer les plus jeunes ou ceux en mal du pays.</li>
-            <li>S’assurer que tout est calme avant de quitter le secteur.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Rôle éducatif</strong>
-          <ul>
-            <li>Autonomie : gérer ses affaires, son linge, son temps.</li>
-            <li>Vivre-ensemble : respect des règles et des autres.</li>
-            <li>Sécurité : hygiène, repas équilibrés, rythme de sommeil.</li>
-            <li>Observation : détecter mal-être, problème de santé, conflit.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Points de vigilance</strong>
-          <ul>
-            <li>Toujours un animateur dans les lieux sensibles.</li>
-            <li>S’adapter à l’âge des enfants.</li>
-            <li>Être attentif aux signes d’isolement ou harcèlement.</li>
-            <li>Surveiller les transitions, moments souvent chaotiques.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Astuces</strong>
-          <ul>
-            <li>Ludifier : concours, relais hygiène, missions.</li>
-            <li>Communiquer avec l’équipe sur les responsabilités.</li>
-            <li>Montrer l’exemple.</li>
-            <li>Observer discrètement pour repérer un besoin d’aide.</li>
-          </ul>
-        </li>
-      </ul>
-      <button class="openModalBtn back-button" data-modal="modal2">Débats 4 coins</button>
-
-      <!-- Modale 2 -->
-      <div id="modal2" class="modalspe">
-        <div class="modal__contentspe">
+      <!-- Section PSAADRASUFRA -->
+      <div id="modal-psad" class="modalspe">
+        <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
-          <p><strong>DÉBATS 4 COINS :</strong></p>
-          <div>
-            <p>Option avec 4 coins : rouge, bleu, jaune et verts : Tout à fait d’accord / Plutôt d’accord / Pas d’accord
-              / Dépend de l'âge</p>
-            <h5>🏠 Vie quotidienne / règles</h5>
-            <ol class="questions">
-              <li>Les règles devraient être décidées uniquement par les animateurs.</li>
-              <li>On devrait pouvoir choisir librement à quelle heure on se couche en colo.</li>
-              <li>Les chambres devraient être mixtes si tout le monde est d'accord.</li>
-              <li>Il faudrait que chacun range seulement ses affaires et pas les espaces communs.</li>
-            </ol><br>
-
-            <h5>🍽️ Repas / alimentation</h5>
-            <ol class="questions">
-              <li>Tout le monde devrait pouvoir choisir son menu à chaque repas.</li>
-              <li>Il est normal qu'il y ait des repas “découverte” pour goûter de nouveaux plats.</li>
-              <li>Il faudrait pouvoir manger quand on veut et pas à des horaires fixes.</li>
-              <li>Le gaspillage alimentaire devrait entraîner des sanctions.</li>
-            </ol><br>
-
-            <h5>🎨 Activités et liberté</h5>
-            <ol class="questions">
-              <li>Les enfants devraient décider eux-mêmes du programme de la journée.</li>
-              <li>Il devrait toujours y avoir des activités obligatoires.</li>
-              <li>Il est normal d'avoir des temps calmes même si on préfère jouer.</li>
-              <li>Les sorties à l'extérieur devraient être limitées pour la sécurité.</li>
-            </ol><br>
-
-            <h5>📱 Objets personnels / vie numérique</h5>
-            <ol class="questions">
-              <li>Les téléphones portables devraient être autorisés tout le temps.</li>
-              <li>Il est normal d'interdire certains objets personnels dans un centre.</li>
-              <li>On devrait pouvoir prendre et publier des photos librement.</li>
-              <li>Les animateurs devraient vérifier ce qu'on fait sur les réseaux sociaux.</li>
-            </ol><br>
-
-            <h5>👥 Vie en groupe / respect</h5>
-            <ol class="questions">
-              <li>Il est normal de faire des corvées collectives même si on n'aime pas ça.</li>
-              <li>Les plus âgés devraient avoir plus de responsabilités que les plus jeunes.</li>
-              <li>Tout le monde devrait participer aux animations, même s'il est timide.</li>
-              <li>Il faudrait toujours voter pour prendre les décisions du groupe.</li>
-            </ol>
-          </div>
-
+          <h1><a href="../public/pdfs/formation/PSAADRAFRA.pdf" class="orange"><u>O PSAADRASUFRA</u></a></h1>
+          <ul>
+            <li style="list-style-type: none;"><b>O</b>bjectifs : Quels sont les buts précis ? Quelles valeurs ?</li>
+            <li style="list-style-type: none;"><b>P</b>réparation : Matériels, lieux, organisation, rôles.</li>
+            <li style="list-style-type: none;"><b>S</b>ensibilisation : Comment informer et motiver les jeunes ?</li>
+            <li style="list-style-type: none;"><b>A</b>ménagement : Adapter l’espace et le matériel.</li>
+            <li style="list-style-type: none;"><b>A</b>ccueil : Consignes, ambiance, confiance.</li>
+            <li style="list-style-type: none;"><b>D</b>éroulement : Les étapes, gestion du temps, imprévus.</li>
+            <li style="list-style-type: none;"><b>R</b>ythme : Alternance calme/action, pauses.</li>
+            <li style="list-style-type: none;"><b>A</b>nimation : Techniques, participation, conflits.</li>
+            <li style="list-style-type: none;"><b>S</b>écurité : Risques, mesures, urgences.</li>
+            <li style="list-style-type: none;"><b>F</b>in : Clôture positive, bilan, valorisation.</li>
+            <li style="list-style-type: none;"><b>R</b>angement : Organisation, responsabilité.</li>
+            <li style="list-style-type: none;"><b>A</b>nalyse : Points forts, difficultés, améliorations.</li>
+          </ul>
         </div>
       </div>
 
-      <br>
-
-      <h1 id="entre">Entretien individuels</h1>
-      <h4>En début de séjour</h4>
-      <ul>
-        <li><label><input type="checkbox"> Question basique : lieu d'habitation, âge, avenir orienté colo ? alsh ? scout ? => pourquoi le bafa ?</label></li>
-        <li><label><input type="checkbox"> Quelles sont tes attentes vis a vis de la formation</label></li>
-        <li><label><input type="checkbox"> Bien intégré ? Comment te sens tu par rapport au groupe ?</label></li>
-        <li><label><input type="checkbox"> Est ce que tu as une info personnelle que l'on doit prendre en compte ?</label></li>
-        <li><label><input type="checkbox"> APPRO : Ton stage pratique étais quelle type d'acm ?</label></li>
-      </ul>
-      <h4>Milieu de séjour</h4>
-      <ul>
-        <li><label><input type="checkbox"> Comment te sent tu dans le groupe ? dans les attentes de la formation
-            ?</label></li>
-        <li><label><input type="checkbox"> Stresse ? beaucoup de travail ou au contraire tout va bien de ton côté
-            ?</label></li>
-        <li><label><input type="checkbox"> Que penses tu du contenu de la formation ? Y'a t-il des choses que tu
-            voudrais abordés que l'on a pas encore fais ?</label></li>
-        <li><label><input type="checkbox"> Ne rien lâcher !</label></li>
-      </ul>
-      <h4>Fin de séjour</h4>
-      <ul>
-        <li><label><input type="checkbox"> Selon toi, as-tu validé ? Pouquoi ? Est ce que la formation a répondu à tes
-            attentes ?</label></li>
-        <li><label><input type="checkbox"> As-tu trouvé ton stage pratique ? c'est un alsh ou colo ?</label></li>
-        <li><label><input type="checkbox"> As t-on répondu à toute tes interrogation ?</label></li>
-        <li><label><input type="checkbox"> Lecture de l'appréciation + visible sur l'espace du stagiaire d'ici 2 à 3
-            semaines</label></li>
-      </ul>
-
-      <br>
-
-      <h1 id="handi">Handicap</h1>
-      <ul>
-        <li>Brainstorming : À quoi pensez-vous en entendant « handicap » ? (Fauteuil roulant, surdité, autisme,
-          malvoyance, accompagnement, inclusion, accessibilité, patience, adaptation, communication alternative…)
-        </li>
-
-        <li>Le handicap, c’est :
-          <ul>
-            <li>Une diversité de situations : moteur, sensoriel, intellectuel, psychique, troubles du spectre
-              autistique, maladies chroniques…</li>
-            <li>Des besoins spécifiques selon la personne, pas selon l’étiquette du handicap.</li>
-            <li>Un droit à l’inclusion et à la participation à toutes les activités.</li>
-            <li>Un travail d’équipe avec l’ensemble des animateurs, la direction et parfois des accompagnants
-              spécialisés.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Avant le séjour</strong>
-          <ul>
-            <li>Se renseigner sur le handicap et les besoins précis de l’enfant (fiche sanitaire, échange avec les
-              parents).</li>
-            <li>Préparer l’équipe à l’accueil (règles de sécurité, gestes adaptés, aménagements).</li>
-            <li>Vérifier l’accessibilité des lieux (hébergement, sanitaires, activités).</li>
-            <li>Prévoir du matériel spécifique si nécessaire (plan incliné, jeux adaptés, pictogrammes…).</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Accueil</strong>
-          <ul>
-            <li>Prendre le temps de se présenter à l’enfant et à sa famille.</li>
-            <li>Rassurer sur le déroulement du séjour et montrer les lieux.</li>
-            <li>Être attentif aux signes de stress ou d’inconfort dès l’arrivée.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Vie quotidienne</strong>
-          <ul>
-            <li>Adapter les horaires, les rythmes et les espaces si nécessaire.</li>
-            <li>Prévoir un accompagnement personnalisé pour les repas, la toilette ou les déplacements si besoin.</li>
-            <li>Favoriser l’autonomie en laissant faire ce que l’enfant peut réaliser seul.</li>
-            <li>Encourager l’interaction avec les autres enfants, éviter l’isolement.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Activités</strong>
-          <ul>
-            <li>Adapter les règles et le matériel pour que tout le monde participe.</li>
-            <li>Privilégier la coopération plutôt que la compétition.</li>
-            <li>Prévoir un plan B si l’activité prévue est inaccessible ou trop fatigante.</li>
-            <li>Valoriser la participation et les réussites, même petites.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Communication</strong>
-          <ul>
-            <li>Utiliser un langage clair, simple et adapté à l’âge et aux capacités.</li>
-            <li>Employer des supports visuels ou gestes si besoin.</li>
-            <li>Être attentif au langage non verbal (expressions, attitudes, réactions).</li>
-            <li>Prendre le temps d’écouter et de reformuler pour s’assurer de la compréhension.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Rôle éducatif</strong>
-          <ul>
-            <li>Apprendre aux enfants valides à respecter, aider et inclure.</li>
-            <li>Déconstruire les préjugés sur le handicap.</li>
-            <li>Valoriser la diversité comme une richesse du groupe.</li>
-            <li>Développer la solidarité et l’empathie.</li>
-            <li><a href="https://www.youtube.com/watch?v=RlNOUx9o8Lo" target="_blank"><u>Voir vidéo</u></a> la petite
-              casserole d'Anatole sur le handicap</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Points de vigilance</strong>
-          <ul>
-            <li>Éviter la surprotection : laisser l’enfant essayer et expérimenter.</li>
-            <li>Être attentif à la fatigue (physique et émotionnelle).</li>
-            <li>Adapter la sécurité aux besoins spécifiques (allergies, risques médicaux, mobilité réduite).</li>
-            <li>Communiquer avec les parents ou tuteurs en cas de doute ou de problème.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Astuces</strong>
-          <ul>
-            <li>Préparer le groupe à l’accueil d’un enfant en situation de handicap, de manière simple et positive.</li>
-            <li>Créer des binômes ou trinômes “solidaires” pour les activités.</li>
-            <li>Utiliser des jeux coopératifs qui favorisent la participation de tous.</li>
-            <li>Faire preuve de patience, humour et créativité pour trouver des solutions.</li>
-          </ul>
-        </li>
-      </ul>
-
-      <br>
-
-      <h1 id="ados">Ados & Préados</h1>
-      <ul>
-        <li>Brainstorming : À quoi pensez-vous en entendant « ados / préados » ? (Rires nerveux, musique à fond, “j’ai
-          pas
-          envie”, groupe de copains inséparables, hormones, débats interminables, selfies, fringues, téléphone greffé à
-          la
-          main, grands projets, petites crises…)
-        </li>
-
-        <li style="list-style-type: none;">Les ados/préados, c’est :
-          <ul>
-            <li>Une recherche d’autonomie et d’indépendance.</li>
-            <li>Un besoin d’appartenance au groupe très fort.</li>
-            <li>Une sensibilité accrue au regard des autres.</li>
-            <li>Une grande énergie… mais aussi des phases de “molle attitude”.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Comprendre leur fonctionnement</strong>
-          <ul>
-            <li>Accepter que les ados testent les limites (c’est normal).</li>
-            <li>Donner des responsabilités réelles pour les impliquer.</li>
-            <li>Écouter et valoriser leurs idées, même si elles ne sont pas retenues.</li>
-            <li>Proposer un cadre clair et ferme… mais souple dans la forme.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Vie quotidienne</strong>
-          <ul>
-            <li>Les responsabiliser : gestion de leurs affaires, participation aux tâches collectives.</li>
-            <li>Respecter leur besoin d’intimité (temps seul, discussions entre eux).</li>
-            <li>Intervenir si l’hygiène, l’alimentation ou le sommeil deviennent problématiques.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Activités</strong>
-          <ul>
-            <li>Proposer des activités où ils ont une part de décision (choix, organisation).</li>
-            <li>Favoriser les projets collectifs ou créatifs (vidéo, spectacle, événement sportif).</li>
-            <li>Laisser des moments libres encadrés pour qu’ils puissent se retrouver entre eux.</li>
-            <li>Proposer des défis ou challenges plutôt que des consignes strictes.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Communication</strong>
-          <ul>
-            <li>Éviter le ton “professeur” : parler d’égal à égal, tout en restant l’adulte référent.</li>
-            <li>Être direct, clair et concis dans les consignes.</li>
-            <li>Utiliser l’humour pour désamorcer les tensions.</li>
-            <li>Prendre le temps de discuter individuellement, pas seulement en groupe.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Gestion des conflits</strong>
-          <ul>
-            <li>Ne pas humilier devant le groupe : régler en aparté.</li>
-            <li>Identifier les leaders positifs et négatifs pour équilibrer la dynamique.</li>
-            <li>Encourager la médiation et l’écoute mutuelle.</li>
-            <li>Fixer des limites claires et cohérentes, appliquées par toute l’équipe.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Points de vigilance</strong>
-          <ul>
-            <li>Les comportements à risque (cachés ou assumés) : fugue, tabac, alcool, réseaux sociaux.</li>
-            <li>L’exclusion d’un membre du groupe (isolement, moqueries, cyberharcèlement).</li>
-            <li>Les changements brusques d’attitude (fatigue, repli, colère).</li>
-            <li>La pression entre pairs (oser dire non, résister au “tout le monde le fait”).</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Astuces</strong>
-          <ul>
-            <li><a href="../public/pdfs/formation/saynetes.pdf" target="_blank"><u>Saynète à jouer</u></a> pour mieux
-              comprendre ados</li>
-            <li>Les impliquer dans les règles de vie : ils les respecteront plus facilement.</li>
-            <li>Organiser des temps “off” où ils choisissent l’activité.</li>
-            <li>Valoriser les réussites et prises d’initiatives.</li>
-            <li>Montrer que vous vous intéressez à leur univers (musique, jeux, séries) sans être “l’animateur qui
-              force”.</li>
-          </ul>
-        </li>
-      </ul>
-
-      <button class="openModalBtn back-button" data-modal="modal3">Débats 4 coins avec réponses</button>
-
-      <!-- Modale 3 -->
-      <div id="modal3" class="modalspe">
-        <div class="modal__contentspe">
+      <!-- Section Transports -->
+      <div id="modal-transport" class="modalspe">
+        <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
-          <p><strong>DÉBATS 4 COINS QCM :</strong></p>
-          <div>
-
-            <h5>🏕️ Situations sensibles en camp itinérant 15–17 ans</h5>
-            <ol class="questions">
-              <li>
-                Le soir dans un camp itinérant 15–17 ans, tu entends des ados copuler dans la tente :
-                <ul>
-                  <li><span style="color:red">Rouge :</span> J'appelle les parents le lendemain</li>
-                  <li><span style="color:green">Vert :</span> J'en parle à l'équipe et aux ados concernés</li>
-                  <li><span style="color:blue">Bleu :</span> J'en parle à l'organisme</li>
-                  <li><span style="color:gold">Jaune :</span> Je vais les voir discrètement et leur demande s'ils se
-                    sont protégés</li>
-                </ul>
-              </li><br>
-
-              <li>
-                Un animateur casse par erreur un médicament d’un jeune pour une allergie :
-                <ul>
-                  <li><span style="color:red">Rouge :</span> J'appelle les parents pour prévenir</li>
-                  <li><span style="color:green">Vert :</span> Je demande au jeune si c’est urgent et on en rachète
-                    ensemble</li>
-                  <li><span style="color:blue">Bleu :</span> Je vais directement à la pharmacie pour ne pas que le jeune
-                    loupe son traitement</li>
-                  <li><span style="color:gold">Jaune :</span> J’en parle à l’organisme pour trouver une solution</li>
-                </ul>
-              </li><br>
-
-              <li>
-                Un adolescent semble triste et isolé pendant l'activité :
-                <ul>
-                  <li><span style="color:red">Rouge :</span> J'appelle ses parents pour en parler</li>
-                  <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour organiser un suivi</li>
-                  <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour intervention spécialisée</li>
-                  <li><span style="color:gold">Jaune :</span> Je discute discrètement avec le jeune pour comprendre son
-                    ressenti</li>
-                </ul>
-              </li><br>
-
-              <li>
-                Un adolescent arrive en retard à toutes les activités :
-                <ul>
-                  <li><span style="color:red">Rouge :</span> J'appelle les parents pour sanction</li>
-                  <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour trouver une stratégie éducative
-                  </li>
-                  <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour information</li>
-                  <li><span style="color:gold">Jaune :</span> Je lui parle discrètement pour comprendre ses raisons</li>
-                </ul>
-              </li><br>
-
-              <li>
-                Un adolescent se dispute avec un animateur :
-                <ul>
-                  <li><span style="color:red">Rouge :</span> J'appelle les parents pour intervenir</li>
-                  <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour calmer la situation</li>
-                  <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour avis</li>
-                  <li><span style="color:gold">Jaune :</span> Je discute discrètement avec l'adolescent pour apaiser les
-                    tensions</li>
-                </ul>
-              </li><br>
-
-              <li>
-                Un adolescent se plaint d'une activité physique trop difficile :
-                <ul>
-                  <li><span style="color:red">Rouge :</span> J'appelle les parents pour décision</li>
-                  <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour adapter l'activité</li>
-                  <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour conseil</li>
-                  <li><span style="color:gold">Jaune :</span> Je propose discrètement un rythme adapté au jeune</li>
-                </ul>
-              </li><br>
-
-              <li>
-                Un adolescent oublie régulièrement ses affaires :
-                <ul>
-                  <li><span style="color:red">Rouge :</span> J'appelle les parents pour qu'ils interviennent</li>
-                  <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour trouver des solutions</li>
-                  <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour suivi</li>
-                  <li><span style="color:gold">Jaune :</span> Je l'aide discrètement à organiser ses affaires</li>
-                </ul>
-              </li><br>
-
-              <li>
-                Un adolescent ne respecte pas le règlement des sanitaires :
-                <ul>
-                  <li><span style="color:red">Rouge :</span> J'appelle les parents</li>
-                  <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour instaurer une sanction</li>
-                  <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour avis</li>
-                  <li><span style="color:gold">Jaune :</span> Je parle discrètement avec le jeune pour expliquer le
-                    règlement</li>
-                </ul>
-              </li><br>
-
-              <li>
-                Un adolescent consomme un médicament non-prescrit :
-                <ul>
-                  <li><span style="color:red">Rouge :</span> J'appelle les parents pour prévenir</li>
-                  <li><span style="color:green">Vert :</span> J'en parle à l'équipe pour décider de la suite</li>
-                  <li><span style="color:blue">Bleu :</span> Je préviens l'organisme pour avis médical</li>
-                  <li><span style="color:gold">Jaune :</span> Je questionne discrètement l'adolescent sur le médicament
-                    pris</li>
-                </ul>
-              </li>
-            </ol>
-          </div>
+          <h1>Transports</h1>
+          <ul>
+            <li>Vérifier l'état du car et du chauffeur avant le départ.</li>
+            <li>Organisation des bagages selon l'âge.</li>
+            <li>Placement des animateurs : répartis dans tout le car.</li>
+            <li>Sécurité : Ceintures obligatoires, compter les enfants à chaque montée/descente.</li>
+            <li>Mal des transports : sacs plastiques et places à l'avant.</li>
+            <li>Arrivée : Tour du bus pour les oublis, gestion des bagages.</li>
+            <li style="list-style-type: none; text-align: center"><img src="../public/images/bus.png" alt="Bus" style="max-width:100%; border-radius:10px;"></li>
+          </ul>
         </div>
       </div>
 
-      <br>
-
-      <h1 id="room">Plan des chambres</h1>
-      <ul>
-        <li>Brainstorming : À quoi pensez-vous en entendant « plan des chambres » ? (Chambres mixtes ? Pas mixtes ?
-          Râleries, “je veux être avec ma copine”, “pas avec lui !”, équilibres d’âge, disputes, ronflements, lampe
-          torche
-          sous la couette, équipe des couche-tard…)
-        </li>
-
-        <li>Pourquoi un plan des chambres ?
-          <ul>
-            <li>Assurer la sécurité et le respect des règles (mixité, surveillance).</li>
-            <li>Favoriser le bien-être et l’intégration des enfants.</li>
-            <li>Équilibrer les groupes en fonction des âges, affinités et besoins.</li>
-            <li>Faciliter l’organisation pour les animateurs (référents de secteur, rondes de nuit).</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Principes de base</strong>
-          <ul>
-            <li>Chambres non mixtes sauf exceptions encadrées (fratries très jeunes, raisons médicales).</li>
-            <li>Regrouper par tranches d’âge proches pour éviter les gros décalages.</li>
-            <li>Prendre en compte certaines affinités pour éviter frustrations ou isolement.</li>
-            <li>Veiller à ne pas concentrer uniquement les “fortes personnalités” ensemble.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Préparation</strong>
-          <ul>
-            <li>Demander aux enfants, à l’inscription, s’ils ont un(e) ami(e) avec qui ils aimeraient partager la
-              chambre.</li>
-            <li>Analyser les fiches sanitaires (besoins médicaux, allergies, handicaps).</li>
-            <li>Prévoir un plan provisoire avant l’arrivée pour gagner du temps.</li>
-            <li>Avoir en tête des solutions de remplacement en cas de conflits ou demandes de changement.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>À l’arrivée</strong>
-          <ul>
-            <li>Accueillir les enfants et leur présenter la chambre et ses règles.</li>
-            <li>Expliquer comment seront gérés les changements éventuels.</li>
-            <li>Faire un tour rapide avec eux pour repérer sanitaires, issues de secours, points d’eau.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Gestion pendant le séjour</strong>
-          <ul>
-            <li>Être attentif aux signes de mal-être liés à la chambre (pleurs, isolement, tensions).</li>
-            <li>Changer un enfant de chambre seulement si nécessaire et en expliquant à tous les concernés.</li>
-            <li>Réaliser des rondes discrètes le soir pour vérifier l’ambiance.</li>
-            <li>Limiter les déplacements d’enfants entre chambres après le coucher.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Points de vigilance</strong>
-          <ul>
-            <li>Conflits ou exclusions dans une chambre.</li>
-            <li>Utilisation de téléphones ou objets non autorisés la nuit.</li>
-            <li>Respect de l’hygiène et rangement de l’espace.</li>
-            <li>Prévenir les situations de harcèlement (observer discrètement, écouter les signaux faibles).</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Organisation pratique</strong>
-          <ul>
-            <li>Préparer un plan clair avec les noms, affiché dans la salle animateurs.</li>
-            <li>Donner une copie au directeur et aux animateurs concernés.</li>
-            <li>Mettre à jour le plan si changements pendant le séjour.</li>
-            <li>Garder confidentielles les informations personnelles (médicales, sociales).</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Astuces</strong>
-          <ul>
-            <li>Mettre un animateur référent pour chaque couloir ou secteur.</li>
-            <li>Placer près des sanitaires les plus jeunes ou ceux ayant des besoins nocturnes.</li>
-            <li>Éviter de mettre les plus calmes à côté des “fêtards du soir”.</li>
-            <li>Anticiper les affinités mais aussi les incompatibilités connues.</li>
-          </ul>
-        </li>
-      </ul>
-
-      <br>
-
-      <h1 id="blog">Le blog</h1>
-      <ul>
-        <li>Brainstorming : À quoi pensez-vous en entendant « blog » ? (Partager activités, photos, vidéos, projets,
-          idées d’articles, souvenirs pour les parents, communication, réseau interne…)</li>
-
-        <li style="list-style-type: none;"><strong>Objectifs du blog</strong>
-          <ul>
-            <li>Informer les familles sur les activités et la vie du séjour.</li>
-            <li>Valoriser le travail des enfants et des animateurs.</li>
-            <li>Créer un lien entre les enfants, les animateurs et les parents.</li>
-            <li>Archiver les souvenirs et moments forts du séjour.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Préparation</strong>
-          <ul>
-            <li>Définir les thèmes : mini-reportages, agent confidentiels, recette de cuisine, poème...</li>
-            <li>Décider de la fréquence de publication (Plusieurs par jour ? Une par jour ?).</li>
-            <li>Choisir la plateforme adaptée et sécurisée (accès restreint aux familles).</li>
-            <li>Créer un planning de publication avec les animateurs responsables.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Rédaction des contenus</strong>
-          <ul>
-            <li>Privilégier des textes courts, simples et engageants.</li>
-            <li>Mettre en avant les projets éducatifs et les réussites des enfants.</li>
-            <li>Associer photos et vidéos pour illustrer les articles.</li>
-            <li>Éviter de publier des informations sensibles ou confidentielles.</li>
-            <li>Nombre de photos par article : 20 à 40 maximum. A adapter selon le nb de jeunes !</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Quand publier</strong>
-          <ul>
-            <li>À la fin d’une activité ou d’une journée marquante.</li>
-            <li>Après validation par le responsable du séjour -> car il est responsable.</li>
-            <li>Éviter les publications en direct pour des raisons de sécurité et de qualité.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Droit à l’image</strong>
-          <ul>
-            <li>Vérifier auprès de l'organisme si autorisation parentale est ok.</li>
-            <li>Différencier droit à l'image et droit d'exploitation d'image</li>
-            <li>Conseil : privilégier les photos de groupe ou vues de dos, limiter les photos individuelles. Sinon
-              "je vois pas mon enfant" ou "il ne sourit pas"...
-            </li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Organisation pratique</strong>
-          <ul>
-            <li>Désigner un animateur référent pour gérer le blog et la publication.</li>
-            <li>Stocker les contenus dans un espace sécurisé et organisé par date et thème.</li>
-            <li>Vérifier les droits et autorisations avant toute mise en ligne.</li>
-            <li>Informer les familles sur la publication des contenus et leur droit de retrait.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Astuces</strong>
-          <ul>
-            <li>Varier les formats : texte + photo, vidéo courte, interview des enfants.</li>
-            <li>Utiliser des légendes explicatives et valorisantes.</li>
-            <li>Faire un point régulier avec l’équipe sur les contenus publiés.</li>
-            <li>Anticiper les publications pour les activités importantes ou événements spéciaux.</li>
-          </ul>
-        </li>
-      </ul>
-
-      <br>
-
-      <h1 id="veillee">La Veillée</h1>
-      <ul>
-        <li style="list-style-type: none;"><strong>Préparation</strong>
-          <ul>
-            <li>Choisir un thème adapté à l’âge et au niveau d’énergie des enfants.</li>
-            <li>Prévoir le matériel nécessaire la veille du jour J !</li>
-            <li>Organiser les animateurs avec un responsable de veillée (le meneur) et les anims "suiveurs".</li>
-            <li>Anticiper la durée & le lieu : 45min max pour les plus jeunes, 2h max pour les plus grands (sauf boom).
-            </li>
-            <li>Pensez au sensibilisation ! Très souvent oublié après les formation théoriques.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Déroulement</strong>
-          <ul>
-            <li>Accueil et mise en place des enfants (règles, consignes de sécurité).</li>
-            <li>Activité principale.</li>
-            <li>Temps calme et transition vers le coucher (histoire, discussion, musique douce).</li>
-            <li>Bilan rapide et rangement du matériel (le rangement peut avoir lieu avant le retour au calme si ce sont
-              des grands).</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Points de vigilance</strong>
-          <ul>
-            <li>Surveiller l’énergie des enfants et adapter l’activité (trop fatigant = risque d’ennui ou de conflits).
-            </li>
-            <li>Éviter les activités trop bruyantes à la fin de la veillée.</li>
-            <li>Veiller à l’équilibre entre animation et moments calmes pour faciliter le sommeil.</li>
-            <li>Respecter les enfants sensibles à la peur ou à l’obscurité.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Conseils pratiques</strong>
-          <ul>
-            <li>Alterner jeux actifs et moments calmes ! (Pas que des veillées culture G ou spectacles...)</li>
-            <li>Prévoir des alternatives pour les enfants qui souhaitent se reposer ou participer plus doucement.</li>
-            <li>Encadrer la transition vers le coucher pour éviter la dispersion et les incidents.</li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Illustration : courbe d’énergie</strong>
-          <ul>
-            <li style="list-style-type: none; padding-left: 0; text-align: center"><img
-                src="../public/images/veillee.jpg" alt="Courbe d'énergie des enfants en veillée"
-                style="max-width:100%; width:100%; height:auto; display:block; margin:0 auto;"></li>
-          </ul>
-        </li>
-
-        <li style="list-style-type: none;"><strong>Astuces</strong>
-          <ul>
-            <li>Prévoir un thème récurrent chaque semaine pour créer des repères dans le fil rouge de la semaine.</li>
-            <li>Impliquer les enfants dans l’animation (lectures, sketches, musiques).</li>
-            <li>Faire attention aux transitions pour limiter l’agitation.</li>
-            <li>Observer la courbe d’énergie pour adapter les temps forts et moments calmes.</li>
-          </ul>
-        </li>
-      </ul>
-
-      <br>
-
-      <h1 id="reu">Réunions du soir</h1>
-      <ul>
-        <li>Chaque soir, APRES le coucher des enfants, les animateurs se réunissent pour faire le point sur la journée.
-          (L'heure dépend donc de la tranche d'âge)</li>
-        <li style="list-style-type: none;"><strong>Objectifs</strong>
-          <ul>
-            <li>Analyser ce qui s'est bien passé et les difficultés rencontrées.</li>
-            <li>Préparer les activités et l'organisation du lendemain.</li>
-            <li>Partager les observations sur les enfants (fatigue, conflits, besoins particuliers).</li>
-            <li>Répartir les rôles et responsabilités pour la suite du séjour.</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><strong>Déroulement</strong>
-          <ul>
-            <li>Le directeur anime la réunion et veille au respect.</li>
-            <li>Chacun peut s'exprimer sur son ressenti, ses idées ou ses besoins.</li>
-            <li>Les décisions sont prises collectivement, en tenant compte des contraintes et des avis de tous.</li>
-            <li>Un temps est prévu pour aborder les points urgents ou sensibles (santé, sécurité, organisation).</li>
-            <li>La réunion doit rester constructive et éviter de s'éterniser pour permettre à chacun de se reposer.</li>
-          </ul>
-        </li>
-        <li style="list-style-type: none;"><strong>Conseils</strong>
-          <ul>
-            <li>Noter les points importants pour garder une trace et suivre les actions décidées.</li>
-            <li>Terminer sur une note positive ou une astuce pour améliorer le travail d'équipe.</li>
-          </ul>
-        </li>
-      </ul><br>
-      <p>
-        <i>Astuce : Varier les formats (débat, tour de table, brainstorming) et prévoir parfois un temps informel pour
-          renforcer la cohésion de l'équipe.</i>
-      </p>
-
-      <button class="openModalBtn back-button" data-modal="modal1">Petit jeu simulation réunion</button>
-
-      <!-- Modale 1 -->
-      <div id="modal1" class="modalspe">
-        <div class="modal__contentspe">
+      <!-- Section Entretien Individuels -->
+      <div id="modal-entre" class="modalspe">
+        <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
-          <p><strong>JEU - SIMULATION D'UNE RÉUNION :</strong></p>
-          <div>
-            <p>
-              <b>Objectif :</b> Simuler une réunion du soir entre animateurs pour expérimenter les dynamiques de groupe
-              et la prise de décision.<br>
-              Chaque participant reçoit un rôle à jouer pour rendre la réunion vivante et pédagogique.
-            </p><br>
-            <ul>
-              <li><b>Le bavard :</b> Parle beaucoup, coupe la parole, discute avec ses voisins.</li>
-              <li><b>Le suiveur :</b> Toujours d'accord avec tout le monde, ne propose rien.</li>
-              <li><b>L'imposant :</b> Veut imposer ses idées, ne laisse pas les autres s'exprimer.</li>
-              <li><b>Le fatigué :</b> Veut écourter la réunion, propose d'improvisé le lendemain.</li>
-              <li><b>Le perdu :</b> Ne comprend rien, pose des questions hors sujet.</li>
-              <li><b>Le répétitif :</b> Revient sans cesse sur un point déjà traité.</li>
-              <li><b>Le participant classique :</b> S'exprime normalement, propose des idées, écoute les autres.</li>
-              <li><b>Le maître de réunion :</b> Anime, distribue la parole, recentre le débat, veille au respect du
-                temps.</li>
-            </ul><br>
-            <b>Déroulement :</b> Chacun tire un rôle au hasard. Le maître de réunion lance un sujet à discuter (ex :
-            organisation d'une activité, gestion d'un problème du jour).<br>
-            <b>L'objectif</b> est d'observer les interactions, de repérer les difficultés et de réfléchir ensemble à des
-            solutions pour améliorer la communication et la prise de décision en équipe.
-            <br><br>
-            <p>
-              <i>Astuce : À la fin, faire un petit bilan sur le ressenti de chacun et les points à améliorer pour les
-                vraies réunions !</i>
-            </p>
-          </div>
-
+          <h1>Entretien individuels</h1>
+          <h4>Début de séjour</h4>
+          <ul>
+            <li>Attentes vis-à-vis de la formation ?</li>
+            <li>Parcours (colo, scout, ALSH) ?</li>
+          </ul>
+          <h4>Milieu de séjour</h4>
+          <ul>
+            <li>Ressenti dans le groupe ?</li>
+            <li>Points à approfondir ?</li>
+          </ul>
+          <h4>Fin de séjour</h4>
+          <ul>
+            <li>Auto-évaluation : as-tu validé ? Pourquoi ?</li>
+            <li>Recherche de stage pratique ?</li>
+          </ul>
         </div>
       </div>
 
-      <br>
-
-      <h1 id="sigle">Rappel des sigles utiles</h1>
-      <ul>
-        <li><b>DRAJES</b> : Délégation Régionale Académique à la Jeunesse, à l’Engagement et aux Sports</li>
-        <li><b>ACM</b> : Accueil Collectif de Mineurs</li>
-        <li><b>DDCS/DDCSPP</b> : Direction Départementale de la Cohésion Sociale / de la Cohésion Sociale et de la
-          Protection des Populations</li>
-        <li><b>DDJES</b> : Direction Départementale Jeunesse, Engagement et Sports</li>
-        <li><b>PE</b> : Projet Éducatif</li>
-        <li><b>PP</b> : Projet Pédagogique</li>
-        <li><b>PPA</b> : Projet Pédagogique d’Activité</li>
-        <li><b>PEDT</b> : Projet Éducatif Territorial</li>
-        <li><b>BAFA</b> : Brevet d’Aptitude aux Fonctions d’Animateur</li>
-        <li><b>BAFD</b> : Brevet d’Aptitude aux Fonctions de Directeur</li>
-        <li><b>CAF</b> : Caisse d’Allocations Familiales (par rapport à vos doc de stagiaire pour les allocs)</li>
-        <li><b>J&S</b> : Jeunesse et Sports</li>
-      </ul>
-
-      <br>
-
-      <h1 id="acm"><a href="../public/images/acm.jpg" class="orange"><u>Différents types d'ACM</u></a></h1>
-      <p>
-        Les ACM sont régis par le Code de l’Action Sociale et des Familles (CASF),
-        articles L 227-1 à L 227-12 et R 227-1 à R 227-30.
-        Il existe <b>trois grandes catégories d’accueils</b> :
-        avec hébergement, sans hébergement et scoutisme.
-      </p>
-
-      <br><br>
-
-      <h5>1. Les Accueils avec hébergement</h5>
-      <ul>
-        <li><b>Séjour de vacances</b> : à partir de 7 mineurs, pour une durée > 3 nuits.</li>
-        <li><b>Séjour court</b> : à partir de 7 mineurs, pour une durée de 1 à 3 nuits.</li>
-        <li><b>Séjour spécifique</b> : à partir de 7 mineurs âgés de 6 ans et plus, autour d’activités particulières :
-          <ul class="regles-vie">
-            <li><b>Séjours sportifs</b> : organisés pour des licenciés d’une fédération sportive agréée ou club affilié
-              (hors compétition).</li>
-            <li><b>Séjours linguistiques</b> : conformes à la norme européenne NF EN 14804, attestation obligatoire de
-              l’organisateur.</li>
-            <li><b>Séjours artistiques et culturels</b> : organisés par une école de musique, de danse ou de théâtre
-              d’État, une collectivité ou une association, en continuité du projet annuel.</li>
-            <li><b>Rencontres européennes de jeunes</b> : respect des dispositions prévues par la Commission européenne
-              et l’agence française concernée.</li>
-            <li><b>Chantiers de bénévoles</b> : pour mineurs de 14 ans et plus, organisés par des associations
-              respectant la charte nationale.</li>
-            <li><b>Rencontres de jeunes</b> : échanges soutenus par l’Office franco-allemand pour la jeunesse (OFAJ).
-            </li>
+      <!-- Section Handicap -->
+      <div id="modal-handi" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1>Handicap / Inclusion</h1>
+          <ul>
+            <li>Inclusion : vivre AVEC les autres, pas à côté.</li>
+            <li>Adapter l'animation : simplifier les consignes, alternatives physiques.</li>
+            <li>Vigilance : fatigue, surprotection, sécurité spécifique.</li>
+            <li>Astuces : binômes solidaires, jeux coopératifs.</li>
           </ul>
-        </li>
-        <li><b>Séjour de vacances en famille</b> : de 2 à 6 mineurs accueillis > 3 nuits, organisé par une personne
-          morale dans plusieurs familles.</li>
-        <li><b>Activité d’hébergement accessoire</b> : 1 à 4 nuits, prolongement du projet éducatif de l’accueil
-          principal (accueil de loisirs ou de jeunes).
-          <ul class="regles-vie">
-            <li><b>Cadre réglementaire</b> : mêmes règles que l’accueil principal (projet pédagogique, encadrement,
-              sécurité).</li>
-            <li><b>Encadrement</b> : minimum 2 animateurs si enfants < 14 ans ; un animateur qualifié référent est
-                recommandé.</li>
-            <li><b>Conditions spécifiques</b> :
-              <ul>
-                <li>Hébergement déclaré ou sous tentes</li>
-                <li>Hygiène et sécurité</li>
-                <li>Couchage séparé filles/garçons > 6 ans</li>
-                <li>Moyens de communication disponibles (ex : téléphone filaire)</li>
-              </ul>
-            </li>
-            <li><b>Exception</b> : si nouvelle activité pour un nouveau public → doit être déclaré en séjour court ou
-              vacances.</li>
+        </div>
+      </div>
+
+      <!-- Section Ados -->
+      <div id="modal-ados" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1>Ados & Préados</h1>
+          <ul>
+            <li>Besoin d'autonomie et d'appartenance au groupe.</li>
+            <li>Responsabilisation : gestion des affaires, projets.</li>
+            <li>Communication : humour, éviter le ton "professeur".</li>
+            <li>Points de vigilance : comportements à risque, exclusion, réseaux sociaux.</li>
           </ul>
-        </li>
-      </ul>
-      <br><br>
-      <h5>2. Les Accueils sans hébergement</h5>
-      <ul>
-        <li><b>Accueil de loisirs extrascolaire</b> :
-          <ul class="regles-vie">
-            <li>À partir de 7 mineurs</li>
-            <li>Pendant au moins 14 jours/an (consécutifs ou non)</li>
-            <li>Durée minimale : 2h/jour</li>
-            <li>Diversité d’activités organisées</li>
-            <li>Effectif maximum : 300 mineurs</li>
+          <button class="openModalBtn back-button" data-modal="modal3">Débats 4 coins avec réponses</button>
+        </div>
+      </div>
+
+      <!-- Section Blog -->
+      <div id="modal-blog" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1>Gestion du blog</h1>
+          <ul>
+            <li>Contenu : privilégier la qualité, raconter une histoire.</li>
+            <li>Droit à l'image : vérifier les autorisations, éviter les photos dégradantes.</li>
+            <li>Organisation : créneau de rédaction, participation des enfants.</li>
           </ul>
-        </li>
-        <li><b>Accueil de loisirs périscolaire</b> :
-          <ul class="regles-vie">
-            <li>À partir de 7 mineurs</li>
-            <li>Pendant au moins 14 jours/an</li>
-            <li>Durée minimale : 2h/jour (1h si PEDT validé)</li>
-            <li>Diversité d’activités organisées</li>
-            <li>Effectif maximum : 300 mineurs (peut correspondre à l’école adossée)</li>
+        </div>
+      </div>
+
+      <!-- Section Réunions -->
+      <div id="modal-reu" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1>Réunions du soir</h1>
+          <ul>
+            <li>Bilan de la journée et préparation du lendemain.</li>
+            <li>Cohésion d'équipe et échange sur les enfants.</li>
           </ul>
-        </li>
-        <li><b>Accueil de jeunes</b> :
-          <ul class="regles-vie">
-            <li>De 7 à 40 mineurs âgés de 14 ans et +</li>
-            <li>Au moins 14 jours/an</li>
-            <li>Répond à un besoin social particulier</li>
-            <li>Soumis à convention entre organisateur et DDCSPP</li>
+          <button class="openModalBtn back-button" data-modal="modal1">Simulation réunion</button>
+        </div>
+      </div>
+
+      <!-- Section Sigles -->
+      <div id="modal-sigle" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1>Rappel des sigles utiles</h1>
+          <ul>
+            <li><b>ACM</b> : Accueil Collectif de Mineurs</li>
+            <li><b>PE / PP / PA</b> : Projets Éducatif, Pédagogique et d'Animation</li>
+            <li><b>SDJES</b> : Service Départemental Jeunesse et Sports</li>
+            <li><b>CEE</b> : Contrat d'Engagement Éducatif</li>
           </ul>
-        </li>
-      </ul>
+        </div>
+      </div>
 
-      <br><br>
+      <!-- Section Acteurs -->
+      <div id="modal-acteurs" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1>ACM & Acteurs</h1>
+          <ul>
+            <li><b>État</b> : Contrôle (SDJES).</li>
+            <li><b>Organisateur</b> : Mairie, Association, CE.</li>
+            <li><b>Équipe</b> : Directeur (PP) et Animateurs (PA).</li>
+            <li><b>Public</b> : Mineurs et familles.</li>
+          </ul>
+          <button class="openModalBtn back-button" data-modal="modal4">Vocabulaire scout</button>
+        </div>
+      </div>
 
-      <h5>3. Les Accueils de scoutisme</h5>
-      <p>
-        Tout accueil de scoutisme, à partir de 7 mineurs, avec ou sans hébergement,
-        organisé par une association agréée par le ministre chargé de la jeunesse.
-      </p>
+            <!-- Modale 4 -->
+            <div id="modal4" class="modalspe">
+                <div class="modal__contentspe">
+                    <button class="modal__closespe">&times;</button>
+                    <p><strong>SCOUTISME – LEXIQUE PAR MOUVEMENT :</strong></p>
+                    <div id="scoutismeContent">
 
-        <button class="openModalBtn back-button" data-modal="modal4">Vocabulaire scout</button>
+                        <h4>📍 <a href="https://www.eedf.fr" class="anone"><u>Éclaireuses Éclaireurs de France</u></a> (EEDF)</h4>
+                        🔸 <strong>Ronde</strong> (6–8 ans) : Lutins<br>
+                        🔸 <strong>Cercle</strong> (8–11 ans) : Louveteaux<br>
+                        🔸 <strong>Équipage</strong> (11–15 ans) : Éclaireurs<br>
+                        🔸 <strong>Clan</strong> (15–18 ans) : Aînés<br><br>
 
-        <!-- Modale 4 -->
-        <div id="modal4" class="modalspe">
-            <div class="modal__contentspe">
-                <button class="modal__closespe">&times;</button>
-                <p><strong>SCOUTISME – LEXIQUE PAR MOUVEMENT :</strong></p>
-                <div id="scoutismeContent">
+                        <h4>⚜️ <a href="https://www.sgdf.fr" class="anone"><u>Scouts et Guides de France</u></a> (SGDF)</h4>
+                        🔸 <strong>Farfadets</strong> (6–8 ans) — <span style="color:green;">Vert</span><br>
+                        🔸 <strong>Louveteaux / Jeannettes</strong> (8–11 ans) — <span style="color:orange;">Orange</span><br>
+                        🔸 <strong>Scouts / Guides</strong> (11–14 ans) — <span style="color:blue;">Bleu</span><br>
+                        🔸 <strong>Pionniers / Caravelles</strong> (14–17 ans) — <span style="color:red;">Rouge</span><br>
+                        🔸 <strong>Compagnons</strong> (17–21 ans) — <span style="color:darkgreen;">Vert Sapin</span><br>
+                        🔸 Projet des ados CAP pour "Concevoir, Agir, Partager"<br><br>
 
-                    <h4>📍 <a href="https://www.eedf.fr" class="anone"><u>Éclaireuses Éclaireurs de France</u></a> (EEDF)</h4>
-                    🔸 <strong>Ronde</strong> (6–8 ans) : Lutins<br>
-                    🔸 <strong>Cercle</strong> (8–11 ans) : Louveteaux<br>
-                    🔸 <strong>Équipage</strong> (11–15 ans) : Éclaireurs<br>
-                    🔸 <strong>Clan</strong> (15–18 ans) : Aînés<br><br>
+                        <h4>🕊️ <a href="https://www.eeudf.org" class="anone"><u>Éclaireuses et Éclaireurs Unionistes de
+                            France</u></a> (EEUdF)</h4>
+                        🔸 <strong>Louveteaux / Louvettes</strong> (8–12 ans) : la Meute<br>
+                        🔸 <strong>Éclaireurs / Éclaireuses</strong> (12–16 ans) : la Troupe ou Compagnie<br>
+                        🔸 <strong>Aînés / Aînées</strong> (16–19 ans) : le Clan<br><br>
 
-                    <h4>⚜️ <a href="https://www.sgdf.fr" class="anone"><u>Scouts et Guides de France</u></a> (SGDF)</h4>
-                    🔸 <strong>Farfadets</strong> (6–8 ans) — <span style="color:green;">Vert</span><br>
-                    🔸 <strong>Louveteaux / Jeannettes</strong> (8–11 ans) — <span style="color:orange;">Orange</span><br>
-                    🔸 <strong>Scouts / Guides</strong> (11–14 ans) — <span style="color:blue;">Bleu</span><br>
-                    🔸 <strong>Pionniers / Caravelles</strong> (14–17 ans) — <span style="color:red;">Rouge</span><br>
-                    🔸 <strong>Compagnons</strong> (17–21 ans) — <span style="color:darkgreen;">Vert Sapin</span><br>
-                    🔸 Projet des ados CAP pour "Concevoir, Agir, Partager"<br><br>
+                        <h4>🌙 <a href="https://scoutsmusulmans.fr/" class="anone"><u>Scouts Musulmans de France</u></a> (SMF)</h4>
+                        🔸 <strong>Voyageurs</strong> (7–11 ans) — <span style="color:green;">Vert</span><br>
+                        🔸 <strong>Éclaireurs</strong> (11–14 ans) — <span style="color:blue;">Bleu</span><br>
+                        🔸 <strong>Pionniers</strong> (14–17 ans) — <span style="color:red;">Rouge</span><br>
+                        🔸 <strong>Compagnons</strong> (17–21 ans) — <span style="color:brown;">Marron</span><br><br>
 
-                    <h4>🕊️ <a href="https://www.eeudf.org" class="anone"><u>Éclaireuses et Éclaireurs Unionistes de France</u></a> (EEUdF)</h4>
-                    🔸 <strong>Louveteaux / Louvettes</strong> (8–12 ans) : la Meute<br>
-                    🔸 <strong>Éclaireurs / Éclaireuses</strong> (12–16 ans) : la Troupe ou Compagnie<br>
-                    🔸 <strong>Aînés / Aînées</strong> (16–19 ans) : le Clan<br><br>
+                        <h4>✡️ <a href="https://www.eeif.org" class="anone"><u>Éclaireuses et Éclaireurs Israélites de
+                            France</u></a> (EEIF)</h4>
+                        🔸 <strong>Bâtisseurs</strong> (8–11 ans) : les "Petits Loups"<br>
+                        🔸 <strong>Éclaireurs</strong> (11–15 ans) : la Troupe<br>
+                        🔸 <strong>Perspectives</strong> (15–17 ans) : les "Pif"<br>
+                        🔸 <strong>Animateurs</strong> (17 ans +) : les "Eks"<br><br>
 
-                    <h4>🌙 <a href="https://scoutsmusulmans.fr/" class="anone"><u>Scouts Musulmans de France</u></a> (SMF)</h4>
-                    🔸 <strong>Voyageurs</strong> (7–11 ans) — <span style="color:green;">Vert</span><br>
-                    🔸 <strong>Éclaireurs</strong> (11–14 ans) — <span style="color:blue;">Bleu</span><br>
-                    🔸 <strong>Pionniers</strong> (14–17 ans) — <span style="color:red;">Rouge</span><br>
-                    🔸 <strong>Compagnons</strong> (17–21 ans) — <span style="color:brown;">Marron</span><br><br>
+                        <h4>⚔️ <a href="https://www.scouts-europe.org" class="anone"><u>Guides et Scouts d'Europe</u></a> (AGSE)
+                        </h4>
+                        🔸 <strong>Louveteaux / Louvettes</strong> (8–12 ans) — <span style="color:yellow;">Jaune</span><br>
+                        🔸 <strong>Éclaireurs / Guides</strong> (12–17 ans) — <span style="color:green;">Vert</span><br>
+                        🔸 <strong>Routiers / Guides-Aînées</strong> (17 ans +) — <span style="color:red;">Rouge /
+              Brun</span><br><br>
 
-                    <h4>✡️ <a href="https://www.eeif.org" class="anone"><u>Éclaireuses et Éclaireurs Israélites de France</u></a> (EEIF)</h4>
-                    🔸 <strong>Bâtisseurs</strong> (8–11 ans) : les "Petits Loups"<br>
-                    🔸 <strong>Éclaireurs</strong> (11–15 ans) : la Troupe<br>
-                    🔸 <strong>Perspectives</strong> (15–17 ans) : les "Pif"<br>
-                    🔸 <strong>Animateurs</strong> (17 ans +) : les "Eks"<br><br>
+                        <hr><br>
 
-                    <h4>⚔️ <a href="https://www.scouts-europe.org" class="anone"><u>Guides et Scouts d'Europe</u></a> (AGSE)</h4>
-                    🔸 <strong>Louveteaux / Louvettes</strong> (8–12 ans) — <span style="color:yellow;">Jaune</span><br>
-                    🔸 <strong>Éclaireurs / Guides</strong> (12–17 ans) — <span style="color:green;">Vert</span><br>
-                    🔸 <strong>Routiers / Guides-Aînées</strong> (17 ans +) — <span style="color:red;">Rouge / Brun</span><br><br>
+                        🌍 <strong>Vocabulaire commun à tous les scouts :</strong><br><br>
+                        🔹 <strong>Foulard</strong> : porté par tous, il montre l'appartenance au groupe.<br>
+                        🔹 <strong>Froissartage</strong> : technique de construction en bois sans clous.<br>
+                        🔹 <strong>Bona</strong> : la grande gamelle pour cuisiner au feu de bois.<br>
+                        🔹 <strong>Promesse</strong> : l'engagement solennel du jeune.<br><br>
 
-                    <hr><br>
+                        <em>💬 Six mouvements, un même esprit : apprendre par l'action et grandir ensemble 🌟</em>
+                    </div>
 
-                    🌍 <strong>Vocabulaire commun à tous les scouts :</strong><br><br>
-                    🔹 <strong>Foulard</strong> : porté par tous, il montre l'appartenance au groupe.<br>
-                    🔹 <strong>Froissartage</strong> : technique de construction en bois sans clous.<br>
-                    🔹 <strong>Bona</strong> : la grande gamelle pour cuisiner au feu de bois.<br>
-                    🔹 <strong>Promesse</strong> : l'engagement solennel du jeune.<br><br>
-
-                    <em>💬 Six mouvements, un même esprit : apprendre par l'action et grandir ensemble 🌟</em>
+                    <button class="back-button" id="scout">Copier le message</button>
                 </div>
-
-                <button class="back-button" id="scout">Copier le message</button>
             </div>
-        </div>
-
-      <h5>4. Exceptions au régime des ACM</h5>
-      <ul>
-        <li><b>Activités en dessous des seuils</b> :
-          <ul class="regles-vie">
-            <li>Sans hébergement < 14 jours/an</li>
-            <li>Avec hébergement < 7 mineurs</li>
-            <li>Périscolaire < 2h/jour (ou 1h avec PEDT)</li>
-          </ul>
-        </li>
-        <li><b>Activités scolaires</b> : voyages scolaires, sorties encadrées par enseignants → non considérées ACM.
-        </li>
-        <li><b>Garderies périscolaires</b> : pas d’ACM si fréquentation irrégulière ou absence de projet éducatif (PMI
-          compétente pour < 6 ans).</li>
-        <li><b>Activités mono-disciplinaires</b> : ex. théâtre, sport, musique, danse → pas considérées ACM.</li>
-        <li><b>Activités cultuelles</b> : catéchisme, patronage, pèlerinages, retraites religieuses → hors ACM.</li>
-        <li><b>Séjours prévention spécialisée</b> : réservés à leurs usagers, encadrés par leurs propres personnels →
-          hors ACM.</li>
-      </ul>
 
       <br>
 
@@ -1172,35 +336,7 @@
       </p>
 
       <br>
-      <h1 id="organismes">Liens organismes de recrutement</h1>
-      <ul>
-        <li><a href="https://www.agencenature.com/fr-nos+animateurs.html" target="_blank"><u>Agence Nature</u></a></li>
-        <li><a href="https://www.asso-regards.org/nous-recrutons/" target="_blank"><u>Regards</u></a></li>
-        <li><a href="https://www.avea-vacances.fr/page/nous-rejoindre" target="_blank"><u>Avea Vacances</u></a></li>
-        <li><a href="https://bafa.ufcv.fr/" target="_blank"><u>UFCV</u></a></li>
-        <li><a href="https://cceairfrance-recrute.talent-soft.com/accueil.aspx" target="_blank"><u>CCE Air
-              France</u></a></li>
-        <li><a href="https://recrutement-sej.ccgpfcheminots.com/front-accueil.html" target="_blank"><u>CCGPF
-              Cheminots</u></a></li>
-        <li><a href="https://www.capjuniors.com/recrutement.html" target="_blank"><u>Cap Juniors</u></a></li>
-        <li><a href="https://www.capmonde.fr/sites/portail/cap-monde-recrute,recrutements-animation-sejours.html"
-            target="_blank"><u>Cap Monde</u></a></li>
-        <li><a href="https://cheminsdumonde.fr/form/candidature-animateur-sejours.htm" target="_blank"><u>Chemins du
-              Monde</u></a></li>
-        <li><a href="https://www.cie-thales.net/onrecrute" target="_blank"><u>CIE Thales</u></a></li>
-        <li><a href="https://croqvacances.org/recrutement.html" target="_blank"><u>Croq Vacances</u></a></li>
-        <li><a href="https://www.djuringa-juniors.fr/p-recrutement.html" target="_blank"><u>Djuringa Juniors</u></a>
-        </li>
-        <li><a href="https://www.gocolo.fr/anim" target="_blank"><u>Gocolo</u></a></li>
-        <li><a href="https://www.le-zebre.com/recrutement.html" target="_blank"><u>Le Zèbre</u></a></li>
-        <li><a href="https://www.mondialjunior.fr/recrutement.html" target="_blank"><u>Mondial Junior</u></a></li>
-        <li><a href="https://www.nouvelles-vagues.com/nouvelles-vagues-recrutement/" target="_blank"><u>Nouvelles
-              Vagues</u></a></li>
-        <li><a href="https://passion-aventure-junior.com/recrutement.html" target="_blank"><u>Passion Aventure
-              Junior</u></a></li>
-        <li><a href="https://www.rh-cgcv.org/com/login?back_url=%2Fcom%2Fprestation%3Fprest_id%3D18"
-            target="_blank"><u>CGCV</u></a></li>
-        <li><a href="https://www.sans-frontieres.fr/infos-pratiques/recrutement/candidature/" target="_blank"><u>Sans
+
               Frontières</u></a></li>
         <li><a href="https://www.sejours-ajd.fr/" target="_blank"><u>Séjours AJD</u></a></li>
         <li><a href="https://www.silc.fr/page/jobs#candidature" target="_blank"><u>SILC</u></a></li>
@@ -1216,11 +352,11 @@
     <button class="back-button" onclick="location.href='../index.html'">Retour</button>
   </div>
 
-    <footer id="footer">
+  <footer id="footer">
     <br>
     <p style="color: white; text-align: center"> &copy; Ressources BAFA/BAFD - By <a
-            href="https://www.instagram.com/romain_colo/" target="_blank"
-            style="color:#f39c12; font-weight:bold;">@romain_colo</a>
+        href="https://www.instagram.com/romain_colo/" target="_blank"
+        style="color:#f39c12; font-weight:bold;">@romain_colo</a>
     </p>
     <p style="text-align: center; margin-top: 8px; margin-bottom: 4px;">
       <a href="https://macollectiondebafa.web.app/index.html" target="_blank" class="other-site-link">
