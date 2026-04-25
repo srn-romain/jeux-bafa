@@ -34,7 +34,7 @@
             <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-vhss">Harcèlement, maltraitance, VSS</a></li>
           <li>Relationnel en ACM</li>
           <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-laicite">Laïcité</a></li>
-          <li>Liberté, autorité, sanction</li>
+          <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-autorite">Liberté, autorité, sanction</a></li>
           <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-contrat">Les contrats</a></li>
           <li>Grands-jeux & veillées des stagiaires</li>
           <li>Atelier Technique</li>
@@ -70,7 +70,7 @@
             <td class="no-link">[9h] Vitamine par les stagiaires</td>
             <td class="no-link">[9h] Vitamine par les stagiaires</td>
             <td class="no-link">[9h] Vitamine par les stagiaires</td>
-            <td class="no-link">Grasse matinée</td>
+              <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-laicite">[9h] Grasse mat + Laïcité</a></td>
             <td class="no-link">[9h] Vitamine par les stagiaires</td>
           </tr>
           <tr>
@@ -80,7 +80,7 @@
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-sigle">[10h] Réglementation</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-handi">[10h] Handicap / Inclusion et accessibilité</a></td>
             <td class="no-link">[10h] Grand jeu grp 1</a></td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-laicite">[10h] Gestion du blog + Laïcité</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-blog">[10h] Gestion du blog + Laïcité</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-organismes">[9h30] Création CV, LM & Stage</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-entre">[10h] Entretiens (3)</a></td>
           </tr>
@@ -116,7 +116,7 @@
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-quot">[16h30] Vie quotidienne</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-vhss">[16h30] Harcèlement / Conduite à risque</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-reunion">[16h30] Réunion + Gestion de conflits</a></td>
-            <td class="no-link">[16h30] Liberté, autorité & sanction</td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-autorite">[16h30] Liberté, autorité & sanction</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-quiz">[16h30] Quiz Kahoot finale</a></td>
             <td class="no-link">[14h] Départ</td>
           </tr>
@@ -780,22 +780,69 @@
       <div id="modal-sigle" class="modalspe">
         <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
-          <h1>Rappel des sigles utiles</h1>
-            <ul>
-                <li><b>DRAJES</b> : Délégation Régionale Académique à la Jeunesse, à l’Engagement et aux Sports</li>
-                <li><b>ACM</b> : Accueil Collectif de Mineurs</li>
-                <li><b>DDCS/DDCSPP</b> : Direction Départementale de la Cohésion Sociale / de la Cohésion Sociale et de la
-                    Protection des Populations</li>
-                <li><b>DDJES</b> : Direction Départementale Jeunesse, Engagement et Sports</li>
-                <li><b>PE</b> : Projet Éducatif</li>
-                <li><b>PP</b> : Projet Pédagogique</li>
-                <li><b>PPA</b> : Projet Pédagogique d’Activité</li>
-                <li><b>PEDT</b> : Projet Éducatif Territorial</li>
-                <li><b>BAFA</b> : Brevet d’Aptitude aux Fonctions d’Animateur</li>
-                <li><b>BAFD</b> : Brevet d’Aptitude aux Fonctions de Directeur</li>
-                <li><b>CAF</b> : Caisse d’Allocations Familiales (par rapport à vos doc de stagiaire pour les allocs)</li>
-                <li><b>J&S</b> : Jeunesse et Sports</li>
-            </ul>
+          <h1 style="text-align: center; color: #2c3e50;"><i class="bi bi-gavel"></i> Réglementation & Sigles ACM</h1>
+          
+          <div class="grid-2col">
+            <!-- Sigles -->
+            <div style="background: rgba(44, 62, 80, 0.05); border: 1px solid rgba(44, 62, 80, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #2c3e50;">Sigles Essentiels</h3>
+              <ul style="font-size: 0.85rem; padding-left: 20px;">
+                <li><strong>DRAJES/SDJES</strong> : Tutelle Jeunesse et Sports.</li>
+                <li><strong>ACM</strong> : Accueil Collectif de Mineurs.</li>
+                <li><strong>PE / PP / PA</strong> : Projets Éducatif, Pédagogique et d'Animation.</li>
+                <li><strong>BAFA / BAFD</strong> : Brevets d'Aptitude (Anim/Dir).</li>
+                <li><strong>PMS</strong> : Projet de Mise en Sûreté (Plan d'urgence).</li>
+              </ul>
+            </div>
+
+            <!-- Taux encadrement -->
+            <div style="background: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #e74c3c;">Taux d'Encadrement</h3>
+              <p style="font-size: 0.9rem; margin-bottom: 5px;"><strong>Extrascolaire (Colos/Vacances) :</strong></p>
+              <ul style="font-size: 0.85rem; padding-left: 20px; margin-bottom: 10px;">
+                <li><strong>- 6 ans</strong> : 1 anim pour 8 enfants.</li>
+                <li><strong>+ 6 ans</strong> : 1 anim pour 12 enfants.</li>
+              </ul>
+              <p style="font-size: 0.9rem; margin-bottom: 5px;"><strong>Périscolaire (Matin/Soir/Midi) :</strong></p>
+              <ul style="font-size: 0.85rem; padding-left: 20px;">
+                <li><strong>- 6 ans</strong> : 1 anim pour 10 enfants.</li>
+                <li><strong>+ 6 ans</strong> : 1 anim pour 14 enfants.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="grid-2col" style="margin-top: 20px;">
+            <!-- Composition équipe -->
+            <div style="background: rgba(52, 152, 219, 0.05); border: 1px solid rgba(52, 152, 219, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #3498db;">Composition de l'Équipe</h3>
+              <ul style="font-size: 0.9rem; padding-left: 20px;">
+                <li><strong>Diplômés (BAFA)</strong> : Minimum 50%.</li>
+                <li><strong>Stagiaires</strong> : Maximum 50%.</li>
+                <li><strong>Non diplômés</strong> : Maximum 20% de l'effectif global.</li>
+              </ul>
+            </div>
+
+            <!-- Santé -->
+            <div style="background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #27ae60;">Santé & Sécurité</h3>
+              <ul style="font-size: 0.9rem; padding-left: 20px;">
+                <li><strong>Fiche Sanitaire</strong> : Obligatoire pour chaque mineur.</li>
+                <li><strong>Assistant Sanitaire (AS)</strong> : Obligatoire en séjour avec hébergement.</li>
+                <li><strong>Médicaments</strong> : Uniquement sur ordonnance médicale.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="deadline-box" style="background: #2c3e50; margin-top: 30px;">
+            <h3><i class="bi bi-water"></i> Focus Baignade</h3>
+            <div class="no-p-style" style="font-size: 0.95rem;">
+              <ul style="margin-bottom: 0;">
+                <li><strong>Hors baignade aménagée</strong> : 1 anim pour 5 (-6 ans) ou 1 pour 8 (+6 ans).</li>
+                <li><strong>Surveillance</strong> : Un Surveillant de Baignade (SB) ou un Maître Nageur (BNSSA/BEESAN) est obligatoire.</li>
+                <li><strong>Périmètre</strong> : Toujours délimiter la zone de bain.</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -962,6 +1009,52 @@
 
           <div class="alert alert-warning" style="margin-top: 20px; border-left: 5px solid #f1c40f; background: rgba(241, 196, 15, 0.1); padding: 15px; border-radius: 5px;">
             <i class="bi bi-exclamation-triangle-fill"></i> <strong>Règle d'or :</strong> La laïcité en ACM vise à permettre la vie commune en respectant la diversité de chacun, tout en garantissant la neutralité du cadre éducatif.
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Liberté, Autorité, Sanction -->
+      <div id="modal-autorite" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1 style="text-align: center; color: #e74c3c;"><i class="bi bi-shield-lock-fill"></i> Liberté, Autorité & Sanction</h1>
+          <p style="text-align: center; font-style: italic; margin-bottom: 30px;">Le cadre n'est pas une prison, c'est ce qui permet la liberté de chacun au sein du groupe.</p>
+
+          <div class="grid-2col">
+            <div style="background: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #e74c3c;">Autorité vs Autoritarisme</h3>
+              <ul style="font-size: 0.95rem; padding-left: 20px;">
+                <li><strong>L'Autorité</strong> : Elle est reconnue par le groupe. Elle se base sur la compétence, la cohérence et l'écoute. On ne "prend" pas l'autorité, on l'acquiert.</li>
+                <li><strong>L'Autoritarisme</strong> : Il est imposé par la force, le cri ou la menace. Il crée de la frustration, de la peur et n'est pas éducatif.</li>
+                <li><strong>La Posture</strong> : Être "juste milieu" : ni le "copain" (perte de cadre), ni le "tyran" (perte de confiance).</li>
+              </ul>
+            </div>
+
+            <div style="background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #27ae60;">La Règle et la Loi</h3>
+              <ul style="font-size: 0.95rem; padding-left: 20px;">
+                <li><strong>La Loi</strong> : Ce qui est immuable (interdit de fumer, de frapper, de sortir seul).</li>
+                <li><strong>La Règle</strong> : Ce qui est négociable ou adaptable (heures de coucher, répartition des tâches).</li>
+                <li><strong>Co-construction</strong> : Faire participer les jeunes à l'élaboration des règles pour qu'elles fassent sens pour eux.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="deadline-box" style="background: #c0392b; margin-top: 30px;">
+            <h3 style="color: #f1c40f;">La Sanction Éducative</h3>
+            <div class="no-p-style" style="font-size: 0.95rem;">
+              <p>Une sanction n'est pas une vengeance. Pour être éducative, elle doit respecter 4 principes :</p>
+              <ul style="margin-bottom: 0;">
+                <li><strong>Individuelle</strong> : On ne punit pas tout un groupe pour la faute d'un seul.</li>
+                <li><strong>Juste et Proportionnée</strong> : La sanction doit être en rapport avec la gravité de l'acte.</li>
+                <li><strong>Expliquée</strong> : L'enfant doit comprendre quel interdit a été bravé et pourquoi il est sanctionné.</li>
+                <li><strong>Réparatrice</strong> : Elle doit permettre de "réparer" le dommage causé (matériellement ou moralement).</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="alert alert-danger" style="margin-top: 20px; border-left: 5px solid #e74c3c; background: rgba(231, 76, 60, 0.1); padding: 15px; border-radius: 5px;">
+            <i class="bi bi-x-circle-fill"></i> <strong>Interdits absolus :</strong> Punitions corporelles, privation de nourriture, privation de sommeil, isolement prolongé sans surveillance, humiliations publiques.
           </div>
         </div>
       </div>
