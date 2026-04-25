@@ -32,12 +32,12 @@
         </ul>
         <ul style="margin: 0; padding-left: 20px;">
             <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-vhss">Harcèlement, maltraitance, VSS</a></li>
-          <li>Relationnel en ACM</li>
+            <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-relationnel">Relationnel en ACM</a></li>
           <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-laicite">Laïcité</a></li>
           <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-autorite">Liberté, autorité, sanction</a></li>
           <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-contrat">Les contrats</a></li>
           <li>Grands-jeux & veillées des stagiaires</li>
-          <li>Atelier Technique</li>
+          <li>Atelier Technique (<a href="javascript:void(0)" class="openModalBtn" data-modal="modal-blog">blog</a> et <a href="javascript:void(0)" class="openModalBtn" data-modal="modal-reunion">réunion</a> par exemple)</li>
         </ul>
       </div>
     </div>
@@ -166,7 +166,7 @@
           </tr>
           <tr>
             <td class="time-label">10h</td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[10h] Présentation stage / DRAJES</a></td>
+            <td class="no-link">[10h] Présentation stage / DRAJES</td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-stage">[10h] Analyse stage pratique</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-stage">[10h] Analyse stage pratique</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-transport">[10h] Réglementation & Transport</a></td>
@@ -208,7 +208,7 @@
           <tr>
             <td class="row-header bg-veillee">SOIR</td>
             <td class="time-label">17h30</td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[17h30] Vie d'un groupe / Lancement GA 1</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-public">[17h30] Vie d'un groupe / Lancement GA 1</a></td>
             <td class="no-link">[17h30] Lancement projet personnel + Prépa</td>
             <td class="no-link">[17h30] Lancement GA 2 + Prépa</td>
             <td class="no-link">[17h30] Temps de Prépa</td>
@@ -513,62 +513,84 @@
             </ul>
         </div>
       </div>
-
+        
       <!-- Section Handicap -->
       <div id="modal-handi" class="modalspe">
         <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
-            <h1 id="handi">Handicap & Inclusion</h1>
-            <p>Comprendre le handicap pour mieux inclure. Voici les grandes familles de handicap :</p>
+          <h1 style="text-align: center; color: #9b59b6;"><i class="bi bi-person-wheelchair"></i> Handicap & Inclusion</h1>
+          <p style="text-align: center; font-style: italic; margin-bottom: 30px;">"Le handicap ne doit pas être un frein à la vie en collectivité."</p>
 
-            <div class="grid-2col" style="margin-top: 20px;">
-                <div style="background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 10px;">
-                    <h3>♿ Moteur</h3>
-                    <p>Atteinte de la capacité du corps à se mouvoir (paralysie, amputation, myopathie, etc.).</p>
-                </div>
-                <div style="background: rgba(46, 204, 113, 0.1); padding: 15px; border-radius: 10px;">
-                    <h3>👁️👂 Sensoriel</h3>
-                    <p>Atteinte des sens : visuel (malvoyance/cécité) ou auditif (malentendant/surdité).</p>
-                </div>
-                <div style="background: rgba(241, 196, 15, 0.1); padding: 15px; border-radius: 10px;">
-                    <h3>🧠 Mental / Psychique</h3>
-                    <p><strong>Mental :</strong> Déficience intellectuelle (Trisomie 21, etc.).<br>
-                       <strong>Psychique :</strong> Troubles de la personnalité/comportement (Autisme, TOC, etc.).</p>
-                </div>
-                <div style="background: rgba(231, 76, 60, 0.1); padding: 15px; border-radius: 10px;">
-                    <h3>🏥 Maladies invalidantes</h3>
-                    <p>Maladies chroniques qui impactent la vie quotidienne (Diabète, Asthme, Épilepsie, etc.).</p>
-                </div>
+          <div class="grid-2col">
+            <!-- Moteur -->
+            <div style="background: rgba(52, 152, 219, 0.05); border: 1px solid rgba(52, 152, 219, 0.2); padding: 20px; border-radius: 15px; text-align: center;">
+              <h3 style="color: #3498db;"><i class="bi bi-person-fill-exclamation"></i> Handicap Moteur</h3>
+              <p>Atteinte de la capacité du corps à se mouvoir (paralysie, amputation, myopathie, etc.).</p>
+              <p style="font-size: 0.85rem; color: #7f8c8d;"><strong>En ACM :</strong> Vigilance sur l'accessibilité des locaux et l'adaptation des jeux de déplacement.</p>
             </div>
 
-            <div style="background: rgba(155, 89, 182, 0.1); padding: 20px; border-radius: 10px; margin-top: 20px;">
-                <h3>📚 Les Troubles "Dys" (Cognitif)</h3>
-                <div class="grid-2col" style="margin-top: 10px; font-size: 0.95rem;">
-                    <ul style="margin: 0;">
-                        <li><strong>Dyslexie :</strong> Lecture difficile.</li>
-                        <li><strong>Dyscalculie :</strong> Calcul difficile.</li>
-                        <li><strong>Dysorthographie :</strong> Orthographe difficile.</li>
-                        <li><strong>Dysphasie :</strong> Parole difficile.</li>
-                        <li><strong>Dyspraxie :</strong> Gestes difficiles.</li>
-                    </ul>
-                    <ul style="margin: 0;">
-                        <li><strong>Dysgraphie :</strong> Écriture difficile.</li>
-                        <li><strong>Dysgnosie :</strong> Reconnaissance difficile (visages, objets).</li>
-                        <li><strong>Dyschronie :</strong> Temps difficile (se repérer).</li>
-                        <li><strong>Dyspropodie :</strong> Rythme difficile (dans la voix).</li>
-                        <li><strong>Dysmotricité :</strong> Mouvements difficiles.</li>
-                    </ul>
-                </div>
+            <!-- Sensoriel -->
+            <div style="background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2); padding: 20px; border-radius: 15px; text-align: center;">
+              <h3 style="color: #27ae60;"><i class="bi bi-eye-slash-fill"></i> Handicap Sensoriel</h3>
+              <p>Atteinte des sens : visuel (malvoyance/cécité) ou auditif (malentendant/surdité).</p>
+              <p style="font-size: 0.85rem; color: #7f8c8d;"><strong>En ACM :</strong> Utiliser des supports tactiles, sonores ou visuels contrastés selon le besoin.</p>
             </div>
 
-            <div style="text-align: center; margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 10px;">
-                <p><strong>Pour aller plus loin :</strong></p>
-                <a href="https://handicap.agriculture.gouv.fr/les-grandes-familles-ou-typologies-de-handicap-a231.html" target="_blank" class="back-button" style="text-decoration: none; display: inline-block;">
-                    <i class="bi bi-link-45deg"></i> Typologies de handicap (Source Officielle)
-                </a>
+            <!-- Mental -->
+            <div style="background: rgba(241, 196, 15, 0.05); border: 1px solid rgba(241, 196, 15, 0.2); padding: 20px; border-radius: 15px; text-align: center;">
+              <h3 style="color: #f39c12;"><i class="bi bi-brain-fill"></i> Mental / Psychique</h3>
+              <p>Déficience intellectuelle (Mental) ou troubles de la personnalité/comportement (Psychique).</p>
+              <p style="font-size: 0.85rem; color: #7f8c8d;"><strong>En ACM :</strong> Rassurer, ritualiser la journée et adapter le niveau de compréhension des consignes.</p>
             </div>
+
+            <!-- Maladies -->
+            <div style="background: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 15px; text-align: center;">
+              <h3 style="color: #e74c3c;"><i class="bi bi-heart-pulse-fill"></i> Maladies invalidantes</h3>
+              <p>Maladies chroniques impactant la vie quotidienne (Diabète, Asthme, Épilepsie, etc.).</p>
+              <p style="font-size: 0.85rem; color: #7f8c8d;"><strong>En ACM :</strong> Connaître le PAI (Projet d'Accueil Individualisé) et les protocoles d'urgence.</p>
+            </div>
+          </div>
+
+          <div style="background: rgba(155, 89, 182, 0.1); padding: 25px; border-radius: 15px; margin-top: 30px;">
+            <h3 style="text-align: center; color: #8e44ad;"><i class="bi bi-book-half"></i> Zoom sur les Troubles "Dys"</h3>
+            <div class="grid-2col" style="margin-top: 15px;">
+              <ul style="margin: 0; font-size: 0.9rem; padding-left: 20px;">
+                <li><strong>Dyslexie :</strong> Lecture difficile.</li>
+                <li><strong>Dyscalculie :</strong> Calcul difficile.</li>
+                <li><strong>Dysorthographie :</strong> Orthographe.</li>
+                <li><strong>Dysphasie :</strong> Parole / Langage.</li>
+                <li><strong>Dyspraxie :</strong> Gestes / Coordination.</li>
+              </ul>
+              <ul style="margin: 0; font-size: 0.9rem; padding-left: 20px;">
+                <li><strong>Dysgraphie :</strong> Écriture.</li>
+                <li><strong>Dysgnosie :</strong> Reconnaissance.</li>
+                <li><strong>Dyschronie :</strong> Repérage temporel.</li>
+                <li><strong>Dyspropodie :</strong> Rythme de la voix.</li>
+                <li><strong>Dysmotricité :</strong> Mouvements.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="deadline-box" style="background: #2c3e50; margin-top: 30px;">
+            <h3><i class="bi bi-check-circle-fill"></i> Les Clés de l'Inclusion</h3>
+            <div class="no-p-style" style="font-size: 0.95rem;">
+              <ul style="margin-bottom: 0;">
+                <li><strong>L'anticipation :</strong> Échanger avec la famille et le jeune avant le séjour.</li>
+                <li><strong>L'adaptation :</strong> On n'exclut pas, on adapte la règle ou l'activité pour que tout le monde joue.</li>
+                <li><strong>La sensibilisation :</strong> Expliquer aux autres enfants (sans stigmatiser) pour favoriser l'entraide.</li>
+                <li><strong>Le PAI :</strong> Document médical essentiel qui définit les soins et les protocoles d'urgence.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="https://handicap.agriculture.gouv.fr/les-grandes-familles-ou-typologies-de-handicap-a231.html" target="_blank" class="back-button" style="text-decoration: none; display: inline-block; background: #9b59b6;">
+              <i class="bi bi-link-45deg"></i> Typologies de handicap (Source Officielle)
+            </a>
+          </div>
         </div>
       </div>
+
 
       <!-- Section Réunion -->
       <div id="modal-reunion" class="modalspe">
@@ -782,21 +804,25 @@
           <button class="modal__closespe">&times;</button>
           <h1 style="text-align: center; color: #2c3e50;"><i class="bi bi-gavel"></i> Réglementation & Sigles ACM</h1>
           
-          <div class="grid-2col">
+          <test class="grid-2col">
             <!-- Sigles -->
             <div style="background: rgba(44, 62, 80, 0.05); border: 1px solid rgba(44, 62, 80, 0.2); padding: 20px; border-radius: 15px;">
               <h3 style="color: #2c3e50;">Sigles Essentiels</h3>
               <ul style="font-size: 0.85rem; padding-left: 20px;">
-                <li><strong>DRAJES/SDJES</strong> : Tutelle Jeunesse et Sports.</li>
+                <li><strong>DRAJES/SDJES</strong> : Délégation Régionale Académique à la Jeunesse, à l’Engagement et aux Sports.</li>
+                <li><b>DDCS/DDCSPP</b> : Direction Départementale de la Cohésion Sociale / de la Cohésion Sociale et de la
+                    Protection des Populations</li>
                 <li><strong>ACM</strong> : Accueil Collectif de Mineurs.</li>
                 <li><strong>PE / PP / PA</strong> : Projets Éducatif, Pédagogique et d'Animation.</li>
+                <li><b>PEDT</b> : Projet Éducatif Territorial</li>
                 <li><strong>BAFA / BAFD</strong> : Brevets d'Aptitude (Anim/Dir).</li>
                 <li><strong>PMS</strong> : Projet de Mise en Sûreté (Plan d'urgence).</li>
+                <li><b>J&S</b> : Jeunesse et Sports</li>
               </ul>
             </div>
 
             <!-- Taux encadrement -->
-            <div style="background: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 15px;">
+            <test style="background: rgba(231, 76, 60, 0.05); border: 1px solid rgba(231, 76, 60, 0.2); padding: 20px; border-radius: 15px;">
               <h3 style="color: #e74c3c;">Taux d'Encadrement</h3>
               <p style="font-size: 0.9rem; margin-bottom: 5px;"><strong>Extrascolaire (Colos/Vacances) :</strong></p>
               <ul style="font-size: 0.85rem; padding-left: 20px; margin-bottom: 10px;">
@@ -805,13 +831,15 @@
               </ul>
               <p style="font-size: 0.9rem; margin-bottom: 5px;"><strong>Périscolaire (Matin/Soir/Midi) :</strong></p>
               <ul style="font-size: 0.85rem; padding-left: 20px;">
-                <li><strong>- 6 ans</strong> : 1 anim pour 10 enfants.</li>
-                <li><strong>+ 6 ans</strong> : 1 anim pour 14 enfants.</li>
+                <li><strong>- 6 ans</strong> : 1 anim pour 10 enfants. (SANS PEDT)</li>
+                <li><strong>+ 6 ans</strong> : 1 anim pour 14 enfants. (SANS PEDT)</li>
+                <li><strong>- 6 ans</strong> : 1 anim pour 14 enfants. (AVEC PEDT)</li>
+                <li><strong>+ 6 ans</strong> : 1 anim pour 18 enfants. (AVEC PEDT)</li>
               </ul>
-            </div>
-          </div>
+            </test>
+          </test>
 
-          <div class="grid-2col" style="margin-top: 20px;">
+          <test class="grid-2col" style="margin-top: 20px;">
             <!-- Composition équipe -->
             <div style="background: rgba(52, 152, 219, 0.05); border: 1px solid rgba(52, 152, 219, 0.2); padding: 20px; border-radius: 15px;">
               <h3 style="color: #3498db;">Composition de l'Équipe</h3>
@@ -831,16 +859,17 @@
                 <li><strong>Médicaments</strong> : Uniquement sur ordonnance médicale.</li>
               </ul>
             </div>
-          </div>
+          </test>
 
           <div class="deadline-box" style="background: #2c3e50; margin-top: 30px;">
             <h3><i class="bi bi-water"></i> Focus Baignade</h3>
             <div class="no-p-style" style="font-size: 0.95rem;">
               <ul style="margin-bottom: 0;">
                 <li><strong>Hors baignade aménagée</strong> : 1 anim pour 5 (-6 ans) ou 1 pour 8 (+6 ans).</li>
-                <li><strong>Surveillance</strong> : Un Surveillant de Baignade (SB) ou un Maître Nageur (BNSSA/BEESAN) est obligatoire.</li>
+                <li><strong>Surveillance</strong> : Un Surveillant de Baignade (SB) ou un Maître Nageur (BNSSA) est obligatoire.</li>
                 <li><strong>Périmètre</strong> : Toujours délimiter la zone de bain.</li>
               </ul>
+                <p>Voir le détail <a href="https://srn-romain.github.io/jeux-bafa/pages/reglementation.html#recap-encadrement" style="color: white"><u>ICI</u></a></p>
             </div>
           </div>
         </div>
@@ -965,6 +994,68 @@
 
           <div class="alert alert-info" style="margin-top: 20px; border-left: 5px solid #3498db; background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 5px;">
             <i class="bi bi-info-circle-fill"></i> <strong>Bon à savoir :</strong> En CEE, le repos quotidien est normalement de 11h. S'il ne peut être respecté (surveillance de nuit par exemple), il doit être compensé ou donner lieu à un repos compensateur.
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Relationnel -->
+      <div id="modal-relationnel" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1 style="text-align: center; color: #1abc9c;"><i class="bi bi-people-fill"></i> Le Relationnel en ACM</h1>
+          <p style="text-align: center; font-style: italic; margin-bottom: 30px;">"Savoir-être et communication : les piliers d'une équipe soudée et d'un accueil de qualité."</p>
+
+          <div class="grid-2col">
+            <!-- Avec les enfants -->
+            <div style="background: rgba(26, 188, 156, 0.05); border: 1px solid rgba(26, 188, 156, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #16a085;"><i class="bi bi-person-fill"></i> Avec les Mineurs</h3>
+              <ul style="font-size: 0.95rem; padding-left: 20px;">
+                <li><strong>Exemplarité</strong> : Être un modèle dans ses paroles et ses actes.</li>
+                <li><strong>Écoute active</strong> : Prendre en compte les besoins et émotions de chacun.</li>
+                <li><strong>Juste distance</strong> : Être proche mais garder sa place d'adulte référent.</li>
+                <li><strong>Autorité bienveillante</strong> : Cadre sécurisant sans autoritarisme.</li>
+              </ul>
+            </div>
+
+            <!-- Avec l'équipe -->
+            <div style="background: rgba(52, 152, 219, 0.05); border: 1px solid rgba(52, 152, 219, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #2980b9;"><i class="bi bi-person-video3"></i> Avec l'Équipe</h3>
+              <ul style="font-size: 0.95rem; padding-left: 20px;">
+                <li><strong>Communication</strong> : Partager les infos (relais) et exprimer ses besoins.</li>
+                <li><strong>Solidarité</strong> : S'entraider dans les moments difficiles ou de fatigue.</li>
+                <li><strong>Loyauté</strong> : Respecter les décisions prises en réunion, même si on était contre.</li>
+                <li><strong>Discrétion</strong> : Régler les désaccords entre adultes, jamais devant les jeunes.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="grid-2col" style="margin-top: 20px;">
+            <!-- Avec les familles -->
+            <div style="background: rgba(243, 156, 18, 0.05); border: 1px solid rgba(243, 156, 18, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #e67e22;"><i class="bi bi-chat-heart-fill"></i> Avec les Familles</h3>
+              <ul style="font-size: 0.95rem; padding-left: 20px;">
+                <li><strong>Accueil</strong> : Être disponible et souriant lors des arrivées/départs.</li>
+                <li><strong>Transmission</strong> : Donner des nouvelles factuelles et positives de l'enfant.</li>
+                <li><strong>Professionnalisme</strong> : Rester neutre et orienter vers le directeur si besoin.</li>
+              </ul>
+            </div>
+
+            <!-- Avec la direction -->
+            <div style="background: rgba(149, 165, 166, 0.05); border: 1px solid rgba(149, 165, 166, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #7f8c8d;"><i class="bi bi-person-badge-fill"></i> Avec la Direction</h3>
+              <ul style="font-size: 0.95rem; padding-left: 20px;">
+                <li><strong>Transparence</strong> : Alerter en cas de problème ou de doute.</li>
+                <li><strong>Respect du cadre</strong> : Appliquer le projet pédagogique.</li>
+                <li><strong>Proposition</strong> : Être force de proposition pour enrichir le séjour.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="deadline-box" style="background: #1abc9c; margin-top: 30px;">
+            <h3><i class="bi bi-lightbulb-fill"></i> Le Secret de la Dynamique d'Équipe</h3>
+            <div class="no-p-style" style="font-size: 0.95rem;">
+              <p>Une bonne équipe n'est pas une équipe qui n'a pas de problèmes, c'est une équipe qui sait les communiquer et les résoudre ensemble. <strong>La communication est la clé !</strong></p>
+            </div>
           </div>
         </div>
       </div>
