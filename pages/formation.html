@@ -54,7 +54,7 @@
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[10h] Investissement des locaux</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[10h] Projets, ACM, Acteurs & Contrats</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-sigle">[10h] Réglementation</a></td>
-            <td class="no-link">[10h] Handicap / Inclusion et accessibilité</td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-handi">[10h] Handicap / Inclusion et accessibilité</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[10h] Grand jeu grp 1</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-blog">[10h] Gestion du blog + Laïcité</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-organismes">[9h30] Création CV, LM & Stage</a></td>
@@ -70,7 +70,7 @@
             <td class="row-header bg-aprem">APREM</td>
             <td class="time-label">13h30</td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-transport">[13h30] Rôle de l'animateur & cursus BAFA</a></td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-ados">[13h30] Connaissance des publics</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-public">[13h30] Connaissance des publics</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-sigle">[13h30] Responsabilités civile & pénale</a></td>
             <td class="no-link">[13h30] Grand jeu grp 3 (Enquête)</td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[13h30] Relationnel & Dynamique</a></td>
@@ -88,7 +88,7 @@
             <td class="row-header bg-aprem">APREM</td>
             <td class="time-label">16h30</td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-transport">[16h30] Rôle de l'animateur & cursus BAFA</a></td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-ados">[16h30] Restitution partie 2</a></td>
+            <td class="no-link">[16h30] Restitution partie 2</td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[16h30] Vie quotidienne</a></td>
             <td class="no-link">[16h30] Harcèlement / Conduite à risque</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-reu">[16h30] Réunion + Gestion de conflits</a></td>
@@ -143,10 +143,10 @@
           <tr>
             <td class="time-label">10h</td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[10h] Présentation stage / DRAJES</a></td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-entre">[10h] Analyse stage pratique</a></td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-entre">[10h] Analyse stage pratique</a></td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-sigle">[10h] Réglementation & Transport</a></td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[10h] Topo aux choix</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-stage">[10h] Analyse stage pratique</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-stage">[10h] Analyse stage pratique</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-transport">[10h] Réglementation & Transport</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-reunion">[10h] Topo aux choix</a></td>
             <td class="no-link">[10h] Grande Foire aux PPAs</td>
           </tr>
           <!-- REPAS -->
@@ -172,7 +172,7 @@
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[15h] GA 1 : Thématique</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[15h] GA 1 : Thématique</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[15h] GA 2 : Séjours Vacances</a></td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-ados">[15h] GA 2 : Ados / Préados</a></td>
+            <td class="no-link">[15h] GA 2 : Ados / Préados</td>
             <td><a href="../index.html">[16h] Administratif + Départ</a></td>
           </tr>
           <!-- GOÛTER -->
@@ -213,25 +213,100 @@
     </div>
 
     <div class="categories">
+        <p style="text-align: center"><i>Cliquez sur un temps dans le planing pour l'afficher en détail</i></p>
       <!-- Section PSAADRASUFRA -->
       <div id="modal-psad" class="modalspe">
         <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
-          <h1><a href="../public/pdfs/formation/PSAADRAFRA.pdf" class="orange"><u>O PSAADRASUFRA</u></a></h1>
-          <ul>
-            <li style="list-style-type: none;"><b>O</b>bjectifs : Quels sont les buts précis ? Quelles valeurs ?</li>
-            <li style="list-style-type: none;"><b>P</b>réparation : Matériels, lieux, organisation, rôles.</li>
-            <li style="list-style-type: none;"><b>S</b>ensibilisation : Comment informer et motiver les jeunes ?</li>
-            <li style="list-style-type: none;"><b>A</b>ménagement : Adapter l’espace et le matériel.</li>
-            <li style="list-style-type: none;"><b>A</b>ccueil : Consignes, ambiance, confiance.</li>
-            <li style="list-style-type: none;"><b>D</b>éroulement : Les étapes, gestion du temps, imprévus.</li>
-            <li style="list-style-type: none;"><b>R</b>ythme : Alternance calme/action, pauses.</li>
-            <li style="list-style-type: none;"><b>A</b>nimation : Techniques, participation, conflits.</li>
-            <li style="list-style-type: none;"><b>S</b>écurité : Risques, mesures, urgences.</li>
-            <li style="list-style-type: none;"><b>F</b>in : Clôture positive, bilan, valorisation.</li>
-            <li style="list-style-type: none;"><b>R</b>angement : Organisation, responsabilité.</li>
-            <li style="list-style-type: none;"><b>A</b>nalyse : Points forts, difficultés, améliorations.</li>
-          </ul>
+            <h1 id="psad"><a href="../public/pdfs/formation/PSAADRAFRA.pdf" class="orange"><u>O PSAADRASUFRA</u></a></h1>
+            <ul>
+                <li style="list-style-type: none;"><b>O</b>bjectifs
+                    <ul>
+                        <li>Quels sont les buts précis de l’activité ou du projet ?</li>
+                        <li>Quels apprentissages, valeurs ou compétences souhaite-t-on développer ?</li>
+                        <li>Comment cette activité s’insère-t-elle dans le projet global du séjour ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>P</b>réparation
+                    <ul>
+                        <li>Quels matériels, lieux, documents sont nécessaires ?</li>
+                        <li>Quelle organisation préalable est requise (réservations, autorisations) ?</li>
+                        <li>Quels rôles et responsabilités pour chaque animateur ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>S</b>ensibilisation
+                    <ul>
+                        <li>Comment informer et motiver les jeunes avant l’activité ?</li>
+                        <li>Quels supports ou messages utiliser pour capter leur attention ?</li>
+                        <li>Y a-t-il des préjugés ou peurs à lever ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>A</b>ménagement
+                    <ul>
+                        <li>Comment adapter l’espace et le matériel pour l’activité ?</li>
+                        <li>Faut-il prévoir des zones spécifiques pour différents groupes ou étapes ?</li>
+                        <li>Comment assurer l’accessibilité pour tous (handicap, âge, niveau) ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>A</b>ccueil
+                    <ul>
+                        <li>Comment accueillir les participants (rythme, ambiance, consignes) ?</li>
+                        <li>Comment présenter l’activité pour susciter l’intérêt et la confiance ?</li>
+                        <li>Comment gérer les éventuelles appréhensions ou réticences ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>D</b>éroulement
+                    <ul>
+                        <li>Quelles sont les différentes étapes de l’activité ?</li>
+                        <li>Comment gérer le temps pour respecter le planning ?</li>
+                        <li>Comment adapter en cas d’imprévu (météo, matériel manquant, groupe difficile) ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>R</b>ythme
+                    <ul>
+                        <li>Comment alterner moments calmes et temps d’action ?</li>
+                        <li>Quelle durée pour chaque phase pour maintenir l’attention ?</li>
+                        <li>Comment prévoir des pauses adaptées aux besoins des jeunes ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>A</b>nimation
+                    <ul>
+                        <li>Quelles techniques d’animation privilégier (jeux, discussions, mises en situation) ?</li>
+                        <li>Comment encourager la participation et la coopération ?</li>
+                        <li>Comment gérer les conflits ou difficultés relationnelles ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>S</b>écurité / Urgence
+                    <ul>
+                        <li>Quels sont les risques liés à l’activité ?</li>
+                        <li>Quelles mesures de sécurité mettre en place ?</li>
+                        <li>Qui est responsable en cas d’incident ?</li>
+                        <li>Comment réagir en situation d’urgence (contact secours, premiers soins) ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>F</b>in
+                    <ul>
+                        <li>Comment clôturer l’activité de manière positive ?</li>
+                        <li>Prévoir un temps de bilan ou de débriefing collectif.</li>
+                        <li>Comment remercier et valoriser les participants ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>R</b>angement
+                    <ul>
+                        <li>Comment organiser le rangement du matériel et de l’espace ?</li>
+                        <li>Qui est responsable de cette phase ?</li>
+                        <li>Comment sensibiliser les jeunes à l’importance du rangement ?</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><b>A</b>nalyse
+                    <ul>
+                        <li>Quels points ont bien fonctionné ?</li>
+                        <li>Quelles difficultés ont été rencontrées ?</li>
+                        <li>Quelles améliorations envisager pour la prochaine fois ?</li>
+                        <li>Comment recueillir le retour des participants et des animateurs ?</li>
+                    </ul>
+                </li>
+            </ul>
         </div>
       </div>
 
@@ -239,16 +314,71 @@
       <div id="modal-transport" class="modalspe">
         <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
-          <h1>Transports</h1>
-          <ul>
-            <li>Vérifier l'état du car et du chauffeur avant le départ.</li>
-            <li>Organisation des bagages selon l'âge.</li>
-            <li>Placement des animateurs : répartis dans tout le car.</li>
-            <li>Sécurité : Ceintures obligatoires, compter les enfants à chaque montée/descente.</li>
-            <li>Mal des transports : sacs plastiques et places à l'avant.</li>
-            <li>Arrivée : Tour du bus pour les oublis, gestion des bagages.</li>
-            <li style="list-style-type: none; text-align: center"><img src="../public/images/bus.png" alt="Bus" style="max-width:100%; border-radius:10px;"></li>
-          </ul>
+            <h1 id="transport">Transports</h1>
+            <ul>
+                <li>Brainstorming : À quoi pensez-vous en entendant « transport » ? (Bus, car, train, avion, vomi, ceinture...)
+                </li>
+                <li>À l’arrivée du car, vérifier l’état général (vitres, carrosserie, etc.). En cas de problème, prévenir le
+                    conducteur. La sécurité des enfants (et des animateurs !) est une priorité, votre responsabilité pénale est
+                    engagée. Vérifier aussi la présence de la trousse de secours et du gilet jaune au besoin. Regarder également
+                    l'état de santé du chauffeur, s'il est fatigué, ou ivre, il ne doit évidemment pas conduire -> refuser de
+                    faire
+                    monter les enfants.
+                </li>
+                <li>Organisation des bagages : qui met les valises dans le car ? Les jeunes ou les animateurs ? -> En fonction
+                    de
+                    tranche d'âge.
+                </li>
+                <li>Les enfants cherchent souvent la meilleure place et rangent leurs valises sans attention. Leur rappeler de
+                    faire attention ou laisser les animateurs s’en charger.
+                </li>
+                <li>Le chauffeur peut demander la liste des jeunes et le nombre d’enfants/animateurs présents.</li>
+                <li>Que prennent les jeunes dans le bus ? Boissons, nourriture ? À adapter selon la durée du trajet. Pour une
+                    sortie piscine, rien à prendre ; pour un long trajet, prévoir eau et pique-nique si un arrêt est prévu.
+                </li>
+                <li>Placement dans le car : où s’installent les animateurs ? -> Doivent être répartis dans le car ! Éviter pour
+                    les jeunes le centre au fond, près des portes et les places sans fauteuils devant :ce sont des places
+                    déconseillé mais pas interdit. Strapontins par contre interdits.
+                </li>
+                <li style="list-style-type: none; padding-left: 0; text-align: center"><img src="../public/images/bus.png"
+                                                                                            alt="Bus" style="max-width:100%; width:100%; height:auto; display:block; margin:0 auto;"></li>
+                <li>L’animateur au fond du bus remonte l’ensemble du groupe. Idéalement, les animateurs sont répartis partout.
+                </li>
+                <li>Avant de partir, vérifier que tout le monde a bien attaché sa ceinture de sécurité. C’est obligatoire et
+                    fondamental.
+                </li>
+                <li>En cas de mal des transports, placer les jeunes sujets à ce problème à l’avant et prévoir des sacs
+                    plastiques à garder sur sois !
+                </li>
+                <li>Attention à la hauteur de la marche lors de la montée et descente, surtout pour les enfants de moins de 10
+                    ans.
+                    Toujours placer un animateur pour compter les enfants à la montée et à la descente.
+                </li>
+                <li>Toilettes dans le bus : les chauffeurs préfèrent souvent qu’on ne les utilise pas. Prévoir un passage aux
+                    toilettes avant le départ.
+                </li>
+                <li>Attention à la hauteur de la soute, les enfants peuvent se cogner.</li>
+                <li>Organisation de la soute : selon la configuration du car, adapter la disposition des animateurs. Parfois les
+                    soutes communiquent, parfois non. Pour les petits, placer les valises à l’avant de la soute.
+                </li>
+                <li>Caler les bagages pour éviter qu’ils ne basculent en cas de freinage brusque.</li>
+                <li>Des valises bien alignées donnent une bonne image du séjour. Des valises mal rangées donnent une mauvaise
+                    impression. (Cela fait parties des vitrines du séjour !)
+                </li>
+                <li>À l’approche de l’arrivée, réveiller les animateurs qui dorment.</li>
+                <li>Avant de descendre, faire un point avec les animateurs et donner les consignes aux jeunes, car une fois
+                    dehors
+                    ils courent vers leurs parents.
+                </li>
+                <li>À l’arrivée, placer un animateur pour compter les enfants à la descente, un autre pour sortir les valises
+                    (surtout pour les petits), et un autre pour surveiller ceux qui partent et les noter.
+                </li>
+                <li>En fin de trajet, faire un tour du bus pour vérifier qu’aucune affaire ou enfant n’a été oublié. Dans les
+                    bus
+                    modernes, une alarme signale si un enfant est resté à bord.
+                </li>
+                <li>Compter systématiquement les enfants en montant et en descendant du bus.</li>
+            </ul>
         </div>
       </div>
 
@@ -293,28 +423,177 @@
       <div id="modal-handi" class="modalspe">
         <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
-          <h1>Handicap / Inclusion</h1>
-          <ul>
-            <li>Inclusion : vivre AVEC les autres, pas à côté.</li>
-            <li>Adapter l'animation : simplifier les consignes, alternatives physiques.</li>
-            <li>Vigilance : fatigue, surprotection, sécurité spécifique.</li>
-            <li>Astuces : binômes solidaires, jeux coopératifs.</li>
-          </ul>
+            <h1 id="handi">Handicap</h1>
+            <ul>
+                <li>Brainstorming : À quoi pensez-vous en entendant « handicap » ? (Fauteuil roulant, surdité, autisme,
+                    malvoyance, accompagnement, inclusion, accessibilité, patience, adaptation, communication alternative…)
+                </li>
+
+                <li>Le handicap, c’est :
+                    <ul>
+                        <li>Une diversité de situations : moteur, sensoriel, intellectuel, psychique, troubles du spectre
+                            autistique, maladies chroniques…</li>
+                        <li>Des besoins spécifiques selon la personne, pas selon l’étiquette du handicap.</li>
+                        <li>Un droit à l’inclusion et à la participation à toutes les activités.</li>
+                        <li>Un travail d’équipe avec l’ensemble des animateurs, la direction et parfois des accompagnants
+                            spécialisés.</li>
+                    </ul>
+                </li>
+
+                <li style="list-style-type: none;"><strong>Avant le séjour</strong>
+                    <ul>
+                        <li>Se renseigner sur le handicap et les besoins précis de l’enfant (fiche sanitaire, échange avec les
+                            parents).</li>
+                        <li>Préparer l’équipe à l’accueil (règles de sécurité, gestes adaptés, aménagements).</li>
+                        <li>Vérifier l’accessibilité des lieux (hébergement, sanitaires, activités).</li>
+                        <li>Prévoir du matériel spécifique si nécessaire (plan incliné, jeux adaptés, pictogrammes…).</li>
+                    </ul>
+                </li>
+
+                <li style="list-style-type: none;"><strong>Accueil</strong>
+                    <ul>
+                        <li>Prendre le temps de se présenter à l’enfant et à sa famille.</li>
+                        <li>Rassurer sur le déroulement du séjour et montrer les lieux.</li>
+                        <li>Être attentif aux signes de stress ou d’inconfort dès l’arrivée.</li>
+                    </ul>
+                </li>
+
+                <li style="list-style-type: none;"><strong>Vie quotidienne</strong>
+                    <ul>
+                        <li>Adapter les horaires, les rythmes et les espaces si nécessaire.</li>
+                        <li>Prévoir un accompagnement personnalisé pour les repas, la toilette ou les déplacements si besoin.</li>
+                        <li>Favoriser l’autonomie en laissant faire ce que l’enfant peut réaliser seul.</li>
+                        <li>Encourager l’interaction avec les autres enfants, éviter l’isolement.</li>
+                    </ul>
+                </li>
+
+                <li style="list-style-type: none;"><strong>Activités</strong>
+                    <ul>
+                        <li>Adapter les règles et le matériel pour que tout le monde participe.</li>
+                        <li>Privilégier la coopération plutôt que la compétition.</li>
+                        <li>Prévoir un plan B si l’activité prévue est inaccessible ou trop fatigante.</li>
+                        <li>Valoriser la participation et les réussites, même petites.</li>
+                    </ul>
+                </li>
+
+                <li style="list-style-type: none;"><strong>Communication</strong>
+                    <ul>
+                        <li>Utiliser un langage clair, simple et adapté à l’âge et aux capacités.</li>
+                        <li>Employer des supports visuels ou gestes si besoin.</li>
+                        <li>Être attentif au langage non verbal (expressions, attitudes, réactions).</li>
+                        <li>Prendre le temps d’écouter et de reformuler pour s’assurer de la compréhension.</li>
+                    </ul>
+                </li>
+
+                <li style="list-style-type: none;"><strong>Rôle éducatif</strong>
+                    <ul>
+                        <li>Apprendre aux enfants valides à respecter, aider et inclure.</li>
+                        <li>Déconstruire les préjugés sur le handicap.</li>
+                        <li>Valoriser la diversité comme une richesse du groupe.</li>
+                        <li>Développer la solidarité et l’empathie.</li>
+                        <li><a href="https://www.youtube.com/watch?v=RlNOUx9o8Lo" target="_blank"><u>Voir vidéo</u></a> la petite
+                            casserole d'Anatole sur le handicap</li>
+                    </ul>
+                </li>
+
+                <li style="list-style-type: none;"><strong>Points de vigilance</strong>
+                    <ul>
+                        <li>Éviter la surprotection : laisser l’enfant essayer et expérimenter.</li>
+                        <li>Être attentif à la fatigue (physique et émotionnelle).</li>
+                        <li>Adapter la sécurité aux besoins spécifiques (allergies, risques médicaux, mobilité réduite).</li>
+                        <li>Communiquer avec les parents ou tuteurs en cas de doute ou de problème.</li>
+                    </ul>
+                </li>
+
+                <li style="list-style-type: none;"><strong>Astuces</strong>
+                    <ul>
+                        <li>Préparer le groupe à l’accueil d’un enfant en situation de handicap, de manière simple et positive.</li>
+                        <li>Créer des binômes ou trinômes “solidaires” pour les activités.</li>
+                        <li>Utiliser des jeux coopératifs qui favorisent la participation de tous.</li>
+                        <li>Faire preuve de patience, humour et créativité pour trouver des solutions.</li>
+                    </ul>
+                </li>
+            </ul>
         </div>
       </div>
 
-      <!-- Section Ados -->
-      <div id="modal-ados" class="modalspe">
+      <!-- Section Réunion -->
+      <div id="modal-reunion" class="modalspe">
         <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
-          <h1>Ados & Préados</h1>
-          <ul>
-            <li>Besoin d'autonomie et d'appartenance au groupe.</li>
-            <li>Responsabilisation : gestion des affaires, projets.</li>
-            <li>Communication : humour, éviter le ton "professeur".</li>
-            <li>Points de vigilance : comportements à risque, exclusion, réseaux sociaux.</li>
-          </ul>
-          <button class="openModalBtn back-button" data-modal="modal3">Débats 4 coins avec réponses</button>
+            <h1 id="reu">Réunions du soir</h1>
+            <ul>
+                <li>Chaque soir, APRES le coucher des enfants, les animateurs se réunissent pour faire le point sur la journée.
+                    (L'heure dépend donc de la tranche d'âge)</li>
+                <li style="list-style-type: none;"><strong>Objectifs</strong>
+                    <ul>
+                        <li>Analyser ce qui s'est bien passé et les difficultés rencontrées.</li>
+                        <li>Préparer les activités et l'organisation du lendemain.</li>
+                        <li>Partager les observations sur les enfants (fatigue, conflits, besoins particuliers).</li>
+                        <li>Répartir les rôles et responsabilités pour la suite du séjour.</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><strong>Déroulement</strong>
+                    <ul>
+                        <li>Le directeur anime la réunion et veille au respect.</li>
+                        <li>Chacun peut s'exprimer sur son ressenti, ses idées ou ses besoins.</li>
+                        <li>Les décisions sont prises collectivement, en tenant compte des contraintes et des avis de tous.</li>
+                        <li>Un temps est prévu pour aborder les points urgents ou sensibles (santé, sécurité, organisation).</li>
+                        <li>La réunion doit rester constructive et éviter de s'éterniser pour permettre à chacun de se reposer.</li>
+                    </ul>
+                </li>
+                <li style="list-style-type: none;"><strong>Conseils</strong>
+                    <ul>
+                        <li>Noter les points importants pour garder une trace et suivre les actions décidées.</li>
+                        <li>Terminer sur une note positive ou une astuce pour améliorer le travail d'équipe.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+      </div>
+
+      <!-- Section Organismes -->
+      <div id="modal-organismes" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+            <h1 id="organismes">Liens organismes de recrutement</h1>
+            <ul>
+                <li><a href="https://www.agencenature.com/fr-nos+animateurs.html" target="_blank"><u>Agence Nature</u></a></li>
+                <li><a href="https://www.asso-regards.org/nous-recrutons/" target="_blank"><u>Regards</u></a></li>
+                <li><a href="https://www.avea-vacances.fr/page/nous-rejoindre" target="_blank"><u>Avea Vacances</u></a></li>
+                <li><a href="https://bafa.ufcv.fr/" target="_blank"><u>UFCV</u></a></li>
+                <li><a href="https://cceairfrance-recrute.talent-soft.com/accueil.aspx" target="_blank"><u>CCE Air
+                    France</u></a></li>
+                <li><a href="https://recrutement-sej.ccgpfcheminots.com/front-accueil.html" target="_blank"><u>CCGPF
+                    Cheminots</u></a></li>
+                <li><a href="https://www.capjuniors.com/recrutement.html" target="_blank"><u>Cap Juniors</u></a></li>
+                <li><a href="https://www.capmonde.fr/sites/portail/cap-monde-recrute,recrutements-animation-sejours.html"
+                       target="_blank"><u>Cap Monde</u></a></li>
+                <li><a href="https://cheminsdumonde.fr/form/candidature-animateur-sejours.htm" target="_blank"><u>Chemins du
+                    Monde</u></a></li>
+                <li><a href="https://www.cie-thales.net/onrecrute" target="_blank"><u>CIE Thales</u></a></li>
+                <li><a href="https://croqvacances.org/recrutement.html" target="_blank"><u>Croq Vacances</u></a></li>
+                <li><a href="https://www.djuringa-juniors.fr/p-recrutement.html" target="_blank"><u>Djuringa Juniors</u></a>
+                </li>
+                <li><a href="https://www.gocolo.fr/anim" target="_blank"><u>Gocolo</u></a></li>
+                <li><a href="https://www.le-zebre.com/recrutement.html" target="_blank"><u>Le Zèbre</u></a></li>
+                <li><a href="https://www.mondialjunior.fr/recrutement.html" target="_blank"><u>Mondial Junior</u></a></li>
+                <li><a href="https://www.nouvelles-vagues.com/nouvelles-vagues-recrutement/" target="_blank"><u>Nouvelles
+                    Vagues</u></a></li>
+                <li><a href="https://passion-aventure-junior.com/recrutement.html" target="_blank"><u>Passion Aventure
+                    Junior</u></a></li>
+                <li><a href="https://www.rh-cgcv.org/com/login?back_url=%2Fcom%2Fprestation%3Fprest_id%3D18"
+                       target="_blank"><u>CGCV</u></a></li>
+                <li><a href="https://www.sans-frontieres.fr/infos-pratiques/recrutement/candidature/" target="_blank"><u>Sans
+                    Frontières</u></a></li>
+                <li><a href="https://www.sejours-ajd.fr/" target="_blank"><u>Séjours AJD</u></a></li>
+                <li><a href="https://www.silc.fr/page/jobs#candidature" target="_blank"><u>SILC</u></a></li>
+                <li><a href="https://www.sportselitejeunes.fr/" target="_blank"><u>Sport Elite Jeunes</u></a></li>
+                <li><a href="https://www.tempsdescopains.com/recrutement/" target="_blank"><u>Temps des Copains</u></a></li>
+                <li><a href="https://temps-jeunes.com/profile/tableaudebord" target="_blank"><u>Temps Jeunes</u></a></li>
+                <li><a href="https://visasloisirs.com/recrutement" target="_blank"><u>VISA Loisirs</u></a></li>
+                <li><a href="https://www.zigotours.com/recrutement.html" target="_blank"><u>Zigotours</u></a></li>
+            </ul>
         </div>
       </div>
 
@@ -349,12 +628,21 @@
         <div class="modal__contentspe modal-large">
           <button class="modal__closespe">&times;</button>
           <h1>Rappel des sigles utiles</h1>
-          <ul>
-            <li><b>ACM</b> : Accueil Collectif de Mineurs</li>
-            <li><b>PE / PP / PA</b> : Projets Éducatif, Pédagogique et d'Animation</li>
-            <li><b>SDJES</b> : Service Départemental Jeunesse et Sports</li>
-            <li><b>CEE</b> : Contrat d'Engagement Éducatif</li>
-          </ul>
+            <ul>
+                <li><b>DRAJES</b> : Délégation Régionale Académique à la Jeunesse, à l’Engagement et aux Sports</li>
+                <li><b>ACM</b> : Accueil Collectif de Mineurs</li>
+                <li><b>DDCS/DDCSPP</b> : Direction Départementale de la Cohésion Sociale / de la Cohésion Sociale et de la
+                    Protection des Populations</li>
+                <li><b>DDJES</b> : Direction Départementale Jeunesse, Engagement et Sports</li>
+                <li><b>PE</b> : Projet Éducatif</li>
+                <li><b>PP</b> : Projet Pédagogique</li>
+                <li><b>PPA</b> : Projet Pédagogique d’Activité</li>
+                <li><b>PEDT</b> : Projet Éducatif Territorial</li>
+                <li><b>BAFA</b> : Brevet d’Aptitude aux Fonctions d’Animateur</li>
+                <li><b>BAFD</b> : Brevet d’Aptitude aux Fonctions de Directeur</li>
+                <li><b>CAF</b> : Caisse d’Allocations Familiales (par rapport à vos doc de stagiaire pour les allocs)</li>
+                <li><b>J&S</b> : Jeunesse et Sports</li>
+            </ul>
         </div>
       </div>
 
@@ -477,6 +765,28 @@
                 <a href="https://www.guyane.gouv.fr/Actions-de-l-Etat/Jeunesse-sports-cohesion-sociale/Jeunesse/Loisirs-educatifs-des-jeunes/Accueils-collectifs-de-mineurs/Differents-types-d-ACM"
                    target="_blank">Guyane.gouv.fr</a>
             </p>
+        </div>
+      </div>
+      <!-- Section Analyse Stage Pratique -->
+      <div id="modal-stage" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1>Analyse du stage pratique</h1>
+          <p>Ce temps est crucial en formation approfondissement pour permettre aux stagiaires de prendre du recul sur leur première expérience en autonomie.</p>
+          
+          <h3>Méthodologie de la séance :</h3>
+          <ul>
+            <li><strong>1. Tour de table introductif :</strong> Chaque stagiaire présente brièvement son séjour (Lieu, organisme, public accueilli, durée).</li>
+            <li><strong>2. Expression des ressentis :</strong> Utiliser des outils (météo du jour, cartes de ressentis) pour exprimer son état d'esprit global après le stage.</li>
+            <li><strong>3. Analyse des réussites :</strong> Qu'est-ce qui a bien fonctionné ? Quelle activité a été une réussite ? Quel lien avec les enfants a été fort ?</li>
+            <li><strong>4. Analyse des difficultés :</strong> Identifier une situation complexe vécue (conflit, gestion de groupe, fatigue, relation équipe).</li>
+            <li><strong>5. Mutualisation et solutions :</strong> En petit groupe ou en grand groupe, on échange sur les situations difficiles pour trouver ensemble des pistes de remédiation.</li>
+            <li><strong>6. Projection sur l'Appro :</strong> Faire le lien entre les besoins identifiés pendant le stage et les objectifs de la session d'approfondissement actuelle.</li>
+          </ul>
+
+          <div class="alert alert-info" style="background: rgba(52, 152, 219, 0.1); border-left: 5px solid #3498db; padding: 15px; margin-top: 20px; border-radius: 5px;">
+            <i class="bi bi-info-circle-fill"></i> <strong>Conseil formateur :</strong> Veillez à créer un climat de confiance sans jugement. Le but n'est pas de sanctionner mais de valoriser l'apprentissage par l'expérience.
+          </div>
         </div>
       </div>
 
