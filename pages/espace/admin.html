@@ -465,9 +465,15 @@
                 </div>
 
                 <form id="settingsForm" style="margin-top:20px;">
-                    <div class="es-field">
-                        <label class="es-field__label" for="settingsDisplayName">Pseudo / Nom d'affichage</label>
-                        <input class="es-input" type="text" id="settingsDisplayName" placeholder="Ex: Romain">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="es-field">
+                            <label class="es-field__label" for="settingsFirstName">Prénom</label>
+                            <input class="es-input" type="text" id="settingsFirstName" placeholder="Ex: Jean">
+                        </div>
+                        <div class="es-field">
+                            <label class="es-field__label" for="settingsLastName">Nom</label>
+                            <input class="es-input" type="text" id="settingsLastName" placeholder="Ex: Dupont">
+                        </div>
                     </div>
                 </form>
 
