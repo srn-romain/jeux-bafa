@@ -1477,3 +1477,49 @@ em {
     max-height: 75%;
   }
 }
+
+/*--------------------------------------------------------------
+# Cursus BAFA Modal Styles
+--------------------------------------------------------------*/
+.cursus-container {
+  margin-top: 20px;
+}
+
+.cursus-step {
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cursus-step:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+.step-number {
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.deadline-box {
+  background: #2c3e50;
+  color: white !important;
+  padding: 25px;
+  border-radius: 15px;
+  margin-top: 30px;
+}
+
+.deadline-box h3 {
+  color: #f1c40f !important;
+  margin-top: 0;
+}
+
+.deadline-box p, .deadline-box li {
+  color: white !important;
+  text-align: left !important;
+  max-width: none !important;
+}
+
+.deadline-box div {
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}

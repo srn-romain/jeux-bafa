@@ -22,20 +22,20 @@
       <p style="margin-bottom: 10px;"><strong>Modules obligatoires à retrouver dans les formations :</strong></p>
       <div class="grid-2col" style="font-size: 0.9rem; gap: 5px 20px;">
         <ul style="margin: 0; padding-left: 20px;">
-          <li>PSAADRAFRA</li>
-          <li>Différents projets, ACM, acteurs</li>
-          <li>Connaissance du public</li>
+            <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">PSAADRAFRA</a></li>
+            <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">Différents projets, ACM, acteurs</a></li>
+            <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-public">Connaissance du public</a></li>
           <li>Réglementation</li>
-          <li>Responsabilité civile et pénale</li>
-          <li>Vie Quotidienne</li>
-          <li>Handicap et inclusion</li>
+            <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-respons">Responsabilité civile et pénale</a></li>
+            <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-quot">Vie Quotidienne</a></li>
+            <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-handi">Handicap et inclusion</a></li>
         </ul>
         <ul style="margin: 0; padding-left: 20px;">
-          <li>Harcèlement, maltraitance, VSS</li>
+            <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-vhss">Harcèlement, maltraitance, VSS</a></li>
           <li>Relationnel en ACM</li>
           <li>Laïcité</li>
           <li>Liberté, autorité, sanction</li>
-          <li>Les contrats</li>
+          <li><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-contrat">Les contrats</a></li>
           <li>Grands-jeux & veillées des stagiaires</li>
           <li>Atelier Technique</li>
         </ul>
@@ -75,7 +75,7 @@
           </tr>
           <tr>
             <td class="time-label">10h</td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-accueil">[10h] Investissement des locaux</a></td>
+            <td class="no-link">[10h] Investissement des locaux</td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[10h] Projets, ACM, Acteurs & Contrats</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-sigle">[10h] Réglementation</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-handi">[10h] Handicap / Inclusion et accessibilité</a></td>
@@ -93,11 +93,11 @@
           <tr>
             <td class="row-header bg-aprem">APREM</td>
             <td class="time-label">13h30</td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-transport">[13h30] Rôle de l'animateur & cursus BAFA</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-bafa">[13h30] Rôle de l'animateur & cursus BAFA</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-public">[13h30] Connaissance des publics</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-resp">[13h30] Responsabilités civile & pénale</a></td>
             <td class="no-link">[13h30] Grand jeu grp 3 (Enquête)</td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[13h30] Relationnel & Dynamique</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-contrat">[13h30] Les contrats</a></td>
             <td class="no-link">[13h30] Grand jeu groupe 2</td>
             <td class="no-link">[13h30] Grand jeu grp 4</td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-bilan">[13h00] Bilan collectif de la session</a></td>
@@ -796,6 +796,129 @@
                 <li><b>CAF</b> : Caisse d’Allocations Familiales (par rapport à vos doc de stagiaire pour les allocs)</li>
                 <li><b>J&S</b> : Jeunesse et Sports</li>
             </ul>
+        </div>
+      </div>
+
+
+      <!-- Section Cursus BAFA -->
+      <div id="modal-bafa" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1 style="text-align: center; color: #f39c12;"><i class="bi bi-mortarboard-fill"></i> Le Cursus BAFA</h1>
+          <p style="text-align: center; font-style: italic; margin-bottom: 30px;">Le Brevet d'Aptitude aux Fonctions d'Animateur se déroule en 3 étapes clés qu'il faut valider dans un temps imparti.</p>
+
+          <div class="cursus-container">
+            <!-- Étape 1 -->
+            <div class="cursus-step" style="background: rgba(243, 156, 18, 0.05); border: 1px solid rgba(243, 156, 18, 0.2); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+              <div class="step-number" style="background: #f39c12; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; position: absolute; top: -15px; left: 20px;">1</div>
+              <h3 style="color: #f39c12; margin-top: 10px;">Session de Formation Générale</h3>
+              <p><strong>Durée :</strong> 8 jours minimum (consécutifs ou non).</p>
+              <p>Cette première étape permet d'acquérir les notions de base : connaissance de l'enfant, réglementation, vie quotidienne et techniques d'animation.</p>
+            </div>
+
+            <!-- Étape 2 -->
+            <div class="cursus-step" style="background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+              <div class="step-number" style="background: #2ecc71; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; position: absolute; top: -15px; left: 20px;">2</div>
+              <h3 style="color: #2ecc71; margin-top: 10px;">Stage Pratique</h3>
+              <p><strong>Durée :</strong> 14 jours minimum.</p>
+              <p>Mise en situation réelle dans un Accueil Collectif de Mineurs (ACM) déclaré. Vous êtes alors "animateur stagiaire".</p>
+              <div class="alert alert-warning" style="margin-top: 10px; padding: 10px; font-size: 0.9rem;">
+                <i class="bi bi-clock-fill"></i> <strong>Délai :</strong> Le stage doit impérativement commencer au plus tard <strong>18 mois</strong> après la fin de votre formation générale.
+              </div>
+            </div>
+
+            <!-- Étape 3 -->
+            <div class="cursus-step" style="background: rgba(52, 152, 219, 0.05); border: 1px solid rgba(52, 152, 219, 0.2); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+              <div class="step-number" style="background: #3498db; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; position: absolute; top: -15px; left: 20px;">3</div>
+              <h3 style="color: #3498db; margin-top: 10px;">Approfondissement ou Qualification</h3>
+              <p><strong>Durée :</strong> 6 jours (Approfondissement) ou 8 jours (Qualification).</p>
+              <p>Dernière étape pour analyser son stage pratique et se spécialiser (ex: grands jeux, petite enfance, voile, etc.).</p>
+            </div>
+          </div>
+
+          <div class="deadline-box">
+            <h3><i class="bi bi-exclamation-triangle-fill"></i> Délais Réglementaires Globaux</h3>
+            <ul style="margin-bottom: 0;">
+              <li><strong>30 mois :</strong> C'est le délai maximum pour effectuer l'ensemble de la formation (du 1er jour de la formation générale à la fin de l'approfondissement).</li>
+              <li><strong>42 mois :</strong> En cas de force majeure, une dérogation de 12 mois peut être accordée par la DRAJES de votre lieu de résidence.</li>
+              <li><strong>Passage en jury :</strong> Une fois les 3 étapes validées, votre dossier passe automatiquement devant un jury départemental qui délivre (ou non) le diplôme.</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin-top: 40px;">
+            <p>Pour plus d'informations officielles et gérer votre dossier :</p>
+            <a href="https://www.jeunes.gouv.fr/bafa-bafd" target="_blank" class="back-button" style="text-decoration: none; display: inline-block; background: #e67e22;">
+              <i class="bi bi-bank"></i> Site Officiel BAFA-BAFD (Gouvernement)
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Types de Contrats -->
+      <div id="modal-contrat" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1 style="text-align: center; color: #e67e22;"><i class="bi bi-file-earmark-text-fill"></i> Les Types de Contrats en ACM</h1>
+          <p style="text-align: center; font-style: italic; margin-bottom: 30px;">Comprendre son contrat est essentiel avant de s'engager sur un séjour ou en centre de loisirs.</p>
+
+          <test class="grid-2col">
+            <!-- CEE -->
+            <div style="background: rgba(230, 126, 34, 0.05); border: 1px solid rgba(230, 126, 34, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #e67e22;"><i class="bi bi-star-fill"></i> Le CEE</h3>
+              <p><strong>Contrat d'Engagement Éducatif</strong></p>
+                <p>C'est le contrat très largement utilisé dans les <b>colos</b>.</p>
+              <ul style="font-size: 0.9rem; padding-left: 20px;">
+                <li><strong>Statut</strong> : N'est pas considéré comme un salaire, mais comme une <strong>indemnité de bénévolat</strong>. Ce contrat ne dépent donc pas du code du travail.</li>
+                <li><strong>Indemnité</strong> : Forfait journalier (minimum de 50€ brut/jour).</li>
+                <li><strong>Avantages</strong> : Nourri et logé par l'organisateur.</li>
+                <li><strong>Limite</strong> : 80 jours travaillés par an maximum.</li>
+                <li><strong>Repos</strong> : 24h de repos consécutif par semaine obligatoire.</li>
+              </ul>
+            </div>
+
+            <!-- CDD / Vacataire -->
+            <div style="background: rgba(52, 152, 219, 0.05); border: 1px solid rgba(52, 152, 219, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #3498db;"><i class="bi bi-clock-history"></i> CDD & Vacataire</h3>
+              <p><strong>Droit commun / Fonction publique</strong></p>
+                <p>Utilisés principalement en <b>ALSH</b>.</p>
+              <ul style="font-size: 0.9rem; padding-left: 20px;">
+                <li><strong>Rémunération</strong> : Payé au SMIC horaire (ou plus selon la grille).</li>
+                <li><strong>CDD</strong> : Contrat classique avec horaires fixes.</li>
+                <li><strong>Vacataire</strong> : Payé à la vacation (quelques heures ou la journée). Très fréquent en mairie.</li>
+                <li><strong>Avantages</strong> : Cotisation chômage classique.</li>
+              </ul>
+            </div>
+
+            <!-- Bénévolat -->
+            <div style="background: rgba(155, 89, 182, 0.05); border: 1px solid rgba(155, 89, 182, 0.2); padding: 20px; border-radius: 15px;">
+              <h3 style="color: #9b59b6;"><i class="bi bi-heart-fill"></i> Bénévolat</h3>
+              <p><strong>Engagement associatif</strong></p>
+                <p>Très fréquent dans le <b>scoutisme</b> ou les petites associations locales.</p>
+              <ul style="font-size: 0.9rem; padding-left: 20px;">
+                <li><strong>Rémunération</strong> : Aucune (c'est le principe du bénévolat).</li>
+                <li><strong>Défraiement</strong> : L'organisateur peut rembourser les frais (transport, repas).</li>
+                <li><strong>Cadre</strong> : Pas de lien de subordination juridique comme un salarié.</li>
+                <li><strong>Avantages</strong> : Engagement citoyen et expérience humaine forte.</li>
+              </ul>
+            </div>
+          </test>
+
+          <div class="deadline-box" style="background: #27ae60; margin-top: 30px;">
+            <h3><i class="bi bi-sun-fill"></i> Comment ça se passe pour les Congés ?</h3>
+            <div class="no-p-style" style="font-size: 0.95rem; background: transparent;">
+              <p>La gestion des congés dépend de votre type de contrat :</p>
+              <ul style="margin-bottom: 0;">
+                <li><strong>En CEE :</strong> Il n'y a pas d'accumulation de "jours de congés payés" comme dans un travail classique. Le repos hebdomadaire (24h) est votre seul temps de coupure. L'indemnité est un forfait global pour la mission.</li>
+                <li><strong>En CDD (Animateur) :</strong> Vous cumulez 2,5 jours de congés par mois. En fin de contrat, si vous ne les avez pas pris, l'employeur vous verse une <strong>Indemnité Compensatrice de Congés Payés (ICCP)</strong> égale à 10% de votre salaire total.</li>
+                <li><strong>En Vacataire :</strong> Le principe est le même que le CDD : une majoration de 10% est souvent ajoutée directement au taux horaire pour compenser l'absence de congés pris.</li>
+                <li><strong>En Bénévolat :</strong> Pas de contrat de travail, donc pas de notion de congés payés.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="alert alert-info" style="margin-top: 20px; border-left: 5px solid #3498db; background: rgba(52, 152, 219, 0.1); padding: 15px; border-radius: 5px;">
+            <i class="bi bi-info-circle-fill"></i> <strong>Bon à savoir :</strong> En CEE, le repos quotidien est normalement de 11h. S'il ne peut être respecté (surveillance de nuit par exemple), il doit être compensé ou donner lieu à un repos compensateur.
+          </div>
         </div>
       </div>
 
