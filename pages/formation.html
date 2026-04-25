@@ -76,7 +76,7 @@
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-acteurs">[13h30] Relationnel & Dynamique</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[13h30] Grand jeu groupe 2</a></td>
             <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-psad">[13h30] Grand jeu grp 4</a></td>
-            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-entre">[13h00] Bilan collectif de la session</a></td>
+            <td><a href="javascript:void(0)" class="openModalBtn" data-modal="modal-bilan">[13h00] Bilan collectif de la session</a></td>
           </tr>
           <!-- GOÛTER -->
           <tr class="bg-gouter">
@@ -928,7 +928,7 @@
           <h1>Connaissance des Publics</h1>
           <p>Adapter son animation, c'est d'abord comprendre à qui l'on s'adresse. Voici les grandes caractéristiques par tranches d'âge :</p>
           
-          <div class="age-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+          <div class="age-grid">
             <div style="background: rgba(243, 156, 18, 0.1); padding: 15px; border-radius: 10px; border-left: 5px solid #f39c12;">
               <h3>👶 3 - 5 ans (Les Maternelles)</h3>
               <ul>
@@ -1022,6 +1022,42 @@
           <div class="alert alert-warning" style="background: rgba(241, 196, 15, 0.1); border-left: 5px solid #f1c40f; padding: 15px; border-radius: 5px; margin-top: 20px;">
             <i class="bi bi-exclamation-triangle-fill"></i> <strong>Rappel :</strong> La fatigue ou l'imprévisibilité d'un enfant ne sont pas des excuses valables devant un juge si le défaut de surveillance est caractérisé.
           </div>
+        </div>
+      </div>
+
+      <!-- Section Bilan Session -->
+      <div id="modal-bilan" class="modalspe">
+        <div class="modal__contentspe modal-large">
+          <button class="modal__closespe">&times;</button>
+          <h1>Bilan et Rédaction des Appréciations</h1>
+          <p>Le bilan de session est le moment où l'on formalise l'avis sur le stage. Voici comment rédiger une appréciation de qualité :</p>
+          
+          <div style="background: rgba(46, 204, 113, 0.1); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+            <h3>✍️ Les règles d'or de l'appréciation</h3>
+            <ul>
+              <li><strong>Soyez objectif :</strong> Évitez les jugements de valeur ("Il est gentil", "Elle est nulle"). Parlez de compétences observées.</li>
+              <li><strong>Donnez des exemples :</strong> "A su mener un grand jeu d'enquête avec dynamisme" plutôt que "Anime bien".</li>
+              <li><strong>Notez la progression :</strong> Valorisez les efforts fournis et l'évolution de la posture entre le J1 et le J8.</li>
+              <li><strong>Le "Sourire, Travail, Sourire" :</strong> Commencez par un point fort, abordez les points de vigilance, et terminez par une conclusion encourageante.</li>
+            </ul>
+          </div>
+
+          <h3>📂 Ressources et exemples :</h3>
+          <p>Retrouvez ci-dessous les documents d'aide à la rédaction :</p>
+          <test style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+            <a href="../public/pdfs/appreciation/appréciation.pdf" target="_blank" class="back-button" style="text-align: center; text-decoration: none;">
+              <i class="bi bi-file-earmark-pdf-fill"></i> Modèles appréciations
+            </a>
+            <a href="../public/pdfs/appreciation/guide_apress.pdf" target="_blank" class="back-button" style="text-align: center; text-decoration: none;">
+              <i class="bi bi-file-earmark-pdf-fill"></i> Guide complet
+            </a>
+            <a href="../public/pdfs/appreciation/recap_appress.pdf" target="_blank" class="back-button" style="text-align: center; text-decoration: none;">
+              <i class="bi bi-file-earmark-pdf-fill"></i> Récapitulatif utile
+            </a>
+            <a href="../public/pdfs/appreciation/illustration_apress.png" target="_blank" class="back-button" style="text-align: center; text-decoration: none;">
+              <i class="bi bi-image"></i> Illustration visuelle
+            </a>
+          </test>
         </div>
       </div>
 
