@@ -474,7 +474,7 @@ p:not(.no-p-style) {
 .modalspe {
   display: none;
   position: fixed;
-  z-index: 2000; /* Increased to be above everything */
+  z-index: 3000; /* Increased to be above everything, including lightbox */
   left: 0;
   top: 0;
   width: 100%;

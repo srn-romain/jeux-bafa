@@ -125,32 +125,36 @@ function injectNavbar() {
 /*--------------------------------------------------------------
 # Modale
 --------------------------------------------------------------*/
-const openModalBtns = document.querySelectorAll('.openModalBtn');
-const closeModalBtns = document.querySelectorAll('.modal__closespe');
-const modals = document.querySelectorAll('.modalspe');
-
-// Ouvrir la bonne modale
-openModalBtns.forEach(button => {
-    button.addEventListener('click', () => {
-        const modalId = button.getAttribute('data-modal');
-        document.getElementById(modalId).style.display = 'block';
-    });
-});
-
-// Fermer la modale en cliquant sur la croix
-closeModalBtns.forEach(button => {
-    button.addEventListener('click', () => {
-        button.closest('.modalspe').style.display = 'none';
-    });
-});
-
-// Fermer la modale en cliquant en dehors du contenu
-window.addEventListener('click', (event) => {
-    modals.forEach(modal => {
-        if (event.target === modal) {
-            modal.style.display = 'none';
+// Gestion des Modales (Ouverture/Fermeture)
+document.addEventListener('click', (event) => {
+    // Ouverture
+    const openBtn = event.target.closest('.openModalBtn');
+    if (openBtn) {
+        const modalId = openBtn.getAttribute('data-modal');
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; 
         }
-    });
+        return;
+    }
+
+    // Fermeture par la croix
+    const closeBtn = event.target.closest('.modal__closespe');
+    if (closeBtn) {
+        const modal = closeBtn.closest('.modalspe');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        return;
+    }
+
+    // Fermeture par clic extérieur
+    if (event.target.classList.contains('modalspe')) {
+        event.target.style.display = 'none';
+        document.body.style.overflow = '';
+    }
 });
 
 /*--------------------------------------------------------------
