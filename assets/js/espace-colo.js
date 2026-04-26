@@ -2159,6 +2159,11 @@ async function loadAnimateurs(coloId) {
                     ` : `
                         <div class="es-anim-item__email">${anim.email || ''}</div>
                     `}
+                    ${(currentRole === 'admin' && anim.lastLogin) ? `
+                        <div style="font-size:0.68rem; color:var(--clr-text-muted); margin-top:2px; font-style:italic; opacity:0.8;">
+                             <i class="bi bi-eye" style="font-size:0.75rem;"></i> Vu le ${formatFullDate(anim.lastLogin)}
+                        </div>
+                    ` : ''}
                 </div>
                 
                 ${anim.isPending ? `
