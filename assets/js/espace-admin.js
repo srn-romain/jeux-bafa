@@ -108,10 +108,33 @@ async function loadConfig() {
             const input = document.getElementById('adminGeminiKey');
             if (input) input.value = data.geminiKey || '';
         }
+
+        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+        if (globalDoc.exists) {
+            const checkSignup = document.getElementById('checkAllowSignup');
+            if (checkSignup) {
+                checkSignup.checked = globalDoc.data().allowSignup !== false; // true par défaut
+            }
+        }
     } catch (err) {
         console.error("loadConfig error:", err);
     }
 }
+
+document.getElementById('checkAllowSignup')?.addEventListener('change', async (e) => {
+    const val = e.target.checked;
+    try {
+        await db.collection('globalSettings').doc('dashboard').set({
+            allowSignup: val,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast(val ? "Création de compte activée." : "Création de compte désactivée.", "success");
+    } catch (err) {
+        console.error("Erreur sauvegarde allowSignup:", err);
+        showToast("Erreur lors de la modification.", "error");
+        e.target.checked = !val; // revert on error
+    }
+});
 
 document.getElementById('btnSaveAdminKey')?.addEventListener('click', async () => {
     const btn = document.getElementById('btnSaveAdminKey');

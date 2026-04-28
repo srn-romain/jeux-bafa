@@ -381,11 +381,13 @@ document.getElementById('btnLogout')?.addEventListener('click', async () => {
 // ----------------------------------------------------------------
 
 async function signInWithGoogle() {
+    window.isSigningUp = true; // Empêcher onAuthStateChanged d'interférer
     try {
         const result = await firebase.auth().signInWithPopup(googleProvider);
         const user = result.user;
         const doc = await firebase.firestore().collection('users').doc(user.uid).get();
         if (!doc.exists) {
+            // Créer le document utilisateur D'ABORD pour satisfaire les règles Firebase
             await firebase.firestore().collection('users').doc(user.uid).set({
                 email: user.email,
                 displayName: user.displayName || '',
@@ -393,6 +395,22 @@ async function signInWithGoogle() {
                 role: 'anim',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
+
+            // Vérifier ensuite si l'inscription est autorisée
+            const globalDoc = await firebase.firestore().collection('globalSettings').doc('dashboard').get();
+            if (globalDoc.exists && globalDoc.data().allowSignup === false) {
+                // Inscription fermée : on annule tout
+                await firebase.firestore().collection('users').doc(user.uid).delete();
+                await user.delete(); // Supprimer le compte auth
+                await firebase.auth().signOut();
+                window.isSigningUp = false;
+                showToast("La création de compte est fermée par le directeur.", "error");
+                if (window.loginView) {
+                    window.loginView.classList.remove('hidden');
+                    window.dashboardView?.classList.add('hidden');
+                }
+                return;
+            }
         } else {
             // Uniquement si pas déjà de photo (ou si l'admin veut forcer la synchro)
             const currentData = doc.data();
@@ -402,7 +420,11 @@ async function signInWithGoogle() {
                 });
             }
         }
+        
+        // Si tout est ok (nouvelle inscription autorisée ou login existant), on recharge
+        window.location.reload();
     } catch (err) {
+        window.isSigningUp = false;
         if (err.code !== 'auth/popup-closed-by-user') {
             console.error('Google sign-in error:', err);
             showToast('Erreur Google : ' + err.message, 'error');

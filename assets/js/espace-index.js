@@ -10,6 +10,31 @@ const dashboardView = document.getElementById('dashboardView');
 const pageLoader = document.getElementById('pageLoader');
 
 // ----------------------------------------------------------------
+// GESTION DU BOUTON D'INSCRIPTION (Désactivable par l'admin)
+// ----------------------------------------------------------------
+db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
+    const enabledContent = document.getElementById('signupEnabledContent');
+    const disabledContent = document.getElementById('signupDisabledContent');
+    
+    if (enabledContent && disabledContent) {
+        // La création est désactivée si allowSignup === false
+        if (doc.exists && doc.data().allowSignup === false) {
+            enabledContent.classList.add('hidden');
+            disabledContent.classList.remove('hidden');
+        } else {
+            enabledContent.classList.remove('hidden');
+            disabledContent.classList.add('hidden');
+        }
+    }
+}, err => {
+    // Si Firebase bloque la lecture pour les non-connectés, on ignore l'erreur
+    // car la sécurité est quand même assurée lors de la tentative d'inscription.
+    if (err.code !== 'permission-denied') {
+        console.error("Erreur lecture settings signup:", err);
+    }
+});
+
+// ----------------------------------------------------------------
 // ONGLETS LOGIN / INSCRIPTION
 // ----------------------------------------------------------------
 document.getElementById('tabLogin')?.addEventListener('click', () => {
@@ -88,11 +113,15 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
     errorEl.classList.add('hidden');
     btnLoading(btn, true);
 
+    window.isSigningUp = true; // Empêcher onAuthStateChanged de couper le processus
+
     try {
         const cred = await auth.createUserWithEmailAndPassword(
             document.getElementById('emailSignup').value.trim(),
             document.getElementById('passwordSignup').value
         );
+        
+        // Créer le document utilisateur D'ABORD pour satisfaire les règles Firebase
         await db.collection('users').doc(cred.user.uid).set({
             email: cred.user.email,
             firstName: firstName,
@@ -101,9 +130,25 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
             role: 'anim',
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+
+        // Sécurité supplémentaire : vérifier l'autorisation
+        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+        if (globalDoc.exists && globalDoc.data().allowSignup === false) {
+            await db.collection('users').doc(cred.user.uid).delete();
+            await cred.user.delete();
+            await auth.signOut();
+            throw new Error("signup_disabled");
+        }
+        // Si tout est ok, on recharge la page pour charger le dashboard proprement
+        window.location.reload();
     } catch (err) {
+        window.isSigningUp = false;
         btnLoading(btn, false);
-        msgEl.textContent = authErrorMessage(err.code);
+        if (err.message === "signup_disabled") {
+            msgEl.textContent = "La création de compte est actuellement fermée par le directeur.";
+        } else {
+            msgEl.textContent = authErrorMessage(err.code);
+        }
         errorEl.classList.remove('hidden');
     }
 });
@@ -116,6 +161,8 @@ document.getElementById('btnGoogleSignup')?.addEventListener('click', signInWith
 // ÉTAT AUTHENTIFICATION
 // ----------------------------------------------------------------
 auth.onAuthStateChanged(async (user) => {
+    if (window.isSigningUp) return; // Ignorer pendant la création de compte manuelle ou Google
+
     if (pageLoader) pageLoader.classList.add('hidden');
 
     if (!user) {

@@ -96,6 +96,7 @@
 
             <!-- Formulaire Inscription -->
             <div id="signupForm" class="hidden" role="tabpanel">
+                <div id="signupEnabledContent">
                 <form id="signupFormEl" novalidate>
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
                         <div class="es-field">
@@ -156,6 +157,15 @@
                 <div class="es-alert es-alert--dark-error hidden mt-3" id="signupError" role="alert">
                     <i class="bi bi-exclamation-circle"></i>
                     <span id="signupErrorMsg"></span>
+                </div>
+                </div>
+
+                <div id="signupDisabledContent" class="hidden" style="text-align:center; padding: 30px 0;">
+                    <div style="font-size:3rem; margin-bottom:12px;">🔒</div>
+                    <h3 style="color:#ffffff; margin-bottom:8px; font-weight:700;">Inscription fermée</h3>
+                    <p style="color:rgba(255,255,255,0.7); font-size:0.9rem; line-height:1.5;">
+                        La création de compte n'est pas disponible.
+                    </p>
                 </div>
             </div>
 
