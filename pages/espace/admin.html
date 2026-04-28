@@ -205,84 +205,102 @@
             <!-- ===================================================
                  ONGLET CONFIGURATION
                  =================================================== -->
+            <!-- ===================================================
+                 ONGLET CONFIGURATION
+                 =================================================== -->
             <div id="tab-config" class="hidden">
-                <div class="es-card" style="max-width: 600px; margin: 0 auto 20px auto; padding: 24px; border-top: 4px solid var(--clr-primary);">
-                    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                        <i class="bi bi-person-plus" style="color: var(--clr-primary);"></i> Inscription des animateurs
-                    </h2>
+                <div class="es-card">
                     
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <div style="font-weight:600;">Autoriser la création de compte</div>
-                            <div style="font-size:0.8rem; color:var(--clr-text-muted);">Si désactivé, le bouton d'inscription affichera un message d'attente à l'écran de connexion.</div>
-                        </div>
-                        <label class="es-switch">
-                            <input type="checkbox" id="checkAllowSignup" checked>
-                            <span class="es-slider"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="es-card" style="max-width: 600px; margin: 0 auto; padding: 24px;">
-                    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                        <i class="bi bi-robot" style="color: var(--clr-primary);"></i> Intelligence Artificielle (Gemini)
-                    </h2>
-                    
-                    <div class="es-field">
-                        <label class="es-field__label" for="adminGeminiKey">Ma Clé API Google Gemini</label>
-                        <div style="display:flex; gap:8px;">
-                            <div style="position:relative; flex:1;">
-                                <input type="password" class="es-input" id="adminGeminiKey" placeholder="AIzaSy..." style="padding-right: 40px; width:100%;">
-                                <button type="button" id="btnToggleAdminKeyVisibility" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--clr-text-muted); cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; z-index:2;">
-                                    <i class="bi bi-eye"></i>
-                                </button>
+                    <!-- Section 1 : Inscription -->
+                    <div style="margin-bottom: 32px;">
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--clr-text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-person-plus" style="color: var(--clr-primary);"></i> Gestion des accès
+                        </h3>
+                        
+                        <div style="background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                            <div>
+                                <div style="font-weight: 600; color: var(--clr-text); font-size: 0.95rem;">Création de compte animateur</div>
+                                <div style="font-size: 0.82rem; color: var(--clr-text-muted); margin-top: 4px; line-height: 1.4;">Si désactivé, l'inscription est totalement bloquée à l'écran de connexion.</div>
                             </div>
-                            <button type="button" id="btnSaveAdminKey" class="es-btn es-btn--primary" style="padding: 0 16px;">
-                                <i class="bi bi-check2"></i> Enregistrer
-                            </button>
+                            <label class="switch" style="flex-shrink: 0; margin-left: 16px;">
+                                <input type="checkbox" id="checkAllowSignup" checked>
+                                <span class="slider"></span>
+                            </label>
                         </div>
-                        <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:8px;">
-                            <i class="bi bi-info-circle"></i> Cette clé est personnelle et sera utilisée pour l'assistant IA sur tous vos espaces de session.
-                        </p>
                     </div>
 
-                    <details style="margin-top: 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0;">
-                        <summary style="padding: 12px 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--clr-primary); list-style: none; display: flex; align-items: center; gap: 8px;">
-                            <i class="bi bi-question-circle"></i> Comment obtenir cette clé gratuitement ?
-                            <i class="bi bi-chevron-down" style="margin-left: auto; font-size: 0.7rem;"></i>
-                        </summary>
-                        <div style="padding: 0 16px 16px; font-size: 0.8rem; color: var(--clr-text-muted); line-height: 1.6;">
-                            <ol style="padding-left: 20px; margin: 10px 0;">
-                                <li>Rendez-vous sur <a href="https://aistudio.google.com/" target="_blank" style="color:var(--clr-primary); text-decoration:underline;">Google AI Studio</a>.</li>
-                                <li>Connectez-vous avec votre compte Google (Gmail).</li>
-                                <li>Cliquez sur <strong>"Get API key"</strong> dans le menu à gauche.</li>
-                                <li>Cliquez sur le bouton bleu <strong>"Create API key"</strong>.</li>
-                                <li>Copiez le code (il commence par <code>AIzaSy...</code>) et collez-la ici.</li>
-                            </ol>
-                            <p style="font-style: italic; font-size: 0.75rem;">
-                                Note : L'utilisation est gratuite et sécurisée. Ne partagez jamais cette clé avec des personnes de confiance.
+                    <div style="height: 1px; background: var(--clr-surface-3); margin: 32px 0;"></div>
+
+                    <!-- Section 2 : Gemini -->
+                    <div style="margin-bottom: 32px;">
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--clr-text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-robot" style="color: var(--clr-primary);"></i> Assistant IA (Gemini)
+                        </h3>
+                        
+                        <div style="background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                            <div class="es-field" style="margin-bottom: 0;">
+                                <label class="es-field__label" for="adminGeminiKey">Ma Clé d'API Google Gemini</label>
+                                <div style="display:flex; gap:8px;">
+                                    <div style="position:relative; flex:1;">
+                                        <input type="password" class="es-input" id="adminGeminiKey" placeholder="AIzaSy..." style="padding-right: 40px; width:100%; background: var(--clr-surface);">
+                                        <button type="button" id="btnToggleAdminKeyVisibility" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--clr-text-muted); cursor:pointer; padding:5px; display:flex; align-items:center; justify-content:center; z-index:2;" title="Afficher/Masquer">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                    <button type="button" id="btnSaveAdminKey" class="es-btn es-btn--primary" style="padding: 0 16px; box-shadow: var(--shadow-sm);">
+                                        <i class="bi bi-check2"></i> <span class="brand-label">Enregistrer</span>
+                                    </button>
+                                </div>
+                                <p style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:10px; line-height: 1.4;">
+                                    <i class="bi bi-info-circle"></i> Clé personnelle requise pour l'assistant intelligent dans vos espaces.
+                                </p>
+                            </div>
+
+                            <details style="margin-top: 16px; background: var(--clr-surface); border: 1px solid var(--clr-surface-3); border-radius: 6px; padding: 0; box-shadow: var(--shadow-sm);">
+                                <summary style="padding: 10px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; color: var(--clr-primary); list-style: none; display: flex; align-items: center; gap: 8px; user-select: none;">
+                                    <i class="bi bi-question-circle"></i> Comment obtenir cette clé gratuitement ?
+                                    <i class="bi bi-chevron-down" style="margin-left: auto; font-size: 0.7rem;"></i>
+                                </summary>
+                                <div style="padding: 0 16px 16px; font-size: 0.8rem; color: var(--clr-text-muted); line-height: 1.6;">
+                                    <ol style="padding-left: 20px; margin: 10px 0;">
+                                        <li>Rendez-vous sur <a href="https://aistudio.google.com/" target="_blank" style="color:var(--clr-primary); text-decoration:underline;">Google AI Studio</a>.</li>
+                                        <li>Connectez-vous avec votre compte Google (Gmail).</li>
+                                        <li>Cliquez sur <strong>"Get API key"</strong> dans le menu à gauche.</li>
+                                        <li>Cliquez sur le bouton bleu <strong>"Create API key"</strong>.</li>
+                                        <li>Copiez le code (il commence par <code>AIzaSy...</code>) et collez-la ici.</li>
+                                    </ol>
+                                    <p style="font-style: italic; font-size: 0.75rem; margin-top: 8px;">
+                                        Note : Ne partagez jamais cette clé avec des personnes non autorisées.
+                                    </p>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+
+                    <div style="height: 1px; background: var(--clr-surface-3); margin: 32px 0;"></div>
+
+                    <!-- Section 3 : Maintenance -->
+                    <div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--clr-text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-tools" style="color: var(--clr-warning);"></i> Maintenance
+                        </h3>
+                        
+                        <div style="background: rgba(243, 156, 18, 0.05); border: 1px solid rgba(243, 156, 18, 0.2); border-radius: var(--radius-md); padding: 20px;">
+                            <p style="font-size: 0.85rem; color: var(--clr-text); margin-bottom: 15px; line-height: 1.5;">
+                                Si les compteurs de participants sur le tableau de bord semblent incorrects, vous pouvez lancer une resynchronisation globale.
+                            </p>
+
+                            <button type="button" id="btnResyncCounters" class="es-btn" style="background: rgba(243,156,18,0.15); color: var(--clr-warning); border: 1px solid rgba(243,156,18,0.3); justify-content: center; box-shadow: none;">
+                                <i class="bi bi-arrow-repeat"></i> Recalculer les compteurs
+                                <span class="es-btn__spinner"></span>
+                            </button>
+                            
+                            <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:12px; line-height: 1.4;">
+                                <i class="bi bi-exclamation-triangle"></i> Action à faire uniquement si vous constatez une anomalie d'affichage.
                             </p>
                         </div>
-                    </details>
-                </div>
-                <!-- Section Maintenance -->
-                <div class="es-card" style="max-width: 600px; margin: 20px auto 0; padding: 24px; border-top: 4px solid var(--clr-warning);">
-                    <h2 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                        <i class="bi bi-tools" style="color: var(--clr-warning);"></i> Maintenance & Optimisation
-                    </h2>
-                    
-                    <p style="font-size: 0.85rem; color: var(--clr-text-muted); margin-bottom: 15px;">
-                        Si les compteurs de participants sur le tableau de bord semblent incorrects, vous pouvez les recalculer globalement.
-                    </p>
+                    </div>
 
-                    <button type="button" id="btnResyncCounters" class="es-btn" style="background: rgba(241,196,15,0.15); color: #f1c40f; border: 1px solid rgba(241,196,15,0.3); width: 100%; justify-content: center;">
-                        <i class="bi bi-arrow-repeat"></i> Recalculer tous les compteurs de participants
-                        <span class="es-btn__spinner"></span>
-                    </button>
-                    
-                    <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:12px;">
-                        <i class="bi bi-info-circle"></i> Cette action scanne toutes les colonies pour mettre à jour les statistiques stockées. À faire une seule fois après la mise à jour.
-                    </p>
                 </div>
             </div>
 

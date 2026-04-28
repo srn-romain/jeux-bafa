@@ -442,7 +442,7 @@ function authErrorMessage(code) {
         'auth/weak-password': 'Mot de passe trop faible (6 caractères minimum).',
         'auth/invalid-credential': 'Identifiants incorrects.',
     };
-    return map[code] || 'Une erreur est survenue.';
+    return map[code] || 'Identifiant ou mot de passe incorrect.';
 }
 
 // ----------------------------------------------------------------
