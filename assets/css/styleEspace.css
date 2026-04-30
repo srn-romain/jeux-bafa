@@ -3030,10 +3030,12 @@ body.modal-open .es-topbar {
 /* Sur mobile : groupes en pleine largeur, boutons qui s'étirent */
 .es-bulk-btngroup {
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .es-bulk-btngroup .es-bulk-btn {
-  flex: 1;
+  flex: 1 1 calc(33.333% - 4px);
+  min-width: 70px;
 }
 
 /* Desktop (≥600px) : labels longs, layout horizontal, séparateur visible */
@@ -3057,6 +3059,7 @@ body.modal-open .es-topbar {
   .es-bulk-btngroup {
     width: auto;
     /* annuler le width:100% du mobile */
+    flex-wrap: nowrap;
   }
 
   .es-bulk-bar__sep {
