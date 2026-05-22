@@ -552,6 +552,24 @@ p:not(.no-p-style) {
   gap: 20px;
 }
 
+@media (min-width: 601px) {
+  .age-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+
+  .age-grid > div {
+    grid-column: span 2;
+  }
+
+  .age-grid > div:nth-child(4) {
+    grid-column: 2 / span 2;
+  }
+
+  .age-grid > div:nth-child(5) {
+    grid-column: 4 / span 2;
+  }
+}
+
 @media (max-width: 600px) {
   .age-grid, .grid-2col {
     grid-template-columns: 1fr;
