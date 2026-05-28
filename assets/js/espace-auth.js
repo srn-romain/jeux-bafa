@@ -19,9 +19,37 @@ function showToast(msg, type = 'default', duration = 3500) {
     const t = document.createElement('div');
     t.className = `es-toast es-toast--${type}`;
     const icons = { success: 'check-circle', error: 'exclamation-circle', warning: 'exclamation-triangle', default: 'info-circle' };
-    t.innerHTML = `<i class="bi bi-${icons[type] || 'info-circle'}"></i><span>${msg}</span>`;
+    
+    const isInfinite = duration === Infinity || duration === 0;
+
+    t.innerHTML = `
+        <i class="bi bi-${icons[type] || 'info-circle'}" style="flex-shrink: 0;"></i>
+        <span style="flex: 1; min-width: 0;">${msg}</span>
+        ${isInfinite ? `<i class="bi bi-x es-toast-close-btn" style="cursor: pointer; font-size: 1.2rem; opacity: 0.7; margin-left: 8px; transition: opacity var(--transition); flex-shrink: 0;"></i>` : ''}
+    `;
+    
+    if (isInfinite) {
+        const closeBtn = t.querySelector('.es-toast-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                t.style.opacity = '0';
+                t.style.transition = 'opacity .3s';
+                setTimeout(() => t.remove(), 300);
+            });
+            closeBtn.addEventListener('mouseover', () => { closeBtn.style.opacity = '1'; });
+            closeBtn.addEventListener('mouseout', () => { closeBtn.style.opacity = '0.7'; });
+        }
+    }
+
     container.appendChild(t);
-    setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity .3s'; setTimeout(() => t.remove(), 300); }, duration);
+    
+    if (!isInfinite) {
+        setTimeout(() => { 
+            t.style.opacity = '0'; 
+            t.style.transition = 'opacity .3s'; 
+            setTimeout(() => t.remove(), 300); 
+        }, duration);
+    }
 }
 
 function btnLoading(btn, on) {

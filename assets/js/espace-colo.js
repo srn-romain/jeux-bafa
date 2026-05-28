@@ -2014,9 +2014,28 @@ async function handleImportJSONColo(file) {
             const colRef = db.collection('espaces').doc(espaceId).collection('participants');
             let added = 0;
             let errors = 0;
+            let errorDetails = [];
 
-            for (const p of list) {
-                if (p.prenom && p.nom && p.age) {
+            for (let i = 0; i < list.length; i++) {
+                const p = list[i];
+                let missingFields = [];
+                if (!p.prenom || !p.prenom.trim()) missingFields.push("prénom");
+                if (!p.nom || !p.nom.trim()) missingFields.push("nom");
+                if (p.age === undefined || p.age === null || p.age === "") {
+                    missingFields.push("âge");
+                } else if (isNaN(parseInt(p.age)) || parseInt(p.age) <= 0) {
+                    missingFields.push("âge invalide");
+                }
+
+                if (missingFields.length > 0) {
+                    errors++;
+                    const rowName = [p.prenom, p.nom].filter(Boolean).join(' ').trim();
+                    const displayName = rowName ? `"${rowName}"` : "Sans nom";
+                    errorDetails.push(`Ligne ${i + 1} (${displayName}) : ${missingFields.join(', ')} manquant(s) ou invalide(s)`);
+                    continue;
+                }
+
+                try {
                     await colRef.add({
                         prenom: p.prenom.trim(),
                         nom: p.nom.trim(),
@@ -2029,8 +2048,12 @@ async function handleImportJSONColo(file) {
                         createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                     added++;
-                } else {
+                } catch (dbErr) {
+                    console.error("Erreur d'ajout en base :", dbErr);
                     errors++;
+                    const rowName = [p.prenom, p.nom].filter(Boolean).join(' ').trim();
+                    const displayName = rowName ? `"${rowName}"` : "Sans nom";
+                    errorDetails.push(`Ligne ${i + 1} (${displayName}) : erreur d'écriture (${dbErr.message || dbErr})`);
                 }
             }
 
@@ -2040,11 +2063,36 @@ async function handleImportJSONColo(file) {
                 });
             }
 
-            showToast(`${added} importés ! ${errors > 0 ? `(${errors} erreurs)` : ''}`, added > 0 ? 'success' : 'error');
+            let toastMsg = `${added} importé${added > 1 ? 's' : ''} !`;
+            if (errors > 0) {
+                toastMsg += ` (${errors} erreur${errors > 1 ? 's' : ''})`;
+                const visibleErrors = errorDetails.slice(0, 5);
+                toastMsg += `<div style="font-size: 0.75rem; margin-top: 6px; border-top: 1px solid rgba(255,255,255,0.25); padding-top: 4px; text-align: left; max-height: 120px; overflow-y: auto;">`;
+                visibleErrors.forEach(err => {
+                    toastMsg += `<div style="margin-bottom: 2px;">• ${escapeHtml(err)}</div>`;
+                });
+                if (errorDetails.length > 5) {
+                    toastMsg += `<div style="font-style: italic; opacity: 0.8; margin-top: 2px;">... et ${errorDetails.length - 5} autre(s) erreur(s)</div>`;
+                }
+                toastMsg += `</div>`;
+            }
+
+            const toastType = added > 0 ? (errors > 0 ? 'warning' : 'success') : 'error';
+            const toastDuration = errors > 0 ? Infinity : 3500;
+            showToast(toastMsg, toastType, toastDuration);
+
             loadParticipants(espaceId, currentRole);
         } catch (err) {
             console.error('import error:', err);
-            showToast("Fichier JSON invalide ou corrompu.", 'error');
+            let userMsg = "Une erreur est survenue lors de l'import.";
+            if (err instanceof SyntaxError) {
+                userMsg = "Le fichier JSON est mal formé ou corrompu (erreur de syntaxe).";
+            } else if (err.message === "Format invalide") {
+                userMsg = "Format invalide : le fichier JSON doit être un tableau ou un objet contenant une liste 'participants'.";
+            } else if (err.message) {
+                userMsg = `Erreur d'import : ${err.message}`;
+            }
+            showToast(userMsg, 'error', Infinity);
         } finally {
             document.getElementById('inputImportParticipantsColo').value = '';
         }
