@@ -277,6 +277,131 @@
                         </div>
                     </div>
 
+                    <div style="height: 1px; background: var(--clr-surface-3); margin: 32px 0;"></div>
+
+                    <!-- Section 3 : Droits et Fonctionnalités -->
+                    <div>
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--clr-text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-shield-check" style="color: var(--clr-primary);"></i> Matrice des droits & fonctionnalités
+                        </h3>
+                        
+                        <div style="background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                            <p style="font-size: 0.82rem; color: var(--clr-text-muted); margin-bottom: 16px; line-height: 1.4;">
+                                Récapitulatif des habilitations et actions autorisées pour chaque rôle de l'application. Les droits d'un animateur dépendent également du verrouillage global activé par le directeur sur chaque espace.
+                            </p>
+                            
+                            <div class="es-table-wrap" style="background: var(--clr-surface); border: 1px solid var(--clr-surface-3);">
+                                <table class="es-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Fonctionnalité</th>
+                                            <th style="text-align: center; width: 110px;">Directeur<br><span style="font-size: 0.65rem; opacity: 0.6;">(Admin)</span></th>
+                                            <th style="text-align: center; width: 110px;">Anim-Admin<br><span style="font-size: 0.65rem; opacity: 0.6;">(Habilité)</span></th>
+                                            <th style="text-align: center; width: 110px;">Animateur<br><span style="font-size: 0.65rem; opacity: 0.6;">(Standard)</span></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Créer, modifier et supprimer des colonies</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Gérer les utilisateurs et attribuer les rôles globaux</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Valider et révoquer les demandes d'accès aux colos</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Verrouiller la liste des participants pour la session</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Configurer les options globales (Inscription, Clé API Gemini)</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Activer/Désactiver l'assistant IA d'un espace</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Réinitialiser entièrement la liste des participants</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Gérer les noms des groupes thématiques</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Importer et exporter la liste des participants (JSON)</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Gérer le lieu de la colonie pour les prévisions météo</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-dash" style="color: var(--clr-text-muted); opacity: 0.5;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Ajouter, modifier ou supprimer un participant</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;" title="Uniquement si la gestion n'est pas verrouillée par le directeur."></i><span style="font-size:0.75rem; color:#f39c12; margin-left:4px;">*</span></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;" title="Uniquement si la gestion n'est pas verrouillée par le directeur."></i><span style="font-size:0.75rem; color:#f39c12; margin-left:4px;">*</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Générer des groupes aléatoires / par genre / par âge</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Créer des alertes personnalisées pour l'équipe (médicaments, etc.)</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Générer des idées d'activités avec l'IA</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;" title="Uniquement si l'IA est activée pour l'espace."></i><span style="font-size:0.75rem; color:#f39c12; margin-left:4px;">**</span></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;" title="Uniquement si l'IA est activée pour l'espace."></i><span style="font-size:0.75rem; color:#f39c12; margin-left:4px;">**</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Consulter et téléverser des photos de la bibliothèque</strong></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                            <td style="text-align: center;"><i class="bi bi-check-circle-fill" style="color: #2ecc71; font-size: 1.1rem;"></i></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div style="margin-top: 14px; font-size: 0.76rem; color: var(--clr-text-muted); line-height: 1.5; display: flex; flex-direction: column; gap: 4px;">
+                                <span><span style="color:#f39c12; font-weight:700;">*</span> Soumis au verrouillage de la gestion des participants par le directeur.</span>
+                                <span><span style="color:#f39c12; font-weight:700;">**</span> Soumis à l'activation de l'IA par le directeur sur l'espace concerné.</span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
