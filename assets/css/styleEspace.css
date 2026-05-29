@@ -1243,6 +1243,9 @@ input:checked + .slider:before {
   position: relative;
   min-height: 220px;
   color: #ffffff;
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
 }
 
 .es-colo-card:hover {
