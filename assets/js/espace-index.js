@@ -417,6 +417,19 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         
     const emojiStyle = colo.bgImage ? `style="background: transparent; box-shadow: none;"` : '';
 
+    let nbJoursStr = '';
+    if (colo.dateDebut && colo.dateFin) {
+        const start = new Date(colo.dateDebut);
+        const end = new Date(colo.dateFin);
+        start.setHours(12, 0, 0, 0);
+        end.setHours(12, 0, 0, 0);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        nbJoursStr = `<div class="es-colo-card__stat" title="Durée du séjour"><i class="bi bi-calendar3"></i> ${diffDays} jour${diffDays !== 1 ? 's' : ''}</div>`;
+    } else {
+        nbJoursStr = `<div class="es-colo-card__stat" title="Durée du séjour"><i class="bi bi-calendar3"></i> -- jours</div>`;
+    }
+
     card.innerHTML = `
         <div class="es-colo-card__header" ${headerStyle}>
             <div class="es-colo-card__emoji" ${emojiStyle}>${emoji}</div>
@@ -456,11 +469,11 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         <div class="es-colo-card__body">
             <div class="es-colo-card__desc">${colo.organisme || colo.description || 'Organisme non défini.'}</div>
             <div class="es-colo-card__stats ${!showStats ? 'es-stats--hidden' : ''}">
-                <div class="es-colo-card__stat">
+                <div class="es-colo-card__stat" title="Nombre de participants">
                     <i class="bi bi-people"></i> 
                     ${nbParticipants} ${colo.isFormation ? 'stagiaire' : 'jeune'}${nbParticipants !== 1 ? 's' : ''}
                 </div>
-                <div class="es-colo-card__stat"><i class="bi bi-person-badge"></i> ${nbAnims} anim${nbAnims !== 1 ? 's' : ''}</div>
+                ${nbJoursStr}
             </div>
         </div>
         <div class="es-colo-card__footer">
