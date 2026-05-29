@@ -657,7 +657,7 @@ document.getElementById('btnCancelColoFormIndex')?.addEventListener('click', () 
 function openColoFormIndex(colo = null) {
     document.getElementById('coloIndexId').value = colo?.id || '';
     document.getElementById('coloIndexNom').value = colo?.nom || '';
-    document.getElementById('coloIndexOrganisme').value = colo?.organisme || colo?.description || '';
+    document.getElementById('coloIndexOrganisme').value = colo?.organisme || '';
     document.getElementById('coloIndexDateDebut').value = colo?.dateDebut || '';
     document.getElementById('coloIndexDateFin').value = colo?.dateFin || '';
     document.getElementById('coloIndexDriveId').value = colo?.driveId || '';
@@ -784,6 +784,7 @@ document.getElementById('btnSaveColoFormIndex')?.addEventListener('click', async
         isFormation: document.getElementById('coloIndexIsFormation')?.checked || false,
         bgImage: document.getElementById('coloIndexBgBase64')?.value || '',
         emoji: document.getElementById('coloIndexEmoji')?.value.trim() || '🏕️',
+        description: firebase.firestore.FieldValue.delete(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 

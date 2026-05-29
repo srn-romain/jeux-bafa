@@ -258,7 +258,7 @@ function buildColoAdminCard(colo) {
         </div>
         <div class="es-colo-admin-card__body" style="font-size:0.87rem; display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
             <div style="flex:1;">
-                ${(colo.organisme || colo.description) ? (colo.organisme || colo.description) : '<span style="opacity:0.5;font-style:italic;">Organisme non défini.</span>'}
+                ${colo.organisme ? colo.organisme : '<span style="opacity:0.5;font-style:italic;">Organisme non défini.</span>'}
             </div>
             <div class="es-colo-admin-card__actions" style="display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; flex-wrap: wrap; flex-shrink: 0; z-index: 10;">
                 <button class="es-card-action-btn"
@@ -362,7 +362,7 @@ document.getElementById('btnNewColo')?.addEventListener('click', () => openColoF
 function openColoForm(colo = null) {
     document.getElementById('coloId').value = colo?.id || '';
     document.getElementById('coloNom').value = colo?.nom || '';
-    document.getElementById('coloOrganisme').value = colo?.organisme || colo?.description || '';
+    document.getElementById('coloOrganisme').value = colo?.organisme || '';
     document.getElementById('coloDateDebut').value = colo?.dateDebut || '';
     document.getElementById('coloDateFin').value = colo?.dateFin || '';
     document.getElementById('coloDriveId').value = colo?.driveId || '';
@@ -506,6 +506,7 @@ document.getElementById('btnSaveColoForm')?.addEventListener('click', async () =
         isFormation: document.getElementById('coloIsFormation')?.checked || false,
         bgImage: document.getElementById('coloBgBase64')?.value || '',
         emoji: document.getElementById('coloEmoji')?.value.trim() || '🏕️',
+        description: firebase.firestore.FieldValue.delete(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -1142,34 +1143,32 @@ async function migrateOldAccessRequests() {
 
 // Lancement automatique à l'ouverture de la page admin (ou une seule fois)
 setTimeout(migrateOldAccessRequests, 2000);
-// ----------------------------------------------------------------
-// MAINTENANCE : RECALCULER LES COMPTEURS
-// ----------------------------------------------------------------
-document.getElementById('btnResyncCounters')?.addEventListener('click', async () => {
-    if (!confirm("Voulez-vous recalculer le nombre de participants pour TOUTES les colonies ? (Cela peut prendre quelques secondes)")) return;
-    
-    const btn = document.getElementById('btnResyncCounters');
-    btnLoading(btn, true);
 
+async function migrateDescriptionToOrganisme() {
     try {
-        const colosSnap = await db.collection('espaces').get();
-        let updatedCount = 0;
+        const snap = await db.collection('espaces').get();
+        if (snap.empty) return;
 
-        for (const coloDoc of colosSnap.docs) {
-            const participantsSnap = await db.collection('espaces').doc(coloDoc.id).collection('participants').get();
-            const count = participantsSnap.size;
-            
-            await db.collection('espaces').doc(coloDoc.id).update({
-                nbParticipants: count
-            });
-            updatedCount++;
+        let migratedCount = 0;
+        for (const doc of snap.docs) {
+            const data = doc.data();
+            if ('description' in data) {
+                const org = data.organisme || data.description || '';
+                await db.collection('espaces').doc(doc.id).update({
+                    organisme: org,
+                    description: firebase.firestore.FieldValue.delete()
+                });
+                migratedCount++;
+            }
         }
 
-        showToast(`Succès : ${updatedCount} colonies mises à jour.`, "success");
-    } catch (err) {
-        console.error("Resync counters error:", err);
-        showToast("Erreur lors du recalcul.", "error");
-    } finally {
-        btnLoading(btn, false);
+        if (migratedCount > 0) {
+            console.log(`Migrated ${migratedCount} spaces to remove description and use organisme.`);
+        }
+    } catch (e) {
+        console.error("Migration description to organisme error: ", e);
     }
-});
+}
+
+setTimeout(migrateDescriptionToOrganisme, 3000);
+
