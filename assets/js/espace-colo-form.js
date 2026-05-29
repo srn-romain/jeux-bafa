@@ -91,10 +91,6 @@ const ColoFormManager = {
                 <div class="es-alert es-alert--error hidden mt-3" id="coloFormError">
                     <i class="bi bi-exclamation-circle"></i><span id="coloFormErrorMsg"></span>
                 </div>
-                <div id="coloDateInfo" class="hidden" style="margin-top:20px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); font-size:0.75rem; color:var(--clr-text-light); display:flex; flex-direction:column; gap:4px; opacity:0.6;">
-                    <div id="coloCreatedAtInfo"></div>
-                    <div id="coloUpdatedAtInfo"></div>
-                </div>
             </div>
             <div class="es-modal__footer">
                 <button class="es-btn es-btn--ghost" id="btnCancelColoForm">Annuler</button>
@@ -214,9 +210,6 @@ const ColoFormManager = {
             emojiSelector: document.getElementById('coloEmojiSelector'),
             errorWrap: document.getElementById('coloFormError'),
             errorMsg: document.getElementById('coloFormErrorMsg'),
-            dateInfo: document.getElementById('coloDateInfo'),
-            createdAtInfo: document.getElementById('coloCreatedAtInfo'),
-            updatedAtInfo: document.getElementById('coloUpdatedAtInfo'),
             overlay: document.getElementById('overlayColoForm')
         };
     },
@@ -350,15 +343,6 @@ const ColoFormManager = {
             els.emojiSelector.innerHTML = this.AVAILABLE_EMOJIS.map(item =>
                 `<button type="button" title="${item.desc}" class="${item.emoji === currentEmoji ? 'selected' : ''}" onclick="ColoFormManager.selectEmoji('${item.emoji}', this)">${item.emoji}</button>`
             ).join('');
-        }
-
-        // Affichage des dates
-        if (colo && (colo.createdAt || colo.updatedAt)) {
-            els.dateInfo?.classList.remove('hidden');
-            if (els.createdAtInfo) els.createdAtInfo.innerHTML = colo.createdAt ? `<i class="bi bi-plus-circle"></i> Créé le ${formatFullDate(colo.createdAt)}` : '';
-            if (els.updatedAtInfo) els.updatedAtInfo.innerHTML = colo.updatedAt ? `<i class="bi bi-pencil-square"></i> Modifié le ${formatFullDate(colo.updatedAt)}` : '';
-        } else {
-            els.dateInfo?.classList.add('hidden');
         }
 
         const formTitle = document.getElementById('coloFormTitle');

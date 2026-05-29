@@ -257,8 +257,14 @@ function buildColoAdminCard(colo) {
             </div>
         </div>
         <div class="es-colo-admin-card__body" style="font-size:0.87rem; display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
-            <div style="flex:1;">
-                ${colo.organisme ? colo.organisme : '<span style="opacity:0.5;font-style:italic;">Organisme non défini.</span>'}
+            <div style="flex:1; display:flex; flex-direction:column; gap:6px;">
+                <div style="font-weight:600;">
+                    ${colo.organisme ? colo.organisme : '<span style="opacity:0.5;font-style:italic;">Organisme non défini.</span>'}
+                </div>
+                <div style="font-size:0.72rem; color:rgba(255,255,255,0.45); display:flex; flex-wrap:wrap; gap:10px; align-items:center; text-shadow:none;">
+                    ${colo.createdAt ? `<span><i class="bi bi-plus-circle"></i> Créé le ${formatFullDate(colo.createdAt)}</span>` : ''}
+                    ${colo.updatedAt ? `<span><i class="bi bi-pencil-square"></i> Modifié le ${formatFullDate(colo.updatedAt)}</span>` : ''}
+                </div>
             </div>
             <div class="es-colo-admin-card__actions" style="display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; flex-wrap: wrap; flex-shrink: 0; z-index: 10;">
                 <button class="es-card-action-btn"
