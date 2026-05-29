@@ -1861,10 +1861,15 @@ async function _callGemini(apiKey, prompt) {
 }
 
 // ----------------------------------------------------------------
-// CONFIGURATION IA SESSION (Directeur)
+// CONFIGURATION IA SESSION (Directeur & Anim-Admin)
 // ----------------------------------------------------------------
 document.getElementById('toggleIASwitch')?.addEventListener('change', async (e) => {
     const enabled = e.target.checked;
+    if (currentRole !== 'admin' && !isAnimAdmin) {
+        showToast("Tu n'as pas le rôle requis pour modifier cette configuration.", "error");
+        e.target.checked = !enabled;
+        return;
+    }
     try {
         await db.collection('espaces').doc(espaceId).update({
             allowAnimAI: enabled
