@@ -177,8 +177,6 @@
       --bg: #145a32;
     }
 
-    /* Vert Sapin */
-
     /* =====================================================
        BOUTON ESPACE ANIMATEUR — discret, dans le panneau
        ===================================================== */
@@ -230,6 +228,39 @@
     .home-footer-note a {
       color: #c2783f;
       text-decoration: underline;
+    }
+
+    /* =====================================================
+       BOUTON RECAP BAFA/BAFD
+       ===================================================== */
+    .recap-btn-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 10px 20px 0;
+      margin-top: 14px;
+    }
+
+    .recap-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 24px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f39c12, #d68910);
+      color: #ffffff;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(243, 156, 18, 0.25);
+      transition: transform 0.2s, box-shadow 0.2s, filter 0.15s;
+    }
+
+    .recap-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(243, 156, 18, 0.35);
+      color: #ffffff;
+      text-decoration: none;
+      filter: brightness(1.05);
     }
 
     /* =====================================================
@@ -353,11 +384,10 @@
 
     </main>
 
-    <!-- Bouton espace animateur — discret -->
-    <test class="espace-anim-wrap">
-      <a href="pages/espace/index.html" class="espace-anim-btn">
-        <i class="bi bi-lock"></i>
-        Espace Animateur Privée
+    <!-- Bouton RECAP BAFA/BAFD -->
+    <test class="recap-btn-wrap">
+      <a href="https://macollectiondebafa.web.app/index.html" target="_blank" class="recap-btn">
+        <i class="bi bi-controller"></i> Découvrir le RECAP BAFA/BAFD
       </a>
     </test>
 
@@ -375,11 +405,6 @@
     <p style="color: white; text-align: center"> &copy; Ressources BAFA/BAFD - By <a
         href="https://www.instagram.com/romain_colo/" target="_blank"
         style="color:#f39c12; font-weight:bold;">@romain_colo</a>
-    </p>
-    <p style="text-align: center; margin-top: 8px; margin-bottom: 4px;">
-      <a href="https://macollectiondebafa.web.app/index.html" target="_blank" class="other-site-link">
-        <i class="bi bi-controller"></i> Découvrir le RECAP BAFA/BAFD
-      </a>
     </p>
   </footer>
 
