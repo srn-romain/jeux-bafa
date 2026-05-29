@@ -117,6 +117,18 @@ auth.onAuthStateChanged(async (user) => {
     const role = userDoc.data().role;
     const userData = userDoc.data();
 
+    // Synchroniser les espaces épinglés (pinnedColos) avec Firestore
+    if (userData && userData.pinnedColos) {
+        localStorage.setItem('pinnedColos', JSON.stringify(userData.pinnedColos));
+    } else {
+        const localPinned = localStorage.getItem('pinnedColos');
+        if (localPinned) {
+            db.collection('users').doc(user.uid).update({
+                pinnedColos: JSON.parse(localPinned)
+            }).catch(err => console.error("Erreur init pinnedColos BDD:", err));
+        }
+    }
+
     // Mettre à jour lastLogin
     db.collection('users').doc(user.uid).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
 
@@ -506,6 +518,15 @@ function togglePinColo(event, coloId, currentId) {
     }
     
     localStorage.setItem('pinnedColos', JSON.stringify(pinnedIds));
+    
+    // Sauvegarder dans Firestore
+    if (currentUser) {
+        db.collection('users').doc(currentUser.uid).update({
+            pinnedColos: pinnedIds
+        }).catch(err => {
+            console.error("Erreur lors de la sauvegarde des espaces épinglés en BDD :", err);
+        });
+    }
     
     // Rafraîchir la liste sans recharger Firestore
     // On récupère la liste actuelle via les éléments DOM ou en gardant allColos global
