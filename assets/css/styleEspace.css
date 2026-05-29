@@ -559,7 +559,7 @@ textarea {
 
 .es-badge--anim {
   background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-dark));
-  color: var(--clr-bg-deep);
+  color: #ffffff;
 }
 
 .es-badge--pending {
@@ -626,7 +626,7 @@ textarea {
 
 .es-btn--primary {
   background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-dark));
-  color: var(--clr-bg-deep);
+  color: #ffffff;
   box-shadow: 0 3px 12px rgba(166, 216, 102, 0.3);
 }
 
@@ -1585,7 +1585,7 @@ input:checked+.es-slider:before {
   height: 28px;
   border-radius: 50%;
   background: var(--clr-primary);
-  color: var(--clr-bg-deep);
+  color: #ffffff;
   border: 2px solid var(--clr-surface);
   display: flex;
   align-items: center;

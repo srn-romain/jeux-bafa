@@ -424,7 +424,7 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         : colo.dateDebut ? `Début : ${formatDate(colo.dateDebut)}` : 'Dates à définir';
 
     const statusBadge = {
-        'admin': '<span class="es-badge es-badge--admin">Admin</span>',
+        'admin': '<span class="es-badge es-badge--approved"><i class="bi bi-check-circle"></i> Accès admin</span>',
         'approved': '<span class="es-badge es-badge--approved"><i class="bi bi-check-circle"></i> Accès accordé</span>',
         'pending': '<span class="es-badge es-badge--pending"><i class="bi bi-hourglass-split"></i> En attente</span>',
         'refused': '<span class="es-badge es-badge--refused"><i class="bi bi-x-circle"></i> Refusé</span>',
