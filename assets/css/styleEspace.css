@@ -1247,8 +1247,7 @@ input:checked + .slider:before {
 
 .es-colo-card:hover {
   transform: translateY(-4px);
-  box-shadow: var(--shadow-lg), 0 0 20px rgba(166, 216, 102, 0.15);
-  border-color: rgba(166, 216, 102, 0.35);
+  box-shadow: var(--shadow-lg);
 }
 
 .es-colo-card--locked {
@@ -1259,16 +1258,8 @@ input:checked + .slider:before {
   border-color: rgba(243, 156, 18, 0.6);
 }
 
-.es-colo-card--pending:hover {
-  border-color: rgba(243, 156, 18, 0.9);
-}
-
 .es-colo-card--approved {
   border-color: rgba(166, 216, 102, 0.4);
-}
-
-.es-colo-card--approved:hover {
-  border-color: rgba(166, 216, 102, 0.8);
 }
 
 .es-colo-card__header {

@@ -510,10 +510,38 @@ async function loadParticipants(coloId, role) {
         renderParticipantsTable(role);
         buildAgeGroupCheckboxes();
         updateStats();
+        selectDefaultAIAgeRange();
         regenerateGroups();
     } catch (err) {
         console.error('loadParticipants:', err);
         showToast('Erreur lors du chargement des participants.', 'error');
+    }
+}
+
+function selectDefaultAIAgeRange() {
+    if (isColoFormation) return;
+    if (!participants || participants.length === 0) return;
+
+    const sum = participants.reduce((s, p) => s + p.age, 0);
+    const avg = sum / participants.length;
+
+    let targetRange = '';
+    if (avg < 6) {
+        targetRange = '3-5 ans';
+    } else if (avg >= 6 && avg < 10) {
+        targetRange = '6-9 ans';
+    } else if (avg >= 10 && avg < 12.5) {
+        targetRange = '10-12 ans';
+    } else if (avg >= 12.5 && avg < 14.5) {
+        targetRange = '12-14 ans';
+    } else {
+        targetRange = '14-17 ans';
+    }
+
+    if (targetRange) {
+        document.querySelectorAll('input[name="activityAge"]').forEach(cb => {
+            cb.checked = (cb.value === targetRange);
+        });
     }
 }
 
