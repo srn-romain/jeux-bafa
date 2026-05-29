@@ -467,7 +467,7 @@ textarea {
     flex-wrap: wrap;
     justify-content: center;
     column-gap: 12px !important;
-    row-gap: 16px !important;
+    row-gap: 24px !important;
     width: 100%;
     margin-top: 14px;
   }
