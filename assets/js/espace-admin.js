@@ -208,6 +208,13 @@ async function loadColos() {
 function buildColoAdminCard(colo) {
     const div = document.createElement('div');
     div.className = 'es-colo-admin-card';
+
+    if (colo.bgImage) {
+        div.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.65) 100%), url('${colo.bgImage}')`;
+        div.style.backgroundSize = 'cover';
+        div.style.backgroundPosition = 'center';
+    }
+
     const dateStr = (colo.dateDebut && colo.dateFin)
         ? `${formatDate(colo.dateDebut)} → ${formatDate(colo.dateFin)}`
         : 'Dates non définies';
@@ -220,62 +227,59 @@ function buildColoAdminCard(colo) {
     const startDate = colo.dateDebut ? new Date(colo.dateDebut) : null;
     const isUpcoming = startDate && startDate > now;
 
-    const headerStyle = colo.bgImage
-        ? `style="background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.7)), url('${colo.bgImage}'); background-size: cover; background-position: center; border-bottom: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-lg) var(--radius-lg) 0 0; text-shadow: 0px 2px 10px rgba(0,0,0,0.9), 0px 1px 3px rgba(0,0,0,1);"`
-        : '';
-
     div.innerHTML = `
-        <div class="es-colo-admin-card__header" ${headerStyle}>
+        <div class="es-colo-admin-card__header">
             <div>
                 <div class="es-colo-admin-card__title">
                     ${colo.emoji || '🏕️'} ${colo.nom || 'Sans nom'}
                     ${isUpcoming ? `
-                        <span style="background:rgba(52,152,219,0.2);color:#3498db;border:1px solid rgba(52,152,219,0.3);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;vertical-align:middle;">
+                        <span style="background:rgba(52,152,219,0.25);color:#ffffff;border:1px solid rgba(52,152,219,0.4);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;vertical-align:middle;text-shadow:none;">
                             À venir
                         </span>
                     ` : ''}
                     ${!visible ? `
-                        <span style="background:rgba(255,165,0,0.15);color:#ff9f43;border:1px solid rgba(255,165,0,0.3);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;">
+                        <span style="background:rgba(255,165,0,0.25);color:#ffffff;border:1px solid rgba(255,165,0,0.4);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;text-shadow:none;">
                             <i class="bi bi-eye-slash-fill"></i> Caché
                         </span>
                     ` : ''}
                 </div>
-                <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);margin-top:2px;display:flex;align-items:center;gap:8px;">
+                <div style="font-size:0.78rem;color:rgba(255,255,255,0.7);margin-top:2px;display:flex;align-items:center;gap:8px;text-shadow:0 1px 2px rgba(0,0,0,0.5);">
                     ${dateStr}
                     <span style="
-                        padding:1px 7px;border-radius:20px;font-size:0.7rem;font-weight:700;
+                        padding:1px 7px;border-radius:20px;font-size:0.7rem;font-weight:700;text-shadow:none;
                         ${locked
-            ? 'background:rgba(231,76,60,0.2);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);'
-            : 'background:rgba(39,174,96,0.2);color:#27ae60;border:1px solid rgba(39,174,96,0.3);'}
+                            ? 'background:rgba(231,76,60,0.25);color:#ffffff;border:1px solid rgba(231,76,60,0.4);'
+                            : 'background:rgba(39,174,96,0.25);color:#ffffff;border:1px solid rgba(39,174,96,0.4);'}
                     ">
                         ${locked ? '🔒 Participants verrouillés' : '🔓 Participants ouverts'}
                     </span>
                 </div>
             </div>
         </div>
-        <div class="es-colo-admin-card__body" style="font-size:0.87rem;color:var(--clr-text-muted); display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+        <div class="es-colo-admin-card__body" style="font-size:0.87rem; display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
             <div style="flex:1;">
                 ${(colo.organisme || colo.description) ? (colo.organisme || colo.description) : '<span style="opacity:0.5;font-style:italic;">Organisme non défini.</span>'}
             </div>
-            <div class="es-colo-admin-card__actions" style="display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; flex-wrap: wrap; flex-shrink: 0;">
+            <div class="es-colo-admin-card__actions" style="display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; flex-wrap: wrap; flex-shrink: 0; z-index: 10;">
                 <button class="es-btn es-btn--sm es-btn--secondary"
                         title="Invisibilité pour les animateurs"
+                        style="padding:4px 8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08); color:#fff;"
                         onclick="toggleColoVisibility('${colo.id}', ${visible})">
                     <i class="bi bi-${visible ? 'eye' : 'eye-slash'}"></i>
                 </button>
-                <div style="width:1px;height:24px;background:rgba(0,0,0,0.15);margin:4px 4px 0 4px;"></div>
+                <div style="width:1px;height:24px;background:rgba(255,255,255,0.15);margin:4px 4px 0 4px;"></div>
                 <button class="es-btn es-btn--sm"
                         title="${locked ? 'Déverrouiller la gestion des participants pour les anims' : 'Verrouiller la gestion des participants'}"
                         style="${locked
-            ? 'background:rgba(39,174,96,0.12);color:#27ae60;border:1px solid rgba(39,174,96,0.3);'
-            : 'background:rgba(231,76,60,0.12);color:#e74c3c;border:1px solid rgba(231,76,60,0.3);'}"
+                            ? 'background:rgba(39,174,96,0.25);color:#ffffff;border:1px solid rgba(39,174,96,0.4);'
+                            : 'background:rgba(231,76,60,0.25);color:#ffffff;border:1px solid rgba(231,76,60,0.4);'}"
                         onclick="toggleParticipantsLock('${colo.id}', ${locked})">
                     <i class="bi bi-${locked ? 'unlock' : 'lock'}"></i>
                     <span class="brand-label">${locked ? 'Déverrouiller' : 'Verrouiller'}</span>
                 </button>
-                <button class="es-btn es-btn--sm" style="background:rgba(166,216,102,0.12);color:#a6d866;border:1px solid rgba(166,216,102,0.25);"
+                <button class="es-btn es-btn--sm" style="background:rgba(166,216,102,0.25);color:#ffffff;border:1px solid rgba(166,216,102,0.4);"
                         onclick="openEditColo('${colo.id}')">
-                    <i class="bi bi-pencil"></i>
+                    <i class="bi bi-pencil" style="color:var(--clr-primary)"></i>
                 </button>
                 <button class="es-btn es-btn--sm es-btn--danger"
                         onclick="confirmDeleteColo('${colo.id}', ${escapeHtml(JSON.stringify(colo.nom || ''))})">

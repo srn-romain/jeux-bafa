@@ -1615,16 +1615,25 @@ input:checked+.es-slider:before {
    CARD ADMIN (dans admin.html)
    ================================================================ */
 .es-colo-admin-card {
-  background: var(--clr-surface);
+  background: linear-gradient(135deg, rgba(58, 80, 50, 0.96), rgba(35, 52, 28, 0.98));
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   overflow: hidden;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  position: relative;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.es-colo-admin-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .es-colo-admin-card__header {
-  padding: 16px 20px;
-  background: linear-gradient(135deg, var(--clr-bg-dark), var(--clr-bg-mid));
+  padding: 20px 20px 10px;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1632,9 +1641,10 @@ input:checked+.es-slider:before {
 }
 
 .es-colo-admin-card__title {
-  font-weight: 700;
-  color: #fff;
-  font-size: 1rem;
+  font-weight: 800;
+  color: #ffffff;
+  font-size: 1.05rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
 }
 
 .es-colo-admin-card__actions {
@@ -1644,7 +1654,9 @@ input:checked+.es-slider:before {
 }
 
 .es-colo-admin-card__body {
-  padding: 16px 20px;
+  padding: 10px 20px 20px;
+  color: rgba(255, 255, 255, 0.85);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 /* ================================================================
