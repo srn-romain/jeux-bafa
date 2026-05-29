@@ -388,6 +388,12 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
     if (accessStatus === 'approved' || accessStatus === 'admin') card.classList.add('es-colo-card--approved');
     if (accessStatus === 'none' || accessStatus === 'refused') card.classList.add('es-colo-card--locked');
 
+    if (colo.bgImage) {
+        card.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.65) 100%), url('${colo.bgImage}')`;
+        card.style.backgroundSize = 'cover';
+        card.style.backgroundPosition = 'center';
+    }
+
     const emoji = colo.emoji || '🏕️';
     const dateStr = (colo.dateDebut && colo.dateFin)
         ? `${formatDate(colo.dateDebut)} → ${formatDate(colo.dateFin)}`
@@ -398,24 +404,18 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         'approved': '<span class="es-badge es-badge--approved"><i class="bi bi-check-circle"></i> Accès accordé</span>',
         'pending': '<span class="es-badge es-badge--pending"><i class="bi bi-hourglass-split"></i> En attente</span>',
         'refused': '<span class="es-badge es-badge--refused"><i class="bi bi-x-circle"></i> Refusé</span>',
-        'none': '<span class="es-badge" style="background:var(--clr-surface-3);color:var(--clr-text-light)"><i class="bi bi-lock"></i> Non autorisé</span>',
+        'none': '<span class="es-badge" style="background:rgba(255,255,255,0.15);color:#ffffff;"><i class="bi bi-lock"></i> Non autorisé</span>',
     };
 
     const lockIcon = (accessStatus === 'approved' || accessStatus === 'admin')
-        ? '<i class="bi bi-unlock-fill" style="color:var(--clr-success)"></i> Accès libre'
-        : '<i class="bi bi-lock-fill" style="color:var(--clr-text-light)"></i> Accès restreint';
+        ? '<i class="bi bi-unlock-fill" style="color:var(--clr-primary)"></i> Accès libre'
+        : '<i class="bi bi-lock-fill" style="color:rgba(255,255,255,0.5)"></i> Accès restreint';
 
     const visible = colo.visible !== false;
     const now = new Date();
     now.setHours(0,0,0,0);
     const startDate = colo.dateDebut ? new Date(colo.dateDebut) : null;
     const isUpcoming = startDate && startDate > now;
-
-    const headerStyle = colo.bgImage 
-        ? `style="background-image: linear-gradient(rgba(0,0,0,0.1), rgba(0,0,0,0.7)), url('${colo.bgImage}'); background-size: cover; background-position: center; text-shadow: 0px 2px 10px rgba(0,0,0,0.9), 0px 1px 3px rgba(0,0,0,1);"` 
-        : '';
-        
-    const emojiStyle = colo.bgImage ? `style="background: transparent; box-shadow: none;"` : '';
 
     let nbJoursStr = '';
     if (colo.dateDebut && colo.dateFin) {
@@ -431,18 +431,17 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
     }
 
     card.innerHTML = `
-        <div class="es-colo-card__header" ${headerStyle}>
-            <div class="es-colo-card__emoji" ${emojiStyle}>${emoji}</div>
+        <div class="es-colo-card__header">
             <div>
                 <div class="es-colo-card__name">
                     ${colo.nom || 'Sans nom'}
                     ${isUpcoming ? `
-                        <span style="background:rgba(52,152,219,0.2);color:#3498db;border:1px solid rgba(52,152,219,0.3);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;">
+                        <span style="background:rgba(52,152,219,0.25);color:#ffffff;border:1px solid rgba(52,152,219,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;">
                             À venir
                         </span>
                     ` : ''}
                     ${!visible ? `
-                        <span style="background:rgba(255,165,0,0.15);color:#ff9f43;border:1px solid rgba(255,165,0,0.3);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;">
+                        <span style="background:rgba(255,165,0,0.25);color:#ffffff;border:1px solid rgba(255,165,0,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;">
                             <i class="bi bi-eye-slash-fill"></i> Caché
                         </span>
                     ` : ''}
@@ -453,15 +452,15 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
                 <div style="margin-left:auto;display:flex;align-items:center;gap:4px;z-index:10;">
                     <button class="es-btn es-btn--sm es-btn--ghost" 
                             title="Modifier la colonie"
-                            style="padding:4px 8px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05);"
+                            style="padding:4px 8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08);"
                             onclick="event.stopPropagation(); openEditColoIndex('${colo.id}')">
                         <i class="bi bi-pencil" style="color:var(--clr-primary)"></i>
                     </button>
                     <button class="es-btn es-btn--sm es-btn--ghost" 
                             title="Changer la visibilité pour les animateurs"
-                            style="padding:4px 8px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.05);"
+                            style="padding:4px 8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08);"
                             onclick="event.stopPropagation(); toggleColoVisibility('${colo.id}', ${visible})">
-                        <i class="bi bi-${visible ? 'eye' : 'eye-slash'}" style="color:${visible ? 'var(--clr-success)' : '#ff9f43'}"></i>
+                        <i class="bi bi-${visible ? 'eye' : 'eye-slash'}" style="color:${visible ? 'var(--clr-primary)' : '#ff9f43'}"></i>
                     </button>
                 </div>
             ` : ''}

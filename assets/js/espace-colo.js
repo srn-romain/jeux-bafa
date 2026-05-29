@@ -208,6 +208,8 @@ async function initColoContent(colo, role) {
     document.getElementById('coloNameTopbar').textContent = colo.nom || 'Colo';
     document.getElementById('coloBreadcrumb').textContent = colo.nom || 'Colo';
     document.getElementById('coloTitle').textContent = colo.nom || 'Colo';
+    const emojiEl = document.getElementById('coloEmoji');
+    if (emojiEl) emojiEl.textContent = colo.emoji || '🏕️';
     document.title = `${colo.nom || 'Colo'} – Espace Anim`;
 
     const dateStr = (colo.dateDebut && colo.dateFin)
