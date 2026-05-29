@@ -412,108 +412,7 @@
     <!-- ===================================================
      MODAL : Créer / Modifier une colonie
      =================================================== -->
-    <div class="es-overlay hidden" id="overlayColoForm" role="dialog" aria-modal="true">
-        <div class="es-modal" style="max-width:560px;">
-            <div class="es-modal__header">
-                <h2 class="es-modal__title" id="coloFormTitle">Nouvelle colonie</h2>
-                <button class="es-modal__close" id="btnCloseColoForm"><i class="bi bi-x"></i></button>
-            </div>
-            <div class="es-modal__body">
-                <form id="coloForm" novalidate>
-                    <input type="hidden" id="coloId">
-                    <div class="es-field">
-                        <label class="es-field__label" for="coloNom">Nom de la colonie *</label>
-                        <input class="es-input" type="text" id="coloNom" required placeholder="Colo des Loups">
-                    </div>
-                    <div class="es-field es-combobox">
-                        <label class="es-field__label" for="coloOrganisme">Organisme</label>
-                        <div class="es-combobox__wrap">
-                            <input class="es-input es-combobox__input" type="text" id="coloOrganisme" placeholder="Ex: UFCV, IFAC..." autocomplete="off">
-                            <div class="es-combobox__dropdown hidden" id="coloOrganismeDropdown"></div>
-                        </div>
-                    </div>
-                    <div class="es-field hidden" id="coloOrganismeAutreWrap">
-                        <label class="es-field__label" for="coloOrganismeAutre">Préciser l'organisme *</label>
-                        <input class="es-input" type="text" id="coloOrganismeAutre" placeholder="Saisissez le nom de l'organisme">
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                        <div class="es-field">
-                            <label class="es-field__label" for="coloDateDebut">Date de début</label>
-                            <input class="es-input" type="date" id="coloDateDebut">
-                        </div>
-                        <div class="es-field">
-                            <label class="es-field__label" for="coloDateFin">Date de fin</label>
-                            <input class="es-input" type="date" id="coloDateFin">
-                        </div>
-                    </div>
-                    <div class="es-field">
-                        <label class="es-field__label" for="coloDriveId">ID Dossier Google Drive</label>
-                        <div class="es-input-wrap">
-                            <i class="bi bi-google es-input-icon" style="color:#4285F4;"></i>
-                            <input class="es-input es-input--icon" type="text" id="coloDriveId"
-                                placeholder="1BxiM...dPNv">
-                        </div>
-                        <p style="font-size:0.77rem;color:var(--clr-text-light);margin-top:4px;">
-                            L'ID se trouve dans l'URL du dossier Drive :
-                            drive.google.com/drive/folders/<strong>ID</strong>
-                        </p>
-                    </div>
-                    <div class="es-field">
-                        <label class="es-field__label" for="coloPPId">ID du fichier Drive (Projet Pédagogique)</label>
-                        <div class="es-input-wrap">
-                            <i class="bi bi-file-earmark-pdf es-input-icon" style="color:var(--clr-danger);"></i>
-                            <input class="es-input es-input--icon" type="text" id="coloPPId" placeholder="Ex: 1A2B3C4D5E6F7G8H9I0J">
-                        </div>
-                        <p style="font-size:0.77rem;color:var(--clr-text-light);margin-top:4px;">
-                            Obtenez l'ID via : <strong>Clic droit > Partager > Copier le lien</strong> (récupérez la partie entre /d/ et /view).
-                        </p>
-                    </div>
-                    <div class="es-field">
-                        <label class="es-field__label" for="coloBgInput">Image de fond (Card Anim)</label>
-                        <div class="es-input-wrap">
-                            <i class="bi bi-image es-input-icon"></i>
-                            <input class="es-input es-input--icon" type="file" id="coloBgInput" accept="image/*" style="padding-top:8px;">
-                        </div>
-                        <div id="coloBgPreviewContainer" class="hidden" style="position: relative; display: inline-block; margin-top: 10px;">
-                            <img id="coloBgPreview" style="max-width: 100%; border-radius: 8px; max-height: 150px; object-fit: cover; display: block;">
-                            <button type="button" id="btnRemoveColoBg" class="es-btn es-btn--danger" style="position: absolute; top: 6px; right: 6px; padding: 4px; width: 28px; height: 28px; border-radius: 50%;">
-                                <i class="bi bi-trash3"></i>
-                            </button>
-                        </div>
-                        <input type="hidden" id="coloBgBase64">
-                    </div>
-                    <div class="es-field">
-                        <label class="es-field__label">Emoji</label>
-                        <input type="hidden" id="coloEmoji" value="🏕️">
-                        <div id="coloEmojiSelector" class="es-emoji-selector">
-                            <!-- JS fill -->
-                        </div>
-                    </div>
-                    <div class="es-field" style="margin-top: 15px;">
-                        <label class="es-checkbox-label" style="display:flex; align-items:center; gap:8px; cursor:pointer;" title="Ajoute une section d'appréciation pour chaque participant.">
-                            <input type="checkbox" id="coloIsFormation">
-                            <span style="font-size:0.9rem; color:var(--clr-text); font-weight: 500;">Cette session est une formation</span>
-                        </label>
-                    </div>
-                </form>
-                <div class="es-alert es-alert--error hidden mt-3" id="coloFormError">
-                    <i class="bi bi-exclamation-circle"></i><span id="coloFormErrorMsg"></span>
-                </div>
-                <div id="coloDateInfo" class="hidden" style="margin-top:20px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.05); font-size:0.75rem; color:var(--clr-text-light); display:flex; flex-direction:column; gap:4px; opacity:0.6;">
-                    <div id="coloCreatedAtInfo"></div>
-                    <div id="coloUpdatedAtInfo"></div>
-                </div>
-            </div>
-            <div class="es-modal__footer">
-                <button class="es-btn es-btn--ghost" id="btnCancelColoForm">Annuler</button>
-                <button class="es-btn es-btn--primary" id="btnSaveColoForm">
-                    <i class="bi bi-check-lg"></i>
-                    <span class="es-btn__text">Enregistrer</span>
-                    <span class="es-btn__spinner"></span>
-                </button>
-            </div>
-        </div>
-    </div>
+    <!-- Le formulaire de colonie (overlayColoForm) est injecté dynamiquement par assets/js/espace-colo-form.js -->
 
 
 
@@ -703,6 +602,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="../../assets/js/firebase-config.js"></script>
     <script src="../../assets/js/espace-auth.js"></script>
+    <script src="../../assets/js/espace-colo-form.js"></script>
     <script src="../../assets/js/espace-admin.js"></script>
 </body>
 
