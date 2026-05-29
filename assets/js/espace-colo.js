@@ -3934,6 +3934,7 @@ document.getElementById('btnBulkClear')?.addEventListener('click', () => {
 // ----------------------------------------------------------------
 let commentsUnsubscribe = null;
 let currentCommentEditingBy = null;
+let currentCommentContent = "";
 
 // Helper pour récupérer précisément la couleur de surlignage sélectionnée
 function getSelectedHighlightColor() {
@@ -4071,6 +4072,13 @@ function applyHighlight(color) {
     }
 }
 
+// Helper pour vérifier si le contenu du commentaire est fonctionnellement vide
+function isCommentContentEmpty(html) {
+    if (!html) return true;
+    const stripped = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, '').replace(/\u200B/g, '').trim();
+    return stripped === "";
+}
+
 async function loadComments(coloId) {
     if (commentsUnsubscribe) commentsUnsubscribe();
 
@@ -4181,7 +4189,7 @@ async function loadComments(coloId) {
                     commentEditingAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
-                editor.innerHTML = (readCont.innerHTML.includes("Aucun commentaire pour le moment")) ? "" : readCont.innerHTML;
+                editor.innerHTML = isCommentContentEmpty(currentCommentContent) ? "" : currentCommentContent;
                 readCont.classList.add('hidden');
                 editCont.classList.remove('hidden');
                 btnEdit.classList.add('hidden');
@@ -4246,8 +4254,9 @@ async function loadComments(coloId) {
         const data = snap.data();
 
         const commentHtml = data.commentaires || "";
-        if (!commentHtml) {
-            readCont.innerHTML = `<span style="opacity:0.4; font-style:italic;"><i class="bi bi-journal-text"></i> Aucun commentaire pour le moment. Cliquez sur le crayon pour commencer à écrire !</span>`;
+        currentCommentContent = commentHtml;
+        if (isCommentContentEmpty(commentHtml)) {
+            readCont.innerHTML = `<div style="text-align: center; opacity: 0.45; font-style: italic; width: 100%; padding: 20px 0;"><i class="bi bi-journal-text"></i> Aucune note d'équipe pour le moment.</div>`;
         } else {
             readCont.innerHTML = commentHtml;
         }
