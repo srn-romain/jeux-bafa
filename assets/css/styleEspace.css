@@ -463,6 +463,15 @@ textarea {
     gap: 6px;
   }
 
+  #adminColoActions {
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: 12px !important;
+    row-gap: 16px !important;
+    width: 100%;
+    margin-top: 14px;
+  }
+
   /* Masquer les labels texte dans la navbar */
   .es-topbar .brand-label,
   .es-user-chip__name,
@@ -1179,13 +1188,19 @@ input:checked + .slider:before {
 }
 
 .es-page__header {
-  padding: 24px 0 20px;
-  margin-bottom: 24px;
+  padding: 24px 0 10px;
+  margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   gap: 15px;
   flex-wrap: wrap;
+}
+
+#adminColoActions {
+  display: flex;
+  align-items: center;
+  gap: 18px; /* Plus d'espace entre les toggles et le bouton sur grand écran */
 }
 
 .es-page__header-info {
