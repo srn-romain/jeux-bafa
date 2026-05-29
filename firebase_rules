@@ -47,12 +47,15 @@ service cloud.firestore {
       allow create, delete: if isAdmin();
       allow update: if isAdmin() || (
         hasApprovedAccess(espaceId) && (
-          // Les anims simples peuvent modifier UNIQUEMENT les commentaires et le verrou d'édition
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentaires', 'commentEditingBy', 'commentEditingByName', 'commentEditingAt']) ||
-          // Les directeurs (anim-admin) peuvent également modifier les paramètres de la colo (météo, photos, IA, verrous, etc.)
+          // Les anims simples peuvent modifier UNIQUEMENT si les commentaires ne sont pas verrouillés par la direction
+          (
+            get(/databases/$(database)/documents/espaces/$(espaceId)).data.get('commentsLocked', false) == false &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentaires', 'commentEditingBy', 'commentEditingByName', 'commentEditingAt'])
+          ) ||
+          // Les directeurs (anim-admin) peuvent également modifier les paramètres de la colo (météo, photos, IA, verrous, commentaires, etc.)
           (
             get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)).data.get('espaceRole', 'anim') == 'anim-admin' &&
-            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentaires', 'commentEditingBy', 'commentEditingByName', 'commentEditingAt', 'meteoLocation', 'meteoLocationName', 'meteoLat', 'meteoLon', 'photoUploadEnabled', 'allowAnimAI', 'nbParticipants', 'participantsLocked'])
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentaires', 'commentEditingBy', 'commentEditingByName', 'commentEditingAt', 'meteoLocation', 'meteoLocationName', 'meteoLat', 'meteoLon', 'photoUploadEnabled', 'allowAnimAI', 'nbParticipants', 'participantsLocked', 'commentsLocked', 'updatedAt'])
           )
         )
       );

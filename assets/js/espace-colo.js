@@ -4067,37 +4067,103 @@ async function loadComments(coloId) {
             readCont.innerHTML = commentHtml;
         }
 
-        const editBy = data.commentEditingBy || "";
-        const editByName = data.commentEditingByName || "Un animateur";
-        const editAt = data.commentEditingAt ? (data.commentEditingAt.toDate ? data.commentEditingAt.toDate() : new Date(data.commentEditingAt)) : null;
+        const commentsLocked = data.commentsLocked === true;
 
-        currentCommentEditingBy = editBy;
+        // Mettre à jour le bouton de verrouillage pour les directeurs et anim-admins
+        const btnToggleCommentsLock = document.getElementById('btnToggleCommentsLock');
+        if (btnToggleCommentsLock) {
+            const newBtn = btnToggleCommentsLock.cloneNode(true);
+            newBtn.disabled = false;
+            newBtn.removeAttribute('disabled');
+            newBtn.classList.remove('loading');
+            btnToggleCommentsLock.parentNode.replaceChild(newBtn, btnToggleCommentsLock);
+            newBtn.addEventListener('click', () => toggleCommentsLock(coloId, commentsLocked));
 
-        const fiveMinutes = 5 * 60 * 1000;
-        const isLockedByOther = editBy && editBy !== currentUser?.uid && editAt && (new Date() - editAt < fiveMinutes);
+            if (commentsLocked) {
+                newBtn.innerHTML = '<i class="bi bi-lock-fill"></i> <span class="brand-label">Verrouillé</span>';
+                newBtn.style.background = 'rgba(231, 76, 60, 0.12)';
+                newBtn.style.color = '#e74c3c';
+                newBtn.style.borderColor = 'rgba(231, 76, 60, 0.3)';
+            } else {
+                newBtn.innerHTML = '<i class="bi bi-unlock-fill"></i> <span class="brand-label">Ouvert</span>';
+                newBtn.style.background = 'rgba(39, 174, 96, 0.12)';
+                newBtn.style.color = '#27ae60';
+                newBtn.style.borderColor = 'rgba(39, 174, 96, 0.3)';
+            }
+        }
 
-        if (isLockedByOther) {
+        const isSimpleAnim = (currentRole === 'anim' && !isAnimAdmin);
+
+        if (isSimpleAnim && commentsLocked) {
             btnEdit.setAttribute('disabled', 'true');
             btnEdit.style.opacity = '0.35';
             btnEdit.style.cursor = 'not-allowed';
-            btnEdit.setAttribute('title', `Modifié par ${editByName}...`);
+            btnEdit.setAttribute('title', 'La direction a verrouillé la modification des notes.');
 
-            lockText.innerHTML = `<strong>${editByName}</strong> est en train de modifier cette section (depuis ${editAt.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}). Veuillez patienter.`;
-            lockIndicator.classList.remove('hidden');
-        } else {
-            btnEdit.removeAttribute('disabled');
-            btnEdit.style.opacity = '1';
-            btnEdit.style.cursor = 'pointer';
-            btnEdit.setAttribute('title', 'Modifier les notes');
-
-            lockIndicator.classList.add('hidden');
-
-            if (editCont.classList.contains('hidden') === false && editBy !== currentUser?.uid) {
+            if (editCont.classList.contains('hidden')) {
+                lockText.innerHTML = `🔒 <strong>La direction a verrouillé la modification des notes d'équipe.</strong> Vous pouvez les consulter mais pas les modifier.`;
+                lockIndicator.classList.remove('hidden');
+            } else {
                 editCont.classList.add('hidden');
                 readCont.classList.remove('hidden');
                 btnEdit.classList.remove('hidden');
             }
+        } else {
+            const editBy = data.commentEditingBy || "";
+            const editByName = data.commentEditingByName || "Un animateur";
+            const editAt = data.commentEditingAt ? (data.commentEditingAt.toDate ? data.commentEditingAt.toDate() : new Date(data.commentEditingAt)) : null;
+
+            currentCommentEditingBy = editBy;
+
+            const fiveMinutes = 5 * 60 * 1000;
+            const isLockedByOther = editBy && editBy !== currentUser?.uid && editAt && (new Date() - editAt < fiveMinutes);
+
+            if (isLockedByOther) {
+                btnEdit.setAttribute('disabled', 'true');
+                btnEdit.style.opacity = '0.35';
+                btnEdit.style.cursor = 'not-allowed';
+                btnEdit.setAttribute('title', `Modifié par ${editByName}...`);
+
+                lockText.innerHTML = `🔒 <strong>${editByName}</strong> est en train de modifier cette section (depuis ${editAt.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}). Veuillez patienter.`;
+                lockIndicator.classList.remove('hidden');
+            } else {
+                btnEdit.removeAttribute('disabled');
+                btnEdit.style.opacity = '1';
+                btnEdit.style.cursor = 'pointer';
+                btnEdit.setAttribute('title', 'Modifier les notes');
+
+                lockIndicator.classList.add('hidden');
+
+                if (editCont.classList.contains('hidden') === false && editBy !== currentUser?.uid) {
+                    editCont.classList.add('hidden');
+                    readCont.classList.remove('hidden');
+                    btnEdit.classList.remove('hidden');
+                }
+            }
         }
     });
+}
+
+async function toggleCommentsLock(coloId, currentCommentsLocked) {
+    if (currentRole !== 'admin' && !isAnimAdmin) return;
+
+    const btn = document.getElementById('btnToggleCommentsLock');
+    if (!btn) return;
+
+    const newCommentsLocked = !currentCommentsLocked;
+    btnLoading(btn, true);
+
+    try {
+        await db.collection('espaces').doc(coloId).update({
+            commentsLocked: newCommentsLocked,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        showToast(newCommentsLocked ? 'Notes d\'équipe verrouillées.' : 'Notes d\'équipe ouvertes aux animateurs.', 'success');
+    } catch (err) {
+        console.error('toggleCommentsLock error:', err);
+        showToast('Erreur lors du changement de verrouillage.', 'error');
+    } finally {
+        btnLoading(btn, false);
+    }
 }
 

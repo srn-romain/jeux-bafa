@@ -831,7 +831,12 @@
                   Notes de réunions, consignes et remarques partagées entre animateurs.
                 </p>
               </div>
-              <div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div class="admin-only hidden">
+                    <button class="es-btn es-btn--sm" id="btnToggleCommentsLock" title="Verrouiller/Déverrouiller les commentaires pour les animateurs">
+                        <i class="bi bi-unlock"></i> <span class="brand-label">Ouvert</span>
+                    </button>
+                </div>
                 <button id="btnEditComment" class="es-btn es-btn--ghost" style="padding: 6px 10px; border-radius: 50%; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; outline: none; box-shadow: none; background: transparent; border: none; color: var(--clr-text-muted);" title="Modifier les notes">
                   <i class="bi bi-pencil" style="font-size: 1.05rem;"></i>
                 </button>
