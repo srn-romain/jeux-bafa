@@ -3662,6 +3662,13 @@ body.modal-open .es-topbar {
   transform: translateY(0);
 }
 
+.tb-btn.active {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: var(--clr-primary, #a6d866);
+  color: var(--clr-primary, #a6d866);
+  box-shadow: 0 0 8px rgba(166, 216, 102, 0.35);
+}
+
 .tb-hl-btn {
   width: 20px;
   height: 20px;
@@ -3680,6 +3687,12 @@ body.modal-open .es-topbar {
 
 .tb-hl-btn:active {
   transform: scale(1);
+}
+
+.tb-hl-btn.active {
+  transform: scale(1.12);
+  border: 2px solid #ffffff !important;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.35), 0 2px 5px rgba(0,0,0,0.3);
 }
 
 /* Rétablissement de la sélection pour l'éditeur */

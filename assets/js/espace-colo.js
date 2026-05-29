@@ -3935,6 +3935,142 @@ document.getElementById('btnBulkClear')?.addEventListener('click', () => {
 let commentsUnsubscribe = null;
 let currentCommentEditingBy = null;
 
+// Helper pour récupérer précisément la couleur de surlignage sélectionnée
+function getSelectedHighlightColor() {
+    let bgCol = "";
+    try {
+        bgCol = document.queryCommandValue('backColor') || document.queryCommandValue('hiliteColor') || "";
+    } catch (e) {}
+
+    const isOurColor = (str) => {
+        if (!str) return false;
+        const clean = str.replace(/\s+/g, '').toLowerCase();
+        return clean.includes('254,240,138') || clean.includes('fef08a') ||
+               clean.includes('254,202,202') || clean.includes('fecaca') ||
+               clean.includes('187,247,208') || clean.includes('bbf7d0');
+    };
+
+    if (isOurColor(bgCol)) {
+        return bgCol.replace(/\s+/g, '').toLowerCase();
+    }
+
+    // Parcours DOM si queryCommandValue renvoie une valeur par défaut du parent
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+        const editor = document.getElementById('commentEditor');
+        const nodesToCheck = [sel.anchorNode, sel.focusNode];
+        
+        for (let node of nodesToCheck) {
+            while (node && node !== editor) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const styleBg = node.style.backgroundColor || window.getComputedStyle(node).backgroundColor;
+                    if (isOurColor(styleBg)) {
+                        return styleBg.replace(/\s+/g, '').toLowerCase();
+                    }
+                }
+                node = node.parentNode;
+            }
+        }
+        
+        // Vérification des nœuds enfants dans le range (ex: sélection englobant un span entier)
+        try {
+            const range = sel.getRangeAt(0);
+            const container = range.commonAncestorContainer;
+            if (container && container.nodeType === Node.ELEMENT_NODE) {
+                const styleBg = container.style.backgroundColor || window.getComputedStyle(container).backgroundColor;
+                if (isOurColor(styleBg)) {
+                    return styleBg.replace(/\s+/g, '').toLowerCase();
+                }
+                const spans = container.querySelectorAll('span');
+                for (const span of spans) {
+                    if (range.intersectsNode(span)) {
+                        const bg = span.style.backgroundColor || window.getComputedStyle(span).backgroundColor;
+                        if (isOurColor(bg)) {
+                            return bg.replace(/\s+/g, '').toLowerCase();
+                        }
+                    }
+                }
+            }
+        } catch (ignored) {}
+    }
+    return "";
+}
+
+// Helper pour appliquer ou effacer de manière compatible le surlignage
+function applyHighlight(color) {
+    document.execCommand('styleWithCSS', false, true);
+    if (!color || color === 'transparent') {
+        document.execCommand('hiliteColor', false, 'rgba(0,0,0,0)');
+        document.execCommand('backColor', false, 'rgba(0,0,0,0)');
+        document.execCommand('hiliteColor', false, 'transparent');
+        document.execCommand('backColor', false, 'transparent');
+
+        // Si la sélection est juste le curseur (collapsed), on force la sortie du span surligné
+        const sel = window.getSelection();
+        if (sel && sel.isCollapsed && sel.rangeCount > 0) {
+            let node = sel.anchorNode;
+            const editor = document.getElementById('commentEditor');
+            let highlightSpan = null;
+
+            const isOurColor = (str) => {
+                if (!str) return false;
+                const clean = str.replace(/\s+/g, '').toLowerCase();
+                return clean.includes('254,240,138') || clean.includes('fef08a') ||
+                       clean.includes('254,202,202') || clean.includes('fecaca') ||
+                       clean.includes('187,247,208') || clean.includes('bbf7d0');
+            };
+
+            while (node && node !== editor) {
+                if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'SPAN') {
+                    const bg = node.style.backgroundColor || window.getComputedStyle(node).backgroundColor;
+                    if (isOurColor(bg)) {
+                        highlightSpan = node;
+                        break;
+                    }
+                }
+                node = node.parentNode;
+            }
+
+            if (highlightSpan) {
+                const range = sel.getRangeAt(0);
+                const zwsp = document.createTextNode('\u200B'); // Espace insécable invisible de largeur nulle
+
+                if (range.startContainer.nodeType === Node.TEXT_NODE) {
+                    const textNode = range.startContainer;
+                    const offset = range.startOffset;
+
+                    if (offset === textNode.length) {
+                        // À la fin du texte, on insère l'espace après le span
+                        highlightSpan.parentNode.insertBefore(zwsp, highlightSpan.nextSibling);
+                    } else if (offset === 0) {
+                        // Au début, avant le span
+                        highlightSpan.parentNode.insertBefore(zwsp, highlightSpan);
+                    } else {
+                        // Au milieu, on sépare le texte et on clone le span de surlignage
+                        const secondHalfText = textNode.splitText(offset);
+                        const secondHalfSpan = highlightSpan.cloneNode(false);
+                        highlightSpan.parentNode.insertBefore(secondHalfSpan, highlightSpan.nextSibling);
+                        secondHalfSpan.appendChild(secondHalfText);
+                        highlightSpan.parentNode.insertBefore(zwsp, secondHalfSpan);
+                    }
+                } else {
+                    // Fallback
+                    highlightSpan.parentNode.insertBefore(zwsp, highlightSpan.nextSibling);
+                }
+
+                // Déplacer le curseur juste après l'espace insécable de largeur nulle
+                const newRange = document.createRange();
+                newRange.setStart(zwsp, 1);
+                newRange.setEnd(zwsp, 1);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+            }
+        }
+    } else {
+        document.execCommand('backColor', false, color);
+    }
+}
+
 async function loadComments(coloId) {
     if (commentsUnsubscribe) commentsUnsubscribe();
 
@@ -3953,32 +4089,81 @@ async function loadComments(coloId) {
     if (!window.commentsListenersAttached) {
         window.commentsListenersAttached = true;
 
+        const updateToolbarStates = () => {
+            if (!editor) return;
+
+            // Gras
+            const isBold = document.queryCommandState('bold');
+            document.getElementById('tbBtnBold')?.classList.toggle('active', isBold);
+
+            // Italique
+            const isItalic = document.queryCommandState('italic');
+            document.getElementById('tbBtnItalic')?.classList.toggle('active', isItalic);
+
+            // Souligné
+            const isUnderline = document.queryCommandState('underline');
+            document.getElementById('tbBtnUnderline')?.classList.toggle('active', isUnderline);
+
+            // Surlignages
+            const highlightColor = getSelectedHighlightColor();
+            const isYellow = highlightColor.includes('254,240,138') || highlightColor.includes('fef08a');
+            const isRed = highlightColor.includes('254,202,202') || highlightColor.includes('fecaca');
+            const isGreen = highlightColor.includes('187,247,208') || highlightColor.includes('bbf7d0');
+
+            document.getElementById('tbHlYellow')?.classList.toggle('active', isYellow);
+            document.getElementById('tbHlRed')?.classList.toggle('active', isRed);
+            document.getElementById('tbHlGreen')?.classList.toggle('active', isGreen);
+        };
+
+        // Écouter les sélections et les mouvements du curseur
+        editor?.addEventListener('keyup', updateToolbarStates);
+        editor?.addEventListener('mouseup', updateToolbarStates);
+        editor?.addEventListener('focus', updateToolbarStates);
+        document.addEventListener('selectionchange', () => {
+            if (document.activeElement === editor) {
+                updateToolbarStates();
+            }
+        });
+
         document.getElementById('tbBtnBold')?.addEventListener('click', () => {
+            document.execCommand('styleWithCSS', false, true);
             document.execCommand('bold', false, null);
+            updateToolbarStates();
             editor.focus();
         });
         document.getElementById('tbBtnItalic')?.addEventListener('click', () => {
+            document.execCommand('styleWithCSS', false, true);
             document.execCommand('italic', false, null);
+            updateToolbarStates();
             editor.focus();
         });
         document.getElementById('tbBtnUnderline')?.addEventListener('click', () => {
+            document.execCommand('styleWithCSS', false, true);
             document.execCommand('underline', false, null);
+            updateToolbarStates();
             editor.focus();
         });
         document.getElementById('tbHlYellow')?.addEventListener('click', () => {
-            document.execCommand('backColor', false, '#fef08a');
+            const isActive = document.getElementById('tbHlYellow')?.classList.contains('active');
+            applyHighlight(isActive ? 'transparent' : '#fef08a');
+            updateToolbarStates();
             editor.focus();
         });
         document.getElementById('tbHlRed')?.addEventListener('click', () => {
-            document.execCommand('backColor', false, '#fecaca');
+            const isActive = document.getElementById('tbHlRed')?.classList.contains('active');
+            applyHighlight(isActive ? 'transparent' : '#fecaca');
+            updateToolbarStates();
             editor.focus();
         });
         document.getElementById('tbHlGreen')?.addEventListener('click', () => {
-            document.execCommand('backColor', false, '#bbf7d0');
+            const isActive = document.getElementById('tbHlGreen')?.classList.contains('active');
+            applyHighlight(isActive ? 'transparent' : '#bbf7d0');
+            updateToolbarStates();
             editor.focus();
         });
         document.getElementById('tbHlClear')?.addEventListener('click', () => {
-            document.execCommand('backColor', false, 'transparent');
+            applyHighlight('transparent');
+            updateToolbarStates();
             editor.focus();
         });
 
