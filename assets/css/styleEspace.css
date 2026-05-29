@@ -1389,14 +1389,15 @@ input:checked+.es-slider:before {
   display: flex;
   gap: 14px;
   font-size: 0.78rem;
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
   padding: 6px 12px;
   border-radius: 8px;
   align-self: flex-start;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
@@ -3369,4 +3370,75 @@ body.modal-open .es-topbar {
 
 .es-btn-promote--active:hover i {
   color: #fff;
+}
+
+/* Glassmorphic card action buttons */
+.es-card-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all var(--transition);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: 0;
+  outline: none;
+}
+
+.es-card-action-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.08);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.es-card-action-btn i {
+  font-size: 0.85rem;
+  color: #ffffff !important;
+}
+
+.es-card-action-btn--danger {
+  background: rgba(231, 76, 60, 0.2);
+  border-color: rgba(231, 76, 60, 0.35);
+}
+
+.es-card-action-btn--danger:hover {
+  background: rgba(231, 76, 60, 0.35);
+  border-color: rgba(231, 76, 60, 0.6);
+}
+
+.es-card-action-btn--danger i {
+  color: #ff7675 !important;
+}
+
+.es-card-action-btn--success {
+  background: rgba(39, 174, 96, 0.2);
+  border-color: rgba(39, 174, 96, 0.35);
+}
+
+.es-card-action-btn--success:hover {
+  background: rgba(39, 174, 96, 0.35);
+  border-color: rgba(39, 174, 96, 0.6);
+}
+
+.es-card-action-btn--success i {
+  color: #2ecc71 !important;
+}
+
+.es-card-action-btn--pill {
+  width: auto;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  gap: 6px;
+}
+
+.es-card-action-btn--pill i {
+  font-size: 0.8rem;
 }

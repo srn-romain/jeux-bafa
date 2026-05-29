@@ -217,6 +217,51 @@ async function initColoContent(colo, role) {
         : '';
     document.getElementById('coloDates').textContent = dateStr;
 
+    // Calcul de J-X si le séjour n'a pas encore commencé
+    const startAgoEl = document.getElementById('coloStartAgo');
+    if (startAgoEl) {
+        if (colo.dateDebut) {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const startDate = new Date(colo.dateDebut);
+            startDate.setHours(0, 0, 0, 0);
+            
+            if (now < startDate) {
+                const diffTime = startDate - now;
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                startAgoEl.textContent = `J-${diffDays} · `;
+                startAgoEl.style.display = 'inline';
+            } else {
+                startAgoEl.style.display = 'none';
+            }
+        } else {
+            startAgoEl.style.display = 'none';
+        }
+    }
+
+    // Calcul de J+X si le séjour est terminé
+    const agoEl = document.getElementById('coloEndAgo');
+    if (agoEl) {
+        if (colo.dateFin) {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            const endDate = new Date(colo.dateFin);
+            endDate.setHours(0, 0, 0, 0);
+            
+            if (now > endDate) {
+                const diffTime = now - endDate;
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                agoEl.textContent = ` · J+${diffDays}`;
+                agoEl.style.display = 'inline';
+                agoEl.style.color = '#ff8a7a'; // soft warning red
+            } else {
+                agoEl.style.display = 'none';
+            }
+        } else {
+            agoEl.style.display = 'none';
+        }
+    }
+
     currentColoDateFin = colo.dateFin ? new Date(colo.dateFin) : null;
 
     isColoFormation = colo.isFormation === true;

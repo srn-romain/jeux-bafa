@@ -415,7 +415,26 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
     const now = new Date();
     now.setHours(0,0,0,0);
     const startDate = colo.dateDebut ? new Date(colo.dateDebut) : null;
+    if (startDate) {
+        startDate.setHours(0,0,0,0);
+    }
     const isUpcoming = startDate && startDate > now;
+
+    let jXBadge = '';
+    if (isUpcoming && startDate) {
+        const diffTime = startDate - now;
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 0) {
+            jXBadge = `
+                <div class="es-colo-card__stat es-colo-card__j-countdown" 
+                     style="display: flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 800; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); padding: 4px 8px; border-radius: 6px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);" 
+                     title="Le séjour commence dans ${diffDays} jours">
+                    <i class="bi bi-hourglass-split" style="color: #f39c12; font-size: 0.75rem;"></i>
+                    J-${diffDays}
+                </div>
+            `;
+        }
+    }
 
     let nbJoursStr = '';
     if (colo.dateDebut && colo.dateFin) {
@@ -449,30 +468,31 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
                 <div class="es-colo-card__dates">${dateStr}</div>
             </div>
             ${role === 'admin' ? `
-                <div style="margin-left:auto;display:flex;align-items:center;gap:4px;z-index:10;">
-                    <button class="es-btn es-btn--sm es-btn--ghost" 
+                <div style="margin-left:auto;display:flex;align-items:center;gap:6px;z-index:10;">
+                    <button class="es-card-action-btn" 
                             title="Modifier la colonie"
-                            style="padding:4px 8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08);"
                             onclick="event.stopPropagation(); openEditColoIndex('${colo.id}')">
-                        <i class="bi bi-pencil" style="color:var(--clr-primary)"></i>
+                        <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="es-btn es-btn--sm es-btn--ghost" 
+                    <button class="es-card-action-btn" 
                             title="Changer la visibilité pour les animateurs"
-                            style="padding:4px 8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08);"
                             onclick="event.stopPropagation(); toggleColoVisibility('${colo.id}', ${visible})">
-                        <i class="bi bi-${visible ? 'eye' : 'eye-slash'}" style="color:${visible ? 'var(--clr-primary)' : '#ff9f43'}"></i>
+                        <i class="bi bi-${visible ? 'eye' : 'eye-slash'}"></i>
                     </button>
                 </div>
             ` : ''}
         </div>
         <div class="es-colo-card__body">
             <div class="es-colo-card__desc">${colo.organisme || colo.description || 'Organisme non défini.'}</div>
-            <div class="es-colo-card__stats ${!showStats ? 'es-stats--hidden' : ''}">
-                <div class="es-colo-card__stat" title="Nombre de participants">
-                    <i class="bi bi-people"></i> 
-                    ${nbParticipants} ${colo.isFormation ? 'stagiaire' : 'jeune'}${nbParticipants !== 1 ? 's' : ''}
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: auto; width: 100%;">
+                <div class="es-colo-card__stats ${!showStats ? 'es-stats--hidden' : ''}">
+                    <div class="es-colo-card__stat" title="Nombre de participants">
+                        <i class="bi bi-people"></i> 
+                        ${nbParticipants} ${colo.isFormation ? 'stagiaire' : 'jeune'}${nbParticipants !== 1 ? 's' : ''}
+                    </div>
+                    ${nbJoursStr}
                 </div>
-                ${nbJoursStr}
+                ${jXBadge}
             </div>
         </div>
         <div class="es-colo-card__footer">

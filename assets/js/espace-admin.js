@@ -261,27 +261,25 @@ function buildColoAdminCard(colo) {
                 ${(colo.organisme || colo.description) ? (colo.organisme || colo.description) : '<span style="opacity:0.5;font-style:italic;">Organisme non défini.</span>'}
             </div>
             <div class="es-colo-admin-card__actions" style="display: flex; justify-content: flex-end; align-items: flex-start; gap: 8px; flex-wrap: wrap; flex-shrink: 0; z-index: 10;">
-                <button class="es-btn es-btn--sm es-btn--secondary"
+                <button class="es-card-action-btn"
                         title="Invisibilité pour les animateurs"
-                        style="padding:4px 8px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.08); color:#fff;"
                         onclick="toggleColoVisibility('${colo.id}', ${visible})">
                     <i class="bi bi-${visible ? 'eye' : 'eye-slash'}"></i>
                 </button>
                 <div style="width:1px;height:24px;background:rgba(255,255,255,0.15);margin:4px 4px 0 4px;"></div>
-                <button class="es-btn es-btn--sm"
-                        title="${locked ? 'Déverrouiller la gestion des participants pour les anims' : 'Verrouiller la gestion des participants'}"
-                        style="${locked
-                            ? 'background:rgba(39,174,96,0.25);color:#ffffff;border:1px solid rgba(39,174,96,0.4);'
-                            : 'background:rgba(231,76,60,0.25);color:#ffffff;border:1px solid rgba(231,76,60,0.4);'}"
+                <button class="es-card-action-btn es-card-action-btn--pill ${locked ? 'es-card-action-btn--danger' : 'es-card-action-btn--success'}"
+                        title="${locked ? 'Déverrouiller la gestion des participants' : 'Verrouiller la gestion des participants'}"
                         onclick="toggleParticipantsLock('${colo.id}', ${locked})">
                     <i class="bi bi-${locked ? 'unlock' : 'lock'}"></i>
-                    <span class="brand-label">${locked ? 'Déverrouiller' : 'Verrouiller'}</span>
+                    <span class="brand-label" style="color:inherit; font-size: inherit; font-weight: inherit;">${locked ? 'Déverrouiller' : 'Verrouiller'}</span>
                 </button>
-                <button class="es-btn es-btn--sm" style="background:rgba(166,216,102,0.25);color:#ffffff;border:1px solid rgba(166,216,102,0.4);"
+                <button class="es-card-action-btn"
+                        title="Modifier"
                         onclick="openEditColo('${colo.id}')">
-                    <i class="bi bi-pencil" style="color:var(--clr-primary)"></i>
+                    <i class="bi bi-pencil"></i>
                 </button>
-                <button class="es-btn es-btn--sm es-btn--danger"
+                <button class="es-card-action-btn es-card-action-btn--danger"
+                        title="Supprimer la colonie"
                         onclick="confirmDeleteColo('${colo.id}', ${escapeHtml(JSON.stringify(colo.nom || ''))})">
                     <i class="bi bi-trash3"></i>
                 </button>
