@@ -650,7 +650,7 @@ function renderParticipantsTable(role) {
             <td style="text-align:center;"><span class="es-pill es-pill--age">${p.age} ans</span></td>
             <td style="text-align:center;">
                 <span class="es-pill ${p.genre === 'masculin' ? 'es-pill--m' : 'es-pill--f'}">
-                    ${p.genre === 'masculin' ? '♂ Garçon' : '♀ Fille'}
+                    ${p.genre === 'masculin' ? 'Garçon' : 'Fille'}
                 </span>
             </td>
             <td class="col-groupe ${!hasGroups ? 'hidden' : ''}" style="text-align:center;">
