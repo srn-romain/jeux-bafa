@@ -1405,6 +1405,10 @@ input:checked+.es-slider:before {
   display: none;
 }
 
+.es-colo-card__lock.es-org--hidden {
+  display: none;
+}
+
 .es-colo-card__stat {
   display: flex;
   align-items: center;

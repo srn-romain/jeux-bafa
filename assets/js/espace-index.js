@@ -208,17 +208,25 @@ auth.onAuthStateChanged(async (user) => {
     window.dashStatsUnsub = db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
         if (doc.exists) {
             showStats = doc.data().showColoStats !== false;
+            showOrg = doc.data().showColoOrg !== false;
         } else {
             showStats = true; // Par défaut
+            showOrg = true; // Par défaut
         }
 
         // Mettre à jour l'état du toggle (si présent)
         const toggle = document.getElementById('checkShowStats');
         if (toggle) toggle.checked = showStats;
 
+        const toggleOrg = document.getElementById('checkShowOrg');
+        if (toggleOrg) toggleOrg.checked = showOrg;
+
         // Appliquer aux cartes existantes sans recharger tout
         document.querySelectorAll('.es-colo-card__stats').forEach(el => {
             el.classList.toggle('es-stats--hidden', !showStats);
+        });
+        document.querySelectorAll('.es-colo-card__lock').forEach(el => {
+            el.classList.toggle('es-org--hidden', !showOrg);
         });
     });
 
@@ -294,6 +302,21 @@ document.getElementById('checkShowStats')?.addEventListener('change', async (e) 
     }
 });
 
+// Listener toggle organisme (Admins seulement car visible que pour eux)
+document.getElementById('checkShowOrg')?.addEventListener('change', async (e) => {
+    const val = e.target.checked;
+    try {
+        await db.collection('globalSettings').doc('dashboard').set({
+            showColoOrg: val,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast(`Visibilité des organismes mise à jour.`, 'success');
+    } catch (err) {
+        console.error("Erreur sauvegarde global org:", err);
+        showToast("Erreur lors de la modification globale.", "error");
+    }
+});
+
 // ----------------------------------------------------------------
 // CHARGEMENT DES COLOS
 // ----------------------------------------------------------------
@@ -302,6 +325,7 @@ let currentColoData = null;
 let currentUser = null;
 let currentRole = null;
 let showStats = true;
+let showOrg = true;
 
 async function loadColos(user, role) {
     currentUser = user;
@@ -407,9 +431,7 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         'none': '<span class="es-badge" style="background:rgba(255,255,255,0.15);color:#ffffff;"><i class="bi bi-lock"></i> Non autorisé</span>',
     };
 
-    const lockIcon = (accessStatus === 'approved' || accessStatus === 'admin')
-        ? '<i class="bi bi-unlock-fill" style="color:var(--clr-primary)"></i> Accès libre'
-        : '<i class="bi bi-lock-fill" style="color:rgba(255,255,255,0.5)"></i> Accès restreint';
+    const organismMarkup = `<i class="bi bi-building" style="color:var(--clr-primary)"></i> ${colo.organisme || 'Organisme non défini'}`;
 
     const visible = colo.visible !== false;
     const now = new Date();
@@ -427,7 +449,7 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         if (diffDays > 0) {
             jXBadge = `
                 <div class="es-colo-card__stat es-colo-card__j-countdown" 
-                     style="display: flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 800; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); padding: 4px 8px; border-radius: 6px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);" 
+                     style="display: flex; align-items: center; gap: 4px; font-size: 0.7rem; font-weight: 800; color: #ffffff; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); padding: 4px 8px; border-radius: 6px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); margin-left: auto;" 
                      title="Le séjour commence dans ${diffDays} jours">
                     <i class="bi bi-hourglass-split" style="color: #f39c12; font-size: 0.75rem;"></i>
                     J-${diffDays}
@@ -483,7 +505,6 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
             ` : ''}
         </div>
         <div class="es-colo-card__body">
-            <div class="es-colo-card__desc">${colo.organisme || colo.description || 'Organisme non défini.'}</div>
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: auto; width: 100%;">
                 <div class="es-colo-card__stats ${!showStats ? 'es-stats--hidden' : ''}">
                     <div class="es-colo-card__stat" title="Nombre de participants">
@@ -496,8 +517,10 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
             </div>
         </div>
         <div class="es-colo-card__footer">
-            <div class="es-colo-card__lock">${lockIcon}</div>
-            ${statusBadge[accessStatus] || ''}
+            <div class="es-colo-card__lock ${!showOrg ? 'es-org--hidden' : ''}">${organismMarkup}</div>
+            <div style="margin-left: auto; display: flex; align-items: center;">
+                ${statusBadge[accessStatus] || ''}
+            </div>
         </div>
     `;
 
