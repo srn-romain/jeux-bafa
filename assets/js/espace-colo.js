@@ -411,49 +411,66 @@ async function initColoQuickSwitch(currentId, role) {
     const dropdown = document.getElementById('colosDropdown');
     const listEl = document.getElementById('colosDropdownList');
     const searchInput = document.getElementById('inputSearchColoSwitch');
+    const chevron = document.getElementById('coloChevronTopbar');
     
-    if (!trigger || !dropdown || role !== 'admin') {
-        // Simple lien pour les non-admins
-        trigger?.addEventListener('click', () => window.location.href = 'index.html');
-        return;
+    if (!trigger || !dropdown) return;
+
+    let allowedColos = [];
+    try {
+        if (role === 'admin') {
+            const snap = await db.collection('espaces').orderBy('nom').get();
+            allowedColos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } else if (role === 'anim') {
+            const reqSnap = await db.collection('accessRequests')
+                .where('userId', '==', currentUser.uid)
+                .where('status', '==', 'approved')
+                .get();
+            const approvedIds = reqSnap.docs.map(doc => doc.data().espaceId);
+
+            if (approvedIds.length > 0) {
+                const snap = await db.collection('espaces').orderBy('nom').get();
+                allowedColos = snap.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(c => approvedIds.includes(c.id));
+            }
+        }
+    } catch (err) {
+        console.error("Erreur initColoQuickSwitch:", err);
     }
 
-    let allColos = [];
+    if (allowedColos.length > 1) {
+        chevron?.classList.remove('hidden');
 
-    // Toggle menu
-    trigger.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const isHidden = dropdown.classList.contains('hidden');
-        
-        // Fermer les autres dropdowns si besoin
-        document.querySelectorAll('.es-topbar__colos-dropdown, .es-user-dropdown').forEach(d => d.classList.add('hidden'));
+        // Toggle menu
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isHidden = dropdown.classList.contains('hidden');
+            
+            // Fermer les autres dropdowns si besoin
+            document.querySelectorAll('.es-topbar__colos-dropdown, .es-user-dropdown').forEach(d => d.classList.add('hidden'));
 
-        if (isHidden) {
-            dropdown.classList.remove('hidden');
-            if (allColos.length === 0) {
-                listEl.innerHTML = '<div style="padding:20px;text-align:center;opacity:0.5;"><div class="es-spinner es-spinner--sm"></div></div>';
-                try {
-                    const snap = await db.collection('espaces').orderBy('nom').get();
-                    allColos = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    renderColoSwitchList(allColos, currentId);
-                } catch (err) {
-                    listEl.innerHTML = '<div style="padding:15px;color:var(--clr-danger);font-size:0.8rem;">Erreur de chargement.</div>';
-                }
+            if (isHidden) {
+                dropdown.classList.remove('hidden');
+                renderColoSwitchList(allowedColos, currentId);
+                searchInput?.focus();
             }
-            searchInput?.focus();
-        }
-    });
+        });
 
-    // Fermer au clic extérieur
-    document.addEventListener('click', () => dropdown.classList.add('hidden'));
-    dropdown.addEventListener('click', (e) => e.stopPropagation());
+        // Fermer au clic extérieur
+        document.addEventListener('click', () => dropdown.classList.add('hidden'));
+        dropdown.addEventListener('click', (e) => e.stopPropagation());
 
-    // Recherche
-    searchInput?.addEventListener('input', (e) => {
-        const val = e.target.value.toLowerCase();
-        const filtered = allColos.filter(c => c.nom.toLowerCase().includes(val));
-        renderColoSwitchList(filtered, currentId);
-    });
+        // Recherche
+        searchInput?.addEventListener('input', (e) => {
+            const val = e.target.value.toLowerCase();
+            const filtered = allowedColos.filter(c => c.nom.toLowerCase().includes(val));
+            renderColoSwitchList(filtered, currentId);
+        });
+    } else {
+        chevron?.classList.add('hidden');
+        // Simple lien pour rediriger vers le dashboard
+        trigger.addEventListener('click', () => window.location.href = 'index.html');
+    }
 }
 
 function renderColoSwitchList(colos, currentId) {
@@ -568,8 +585,12 @@ async function loadParticipants(coloId, role) {
 
         // Gérer la visibilité du bouton réinitialiser (uniquement si admin et liste non vide)
         const deleteAllBtn = document.getElementById('btnDeleteAllParticipants');
-        if (deleteAllBtn && (role === 'admin' || isAnimAdmin)) {
-            deleteAllBtn.parentElement.classList.toggle('hidden', participants.length === 0);
+        if (deleteAllBtn) {
+            if (role === 'admin' && participants.length > 0) {
+                deleteAllBtn.parentElement.classList.remove('hidden');
+            } else {
+                deleteAllBtn.parentElement.classList.add('hidden');
+            }
         }
 
         buildFilters();
@@ -1979,6 +2000,10 @@ document.getElementById('btnCopyActivity')?.addEventListener('click', () => {
 // RÉINITIALISATION MASSIVE (Admin seulement)
 // ----------------------------------------------------------------
 document.getElementById('btnDeleteAllParticipants')?.addEventListener('click', () => {
+    if (currentRole !== 'admin') {
+        showToast("Seul le directeur peut réinitialiser la liste des participants.", "error");
+        return;
+    }
     const input = document.getElementById('inputResetConfirmText');
     const btn = document.getElementById('btnExecuteMassReset');
     if (input) {

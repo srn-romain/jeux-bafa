@@ -2681,18 +2681,7 @@ body.modal-open .es-topbar {
     display: none;
   }
 
-  /* Optimisation Drive Mobile */
-  #driveLinkBtn {
-    padding: 8px;
-    min-width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    justify-content: center;
-  }
 
-  #driveLinkBtn span {
-    display: none;
-  }
 
   /* Amélioration Onglets Mobile */
   .es-nav-tabs {
@@ -3463,4 +3452,76 @@ body.modal-open .es-topbar {
 
 .es-card-action-btn--pill i {
   font-size: 0.8rem;
+}
+
+/* ================================================================
+   RESPONSIVE HEADER - ESPACE COLO
+   ================================================================ */
+.es-colo-header-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  width: 100%;
+}
+
+.es-colo-page-title {
+  font-size: 2rem;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.es-colo-page-emoji {
+  font-size: 2.2rem;
+  flex-shrink: 0;
+}
+
+.es-colo-date-container {
+  display: flex;
+  align-items: center;
+  padding-left: 48px;
+  width: 100%;
+}
+
+.es-colo-date-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 4px 10px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 576px) {
+  .es-colo-header-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .es-colo-page-title {
+    font-size: 1.4rem;
+    gap: 8px;
+  }
+
+  .es-colo-page-emoji {
+    font-size: 1.6rem;
+  }
+
+  .es-colo-date-container {
+    padding-left: 0;
+    margin-top: 4px;
+  }
+
+  .es-colo-date-badge {
+    font-size: 0.78rem;
+    padding: 3px 8px;
+  }
 }
