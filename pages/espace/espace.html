@@ -817,12 +817,68 @@
                 <!-- Injecté par JS -->
               </div>
 
-              <div style="margin-top:14px;">
-                <div class="es-alert es-alert--warning" style="margin:0; padding:8px 12px; font-size:0.75rem; background:rgba(255, 165, 0, 0.05); border:1px solid rgba(255, 165, 0, 0.1);">
-                  <i class="bi bi-info-circle"></i>
-                  <span>Enregistrez cette réponse. Elle disparaîtra si vous rechargez la page</span>
-                </div>
+            </div>
+          </div>
+
+          <!-- SECTION COMMENTAIRES / NOTES D'ÉQUIPE -->
+          <div class="es-card" style="margin-top: 24px; position: relative;" id="sectionCommentaire">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; gap: 10px;">
+              <div>
+                <h3 style="font-weight:700;font-size:1rem;color:var(--clr-text);margin:0;">
+                  <i class="bi bi-chat-left-quote" style="color:var(--clr-primary)"></i> Notes & Commentaires d'Équipe
+                </h3>
+                <p style="font-size:0.78rem; color:var(--clr-text-muted); margin:4px 0 0 0;">
+                  Notes de réunions, consignes et remarques partagées entre animateurs.
+                </p>
               </div>
+              <div>
+                <button id="btnEditComment" class="es-btn es-btn--ghost" style="padding: 6px 10px; border-radius: 50%; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; outline: none; box-shadow: none; background: transparent; border: none; color: var(--clr-text-muted);" title="Modifier les notes">
+                  <i class="bi bi-pencil" style="font-size: 1.05rem;"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Affichage en lecture seule -->
+            <div id="commentReadContainer" class="comment-rich-content" style="min-height: 100px; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: var(--clr-text); font-size: 0.9rem; line-height: 1.6; overflow-wrap: break-word;">
+              <!-- Rempli par le script -->
+            </div>
+
+            <!-- Zone d'édition (cachée par défaut) -->
+            <div id="commentEditContainer" class="hidden" style="margin-top: 10px;">
+              <!-- Barre d'outils d'édition rich text -->
+              <div class="comment-toolbar" style="display:flex; flex-wrap:wrap; gap:6px; background: var(--clr-surface-2); padding: 8px; border-radius: 8px 8px 0 0; border: 1px solid var(--clr-surface-3); border-bottom: none; align-items: center;">
+                <button type="button" class="tb-btn" id="tbBtnBold" title="Gras (Ctrl+B)" style="font-weight:bold;">B</button>
+                <button type="button" class="tb-btn" id="tbBtnItalic" title="Italique (Ctrl+I)" style="font-style:italic;">I</button>
+                <button type="button" class="tb-btn" id="tbBtnUnderline" title="Souligné (Ctrl+U)" style="text-decoration:underline;">U</button>
+                
+                <div style="width:1px; height:18px; background:rgba(255,255,255,0.15); margin:0 4px;"></div>
+                
+                <span style="font-size:0.75rem; color:var(--clr-text-muted); margin-right:4px;">Surligner :</span>
+                <button type="button" class="tb-hl-btn" id="tbHlYellow" style="background-color: #fef08a; border: 1px solid rgba(0,0,0,0.1);" title="Surligner en Jaune"></button>
+                <button type="button" class="tb-hl-btn" id="tbHlRed" style="background-color: #fecaca; border: 1px solid rgba(0,0,0,0.1);" title="Surligner en Rouge"></button>
+                <button type="button" class="tb-hl-btn" id="tbHlGreen" style="background-color: #bbf7d0; border: 1px solid rgba(0,0,0,0.1);" title="Surligner en Vert"></button>
+                <button type="button" class="tb-btn" id="tbHlClear" style="width: 24px; height: 24px; font-size: 0.8rem; opacity: 0.8;" title="Supprimer le surlignage">
+                  <i class="bi bi-x"></i>
+                </button>
+              </div>
+
+              <!-- Zone d'écriture contenteditable -->
+              <div id="commentEditor" contenteditable="true" style="min-height: 180px; max-height: 400px; overflow-y: auto; padding: 14px; background: rgba(0,0,0,0.15); border: 1px solid var(--clr-surface-3); border-radius: 0 0 8px 8px; color: var(--clr-text); font-size: 0.9rem; line-height: 1.6; outline: none; word-wrap: break-word;">
+              </div>
+
+              <!-- Boutons de validation -->
+              <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+                <button id="btnCancelComment" class="es-btn es-btn--ghost es-btn--sm">Annuler</button>
+                <button id="btnSaveComment" class="es-btn es-btn--primary es-btn--sm">
+                  <i class="bi bi-check-lg"></i> <span class="es-btn__text">Enregistrer</span>
+                  <span class="es-btn__spinner"></span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Indicateur de verrouillage par un autre utilisateur -->
+            <div id="commentLockIndicator" class="hidden es-alert es-alert--info" style="margin-top: 12px; padding: 8px 12px; font-size: 0.78rem;">
+              <i class="bi bi-lock-fill"></i> <span id="commentLockText">Un autre animateur est en train de modifier cette section.</span>
             </div>
           </div>
         </div>

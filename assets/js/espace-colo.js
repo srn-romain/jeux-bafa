@@ -361,6 +361,9 @@ async function initColoContent(colo, role) {
     // Charger la bibliothèque
     loadPhotos(colo, role);
 
+    // Charger les commentaires d'équipe
+    loadComments(colo.id);
+
     // IA - Chargement de la config session
     isAIGeneratorEnabled = colo.allowAnimAI !== false; // true par défaut
 
@@ -3925,4 +3928,176 @@ document.getElementById('btnBulkClear')?.addEventListener('click', () => {
     selectedParticipantIds.clear();
     updateBulkBar();
 });
+
+// ----------------------------------------------------------------
+// COMMENTAIRES & NOTES D'ÉQUIPE (LECTURE/ÉCRITURE PARTAGÉE + VERROU TEMPS RÉEL)
+// ----------------------------------------------------------------
+let commentsUnsubscribe = null;
+let currentCommentEditingBy = null;
+
+async function loadComments(coloId) {
+    if (commentsUnsubscribe) commentsUnsubscribe();
+
+    const section = document.getElementById('sectionCommentaire');
+    const btnEdit = document.getElementById('btnEditComment');
+    const readCont = document.getElementById('commentReadContainer');
+    const editCont = document.getElementById('commentEditContainer');
+    const editor = document.getElementById('commentEditor');
+    const btnSave = document.getElementById('btnSaveComment');
+    const btnCancel = document.getElementById('btnCancelComment');
+    const lockIndicator = document.getElementById('commentLockIndicator');
+    const lockText = document.getElementById('commentLockText');
+
+    if (!section) return;
+
+    if (!window.commentsListenersAttached) {
+        window.commentsListenersAttached = true;
+
+        document.getElementById('tbBtnBold')?.addEventListener('click', () => {
+            document.execCommand('bold', false, null);
+            editor.focus();
+        });
+        document.getElementById('tbBtnItalic')?.addEventListener('click', () => {
+            document.execCommand('italic', false, null);
+            editor.focus();
+        });
+        document.getElementById('tbBtnUnderline')?.addEventListener('click', () => {
+            document.execCommand('underline', false, null);
+            editor.focus();
+        });
+        document.getElementById('tbHlYellow')?.addEventListener('click', () => {
+            document.execCommand('backColor', false, '#fef08a');
+            editor.focus();
+        });
+        document.getElementById('tbHlRed')?.addEventListener('click', () => {
+            document.execCommand('backColor', false, '#fecaca');
+            editor.focus();
+        });
+        document.getElementById('tbHlGreen')?.addEventListener('click', () => {
+            document.execCommand('backColor', false, '#bbf7d0');
+            editor.focus();
+        });
+        document.getElementById('tbHlClear')?.addEventListener('click', () => {
+            document.execCommand('backColor', false, 'transparent');
+            editor.focus();
+        });
+
+        btnEdit?.addEventListener('click', async () => {
+            if (currentCommentEditingBy && currentCommentEditingBy !== currentUser?.uid) {
+                showToast("Désolé, quelqu'un d'autre modifie actuellement cette section.", "warning");
+                return;
+            }
+
+            try {
+                const userName = currentUser?.displayName || (currentUser?.email ? currentUser.email.split('@')[0] : 'Un animateur');
+                await db.collection('espaces').doc(coloId).update({
+                    commentEditingBy: currentUser?.uid,
+                    commentEditingByName: userName,
+                    commentEditingAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                editor.innerHTML = (readCont.innerHTML.includes("Aucun commentaire pour le moment")) ? "" : readCont.innerHTML;
+                readCont.classList.add('hidden');
+                editCont.classList.remove('hidden');
+                btnEdit.classList.add('hidden');
+                editor.focus();
+            } catch (err) {
+                console.error("Lock error:", err);
+                showToast("Erreur lors de l'ouverture de l'éditeur.", "error");
+            }
+        });
+
+        btnCancel?.addEventListener('click', async () => {
+            try {
+                await db.collection('espaces').doc(coloId).update({
+                    commentEditingBy: null,
+                    commentEditingByName: null,
+                    commentEditingAt: null
+                });
+
+                editCont.classList.add('hidden');
+                readCont.classList.remove('hidden');
+                btnEdit.classList.remove('hidden');
+            } catch (err) {
+                console.error("Unlock error:", err);
+            }
+        });
+
+        btnSave?.addEventListener('click', async () => {
+            btnLoading(btnSave, true);
+            const htmlContent = editor.innerHTML.trim();
+            try {
+                await db.collection('espaces').doc(coloId).update({
+                    commentaires: htmlContent,
+                    commentEditingBy: null,
+                    commentEditingByName: null,
+                    commentEditingAt: null
+                });
+                showToast("Notes enregistrées.", "success");
+                editCont.classList.add('hidden');
+                readCont.classList.remove('hidden');
+                btnEdit.classList.remove('hidden');
+            } catch (err) {
+                console.error("Save comments error:", err);
+                showToast("Erreur lors de la sauvegarde.", "error");
+            } finally {
+                btnLoading(btnSave, false);
+            }
+        });
+
+        window.addEventListener('beforeunload', () => {
+            if (currentCommentEditingBy === currentUser?.uid) {
+                db.collection('espaces').doc(coloId).update({
+                    commentEditingBy: null,
+                    commentEditingByName: null,
+                    commentEditingAt: null
+                });
+            }
+        });
+    }
+
+    commentsUnsubscribe = db.collection('espaces').doc(coloId).onSnapshot(snap => {
+        if (!snap.exists) return;
+        const data = snap.data();
+
+        const commentHtml = data.commentaires || "";
+        if (!commentHtml) {
+            readCont.innerHTML = `<span style="opacity:0.4; font-style:italic;"><i class="bi bi-journal-text"></i> Aucun commentaire pour le moment. Cliquez sur le crayon pour commencer à écrire !</span>`;
+        } else {
+            readCont.innerHTML = commentHtml;
+        }
+
+        const editBy = data.commentEditingBy || "";
+        const editByName = data.commentEditingByName || "Un animateur";
+        const editAt = data.commentEditingAt ? (data.commentEditingAt.toDate ? data.commentEditingAt.toDate() : new Date(data.commentEditingAt)) : null;
+
+        currentCommentEditingBy = editBy;
+
+        const fiveMinutes = 5 * 60 * 1000;
+        const isLockedByOther = editBy && editBy !== currentUser?.uid && editAt && (new Date() - editAt < fiveMinutes);
+
+        if (isLockedByOther) {
+            btnEdit.setAttribute('disabled', 'true');
+            btnEdit.style.opacity = '0.35';
+            btnEdit.style.cursor = 'not-allowed';
+            btnEdit.setAttribute('title', `Modifié par ${editByName}...`);
+
+            lockText.innerHTML = `<strong>${editByName}</strong> est en train de modifier cette section (depuis ${editAt.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}). Veuillez patienter.`;
+            lockIndicator.classList.remove('hidden');
+        } else {
+            btnEdit.removeAttribute('disabled');
+            btnEdit.style.opacity = '1';
+            btnEdit.style.cursor = 'pointer';
+            btnEdit.setAttribute('title', 'Modifier les notes');
+
+            lockIndicator.classList.add('hidden');
+
+            if (editCont.classList.contains('hidden') === false && editBy !== currentUser?.uid) {
+                editCont.classList.add('hidden');
+                readCont.classList.remove('hidden');
+                btnEdit.classList.remove('hidden');
+            }
+        }
+    });
+}
 
