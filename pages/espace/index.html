@@ -439,9 +439,16 @@
                         <label class="es-field__label" for="coloIndexNom">Nom de la colonie *</label>
                         <input class="es-input" type="text" id="coloIndexNom" required placeholder="Colo des Loups">
                     </div>
-                    <div class="es-field">
+                    <div class="es-field es-combobox">
                         <label class="es-field__label" for="coloIndexOrganisme">Organisme</label>
-                        <input class="es-input" type="text" id="coloIndexOrganisme" placeholder="Ex: UFCV, IFAC...">
+                        <div class="es-combobox__wrap">
+                            <input class="es-input es-combobox__input" type="text" id="coloIndexOrganisme" placeholder="Ex: UFCV, IFAC..." autocomplete="off">
+                            <div class="es-combobox__dropdown hidden" id="coloIndexOrganismeDropdown"></div>
+                        </div>
+                    </div>
+                    <div class="es-field hidden" id="coloIndexOrganismeAutreWrap">
+                        <label class="es-field__label" for="coloIndexOrganismeAutre">Préciser l'organisme *</label>
+                        <input class="es-input" type="text" id="coloIndexOrganismeAutre" placeholder="Saisissez le nom de l'organisme">
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                         <div class="es-field">
@@ -454,7 +461,7 @@
                         </div>
                     </div>
                     <div class="es-field">
-                        <label class="es-field__label" for="coloIndexDriveId">ID Dossier Google Drive (optionnel)</label>
+                        <label class="es-field__label" for="coloIndexDriveId">ID Dossier Google Drive</label>
                         <div class="es-input-wrap">
                             <i class="bi bi-google es-input-icon" style="color:#4285F4;"></i>
                             <input class="es-input es-input--icon" type="text" id="coloIndexDriveId" placeholder="1BxiM...dPNv">

@@ -3525,3 +3525,103 @@ body.modal-open .es-topbar {
     padding: 3px 8px;
   }
 }
+
+/* ================================================================
+   COMBOBOX DROPDOWN SYSTEM (ORGANISME)
+   ================================================================ */
+.es-combobox__wrap {
+  position: relative;
+  width: 100%;
+}
+
+.es-combobox__input {
+  padding-right: 36px !important;
+}
+
+.es-combobox__toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--clr-text-light);
+  cursor: pointer;
+  pointer-events: none; /* Let clicks pass through to the input */
+  transition: transform var(--transition);
+}
+
+.es-combobox__wrap.open .es-combobox__toggle {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.es-combobox__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 1000; /* Ensure it stays above everything inside the modal */
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity var(--transition), transform var(--transition);
+}
+
+.es-combobox__dropdown.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.es-combobox__header {
+  padding: 8px 14px 4px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--clr-text-muted);
+  background: var(--clr-surface-2);
+  letter-spacing: 0.5px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  border-bottom: 1px solid var(--clr-surface-3);
+}
+
+.es-combobox__item {
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  color: var(--clr-text);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.es-combobox__item i {
+  color: var(--clr-text-light);
+  font-size: 0.85rem;
+}
+
+.es-combobox__item:hover {
+  background: var(--clr-surface-2);
+}
+
+.es-combobox__item.active {
+  background: var(--clr-surface-3);
+  font-weight: 600;
+}
+
+.es-combobox__item--empty {
+  color: var(--clr-text-light);
+  font-style: italic;
+  cursor: default;
+}
+
+.es-combobox__item--empty:hover {
+  background: transparent;
+}
