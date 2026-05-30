@@ -115,6 +115,10 @@ async function loadConfig() {
             if (checkSignup) {
                 checkSignup.checked = globalDoc.data().allowSignup !== false; // true par défaut
             }
+            const recapInput = document.getElementById('adminRecapBafaUrl');
+            if (recapInput) {
+                recapInput.value = globalDoc.data().recapBafaUrl || '';
+            }
         }
     } catch (err) {
         console.error("loadConfig error:", err);
@@ -133,6 +137,28 @@ document.getElementById('checkAllowSignup')?.addEventListener('change', async (e
         console.error("Erreur sauvegarde allowSignup:", err);
         showToast("Erreur lors de la modification.", "error");
         e.target.checked = !val; // revert on error
+    }
+});
+
+document.getElementById('btnSaveAdminRecapUrl')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveAdminRecapUrl');
+    const input = document.getElementById('adminRecapBafaUrl');
+    if (!input) return;
+    
+    const val = input.value.trim();
+    btnLoading(btn, true);
+    
+    try {
+        await db.collection('globalSettings').doc('dashboard').set({
+            recapBafaUrl: val,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast("Lien Récap BAFA global mis à jour.", "success");
+    } catch (err) {
+        console.error("Erreur sauvegarde recapBafaUrl:", err);
+        showToast("Erreur lors de l'enregistrement.", "error");
+    } finally {
+        btnLoading(btn, false);
     }
 });
 

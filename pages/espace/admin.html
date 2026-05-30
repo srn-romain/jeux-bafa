@@ -234,6 +234,32 @@
 
                     <div style="height: 1px; background: var(--clr-surface-3); margin: 32px 0;"></div>
 
+                    <!-- Section 1.5 : Récap BAFA -->
+                    <div style="margin-bottom: 32px;">
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--clr-text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-journal-check" style="color: var(--clr-primary);"></i> Fiche Récap BAFA (Collection)
+                        </h3>
+                        
+                        <div style="background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                            <div class="es-field" style="margin-bottom: 0;">
+                                <label class="es-field__label" for="adminRecapBafaUrl">Lien global vers la collection Récap BAFA</label>
+                                <div style="display:flex; gap:8px;">
+                                    <div style="position:relative; flex:1;">
+                                        <input type="url" class="es-input" id="adminRecapBafaUrl" placeholder="https://macollectiondebafa.web.app/dashboard.html?uid=..." style="width:100%; background: var(--clr-surface);">
+                                    </div>
+                                    <button type="button" id="btnSaveAdminRecapUrl" class="es-btn es-btn--primary" style="padding: 0 16px; box-shadow: var(--shadow-sm);">
+                                        <i class="bi bi-check2"></i> <span class="brand-label">Enregistrer</span>
+                                    </button>
+                                </div>
+                                <p style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:10px; line-height: 1.4;">
+                                    <i class="bi bi-info-circle"></i> Ce lien permettra d'afficher un bouton direct sur chaque séjour du tableau de bord pour ouvrir automatiquement l'expérience correspondante sur Récap BAFA.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="height: 1px; background: var(--clr-surface-3); margin: 32px 0;"></div>
+
                     <!-- Section 2 : Gemini -->
                     <div style="margin-bottom: 32px;">
                         <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--clr-text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">

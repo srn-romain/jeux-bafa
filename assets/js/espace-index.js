@@ -328,6 +328,7 @@ let showStats = true;
 let showOrg = true;
 let activeTypeFilter = 'all';
 let activeYearFilter = 'all';
+let globalRecapBafaUrl = '';
 
 async function loadColos(user, role) {
     currentUser = user;
@@ -347,6 +348,10 @@ async function loadColos(user, role) {
     try {
         // Récupérer toutes les colos triées par date de début (la plus récente en haut)
         const snapshot = await db.collection('espaces').orderBy('dateDebut', 'desc').get();
+
+        // Récupérer la configuration globale Récap BAFA
+        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+        globalRecapBafaUrl = globalDoc.exists ? (globalDoc.data().recapBafaUrl || '') : '';
 
         // Récupérer tous les accès approuvés pour compter les anims par colo (une seule requête)
         const animCounts = {};
@@ -571,6 +576,20 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         nbJoursStr = `<div class="es-colo-card__stat" title="Durée du séjour"><i class="bi bi-calendar3"></i> -- jours</div>`;
     }
 
+    let recapBadge = '';
+    if (globalRecapBafaUrl) {
+        let finalUrl = globalRecapBafaUrl;
+        if (colo.dateDebut && colo.dateFin) {
+            const separator = finalUrl.includes('?') ? '&' : '?';
+            finalUrl = `${finalUrl}${separator}startDate=${colo.dateDebut}&endDate=${colo.dateFin}`;
+        }
+        recapBadge = `
+            <a href="${finalUrl}" target="_blank" onclick="event.stopPropagation();" class="es-badge es-badge--recap" style="background: rgba(155, 89, 182, 0.15); color: #af7ac5; border: 1px solid rgba(155, 89, 182, 0.35); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(155, 89, 182, 0.25)'" onmouseout="this.style.background='rgba(155, 89, 182, 0.15)'" title="Ouvrir la fiche Récap BAFA">
+                <i class="bi bi-journal-check"></i> Récap BAFA
+            </a>
+        `;
+    }
+
     card.innerHTML = `
         <div class="es-colo-card__header">
             <div>
@@ -618,7 +637,8 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         </div>
         <div class="es-colo-card__footer">
             <div class="es-colo-card__lock ${!showOrg ? 'es-org--hidden' : ''}">${organismMarkup}</div>
-            <div style="margin-left: auto; display: flex; align-items: center;">
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+                ${recapBadge}
                 ${statusBadge[accessStatus] || ''}
             </div>
         </div>

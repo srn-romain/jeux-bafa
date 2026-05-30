@@ -60,6 +60,7 @@ const ColoFormManager = {
                             Obtenez l'ID via : <strong>Clic droit > Partager > Copier le lien</strong> (récupérez la partie entre /d/ et /view).
                         </p>
                     </div>
+
                     <div class="es-field">
                         <label class="es-field__label" for="coloBgInput">Image de fond (Card Anim)</label>
                         <div class="es-input-wrap">
