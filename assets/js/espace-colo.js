@@ -314,6 +314,27 @@ async function initColoContent(colo, role) {
         driveBtn.classList.remove('hidden');
     }
 
+    // Récap BAFA
+    try {
+        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+        if (globalDoc.exists && globalDoc.data().recapBafaUrl) {
+            const globalRecapBafaUrl = globalDoc.data().recapBafaUrl;
+            let finalUrl = globalRecapBafaUrl;
+            if (colo.dateDebut && colo.dateFin) {
+                const separator = finalUrl.includes('?') ? '&' : '?';
+                finalUrl = `${finalUrl}${separator}startDate=${colo.dateDebut}&endDate=${colo.dateFin}`;
+            }
+            const recapBtn = document.getElementById('recapLinkBtn');
+            if (recapBtn) {
+                recapBtn.href = finalUrl;
+                recapBtn.classList.remove('hidden');
+                recapBtn.style.display = 'inline-flex';
+            }
+        }
+    } catch (err) {
+        console.error("Erreur chargement recapBafaUrl global:", err);
+    }
+
     // Gestion du verrou participants
     currentLocked = colo.participantsLocked !== false; // true par défaut
 

@@ -584,8 +584,8 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
             finalUrl = `${finalUrl}${separator}startDate=${colo.dateDebut}&endDate=${colo.dateFin}`;
         }
         recapBadge = `
-            <a href="${finalUrl}" target="_blank" onclick="event.stopPropagation();" class="es-badge es-badge--recap" style="background: rgba(155, 89, 182, 0.15); color: #af7ac5; border: 1px solid rgba(155, 89, 182, 0.35); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(155, 89, 182, 0.25)'" onmouseout="this.style.background='rgba(155, 89, 182, 0.15)'" title="Ouvrir la fiche Récap BAFA">
-                <i class="bi bi-journal-check"></i> Récap BAFA
+            <a href="${finalUrl}" target="_blank" onclick="event.stopPropagation();" class="es-card-action-btn" style="background: rgba(155, 89, 182, 0.15); border: 1px solid rgba(155, 89, 182, 0.35); text-decoration: none; display: inline-flex;" onmouseover="this.style.background='rgba(155, 89, 182, 0.25)'" onmouseout="this.style.background='rgba(155, 89, 182, 0.15)'" title="Ouvrir la fiche Récap BAFA">
+                <i class="bi bi-journal-check" style="color: #af7ac5 !important;"></i>
             </a>
         `;
     }
@@ -608,8 +608,9 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
                 </div>
                 <div class="es-colo-card__dates">${dateStr}</div>
             </div>
-            ${role === 'admin' ? `
-                <div style="margin-left:auto;display:flex;align-items:center;gap:6px;z-index:10;">
+            <div style="margin-left:auto;display:flex;align-items:center;gap:6px;z-index:10;">
+                ${recapBadge}
+                ${role === 'admin' ? `
                     <button class="es-card-action-btn" 
                             title="Modifier la colonie"
                             onclick="event.stopPropagation(); openEditColoIndex('${colo.id}')">
@@ -620,13 +621,13 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
                             onclick="event.stopPropagation(); toggleColoVisibility('${colo.id}', ${visible})">
                         <i class="bi bi-${visible ? 'eye' : 'eye-slash'}"></i>
                     </button>
-                </div>
-            ` : ''}
+                ` : ''}
+            </div>
         </div>
         <div class="es-colo-card__body">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: auto; width: 100%;">
                 <div class="es-colo-card__stats ${!showStats ? 'es-stats--hidden' : ''}">
-                    <div class="es-colo-card__stat" title="Nombre de participants">
+                     <div class="es-colo-card__stat" title="Nombre de participants">
                         <i class="bi bi-people"></i> 
                         ${nbParticipants} ${colo.isFormation ? 'stagiaire' : 'jeune'}${nbParticipants !== 1 ? 's' : ''}
                     </div>
@@ -638,7 +639,6 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         <div class="es-colo-card__footer">
             <div class="es-colo-card__lock ${!showOrg ? 'es-org--hidden' : ''}">${organismMarkup}</div>
             <div style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
-                ${recapBadge}
                 ${statusBadge[accessStatus] || ''}
             </div>
         </div>
