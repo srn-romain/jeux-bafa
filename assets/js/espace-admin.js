@@ -189,6 +189,54 @@ async function loadColos() {
         const snap = await db.collection('espaces').orderBy('dateDebut', 'desc').get();
         loader?.classList.add('hidden');
 
+        // Calcul et affichage de la bannière de statistiques globales admin
+        let totalEspaces = snap.docs.length;
+        let nbFormations = 0;
+        let nbColos = 0;
+
+        snap.docs.forEach(doc => {
+            if (doc.data().isFormation === true) {
+                nbFormations++;
+            } else {
+                nbColos++;
+            }
+        });
+
+        const adminBanner = document.getElementById('adminGlobalStatsBanner');
+        if (adminBanner) {
+            adminBanner.innerHTML = `
+                <div class="es-admin-stats-banner">
+                    <div class="es-admin-stat-card active" id="statCardTotal" onclick="filterAdminColos('all')" title="Afficher tous les espaces">
+                        <div class="es-admin-stat-card__icon es-admin-stat-card__icon--total">
+                            <i class="bi bi-grid-fill"></i>
+                        </div>
+                        <div class="es-admin-stat-card__content">
+                            <div class="es-admin-stat-card__value">${totalEspaces}</div>
+                            <div class="es-admin-stat-card__label">Total Espaces</div>
+                        </div>
+                    </div>
+                    <div class="es-admin-stat-card" id="statCardFormation" onclick="filterAdminColos('formation')" title="Filtrer les formations">
+                        <div class="es-admin-stat-card__icon es-admin-stat-card__icon--formation">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <div class="es-admin-stat-card__content">
+                            <div class="es-admin-stat-card__value">${nbFormations}</div>
+                            <div class="es-admin-stat-card__label">Formations</div>
+                        </div>
+                    </div>
+                    <div class="es-admin-stat-card" id="statCardColo" onclick="filterAdminColos('colo')" title="Filtrer les colonies">
+                        <div class="es-admin-stat-card__icon es-admin-stat-card__icon--colo">
+                            <i class="bi bi-tree-fill"></i>
+                        </div>
+                        <div class="es-admin-stat-card__content">
+                            <div class="es-admin-stat-card__value">${nbColos}</div>
+                            <div class="es-admin-stat-card__label">Colonies</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         if (snap.empty) {
             empty?.classList.remove('hidden');
             return;
@@ -208,6 +256,7 @@ async function loadColos() {
 function buildColoAdminCard(colo) {
     const div = document.createElement('div');
     div.className = 'es-colo-admin-card';
+    div.dataset.type = colo.isFormation ? 'formation' : 'colo';
 
     if (colo.bgImage) {
         div.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.65) 100%), url('${colo.bgImage}')`;
@@ -1015,4 +1064,31 @@ setTimeout(migrateDescriptionToOrganisme, 3000);
 
 // Initialisation du formulaire de création/modification de colonie
 ColoFormManager.init('admin', loadColos);
+
+window.filterAdminColos = function(type) {
+    const btn = document.getElementById(type === 'all' ? 'statCardTotal' : type === 'formation' ? 'statCardFormation' : 'statCardColo');
+    let targetType = type;
+    if (btn && btn.classList.contains('active') && type !== 'all') {
+        targetType = 'all';
+    }
+
+    const cards = document.querySelectorAll('#colosAdminList .es-colo-admin-card');
+    cards.forEach(card => {
+        if (targetType === 'all') {
+            card.classList.remove('es-card--filtered-out');
+        } else if (card.dataset.type === targetType) {
+            card.classList.remove('es-card--filtered-out');
+        } else {
+            card.classList.add('es-card--filtered-out');
+        }
+    });
+
+    const btnTotal = document.getElementById('statCardTotal');
+    const btnFormation = document.getElementById('statCardFormation');
+    const btnColo = document.getElementById('statCardColo');
+
+    btnTotal?.classList.toggle('active', targetType === 'all');
+    btnFormation?.classList.toggle('active', targetType === 'formation');
+    btnColo?.classList.toggle('active', targetType === 'colo');
+};
 
