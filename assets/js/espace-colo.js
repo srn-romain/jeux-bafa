@@ -620,9 +620,9 @@ function selectDefaultAIAgeRange() {
         targetRange = '3-5 ans';
     } else if (avg >= 6 && avg < 10) {
         targetRange = '6-9 ans';
-    } else if (avg >= 10 && avg < 12.5) {
+    } else if (avg >= 10 && avg < 12) {
         targetRange = '10-12 ans';
-    } else if (avg >= 12.5 && avg < 14.5) {
+    } else if (avg >= 12 && avg < 14) {
         targetRange = '12-14 ans';
     } else {
         targetRange = '14-17 ans';
