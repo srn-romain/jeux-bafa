@@ -326,10 +326,14 @@ let currentUser = null;
 let currentRole = null;
 let showStats = true;
 let showOrg = true;
+let activeTypeFilter = 'all';
+let activeYearFilter = 'all';
 
 async function loadColos(user, role) {
     currentUser = user;
     currentRole = role;
+    activeTypeFilter = 'all';
+    activeYearFilter = 'all';
 
     const loader = document.getElementById('colosLoader');
     const grid = document.getElementById('colosGrid');
@@ -406,6 +410,48 @@ async function loadColos(user, role) {
             adminBanner.innerHTML = '';
         }
 
+        // Calcul et affichage de la barre de filtrage par année
+        const yearsSet = new Set();
+        snapshot.docs.forEach(doc => {
+            const data = doc.data();
+            const visible = data.visible !== false;
+            if (role === 'anim' && !visible) return; // ignore les espaces invisibles pour les anims
+
+            if (data.dateDebut) {
+                const year = data.dateDebut.split('-')[0];
+                if (year && year.length === 4) {
+                    yearsSet.add(year);
+                }
+            }
+        });
+        const uniqueYears = Array.from(yearsSet).sort((a, b) => b - a);
+
+        const yearBanner = document.getElementById('yearFilterBar');
+        if (yearBanner && uniqueYears.length > 0) {
+            let pillsHtml = `
+                <div class="es-year-filter-bar">
+                    <div class="es-year-filter-label">
+                        <i class="bi bi-calendar3"></i> Années :
+                    </div>
+                    <div class="es-year-filter-pill active" data-year="all" onclick="filterColosYear('all')">
+                        Toutes
+                    </div>
+            `;
+            uniqueYears.forEach(yr => {
+                pillsHtml += `
+                    <div class="es-year-filter-pill" data-year="${yr}" onclick="filterColosYear('${yr}')">
+                        ${yr}
+                    </div>
+                `;
+            });
+            pillsHtml += `</div>`;
+            yearBanner.innerHTML = pillsHtml;
+            yearBanner.classList.remove('hidden');
+        } else if (yearBanner) {
+            yearBanner.classList.add('hidden');
+            yearBanner.innerHTML = '';
+        }
+
         if (snapshot.empty) {
             empty.classList.remove('hidden');
             return;
@@ -461,6 +507,7 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
     const card = document.createElement('div');
     card.className = 'es-colo-card';
     card.dataset.type = colo.isFormation ? 'formation' : 'colo';
+    card.dataset.year = colo.dateDebut ? colo.dateDebut.split('-')[0] : 'none';
     if (accessStatus === 'pending') card.classList.add('es-colo-card--pending');
     if (accessStatus === 'approved' || accessStatus === 'admin') card.classList.add('es-colo-card--approved');
     if (accessStatus === 'none' || accessStatus === 'refused') card.classList.add('es-colo-card--locked');
@@ -700,18 +747,13 @@ async function openEditColoIndex(id) {
 // Initialisation du formulaire partagé au chargement
 ColoFormManager.init('index', () => loadColos(currentUser, currentRole));
 
-window.filterColos = function(type) {
-    const btn = document.getElementById(type === 'all' ? 'statCardTotal' : type === 'formation' ? 'statCardFormation' : 'statCardColo');
-    let targetType = type;
-    if (btn && btn.classList.contains('active') && type !== 'all') {
-        targetType = 'all';
-    }
-
+window.applyEspaceFilters = function() {
     const cards = document.querySelectorAll('.es-colos-grid .es-colo-card');
     cards.forEach(card => {
-        if (targetType === 'all') {
-            card.classList.remove('es-card--filtered-out');
-        } else if (card.dataset.type === targetType) {
+        const matchesType = (activeTypeFilter === 'all' || card.dataset.type === activeTypeFilter);
+        const matchesYear = (activeYearFilter === 'all' || card.dataset.year === activeYearFilter);
+
+        if (matchesType && matchesYear) {
             card.classList.remove('es-card--filtered-out');
         } else {
             card.classList.add('es-card--filtered-out');
@@ -722,8 +764,30 @@ window.filterColos = function(type) {
     const btnFormation = document.getElementById('statCardFormation');
     const btnColo = document.getElementById('statCardColo');
 
-    btnTotal?.classList.toggle('active', targetType === 'all');
-    btnFormation?.classList.toggle('active', targetType === 'formation');
-    btnColo?.classList.toggle('active', targetType === 'colo');
+    btnTotal?.classList.toggle('active', activeTypeFilter === 'all');
+    btnFormation?.classList.toggle('active', activeTypeFilter === 'formation');
+    btnColo?.classList.toggle('active', activeTypeFilter === 'colo');
+
+    document.querySelectorAll('.es-year-filter-pill').forEach(pill => {
+        pill.classList.toggle('active', pill.dataset.year === activeYearFilter);
+    });
+};
+
+window.filterColos = function(type) {
+    if (activeTypeFilter === type && type !== 'all') {
+        activeTypeFilter = 'all';
+    } else {
+        activeTypeFilter = type;
+    }
+    applyEspaceFilters();
+};
+
+window.filterColosYear = function(year) {
+    if (activeYearFilter === year && year !== 'all') {
+        activeYearFilter = 'all';
+    } else {
+        activeYearFilter = year;
+    }
+    applyEspaceFilters();
 };
 
