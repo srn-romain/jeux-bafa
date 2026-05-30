@@ -2014,16 +2014,17 @@ document.getElementById('btnDeleteAllParticipants')?.addEventListener('click', (
     }
     const input = document.getElementById('inputResetConfirmText');
     const btn = document.getElementById('btnExecuteMassReset');
-    if (input) {
-        input.value = '';
-        input.oninput = (e) => {
-            btn.disabled = e.target.value !== 'SUPPRIMER';
-        };
-    }
     
     const newBtn = btn.cloneNode(true);
     btn.parentNode.replaceChild(newBtn, btn);
     newBtn.disabled = true;
+
+    if (input) {
+        input.value = '';
+        input.oninput = (e) => {
+            newBtn.disabled = e.target.value.trim().toUpperCase() !== 'SUPPRIMER';
+        };
+    }
 
     newBtn.addEventListener('click', async () => {
         btnLoading(newBtn, true);
