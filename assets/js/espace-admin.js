@@ -11,6 +11,7 @@ let currentColoNom = ''; // Pour l'export
 let currentAdminGroups = []; // Noms des groupes thématiques
 let deleteTarget = null; // { type: 'colo'|'participant', id, coloId? }
 let adminParticipantColView = 'note'; // 'spec' | 'note'
+let currentAdminNotesContent = "";
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -99,6 +100,141 @@ function loadPendingBadge() {
 // ----------------------------------------------------------------
 // ONGLET CONFIGURATION (Gemini Key)
 // ----------------------------------------------------------------
+// Helper pour vérifier si le contenu de la note est fonctionnellement vide
+function isAdminNotesContentEmpty(html) {
+    if (!html) return true;
+    const stripped = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, '').replace(/\u200B/g, '').trim();
+    return stripped === "";
+}
+
+// Helper pour récupérer précisément la couleur de surlignage sélectionnée pour les notes admin
+function getSelectedAdminNotesHighlightColor() {
+    let bgCol = "";
+    try {
+        bgCol = document.queryCommandValue('backColor') || document.queryCommandValue('hiliteColor') || "";
+    } catch (e) {}
+
+    const isOurColor = (str) => {
+        if (!str) return false;
+        const clean = str.replace(/\s+/g, '').toLowerCase();
+        return clean.includes('254,240,138') || clean.includes('fef08a') ||
+               clean.includes('254,202,202') || clean.includes('fecaca') ||
+               clean.includes('187,247,208') || clean.includes('bbf7d0');
+    };
+
+    if (isOurColor(bgCol)) {
+        return bgCol.replace(/\s+/g, '').toLowerCase();
+    }
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+        const editor = document.getElementById('adminNotesEditor');
+        const nodesToCheck = [sel.anchorNode, sel.focusNode];
+        
+        for (let node of nodesToCheck) {
+            while (node && node !== editor) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    const styleBg = node.style.backgroundColor || window.getComputedStyle(node).backgroundColor;
+                    if (isOurColor(styleBg)) {
+                        return styleBg.replace(/\s+/g, '').toLowerCase();
+                    }
+                }
+                node = node.parentNode;
+            }
+        }
+        
+        try {
+            const range = sel.getRangeAt(0);
+            const container = range.commonAncestorContainer;
+            if (container && container.nodeType === Node.ELEMENT_NODE) {
+                const styleBg = container.style.backgroundColor || window.getComputedStyle(container).backgroundColor;
+                if (isOurColor(styleBg)) {
+                    return styleBg.replace(/\s+/g, '').toLowerCase();
+                }
+                const spans = container.querySelectorAll('span');
+                for (const span of spans) {
+                    if (range.intersectsNode(span)) {
+                        const bg = span.style.backgroundColor || window.getComputedStyle(span).backgroundColor;
+                        if (isOurColor(bg)) {
+                            return bg.replace(/\s+/g, '').toLowerCase();
+                        }
+                    }
+                }
+            }
+        } catch (ignored) {}
+    }
+    return "";
+}
+
+// Helper pour appliquer ou effacer de manière compatible le surlignage des notes admin
+function applyAdminNotesHighlight(color) {
+    document.execCommand('styleWithCSS', false, true);
+    if (!color || color === 'transparent') {
+        document.execCommand('hiliteColor', false, 'rgba(0,0,0,0)');
+        document.execCommand('backColor', false, 'rgba(0,0,0,0)');
+        document.execCommand('hiliteColor', false, 'transparent');
+        document.execCommand('backColor', false, 'transparent');
+
+        const sel = window.getSelection();
+        if (sel && sel.isCollapsed && sel.rangeCount > 0) {
+            let node = sel.anchorNode;
+            const editor = document.getElementById('adminNotesEditor');
+            let highlightSpan = null;
+
+            const isOurColor = (str) => {
+                if (!str) return false;
+                const clean = str.replace(/\s+/g, '').toLowerCase();
+                return clean.includes('254,240,138') || clean.includes('fef08a') ||
+                       clean.includes('254,202,202') || clean.includes('fecaca') ||
+                       clean.includes('187,247,208') || clean.includes('bbf7d0');
+            };
+
+            while (node && node !== editor) {
+                if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'SPAN') {
+                    const bg = node.style.backgroundColor || window.getComputedStyle(node).backgroundColor;
+                    if (isOurColor(bg)) {
+                        highlightSpan = node;
+                        break;
+                    }
+                }
+                node = node.parentNode;
+            }
+
+            if (highlightSpan) {
+                const range = sel.getRangeAt(0);
+                const zwsp = document.createTextNode('\u200B');
+
+                if (range.startContainer.nodeType === Node.TEXT_NODE) {
+                    const textNode = range.startContainer;
+                    const offset = range.startOffset;
+
+                    if (offset === textNode.length) {
+                        highlightSpan.parentNode.insertBefore(zwsp, highlightSpan.nextSibling);
+                    } else if (offset === 0) {
+                        highlightSpan.parentNode.insertBefore(zwsp, highlightSpan);
+                    } else {
+                        const secondHalfText = textNode.splitText(offset);
+                        const secondHalfSpan = highlightSpan.cloneNode(false);
+                        highlightSpan.parentNode.insertBefore(secondHalfSpan, highlightSpan.nextSibling);
+                        secondHalfSpan.appendChild(secondHalfText);
+                        highlightSpan.parentNode.insertBefore(zwsp, secondHalfSpan);
+                    }
+                } else {
+                    highlightSpan.parentNode.insertBefore(zwsp, highlightSpan.nextSibling);
+                }
+
+                const newRange = document.createRange();
+                newRange.setStart(zwsp, 1);
+                newRange.setEnd(zwsp, 1);
+                sel.removeAllRanges();
+                sel.addRange(newRange);
+            }
+        }
+    } else {
+        document.execCommand('backColor', false, color);
+    }
+}
+
 async function loadConfig() {
     if (!currentAdminUser) return;
     try {
@@ -119,10 +255,154 @@ async function loadConfig() {
             if (recapInput) {
                 recapInput.value = globalDoc.data().recapBafaUrl || '';
             }
+
+            // LOAD ADMIN NOTES
+            const notesHtml = globalDoc.data().notesAdmin || '';
+            currentAdminNotesContent = notesHtml;
+            const readCont = document.getElementById('adminNotesReadContainer');
+            if (readCont) {
+                if (isAdminNotesContentEmpty(notesHtml)) {
+                    readCont.innerHTML = `<div style="text-align: center; opacity: 0.45; font-style: italic; width: 100%; padding: 20px 0;"><i class="bi bi-journal-text"></i> Aucune note administrateur pour le moment.</div>`;
+                } else {
+                    readCont.innerHTML = notesHtml;
+                }
+            }
         }
+
+        // Init notes events
+        initAdminNotesEvents();
     } catch (err) {
         console.error("loadConfig error:", err);
     }
+}
+
+let adminNotesEventsAttached = false;
+function initAdminNotesEvents() {
+    if (adminNotesEventsAttached) return;
+    adminNotesEventsAttached = true;
+
+    const editor = document.getElementById('adminNotesEditor');
+    const btnEdit = document.getElementById('btnEditAdminNotes');
+    const readCont = document.getElementById('adminNotesReadContainer');
+    const editCont = document.getElementById('adminNotesEditContainer');
+    const btnSave = document.getElementById('btnSaveAdminNotes');
+    const btnCancel = document.getElementById('btnCancelAdminNotes');
+
+    if (!editor || !btnEdit || !readCont || !editCont || !btnSave || !btnCancel) return;
+
+    const updateToolbarStates = () => {
+        if (!editor) return;
+
+        // Gras
+        const isBold = document.queryCommandState('bold');
+        document.getElementById('tbAdminNotesBtnBold')?.classList.toggle('active', isBold);
+
+        // Italique
+        const isItalic = document.queryCommandState('italic');
+        document.getElementById('tbAdminNotesBtnItalic')?.classList.toggle('active', isItalic);
+
+        // Souligné
+        const isUnderline = document.queryCommandState('underline');
+        document.getElementById('tbAdminNotesBtnUnderline')?.classList.toggle('active', isUnderline);
+
+        // Surlignages
+        const highlightColor = getSelectedAdminNotesHighlightColor();
+        const isYellow = highlightColor.includes('254,240,138') || highlightColor.includes('fef08a');
+        const isRed = highlightColor.includes('254,202,202') || highlightColor.includes('fecaca');
+        const isGreen = highlightColor.includes('187,247,208') || highlightColor.includes('bbf7d0');
+
+        document.getElementById('tbAdminNotesHlYellow')?.classList.toggle('active', isYellow);
+        document.getElementById('tbAdminNotesHlRed')?.classList.toggle('active', isRed);
+        document.getElementById('tbAdminNotesHlGreen')?.classList.toggle('active', isGreen);
+    };
+
+    editor.addEventListener('keyup', updateToolbarStates);
+    editor.addEventListener('mouseup', updateToolbarStates);
+    editor.addEventListener('focus', updateToolbarStates);
+    document.addEventListener('selectionchange', () => {
+        if (document.activeElement === editor) {
+            updateToolbarStates();
+        }
+    });
+
+    document.getElementById('tbAdminNotesBtnBold')?.addEventListener('click', () => {
+        document.execCommand('styleWithCSS', false, true);
+        document.execCommand('bold', false, null);
+        updateToolbarStates();
+        editor.focus();
+    });
+    document.getElementById('tbAdminNotesBtnItalic')?.addEventListener('click', () => {
+        document.execCommand('styleWithCSS', false, true);
+        document.execCommand('italic', false, null);
+        updateToolbarStates();
+        editor.focus();
+    });
+    document.getElementById('tbAdminNotesBtnUnderline')?.addEventListener('click', () => {
+        document.execCommand('styleWithCSS', false, true);
+        document.execCommand('underline', false, null);
+        updateToolbarStates();
+        editor.focus();
+    });
+    document.getElementById('tbAdminNotesHlYellow')?.addEventListener('click', () => {
+        const isActive = document.getElementById('tbAdminNotesHlYellow')?.classList.contains('active');
+        applyAdminNotesHighlight(isActive ? 'transparent' : '#fef08a');
+        updateToolbarStates();
+        editor.focus();
+    });
+    document.getElementById('tbAdminNotesHlRed')?.addEventListener('click', () => {
+        const isActive = document.getElementById('tbAdminNotesHlRed')?.classList.contains('active');
+        applyAdminNotesHighlight(isActive ? 'transparent' : '#fecaca');
+        updateToolbarStates();
+        editor.focus();
+    });
+    document.getElementById('tbAdminNotesHlGreen')?.addEventListener('click', () => {
+        const isActive = document.getElementById('tbAdminNotesHlGreen')?.classList.contains('active');
+        applyAdminNotesHighlight(isActive ? 'transparent' : '#bbf7d0');
+        updateToolbarStates();
+        editor.focus();
+    });
+
+    btnEdit.addEventListener('click', () => {
+        editor.innerHTML = isAdminNotesContentEmpty(currentAdminNotesContent) ? "" : currentAdminNotesContent;
+        readCont.classList.add('hidden');
+        editCont.classList.remove('hidden');
+        btnEdit.classList.add('hidden');
+        editor.focus();
+    });
+
+    btnCancel.addEventListener('click', () => {
+        editCont.classList.add('hidden');
+        readCont.classList.remove('hidden');
+        btnEdit.classList.remove('hidden');
+    });
+
+    btnSave.addEventListener('click', async () => {
+        btnLoading(btnSave, true);
+        const htmlContent = editor.innerHTML.trim();
+        try {
+            await db.collection('globalSettings').doc('dashboard').update({
+                notesAdmin: htmlContent,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            showToast("Notes administratives enregistrées.", "success");
+            currentAdminNotesContent = htmlContent;
+            
+            if (isAdminNotesContentEmpty(htmlContent)) {
+                readCont.innerHTML = `<div style="text-align: center; opacity: 0.45; font-style: italic; width: 100%; padding: 20px 0;"><i class="bi bi-journal-text"></i> Aucune note administrateur pour le moment.</div>`;
+            } else {
+                readCont.innerHTML = htmlContent;
+            }
+
+            editCont.classList.add('hidden');
+            readCont.classList.remove('hidden');
+            btnEdit.classList.remove('hidden');
+        } catch (err) {
+            console.error("Save admin notes error:", err);
+            showToast("Erreur lors de la sauvegarde.", "error");
+        } finally {
+            btnLoading(btnSave, false);
+        }
+    });
 }
 
 document.getElementById('checkAllowSignup')?.addEventListener('change', async (e) => {

@@ -450,6 +450,62 @@
                         </div>
                     </div>
 
+                    <div style="height: 1px; background: var(--clr-surface-3); margin: 32px 0;"></div>
+
+                    <!-- Section 4 : Notes Administrateur -->
+                    <div style="position: relative;" id="sectionAdminNotes">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap: 10px;">
+                            <div>
+                                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--clr-text); margin: 0; display: flex; align-items: center; gap: 8px;">
+                                    <i class="bi bi-chat-left-quote" style="color: var(--clr-primary);"></i> Notes Administrateur
+                                </h3>
+                                <p style="font-size:0.78rem; color:var(--clr-text-muted); margin:4px 0 0 0;">
+                                    Notes, rappels et consignes pour l'administration.
+                                </p>
+                            </div>
+                            <div>
+                                <button id="btnEditAdminNotes" class="es-btn es-btn--ghost" style="padding: 6px 10px; border-radius: 50%; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; outline: none; box-shadow: none; background: transparent; border: none; color: var(--clr-text-muted);" title="Modifier les notes admin">
+                                    <i class="bi bi-pencil" style="font-size: 1.05rem;"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Affichage en lecture seule -->
+                        <div id="adminNotesReadContainer" class="comment-rich-content" style="min-height: 100px; padding: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: var(--clr-text); font-size: 0.9rem; line-height: 1.6; overflow-wrap: break-word;">
+                            <div style="text-align: center; opacity: 0.45; font-style: italic; width: 100%; padding: 20px 0;"><i class="bi bi-journal-text"></i> Chargement des notes...</div>
+                        </div>
+
+                        <!-- Zone d'édition (cachée par défaut) -->
+                        <div id="adminNotesEditContainer" class="hidden" style="margin-top: 10px;">
+                            <!-- Barre d'outils d'édition rich text -->
+                            <div class="comment-toolbar" style="display:flex; flex-wrap:wrap; gap:6px; background: var(--clr-surface-2); padding: 8px; border-radius: 8px 8px 0 0; border: 1px solid var(--clr-surface-3); border-bottom: none; align-items: center;">
+                                <button type="button" class="tb-btn" id="tbAdminNotesBtnBold" title="Gras (Ctrl+B)" style="font-weight:bold;">B</button>
+                                <button type="button" class="tb-btn" id="tbAdminNotesBtnItalic" title="Italique (Ctrl+I)" style="font-style:italic;">I</button>
+                                <button type="button" class="tb-btn" id="tbAdminNotesBtnUnderline" title="Souligné (Ctrl+U)" style="text-decoration:underline;">U</button>
+                                
+                                <div style="width:1px; height:18px; background:rgba(255,255,255,0.15); margin:0 4px;"></div>
+                                
+                                <span style="font-size:0.75rem; color:var(--clr-text-muted); margin-right:4px;">Surligner :</span>
+                                <button type="button" class="tb-hl-btn" id="tbAdminNotesHlYellow" style="background-color: #fef08a; border: 1px solid rgba(0,0,0,0.1);" title="Surligner en Jaune"></button>
+                                <button type="button" class="tb-hl-btn" id="tbAdminNotesHlRed" style="background-color: #fecaca; border: 1px solid rgba(0,0,0,0.1);" title="Surligner en Rouge"></button>
+                                <button type="button" class="tb-hl-btn" id="tbAdminNotesHlGreen" style="background-color: #bbf7d0; border: 1px solid rgba(0,0,0,0.1);" title="Surligner en Vert"></button>
+                            </div>
+
+                            <!-- Zone d'écriture contenteditable -->
+                            <div id="adminNotesEditor" contenteditable="true" style="min-height: 180px; max-height: 400px; overflow-y: auto; padding: 14px; background: rgba(0,0,0,0.15); border: 1px solid var(--clr-surface-3); border-radius: 0 0 8px 8px; color: var(--clr-text); font-size: 0.9rem; line-height: 1.6; outline: none; word-wrap: break-word;">
+                            </div>
+
+                            <!-- Boutons de validation -->
+                            <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:12px;">
+                                <button id="btnCancelAdminNotes" class="es-btn es-btn--ghost es-btn--sm">Annuler</button>
+                                <button id="btnSaveAdminNotes" class="es-btn es-btn--primary es-btn--sm">
+                                    <i class="bi bi-check-lg"></i> <span class="es-btn__text">Enregistrer</span>
+                                    <span class="es-btn__spinner"></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
