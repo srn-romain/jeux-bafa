@@ -269,6 +269,9 @@ async function loadConfig() {
             }
         }
 
+        // Load Espaces for Batch Export
+        await loadConfigExportEspaces();
+
         // Init notes events
         initAdminNotesEvents();
     } catch (err) {
@@ -403,6 +406,155 @@ function initAdminNotesEvents() {
             btnLoading(btnSave, false);
         }
     });
+}
+
+// ----------------------------------------------------------------
+// BATCH PARTICIPANTS EXPORT
+// ----------------------------------------------------------------
+let exportEventsAttached = false;
+
+function updateDeselectButtonVisibility() {
+    const btnDeselectAll = document.getElementById('btnDeselectAllExportEspaces');
+    if (!btnDeselectAll) return;
+    const hasSelection = document.querySelectorAll('.export-colo-checkbox:checked').length > 0;
+    btnDeselectAll.classList.toggle('hidden', !hasSelection);
+}
+
+function initExportEvents() {
+    if (exportEventsAttached) return;
+    exportEventsAttached = true;
+
+    const btnSelectAll = document.getElementById('btnSelectAllExportEspaces');
+    const btnDeselectAll = document.getElementById('btnDeselectAllExportEspaces');
+    const btnExecute = document.getElementById('btnExecuteBatchExport');
+    const container = document.getElementById('exportEspacesContainer');
+
+    btnSelectAll?.addEventListener('click', () => {
+        document.querySelectorAll('.export-colo-checkbox').forEach(cb => cb.checked = true);
+        updateDeselectButtonVisibility();
+    });
+
+    btnDeselectAll?.addEventListener('click', () => {
+        document.querySelectorAll('.export-colo-checkbox').forEach(cb => cb.checked = false);
+        updateDeselectButtonVisibility();
+    });
+
+    container?.addEventListener('change', (e) => {
+        if (e.target.classList.contains('export-colo-checkbox')) {
+            updateDeselectButtonVisibility();
+        }
+    });
+
+    btnExecute?.addEventListener('click', async () => {
+        const selectedCbs = document.querySelectorAll('.export-colo-checkbox:checked');
+        if (selectedCbs.length === 0) {
+            showToast('Veuillez sélectionner au moins un espace à exporter.', 'error');
+            return;
+        }
+
+        const selectedColos = [];
+        selectedCbs.forEach(cb => {
+            selectedColos.push({
+                id: cb.value,
+                nom: cb.dataset.nom
+            });
+        });
+
+        btnLoading(btnExecute, true);
+        try {
+            await exportBatchParticipants(selectedColos);
+        } catch (err) {
+            console.error('Batch export execute error:', err);
+        } finally {
+            btnLoading(btnExecute, false);
+        }
+    });
+}
+
+async function loadConfigExportEspaces() {
+    const container = document.getElementById('exportEspacesContainer');
+    if (!container) return;
+
+    try {
+        const snap = await db.collection('espaces').orderBy('dateDebut', 'desc').get();
+        if (snap.empty) {
+            container.innerHTML = `<div style="text-align: center; opacity: 0.45; font-style: italic; width: 100%; grid-column: 1 / -1; padding: 20px 0;"><i class="bi bi-info-circle"></i> Aucun espace créé.</div>`;
+            return;
+        }
+
+        let html = '';
+        snap.docs.forEach(doc => {
+            const colo = doc.data();
+            const id = doc.id;
+            const year = colo.dateDebut ? new Date(colo.dateDebut).getFullYear() : '';
+            const labelText = `${colo.emoji || '🏕️'} ${colo.nom || 'Sans nom'}${year ? ` (${year})` : ''}`;
+            const cleanNom = escapeHtml(colo.nom || '');
+            
+            html += `
+                <label class="es-checkbox-label" style="display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; cursor: pointer; user-select: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='rgba(255,255,255,0.03)'">
+                    <input type="checkbox" class="export-colo-checkbox" value="${id}" data-nom="${cleanNom}" style="accent-color: var(--clr-primary); width: 16px; height: 16px;">
+                    <span style="font-size: 0.85rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(labelText)}">
+                        ${escapeHtml(labelText)}
+                    </span>
+                </label>
+            `;
+        });
+        container.innerHTML = html;
+        initExportEvents();
+        updateDeselectButtonVisibility();
+    } catch (err) {
+        console.error("loadConfigExportEspaces error:", err);
+        container.innerHTML = `<div style="text-align: center; color: var(--clr-danger); width: 100%; grid-column: 1 / -1; padding: 20px 0;"><i class="bi bi-exclamation-circle"></i> Erreur lors du chargement des espaces.</div>`;
+    }
+}
+
+async function exportBatchParticipants(selectedColos) {
+    try {
+        let successCount = 0;
+        for (const colo of selectedColos) {
+            const snap = await db.collection('espaces').doc(colo.id).collection('participants')
+                .orderBy('nom', 'asc').get();
+            const pts = snap.docs.map(d => {
+                const data = d.data();
+                return {
+                    prenom: data.prenom,
+                    nom: data.nom,
+                    age: data.age,
+                    genre: data.genre,
+                    groupeId: data.groupeId || null,
+                    note: data.note || '',
+                    appreciation: data.appreciation || '',
+                    spec: data.spec || []
+                };
+            });
+
+            const exportData = {
+                coloId: colo.id,
+                coloNom: colo.nom,
+                exportDate: new Date().toISOString(),
+                participants: pts
+            };
+
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `participants_${colo.nom.replace(/\s+/g, '_').toLowerCase()}_${new Date().toLocaleDateString('fr-FR').replace(/\//g, '-')}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            successCount++;
+            // Small delay to ensure the browser schedules multiple downloads correctly
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        showToast(`${successCount} fichier(s) exporté(s) !`, 'success');
+    } catch (err) {
+        console.error('Batch export error:', err);
+        showToast("Erreur lors de l'exportation des fichiers.", 'error');
+    }
 }
 
 document.getElementById('checkAllowSignup')?.addEventListener('change', async (e) => {
