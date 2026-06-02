@@ -15,7 +15,7 @@ const ColoFormManager = {
                 <form id="coloForm" novalidate>
                     <input type="hidden" id="coloId">
                     <div class="es-field">
-                        <label class="es-field__label" for="coloNom">Nom de la colonie *</label>
+                        <label class="es-field__label" for="coloNom">Nom de l'espace *</label>
                         <input class="es-input" type="text" id="coloNom" required placeholder="Colo des Loups">
                     </div>
                     <div class="es-field es-combobox">
@@ -347,7 +347,7 @@ const ColoFormManager = {
         }
 
         const formTitle = document.getElementById('coloFormTitle');
-        if (formTitle) formTitle.textContent = colo ? 'Modifier la colonie' : 'Nouvelle colonie';
+        if (formTitle) formTitle.textContent = colo ? 'Modifier un espace' : 'Nouvelle espace';
         if (els.errorWrap) els.errorWrap.classList.add('hidden');
         
         openModal('overlayColoForm');
@@ -536,7 +536,7 @@ const ColoFormManager = {
         
         const nomVal = els.nom?.value.trim();
         if (!nomVal) {
-            els.errorMsg.textContent = 'Le nom de la colonie est obligatoire.';
+            els.errorMsg.textContent = 'Le nom de l\'espace est obligatoire.';
             els.errorWrap.classList.remove('hidden');
             return;
         }

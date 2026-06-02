@@ -551,6 +551,8 @@ async function exportBatchParticipants(selectedColos) {
         }
 
         showToast(`${successCount} fichier(s) exporté(s) !`, 'success');
+        document.querySelectorAll('.export-colo-checkbox').forEach(cb => cb.checked = false);
+        updateDeselectButtonVisibility();
     } catch (err) {
         console.error('Batch export error:', err);
         showToast("Erreur lors de l'exportation des fichiers.", 'error');
