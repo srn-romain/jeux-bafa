@@ -565,6 +565,12 @@ function initVotesSystem() {
             });
         }
     });
+
+    // Affiche la modale de bienvenue/incitation au vote pour les nouveaux visiteurs
+    if (!localStorage.getItem('vote_welcome_modal_shown')) {
+        showVoteWelcomeModal();
+        localStorage.setItem('vote_welcome_modal_shown', 'true');
+    }
 }
 
 function handleVoteClick(voteId, direction, btnUp, btnDown, countUpSpan, countDownSpan) {
@@ -619,4 +625,214 @@ function updateLocalUI(direction, val, btnUp, btnDown, countUpSpan, countDownSpa
             btnDown.querySelector('i').className = 'bi bi-hand-thumbs-down';
         }
     }
+}
+
+/**
+ * Affiche une modale d'information et d'incitation au vote (gros coup de pub)
+ * pour l'utilisateur qui ouvre l'application pour la première fois.
+ */
+function showVoteWelcomeModal() {
+    // Injecter les styles CSS de la modale s'ils ne sont pas déjà présents
+    if (!document.getElementById('vote-modal-styles')) {
+        const style = document.createElement('style');
+        style.id = 'vote-modal-styles';
+        style.innerHTML = `
+            .vote-welcome-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(44, 62, 80, 0.7);
+                backdrop-filter: blur(8px);
+                -webkit-backdrop-filter: blur(8px);
+                z-index: 10000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                max-width: none !important;
+            }
+            .vote-welcome-overlay.active {
+                opacity: 1;
+            }
+            .vote-welcome-card {
+                background: #ffffff;
+                width: 90%;
+                max-width: 480px;
+                border-radius: 20px;
+                padding: 30px;
+                box-shadow: 0 15px 40px rgba(0, 0, 0, 0.25);
+                transform: scale(0.8);
+                transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                text-align: center;
+                position: relative;
+                border: 1px solid #f9e2b3;
+                font-family: 'Inter', 'Roboto', Arial, sans-serif;
+            }
+            .vote-welcome-overlay.active .vote-welcome-card {
+                transform: scale(1);
+            }
+            .vote-welcome-close {
+                position: absolute;
+                top: 15px;
+                right: 18px;
+                background: none;
+                border: none;
+                font-size: 1.8rem;
+                color: #95a5a6;
+                cursor: pointer;
+                transition: color 0.2s;
+                line-height: 1;
+            }
+            .vote-welcome-close:hover {
+                color: #e74c3c;
+            }
+            .vote-welcome-badge {
+                display: inline-block;
+                background: linear-gradient(135deg, #e74c3c, #c0392b);
+                color: #ffffff;
+                font-size: 0.75rem;
+                font-weight: 800;
+                padding: 4px 12px;
+                border-radius: 20px;
+                letter-spacing: 1px;
+                margin-bottom: 15px;
+                box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);
+            }
+            .vote-welcome-icon-container {
+                display: flex;
+                justify-content: center;
+                gap: 15px;
+                margin: 10px 0 20px 0;
+            }
+            .vote-welcome-icon-circle {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.8rem;
+                color: #ffffff;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            }
+            .vote-welcome-icon-circle.up {
+                background: linear-gradient(135deg, #2ecc71, #27ae60);
+                animation: float-up 3s infinite ease-in-out;
+            }
+            .vote-welcome-icon-circle.down {
+                background: linear-gradient(135deg, #e74c3c, #c0392b);
+                animation: float-down 3s infinite ease-in-out;
+                animation-delay: 0.5s;
+            }
+            @keyframes float-up {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-8px); }
+            }
+            @keyframes float-down {
+                0%, 100% { transform: translateY(0); }
+                50% { transform: translateY(-6px); }
+            }
+            .vote-welcome-card h2 {
+                color: #2c3e50;
+                font-size: 1.5rem;
+                font-weight: 800;
+                margin-bottom: 12px;
+                margin-top: 0;
+            }
+            .vote-welcome-card p {
+                font-size: 0.92rem;
+                color: #5d6d7e;
+                line-height: 1.6;
+                margin-bottom: 24px;
+            }
+            .vote-welcome-card strong {
+                color: #2c3e50;
+            }
+            .vote-welcome-cta {
+                background: linear-gradient(135deg, #f39c12, #d68910);
+                color: #ffffff;
+                border: none;
+                border-radius: 30px;
+                padding: 12px 30px;
+                font-size: 0.95rem;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow: 0 5px 15px rgba(243, 156, 18, 0.3);
+                transition: transform 0.2s, box-shadow 0.2s, filter 0.15s;
+                width: 100%;
+            }
+            .vote-welcome-cta:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(243, 156, 18, 0.4);
+                filter: brightness(1.05);
+            }
+            .vote-welcome-cta:active {
+                transform: translateY(0);
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Structure HTML de la modale
+    const modalHtml = `
+        <div class="vote-welcome-overlay" id="voteWelcomeOverlay">
+            <div class="vote-welcome-card">
+                <button class="vote-welcome-close" id="voteWelcomeCloseBtn">&times;</button>
+                <span class="vote-welcome-badge">COMMUNAUTÉ</span>
+                <h2>Votre avis compte ! 🌟</h2>
+                
+                <div class="vote-welcome-icon-container">
+                    <div class="vote-welcome-icon-circle up">
+                        <i class="bi bi-hand-thumbs-up-fill"></i>
+                    </div>
+                    <div class="vote-welcome-icon-circle down">
+                        <i class="bi bi-hand-thumbs-down-fill"></i>
+                    </div>
+                </div>
+
+                <p>
+                    <strong>Aidez-nous à améliorer les ressources !</strong><br>
+                    Vous pouvez désormais voter pour vos idées et jeux préférés. 
+                    <br><br>
+                    <strong>Aucun compte n'est requis</strong>, il suffit d'un simple clic sur le pouce vert 👍 ou le pouce rouge 👎. Chaque vote nous aide à savoir ce qui plaît le plus en colo !
+                </p>
+
+                <button class="vote-welcome-cta" id="voteWelcomeCtaBtn">C'est parti ! 🚀</button>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    const overlay = document.getElementById('voteWelcomeOverlay');
+    const closeBtn = document.getElementById('voteWelcomeCloseBtn');
+    const ctaBtn = document.getElementById('voteWelcomeCtaBtn');
+
+    // Empêcher le défilement de la page arrière pendant que la modale est active
+    document.body.style.overflow = 'hidden';
+
+    // Activer l'animation d'apparition
+    setTimeout(() => {
+        overlay.classList.add('active');
+    }, 50);
+
+    // Fonction de fermeture
+    function closeModal() {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        setTimeout(() => {
+            overlay.remove();
+        }, 300);
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+    ctaBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            closeModal();
+        }
+    });
 }
