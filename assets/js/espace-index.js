@@ -178,6 +178,9 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
     const userData = userDoc.data();
+    if (userData.banned === true) {
+        return; // Centralized handler will show ban screen
+    }
     const role = userData.role;
 
     // Masquer login, afficher dashboard

@@ -484,3 +484,143 @@ if ('serviceWorker' in navigator) {
             .catch(err => console.log('SW Registration Failed', err));
     });
 }
+
+// ----------------------------------------------------------------
+// GESTION DU BANNISSEMENT
+// ----------------------------------------------------------------
+
+function showBannedScreen() {
+    // Hide standard page loaders
+    document.getElementById('pageLoader')?.classList.add('hidden');
+    document.getElementById('adminLoader')?.classList.add('hidden');
+
+    if (!document.getElementById('ban-screen-styles')) {
+        const style = document.createElement('style');
+        style.id = 'ban-screen-styles';
+        style.innerHTML = `
+            .es-ban-screen {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: var(--clr-bg-dark, #121212);
+                color: var(--clr-text, #ffffff);
+                z-index: 999999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .es-ban-card {
+                background: var(--clr-surface-2, #1e1e1e);
+                border: 1px solid var(--clr-surface-3, rgba(255,255,255,0.08));
+                padding: 40px;
+                border-radius: var(--radius-lg, 16px);
+                max-width: 480px;
+                width: 100%;
+                text-align: center;
+                box-shadow: var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.5));
+                animation: es-ban-fadein 0.4s ease-out;
+            }
+            @keyframes es-ban-fadein {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .es-ban-icon {
+                font-size: 3.5rem;
+                color: var(--clr-danger, #e74c3c);
+                margin-bottom: 24px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .es-ban-title {
+                font-size: 1.5rem;
+                font-weight: 800;
+                margin-top: 0;
+                margin-bottom: 16px;
+                color: var(--clr-text, #ffffff);
+            }
+            .es-ban-message {
+                font-size: 0.95rem;
+                line-height: 1.6;
+                color: var(--clr-text-muted, rgba(255,255,255,0.7));
+                margin-bottom: 32px;
+            }
+            .es-ban-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const banHtml = `
+        <div class="es-ban-screen">
+            <div class="es-ban-card">
+                <div class="es-ban-icon">
+                    <i class="bi bi-shield-slash-fill"></i>
+                </div>
+                <h1 class="es-ban-title">Accès restreint</h1>
+                <p class="es-ban-message">
+                    L'administrateur de l'app vous a restreint les accès à cet espace, veuillez nous contacter si vous pensez que cela est une erreur.
+                </p>
+                <div class="es-ban-actions">
+                    <button id="btnBanLogout" class="es-btn es-btn--danger es-btn--full es-btn--lg">
+                        <i class="bi bi-box-arrow-right"></i> Déconnexion
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    let banContainer = document.getElementById('banScreenContainer');
+    if (!banContainer) {
+        banContainer = document.createElement('div');
+        banContainer.id = 'banScreenContainer';
+        document.body.appendChild(banContainer);
+    }
+    banContainer.innerHTML = banHtml;
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById('btnBanLogout')?.addEventListener('click', async () => {
+        await firebase.auth().signOut();
+        window.location.reload();
+    });
+}
+
+// Écouteur global pour intercepter et bloquer en temps réel si banni
+firebase.auth().onAuthStateChanged((user) => {
+    if (user) {
+        if (window.currentUserUnsub) window.currentUserUnsub();
+        window.currentUserUnsub = firebase.firestore().collection('users').doc(user.uid).onSnapshot(doc => {
+            if (doc.exists) {
+                const userData = doc.data();
+                if (userData.banned === true) {
+                    showBannedScreen();
+                } else {
+                    // Si le membre a été débanni en temps réel, on supprime l'écran de ban s'il existe
+                    const container = document.getElementById('banScreenContainer');
+                    if (container) {
+                        container.remove();
+                        document.body.style.overflow = '';
+                        window.location.reload(); // Recharger pour restaurer l'état
+                    }
+                }
+            }
+        }, err => {
+            if (err.code !== 'permission-denied') {
+                console.error("Erreur écoute statut ban:", err);
+            }
+        });
+    } else {
+        if (window.currentUserUnsub) {
+            window.currentUserUnsub();
+            window.currentUserUnsub = null;
+        }
+    }
+});

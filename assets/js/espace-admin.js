@@ -34,6 +34,10 @@ auth.onAuthStateChanged(async (user) => {
     const role = userDoc.data().role;
     const userData = userDoc.data();
 
+    if (userData.banned === true) {
+        return; // Centralized handler will show ban screen
+    }
+
     // Mettre à jour lastLogin
     db.collection('users').doc(user.uid).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
 
@@ -1131,6 +1135,20 @@ let rightsUserName = null;
 
 document.getElementById('btnCloseUserRights')?.addEventListener('click', () => closeModal('overlayUserRights'));
 document.getElementById('btnCloseUserRights2')?.addEventListener('click', () => closeModal('overlayUserRights'));
+document.getElementById('checkUserBanned')?.addEventListener('change', async (e) => {
+    if (!rightsUserId) return;
+    const isBanned = e.target.checked;
+    try {
+        await db.collection('users').doc(rightsUserId).update({
+            banned: isBanned
+        });
+        showToast(isBanned ? "Utilisateur banni." : "Utilisateur réhabilité.", "success");
+    } catch (err) {
+        console.error("Erreur mise à jour bannissement:", err);
+        showToast("Erreur lors de la mise à jour.", "error");
+        e.target.checked = !isBanned; // Revenir à l'état précédent
+    }
+});
 
 async function openUserRightsPanel(uid, email, displayName) {
     rightsUserId = uid;
@@ -1140,12 +1158,21 @@ async function openUserRightsPanel(uid, email, displayName) {
     document.getElementById('userRightsEmail').textContent = email;
 
     // Reset
+    const banCheckbox = document.getElementById('checkUserBanned');
+    if (banCheckbox) banCheckbox.checked = false;
     document.getElementById('userRightsLoader').classList.remove('hidden');
     document.getElementById('userRightsList').classList.add('hidden');
     document.getElementById('userRightsEmpty').classList.add('hidden');
     document.getElementById('userRightsList').innerHTML = '';
 
     openModal('overlayUserRights');
+
+    // Charger le statut banni
+    db.collection('users').doc(uid).get().then(doc => {
+        if (doc.exists && banCheckbox) {
+            banCheckbox.checked = doc.data().banned === true;
+        }
+    }).catch(err => console.error("Erreur chargement statut banni:", err));
 
     try {
         const espacesSnap = await db.collection('espaces').orderBy('dateDebut', 'desc').get();

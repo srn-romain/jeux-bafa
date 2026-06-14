@@ -117,6 +117,10 @@ auth.onAuthStateChanged(async (user) => {
     const role = userDoc.data().role;
     const userData = userDoc.data();
 
+    if (userData.banned === true) {
+        return; // Centralized handler will show ban screen
+    }
+
     // Synchroniser les espaces épinglés (pinnedColos) avec Firestore
     if (userData && userData.pinnedColos) {
         localStorage.setItem('pinnedColos', JSON.stringify(userData.pinnedColos));

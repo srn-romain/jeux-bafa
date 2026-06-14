@@ -590,6 +590,21 @@
             </div>
             <div class="es-modal__body" style="padding-bottom:8px;">
 
+                <!-- Section Bannissement -->
+                <div id="userRightsBanSection" style="margin-bottom: 20px; padding: 12px; background: rgba(231,76,60,0.06); border: 1px solid rgba(231,76,60,0.15); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 1.5rem; color: var(--clr-danger, #e74c3c);">🚫</span>
+                        <div>
+                            <div style="font-weight: 700; color: var(--clr-text); font-size: 0.88rem;">Bannir ce membre</div>
+                            <div style="font-size: 0.72rem; color: var(--clr-text-muted);">Restreindre immédiatement tous ses accès aux espaces.</div>
+                        </div>
+                    </div>
+                    <label class="switch" style="flex-shrink: 0;">
+                        <input type="checkbox" id="checkUserBanned">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
                 <!-- Loader -->
                 <div class="es-loader" id="userRightsLoader" style="padding:28px;">
                     <div class="es-spinner"></div>
