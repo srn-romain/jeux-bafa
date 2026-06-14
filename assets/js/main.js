@@ -328,3 +328,54 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 });
+
+/*--------------------------------------------------------------
+# Persistance globale des Checkboxes (localStorage)
+--------------------------------------------------------------*/
+document.addEventListener("DOMContentLoaded", function () {
+    persistCheckboxes();
+});
+
+function persistCheckboxes() {
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    const pageKey = encodeURIComponent(window.location.pathname);
+
+    checkboxes.forEach((checkbox, index) => {
+        let checkKey = "";
+        
+        if (checkbox.id) {
+            checkKey = `cb_id_${checkbox.id}`;
+        } else {
+            const parentLabel = checkbox.closest('label');
+            const parentLi = checkbox.closest('li');
+            let textContent = "";
+            
+            if (parentLabel) {
+                textContent = parentLabel.innerText.trim();
+            } else if (parentLi) {
+                textContent = parentLi.innerText.trim();
+            }
+            
+            if (textContent) {
+                const cleanText = textContent
+                    .replace(/[\s\r\n\t]+/g, '_')
+                    .toLowerCase()
+                    .substring(0, 100);
+                checkKey = `cb_txt_${pageKey}_${cleanText}`;
+            } else {
+                checkKey = `cb_idx_${pageKey}_${index}`;
+            }
+        }
+
+        // Charger l'état sauvegardé
+        const savedState = localStorage.getItem(checkKey);
+        if (savedState !== null) {
+            checkbox.checked = savedState === "true";
+        }
+
+        // Enregistrer l'état lors d'un changement
+        checkbox.addEventListener("change", function () {
+            localStorage.setItem(checkKey, checkbox.checked);
+        });
+    });
+}
