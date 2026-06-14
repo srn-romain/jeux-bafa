@@ -379,3 +379,244 @@ function persistCheckboxes() {
         });
     });
 }
+
+/*--------------------------------------------------------------
+# Système de Votes (Pouces Verts / Rouges)
+--------------------------------------------------------------*/
+document.addEventListener("DOMContentLoaded", function () {
+    const targetPages = [
+        'activites.html', 
+        'veillees.html', 
+        'semaine.html', 
+        'presentation.html', 
+        'conversation.html', 
+        'animateur.html', 
+        'manuels.html', 
+        'calme.html', 
+        'musique.html', 
+        'bouffe.html'
+    ];
+    
+    const currentPath = window.location.pathname.split('/').pop() || 'index.html';
+    const isTargetPage = targetPages.some(page => currentPath.includes(page));
+    
+    if (isTargetPage) {
+        loadFirebaseAndInitVotes();
+    }
+});
+
+function loadFirebaseAndInitVotes() {
+    if (window.firebase && window.db) {
+        initVotesSystem();
+        return;
+    }
+
+    // Déterminer le chemin relatif de firebase-config.js
+    const isRoot = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || !window.location.pathname.includes('/pages/');
+    const basePath = isRoot ? '' : '../';
+    const configPath = basePath + "assets/js/firebase-config.js";
+
+    const scripts = [
+        "https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js",
+        "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js",
+        "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js",
+        configPath
+    ];
+
+    let loadedCount = 0;
+    function loadNext() {
+        if (loadedCount >= scripts.length) {
+            if (window.firebase) {
+                if (!window.db) window.db = firebase.firestore();
+                if (!window.auth) window.auth = firebase.auth();
+                initVotesSystem();
+            }
+            return;
+        }
+        const script = document.createElement("script");
+        script.src = scripts[loadedCount];
+        script.onload = () => {
+            loadedCount++;
+            loadNext();
+        };
+        script.onerror = () => {
+            console.error("Erreur de chargement du script Firebase : " + scripts[loadedCount]);
+        };
+        document.head.appendChild(script);
+    }
+    loadNext();
+}
+
+function initVotesSystem() {
+    const listItems = document.querySelectorAll('.categories ul:not(.fads-grid) li, .categories ol:not(.fads-grid) li');
+    const pageKey = window.location.pathname.split('/').pop() || 'index.html';
+
+    const itemsToVote = [];
+
+    listItems.forEach((li, index) => {
+        if (li.closest('.regles-vie') || li.closest('.modalspe')) return;
+
+        const text = li.innerText.trim();
+        if (!text) return;
+
+        const cleanText = text
+            .replace(/[\s\r\n\t/]+/g, '_')
+            .toLowerCase()
+            .substring(0, 80);
+        
+        const voteId = `${pageKey}_${cleanText}`;
+
+        itemsToVote.push({
+            li: li,
+            voteId: voteId
+        });
+    });
+
+    if (itemsToVote.length === 0) return;
+
+    itemsToVote.forEach(item => {
+        const voteContainer = document.createElement('span');
+        voteContainer.className = 'vote-container';
+        voteContainer.setAttribute('data-vote-id', item.voteId);
+
+        const userVoteKey = `vote_${item.voteId}`;
+        const localVote = localStorage.getItem(userVoteKey);
+
+        const upIconClass = localVote === 'up' ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up';
+        const downIconClass = localVote === 'down' ? 'bi-hand-thumbs-down-fill' : 'bi-hand-thumbs-down';
+        const upActive = localVote === 'up' ? 'active' : '';
+        const downActive = localVote === 'down' ? 'active' : '';
+
+        voteContainer.innerHTML = `
+            <button class="vote-btn vote-up ${upActive}" title="J'aime">
+                <i class="bi ${upIconClass}"></i>
+                <span class="vote-count-up">0</span>
+            </button>
+            <button class="vote-btn vote-down ${downActive}" title="Je n'aime pas">
+                <i class="bi ${downIconClass}"></i>
+                <span class="vote-count-down" style="display: none;">0</span>
+            </button>
+        `;
+
+        item.li.prepend(voteContainer);
+
+        const btnUp = voteContainer.querySelector('.vote-up');
+        const btnDown = voteContainer.querySelector('.vote-down');
+        const countUpSpan = voteContainer.querySelector('.vote-count-up');
+        const countDownSpan = voteContainer.querySelector('.vote-count-down');
+
+        btnUp.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleVoteClick(item.voteId, 'up', btnUp, btnDown, countUpSpan, countDownSpan);
+        });
+
+        btnDown.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            handleVoteClick(item.voteId, 'down', btnUp, btnDown, countUpSpan, countDownSpan);
+        });
+    });
+
+    // Charger les votes positifs
+    db.collection('positive_votes').get().then(snapshot => {
+        const votesMap = {};
+        snapshot.forEach(doc => {
+            votesMap[doc.id] = doc.data().count || 0;
+        });
+
+        itemsToVote.forEach(item => {
+            const count = votesMap[item.voteId] || 0;
+            const container = item.li.querySelector(`.vote-container[data-vote-id="${item.voteId}"]`);
+            if (container) {
+                container.querySelector('.vote-count-up').innerText = count;
+            }
+        });
+    }).catch(err => {
+        console.error("Erreur de chargement des votes positifs:", err);
+    });
+
+    // Charger les votes négatifs (visible uniquement par l'admin connecté)
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            db.collection('users').doc(user.uid).get().then(doc => {
+                if (doc.exists && doc.data().role === 'admin') {
+                    db.collection('negative_votes').get().then(snapshot => {
+                        const negVotesMap = {};
+                        snapshot.forEach(doc => {
+                            negVotesMap[doc.id] = doc.data().count || 0;
+                        });
+
+                        itemsToVote.forEach(item => {
+                            const count = negVotesMap[item.voteId] || 0;
+                            const container = item.li.querySelector(`.vote-container[data-vote-id="${item.voteId}"]`);
+                            if (container) {
+                                const countDownSpan = container.querySelector('.vote-count-down');
+                                countDownSpan.innerText = count;
+                                countDownSpan.style.display = 'inline';
+                            }
+                        });
+                    }).catch(err => {
+                        console.error("Erreur de chargement des votes négatifs (admin):", err);
+                    });
+                }
+            }).catch(err => {
+                console.error("Erreur de lecture du rôle utilisateur:", err);
+            });
+        }
+    });
+}
+
+function handleVoteClick(voteId, direction, btnUp, btnDown, countUpSpan, countDownSpan) {
+    const userVoteKey = `vote_${voteId}`;
+    const currentVote = localStorage.getItem(userVoteKey);
+
+    if (currentVote === direction) {
+        localStorage.removeItem(userVoteKey);
+        updateVoteFirestore(voteId, direction, -1);
+        updateLocalUI(direction, -1, btnUp, btnDown, countUpSpan, countDownSpan);
+    } else if (currentVote) {
+        localStorage.setItem(userVoteKey, direction);
+        updateVoteFirestore(voteId, currentVote, -1);
+        updateVoteFirestore(voteId, direction, 1);
+        updateLocalUI(currentVote, -1, btnUp, btnDown, countUpSpan, countDownSpan);
+        updateLocalUI(direction, 1, btnUp, btnDown, countUpSpan, countDownSpan);
+    } else {
+        localStorage.setItem(userVoteKey, direction);
+        updateVoteFirestore(voteId, direction, 1);
+        updateLocalUI(direction, 1, btnUp, btnDown, countUpSpan, countDownSpan);
+    }
+}
+
+function updateVoteFirestore(voteId, direction, val) {
+    const colName = direction === 'up' ? 'positive_votes' : 'negative_votes';
+    db.collection(colName).doc(voteId).set({
+        count: firebase.firestore.FieldValue.increment(val)
+    }, { merge: true }).catch(err => {
+        console.error(`Erreur mise à jour vote ${direction} dans Firestore:`, err);
+    });
+}
+
+function updateLocalUI(direction, val, btnUp, btnDown, countUpSpan, countDownSpan) {
+    if (direction === 'up') {
+        const count = parseInt(countUpSpan.innerText) + val;
+        countUpSpan.innerText = count >= 0 ? count : 0;
+        if (val > 0) {
+            btnUp.classList.add('active');
+            btnUp.querySelector('i').className = 'bi bi-hand-thumbs-up-fill';
+        } else {
+            btnUp.classList.remove('active');
+            btnUp.querySelector('i').className = 'bi bi-hand-thumbs-up';
+        }
+    } else {
+        const count = parseInt(countDownSpan.innerText) + val;
+        countDownSpan.innerText = count >= 0 ? count : 0;
+        if (val > 0) {
+            btnDown.classList.add('active');
+            btnDown.querySelector('i').className = 'bi bi-hand-thumbs-down-fill';
+        } else {
+            btnDown.classList.remove('active');
+            btnDown.querySelector('i').className = 'bi bi-hand-thumbs-down';
+        }
+    }
+}

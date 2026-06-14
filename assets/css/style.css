@@ -1564,3 +1564,60 @@ em {
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
+/*--------------------------------------------------------------
+# Boutons de Vote (Pouces Verts / Rouges)
+--------------------------------------------------------------*/
+.vote-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.vote-btn {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  padding: 1px 6px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  transition: all 0.2s ease-in-out;
+  color: #888;
+  height: 20px;
+}
+
+.vote-btn:hover {
+  transform: scale(1.08);
+}
+
+.vote-btn.vote-up:hover, .vote-btn.vote-up.active {
+  color: #2ecc71 !important;
+  background-color: rgba(46, 204, 113, 0.08) !important;
+  border-color: rgba(46, 204, 113, 0.18) !important;
+}
+
+.vote-btn.vote-down:hover, .vote-btn.vote-down.active {
+  color: #e74c3c !important;
+  background-color: rgba(231, 76, 60, 0.08) !important;
+  border-color: rgba(231, 76, 60, 0.18) !important;
+}
+
+.vote-count-up, .vote-count-down {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #666;
+}
+
+.vote-btn.vote-up.active .vote-count-up {
+  color: #2ecc71;
+}
+
+.vote-btn.vote-down.active .vote-count-down {
+  color: #e74c3c;
+}
+
+

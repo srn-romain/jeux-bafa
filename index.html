@@ -285,6 +285,126 @@
         font-size: 0.74rem;
       }
     }
+
+    /* Annonce Nouveauté Votes */
+    .vote-announcement {
+      margin: 15px 20px 5px;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #fffef9, #fdf5e6);
+      border: 1px solid #f9e2b3;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      box-shadow: 0 4px 15px rgba(243, 156, 18, 0.08);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-align: left;
+    }
+
+    .vote-announcement:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(243, 156, 18, 0.15);
+      border-color: #f5b041;
+    }
+
+    .vote-announcement-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f39c12, #d68910);
+      color: #fff;
+      font-size: 1.4rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      box-shadow: 0 3px 8px rgba(243, 156, 18, 0.3);
+      flex-shrink: 0;
+      animation: pulse-icon 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-icon {
+      0% {
+        transform: scale(1);
+        box-shadow: 0 3px 8px rgba(243, 156, 18, 0.3);
+      }
+      50% {
+        transform: scale(1.05);
+        box-shadow: 0 3px 14px rgba(243, 156, 18, 0.5);
+      }
+      100% {
+        transform: scale(1);
+        box-shadow: 0 3px 8px rgba(243, 156, 18, 0.3);
+      }
+    }
+
+    .vote-announcement-content {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-grow: 1;
+    }
+
+    .vote-announcement-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .badge-new {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: #fff;
+      font-size: 0.68rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+      letter-spacing: 0.8px;
+      box-shadow: 0 2px 5px rgba(192, 57, 43, 0.2);
+    }
+
+    .vote-announcement-title {
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: #2c3e2d;
+    }
+
+    .vote-announcement-desc {
+      font-size: 0.82rem;
+      color: #5d6d7e;
+      margin: 0;
+      line-height: 1.45;
+    }
+
+    .vote-inline-emoji {
+      font-size: 0.9rem;
+      padding: 0 2px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    @media (max-width: 600px) {
+      .vote-announcement {
+        margin: 10px 12px 0;
+        padding: 12px 14px;
+        gap: 12px;
+      }
+      
+      .vote-announcement-icon {
+        width: 38px;
+        height: 38px;
+        font-size: 1.15rem;
+      }
+
+      .vote-announcement-title {
+        font-size: 0.88rem;
+      }
+
+      .vote-announcement-desc {
+        font-size: 0.78rem;
+      }
+    }
   </style>
 </head>
 
@@ -299,6 +419,22 @@
       <h1>🏕️ BAFA &amp; BAFD</h1>
       <p>Toutes vos ressources d'animation classées par thèmes. Cliquez sur une catégorie pour en savoir davantage !</p>
     </test>
+
+    <!-- Nouveauté Votes -->
+    <div class="vote-announcement">
+      <div class="vote-announcement-icon">
+        <i class="bi bi-hand-thumbs-up-fill"></i>
+      </div>
+      <test class="vote-announcement-content">
+        <test class="vote-announcement-header">
+          <span class="badge-new">NOUVEAUTÉ 🔥</span>
+          <test class="vote-announcement-title">Votez pour vos jeux préférés !</test>
+        </test>
+        <p class="vote-announcement-desc">
+          <strong>Donnez votre avis !</strong> Soutenez les meilleures idées avec un pouce vert <span class="vote-inline-emoji">👍</span> ou signalez celles qui vous plaisent moins avec un pouce rouge <span class="vote-inline-emoji">👎</span>. Cliquez sur l'une des rubriques ci-dessous pour voter !
+        </p>
+      </test>
+    </div>
 
     <main class="categories-grid">
 

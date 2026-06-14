@@ -128,6 +128,21 @@ service cloud.firestore {
     }
 
     // ============================================================
+    // COLLECTION : positive_votes
+    // ============================================================
+    match /positive_votes/{voteId} {
+      allow read, write: if true;
+    }
+
+    // ============================================================
+    // COLLECTION : negative_votes
+    // ============================================================
+    match /negative_votes/{voteId} {
+      allow read: if isAdmin();
+      allow write: if true;
+    }
+
+    // ============================================================
     // REFUS PAR DÉFAUT
     // ============================================================
     match /{document=**} {
