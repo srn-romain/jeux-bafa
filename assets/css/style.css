@@ -1674,6 +1674,12 @@ em {
   border-bottom: none;
 }
 
+.vote-admin-tooltip .vote-meta-user {
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 2px;
+}
+
 .vote-admin-tooltip .vote-meta-time {
   font-weight: 600;
   color: #34495e;

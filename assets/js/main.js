@@ -445,6 +445,8 @@ function loadFirebaseAndInitVotes() {
     loadNext();
 }
 
+let currentUserData = null;
+
 function initVotesSystem() {
     const listItems = document.querySelectorAll('.categories ul:not(.fads-grid) li, .categories ol:not(.fads-grid) li');
     const pageKey = window.location.pathname.split('/').pop() || 'index.html';
@@ -534,36 +536,43 @@ function initVotesSystem() {
         console.error("Erreur de chargement des votes positifs:", err);
     });
 
-    // Charger les votes négatifs (visible uniquement par l'admin connecté)
+    // Charger les votes négatifs (visible uniquement par l'admin connecté) et récupérer les données utilisateur
     auth.onAuthStateChanged(user => {
         if (user) {
             db.collection('users').doc(user.uid).get().then(doc => {
-                if (doc.exists && doc.data().role === 'admin') {
-                    db.collection('negative_votes').get().then(snapshot => {
-                        const negVotesMap = {};
-                        snapshot.forEach(doc => {
-                            negVotesMap[doc.id] = doc.data().count || 0;
+                if (doc.exists) {
+                    currentUserData = doc.data();
+                    currentUserData.uid = user.uid;
+
+                    if (currentUserData.role === 'admin') {
+                        db.collection('negative_votes').get().then(snapshot => {
+                            const negVotesMap = {};
+                            snapshot.forEach(doc => {
+                                negVotesMap[doc.id] = doc.data().count || 0;
+                            });
+
+                            itemsToVote.forEach(item => {
+                                const count = negVotesMap[item.voteId] || 0;
+                                const container = item.li.querySelector(`.vote-container[data-vote-id="${item.voteId}"]`);
+                                if (container) {
+                                    const countDownSpan = container.querySelector('.vote-count-down');
+                                    countDownSpan.innerText = count;
+                                    countDownSpan.style.display = 'inline';
+                                }
+                            });
+                        }).catch(err => {
+                            console.error("Erreur de chargement des votes négatifs (admin):", err);
                         });
 
-                        itemsToVote.forEach(item => {
-                            const count = negVotesMap[item.voteId] || 0;
-                            const container = item.li.querySelector(`.vote-container[data-vote-id="${item.voteId}"]`);
-                            if (container) {
-                                const countDownSpan = container.querySelector('.vote-count-down');
-                                countDownSpan.innerText = count;
-                                countDownSpan.style.display = 'inline';
-                            }
-                        });
-                    }).catch(err => {
-                        console.error("Erreur de chargement des votes négatifs (admin):", err);
-                    });
-
-                    // Initialiser les tooltips pour l'admin
-                    setupAdminTooltips(itemsToVote);
+                        // Initialiser les tooltips pour l'admin
+                        setupAdminTooltips(itemsToVote);
+                    }
                 }
             }).catch(err => {
                 console.error("Erreur de lecture du rôle utilisateur:", err);
             });
+        } else {
+            currentUserData = null;
         }
     });
 
@@ -613,7 +622,7 @@ function getVoterMetadata() {
     const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
     const formattedDate = `le ${dateStr} à ${timeStr}`;
 
-    return {
+    const metadata = {
         date: formattedDate,
         rawTimestamp: now.getTime(),
         browser: browser,
@@ -621,6 +630,26 @@ function getVoterMetadata() {
         device: device,
         lang: navigator.language || "fr"
     };
+
+    if (currentUserData) {
+        metadata.uid = currentUserData.uid || '';
+        let name = currentUserData.displayName || '';
+        if (!name) {
+            const parts = [];
+            if (currentUserData.firstName) parts.push(currentUserData.firstName);
+            if (currentUserData.lastName) parts.push(currentUserData.lastName);
+            name = parts.join(' ');
+        }
+        metadata.userName = name || currentUserData.email || 'Anonyme';
+        metadata.userRole = currentUserData.role || 'anim';
+    } else if (auth.currentUser) {
+        const user = auth.currentUser;
+        metadata.uid = user.uid;
+        metadata.userName = user.displayName || user.email || 'Anonyme';
+        metadata.userRole = 'anim';
+    }
+
+    return metadata;
 }
 
 let activeBtn = null;
@@ -636,34 +665,54 @@ function showTooltipForBtn(btn, voteId, direction) {
     const tooltip = document.getElementById('vote-admin-tooltip');
     if (!tooltip) return;
     
-    tooltip.innerHTML = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4><div class="vote-meta-loading">Chargement...</div>`;
+    tooltip.innerHTML = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4><span class="vote-meta-loading">Chargement...</span>`;
     tooltip.style.left = `${window.scrollX + rect.left + rect.width / 2}px`;
     tooltip.style.top = `${window.scrollY + rect.top - 8}px`;
     tooltip.style.transform = 'translate(-50%, -100%) translateY(-5px)';
     tooltip.classList.add('active');
 
     const colName = direction === 'up' ? 'positive_votes' : 'negative_votes';
+    
     db.collection(colName).doc(voteId).get().then(doc => {
         if (activeBtn !== btn) return;
         
-        if (doc.exists && doc.data().voters && Object.keys(doc.data().voters).length > 0) {
-            const voters = doc.data().voters;
-            const sortedVoters = Object.values(voters).sort((a, b) => (b.rawTimestamp || 0) - (a.rawTimestamp || 0));
+        let voters = {};
+        if (doc.exists) {
+            const data = doc.data() || {};
             
+            // 1. Essayer de récupérer le map imbriqué "voters"
+            if (data.voters && typeof data.voters === 'object') {
+                voters = { ...data.voters };
+            }
+            
+            // 2. Récupérer également les clés plates "voters.v_xxxxx" créées par .set(..., {merge: true})
+            Object.keys(data).forEach(key => {
+                if (key.startsWith('voters.')) {
+                    const visitorId = key.substring(7); // "voters.".length
+                    voters[visitorId] = data[key];
+                }
+            });
+        }
+        
+        const sortedVoters = Object.values(voters).sort((a, b) => (b.rawTimestamp || 0) - (a.rawTimestamp || 0));
+        
+        if (doc.exists && sortedVoters.length > 0) {
             let html = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4>`;
             html += `<ul>`;
             sortedVoters.forEach(v => {
+                const userLine = v.userName ? `<span class="vote-meta-user"><strong>${v.userName}</strong> (${v.userRole || 'Utilisateur'})</span>` : '';
                 html += `
                     <li>
-                        <div class="vote-meta-time">${v.date || 'Date inconnue'}</div>
-                        <div class="vote-meta-details">${v.device || 'Appareil'} (${v.os || 'OS'}) - ${v.browser || 'Navigateur'}</div>
+                        ${userLine}
+                        <span class="vote-meta-time">${v.date || 'Date inconnue'}</span>
+                        <span class="vote-meta-details">${v.device || 'Appareil'} (${v.os || 'OS'}) - ${v.browser || 'Navigateur'}</span>
                     </li>
                 `;
             });
             html += `</ul>`;
             tooltip.innerHTML = html;
         } else {
-            tooltip.innerHTML = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4><div class="vote-meta-loading">Aucune donnée enregistrée.</div>`;
+            tooltip.innerHTML = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4><span class="vote-meta-loading">Aucune donnée enregistrée.</span>`;
         }
         
         const newRect = btn.getBoundingClientRect();
@@ -671,7 +720,7 @@ function showTooltipForBtn(btn, voteId, direction) {
         tooltip.style.top = `${window.scrollY + newRect.top - 8}px`;
     }).catch(err => {
         if (activeBtn !== btn) return;
-        tooltip.innerHTML = `<h4>Erreur</h4><div class="vote-meta-loading">Impossible de charger les données.</div>`;
+        tooltip.innerHTML = `<h4>Erreur</h4><span class="vote-meta-loading">Impossible de charger les données.</span>`;
     });
 }
 

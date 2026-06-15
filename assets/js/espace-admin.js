@@ -1099,9 +1099,15 @@ async function loadUsers() {
                 <td style="text-align: center;">${u.displayName || '<span style="color:var(--clr-text-light)">–</span>'}</td>
                 <td style="text-align: center; font-size:0.82rem;color:var(--clr-text-muted);">${formatFullDate(u.lastLogin)}</td>
                 <td style="text-align: center;">
-                    <span class="es-badge ${u.role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}">
-                        ${u.role === 'admin' ? '👑 Admin' : '🎨 Anim'}
-                    </span>
+                    ${u.banned === true ? `
+                        <span class="es-badge es-badge--banned">
+                            🚫 Banni
+                        </span>
+                    ` : `
+                        <span class="es-badge ${u.role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}">
+                            ${u.role === 'admin' ? '👑 Admin' : '🎨 Anim'}
+                        </span>
+                    `}
                 </td>
                 <td class="es-table__actions" style="vertical-align: middle;">
                     <div style="display:flex; gap:6px; align-items:center; justify-content: center;">
@@ -1143,6 +1149,7 @@ document.getElementById('checkUserBanned')?.addEventListener('change', async (e)
             banned: isBanned
         });
         showToast(isBanned ? "Utilisateur banni." : "Utilisateur réhabilité.", "success");
+        loadUsers();
     } catch (err) {
         console.error("Erreur mise à jour bannissement:", err);
         showToast("Erreur lors de la mise à jour.", "error");
