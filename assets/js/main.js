@@ -557,6 +557,9 @@ function initVotesSystem() {
                     }).catch(err => {
                         console.error("Erreur de chargement des votes négatifs (admin):", err);
                     });
+
+                    // Initialiser les tooltips pour l'admin
+                    setupAdminTooltips(itemsToVote);
                 }
             }).catch(err => {
                 console.error("Erreur de lecture du rôle utilisateur:", err);
@@ -571,32 +574,237 @@ function initVotesSystem() {
     }
 }
 
+function getOrCreateVisitorId() {
+    let visitorId = localStorage.getItem('vote_visitor_id');
+    if (!visitorId) {
+        visitorId = 'v_' + Math.random().toString(36).substring(2, 15) + '_' + Date.now().toString(36);
+        localStorage.setItem('vote_visitor_id', visitorId);
+    }
+    return visitorId;
+}
+
+function getVoterMetadata() {
+    const ua = navigator.userAgent;
+    let browser = "Inconnu";
+    let os = "Inconnu";
+    
+    // OS simple
+    if (ua.indexOf("Win") !== -1) os = "Windows";
+    else if (ua.indexOf("Mac") !== -1) os = "MacOS";
+    else if (ua.indexOf("Linux") !== -1) os = "Linux";
+    else if (ua.indexOf("Android") !== -1) os = "Android";
+    else if (ua.indexOf("like Mac") !== -1) os = "iOS";
+    
+    // Navigateur simple
+    if (ua.indexOf("Firefox") !== -1) browser = "Firefox";
+    else if (ua.indexOf("SamsungBrowser") !== -1) browser = "Samsung Browser";
+    else if (ua.indexOf("Opera") !== -1 || ua.indexOf("OPR") !== -1) browser = "Opera";
+    else if (ua.indexOf("Trident") !== -1) browser = "Internet Explorer";
+    else if (ua.indexOf("Edge") !== -1 || ua.indexOf("Edg") !== -1) browser = "Edge";
+    else if (ua.indexOf("Chrome") !== -1) browser = "Chrome";
+    else if (ua.indexOf("Safari") !== -1) browser = "Safari";
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    const device = isMobile ? "Mobile" : "Desktop";
+
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const dateStr = `${pad(now.getDate())}/${pad(now.getMonth() + 1)}/${now.getFullYear()}`;
+    const timeStr = `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    const formattedDate = `le ${dateStr} à ${timeStr}`;
+
+    return {
+        date: formattedDate,
+        rawTimestamp: now.getTime(),
+        browser: browser,
+        os: os,
+        device: device,
+        screen: `${window.screen.width}x${window.screen.height}`,
+        lang: navigator.language || "fr"
+    };
+}
+
+let activeBtn = null;
+let touchStartTimer = null;
+let touchX = 0;
+let touchY = 0;
+
+function showTooltipForBtn(btn, voteId, direction) {
+    if (activeBtn === btn) return;
+    activeBtn = btn;
+    
+    const rect = btn.getBoundingClientRect();
+    const tooltip = document.getElementById('vote-admin-tooltip');
+    if (!tooltip) return;
+    
+    tooltip.innerHTML = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4><div class="vote-meta-loading">Chargement...</div>`;
+    tooltip.style.left = `${window.scrollX + rect.left + rect.width / 2}px`;
+    tooltip.style.top = `${window.scrollY + rect.top - 8}px`;
+    tooltip.style.transform = 'translate(-50%, -100%) translateY(-5px)';
+    tooltip.classList.add('active');
+
+    const colName = direction === 'up' ? 'positive_votes' : 'negative_votes';
+    db.collection(colName).doc(voteId).get().then(doc => {
+        if (activeBtn !== btn) return;
+        
+        if (doc.exists && doc.data().voters && Object.keys(doc.data().voters).length > 0) {
+            const voters = doc.data().voters;
+            const sortedVoters = Object.values(voters).sort((a, b) => (b.rawTimestamp || 0) - (a.rawTimestamp || 0));
+            
+            let html = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4>`;
+            html += `<ul>`;
+            sortedVoters.forEach(v => {
+                html += `
+                    <li>
+                        <div class="vote-meta-time">${v.date || 'Date inconnue'}</div>
+                        <div class="vote-meta-details">${v.device || 'Appareil'} (${v.os || 'OS'}) - ${v.browser || 'Navigateur'} (${v.screen || 'Résolution'})</div>
+                    </li>
+                `;
+            });
+            html += `</ul>`;
+            tooltip.innerHTML = html;
+        } else {
+            tooltip.innerHTML = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4><div class="vote-meta-loading">Aucune donnée enregistrée.</div>`;
+        }
+        
+        const newRect = btn.getBoundingClientRect();
+        tooltip.style.left = `${window.scrollX + newRect.left + newRect.width / 2}px`;
+        tooltip.style.top = `${window.scrollY + newRect.top - 8}px`;
+    }).catch(err => {
+        if (activeBtn !== btn) return;
+        tooltip.innerHTML = `<h4>Erreur</h4><div class="vote-meta-loading">Impossible de charger les données.</div>`;
+    });
+}
+
+function hideTooltip() {
+    activeBtn = null;
+    const tooltip = document.getElementById('vote-admin-tooltip');
+    if (tooltip) {
+        tooltip.classList.remove('active');
+    }
+}
+
+function setupAdminTooltips(itemsToVote) {
+    let tooltipEl = document.getElementById('vote-admin-tooltip');
+    if (!tooltipEl) {
+        tooltipEl = document.createElement('div');
+        tooltipEl.id = 'vote-admin-tooltip';
+        tooltipEl.className = 'vote-admin-tooltip';
+        document.body.appendChild(tooltipEl);
+    }
+
+    itemsToVote.forEach(item => {
+        const container = item.li.querySelector(`.vote-container[data-vote-id="${item.voteId}"]`);
+        if (!container) return;
+
+        const btnUp = container.querySelector('.vote-up');
+        const btnDown = container.querySelector('.vote-down');
+
+        [ { btn: btnUp, dir: 'up' }, { btn: btnDown, dir: 'down' } ].forEach(({ btn, dir }) => {
+            if (!btn) return;
+
+            btn.addEventListener('mouseenter', () => {
+                showTooltipForBtn(btn, item.voteId, dir);
+            });
+
+            btn.addEventListener('mouseleave', () => {
+                hideTooltip();
+            });
+
+            btn.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                touchX = touch.clientX;
+                touchY = touch.clientY;
+
+                if (touchStartTimer) clearTimeout(touchStartTimer);
+                
+                touchStartTimer = setTimeout(() => {
+                    showTooltipForBtn(btn, item.voteId, dir);
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+                }, 600);
+            }, { passive: true });
+
+            btn.addEventListener('touchmove', (e) => {
+                const touch = e.touches[0];
+                if (Math.abs(touch.clientX - touchX) > 10 || Math.abs(touch.clientY - touchY) > 10) {
+                    if (touchStartTimer) {
+                        clearTimeout(touchStartTimer);
+                        touchStartTimer = null;
+                    }
+                    hideTooltip();
+                }
+            }, { passive: true });
+
+            btn.addEventListener('touchend', () => {
+                if (touchStartTimer) {
+                    clearTimeout(touchStartTimer);
+                    touchStartTimer = null;
+                }
+                hideTooltip();
+            });
+
+            btn.addEventListener('touchcancel', () => {
+                if (touchStartTimer) {
+                    clearTimeout(touchStartTimer);
+                    touchStartTimer = null;
+                }
+                hideTooltip();
+            });
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (activeBtn && !activeBtn.contains(e.target)) {
+            hideTooltip();
+        }
+    });
+    document.addEventListener('touchstart', (e) => {
+        if (activeBtn && !activeBtn.contains(e.target)) {
+            hideTooltip();
+        }
+    }, { passive: true });
+}
+
 function handleVoteClick(voteId, direction, btnUp, btnDown, countUpSpan, countDownSpan) {
     const userVoteKey = `vote_${voteId}`;
     const currentVote = localStorage.getItem(userVoteKey);
+    const visitorId = getOrCreateVisitorId();
+    const metadata = getVoterMetadata();
 
     if (currentVote === direction) {
         localStorage.removeItem(userVoteKey);
-        updateVoteFirestore(voteId, direction, -1);
+        updateVoteFirestore(voteId, direction, -1, visitorId, null);
         updateLocalUI(direction, -1, btnUp, btnDown, countUpSpan, countDownSpan);
     } else if (currentVote) {
         localStorage.setItem(userVoteKey, direction);
-        updateVoteFirestore(voteId, currentVote, -1);
-        updateVoteFirestore(voteId, direction, 1);
+        updateVoteFirestore(voteId, currentVote, -1, visitorId, null);
+        updateVoteFirestore(voteId, direction, 1, visitorId, metadata);
         updateLocalUI(currentVote, -1, btnUp, btnDown, countUpSpan, countDownSpan);
         updateLocalUI(direction, 1, btnUp, btnDown, countUpSpan, countDownSpan);
     } else {
         localStorage.setItem(userVoteKey, direction);
-        updateVoteFirestore(voteId, direction, 1);
+        updateVoteFirestore(voteId, direction, 1, visitorId, metadata);
         updateLocalUI(direction, 1, btnUp, btnDown, countUpSpan, countDownSpan);
     }
 }
 
-function updateVoteFirestore(voteId, direction, val) {
+function updateVoteFirestore(voteId, direction, val, visitorId, metadata) {
     const colName = direction === 'up' ? 'positive_votes' : 'negative_votes';
-    db.collection(colName).doc(voteId).set({
+    const updateData = {
         count: firebase.firestore.FieldValue.increment(val)
-    }, { merge: true }).catch(err => {
+    };
+
+    if (visitorId) {
+        if (metadata) {
+            updateData[`voters.${visitorId}`] = metadata;
+        } else {
+            updateData[`voters.${visitorId}`] = firebase.firestore.FieldValue.delete();
+        }
+    }
+
+    db.collection(colName).doc(voteId).set(updateData, { merge: true }).catch(err => {
         console.error(`Erreur mise à jour vote ${direction} dans Firestore:`, err);
     });
 }
