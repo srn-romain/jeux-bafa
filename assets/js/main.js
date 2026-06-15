@@ -619,7 +619,6 @@ function getVoterMetadata() {
         browser: browser,
         os: os,
         device: device,
-        screen: `${window.screen.width}x${window.screen.height}`,
         lang: navigator.language || "fr"
     };
 }
@@ -657,7 +656,7 @@ function showTooltipForBtn(btn, voteId, direction) {
                 html += `
                     <li>
                         <div class="vote-meta-time">${v.date || 'Date inconnue'}</div>
-                        <div class="vote-meta-details">${v.device || 'Appareil'} (${v.os || 'OS'}) - ${v.browser || 'Navigateur'} (${v.screen || 'Résolution'})</div>
+                        <div class="vote-meta-details">${v.device || 'Appareil'} (${v.os || 'OS'}) - ${v.browser || 'Navigateur'}</div>
                     </li>
                 `;
             });

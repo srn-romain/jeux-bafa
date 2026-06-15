@@ -405,6 +405,15 @@
         font-size: 0.78rem;
       }
     }
+
+    .rgpd-link {
+      color: rgba(255, 255, 255, 0.6) !important;
+      transition: color 0.2s ease;
+      font-weight: 500;
+    }
+    .rgpd-link:hover {
+      color: #f39c12 !important;
+    }
   </style>
 </head>
 
@@ -542,7 +551,53 @@
         href="https://www.instagram.com/romain_colo/" target="_blank"
         style="color:#f39c12; font-weight:bold;">@romain_colo</a>
     </p>
+    <p style="text-align: center; margin-top: 10px; font-size: 0.8rem; margin-bottom: 15px;">
+      <a href="#" class="openModalBtn rgpd-link" data-modal="rgpd-modal">
+        Confidentialité & RGPD
+      </a>
+    </p>
   </footer>
+
+  <!-- Modale RGPD / Confidentialité -->
+  <div id="rgpd-modal" class="modalspe">
+    <div class="modal__contentspe">
+      <button class="modal__closespe">&times;</button>
+      <h2 style="font-family: 'Inter', sans-serif; font-weight: 700; color: #2c3e50; margin-bottom: 20px;">🛡️ Politique de Confidentialité & RGPD</h2>
+      
+      <div style="font-family: 'Inter', sans-serif; color: #4a5568; line-height: 1.6; font-size: 0.9rem; text-align: left;">
+        <p style="margin-bottom: 15px;">
+          Conformément au <strong>Règlement Général sur la Protection des Données (RGPD)</strong>, nous vous informons de manière transparente sur les données collectées et leur utilité lors de votre navigation sur ce site.
+        </p>
+
+        <h3 style="color: #2c3e50; font-size: 1rem; font-weight: 600; margin-top: 20px; margin-bottom: 8px;">1. Données collectées</h3>
+        <p style="margin-bottom: 10px;">
+          Lorsque vous votez sur ce site (pouces vers le haut/bas), nous collectons les métadonnées suivantes :
+        </p>
+        <ul style="margin-left: 20px; margin-bottom: 15px; list-style-type: disc;">
+          <li style="margin-bottom: 5px;">La date et l'heure exactes de votre vote.</li>
+          <li style="margin-bottom: 5px;">Le type d'appareil utilisé (Ordinateur ou Mobile).</li>
+          <li style="margin-bottom: 5px;">Le système d'exploitation (Windows, macOS, Android, iOS, Linux...).</li>
+          <li style="margin-bottom: 5px;">Le nom du navigateur (Chrome, Safari, Firefox, Edge...).</li>
+          <li style="margin-bottom: 5px;">La langue par défaut de votre navigateur.</li>
+        </ul>
+
+        <h3 style="color: #2c3e50; font-size: 1rem; font-weight: 600; margin-top: 20px; margin-bottom: 8px;">2. But de la collecte</h3>
+        <p style="margin-bottom: 15px;">
+          Ces informations ont pour but unique d'assurer la <strong>fiabilité du système de votes</strong> et d'aider à prévenir les votes frauduleux ou automatisés (spams, votes multiples abusifs). Elles permettent d'améliorer la pertinence des contenus partagés.
+        </p>
+
+        <h3 style="color: #2c3e50; font-size: 1rem; font-weight: 600; margin-top: 20px; margin-bottom: 8px;">3. Accès et visibilité</h3>
+        <p style="margin-bottom: 15px;">
+          Ces métadonnées sont stockées de façon sécurisée sur Firebase Firestore. Elles ne sont consultables <strong>que par l'administrateur du site</strong>, afin de modérer et d'analyser la validité globale des votes. Aucune donnée n'est revendue ni transmise à des tiers.
+        </p>
+
+        <h3 style="color: #2c3e50; font-size: 1rem; font-weight: 600; margin-top: 20px; margin-bottom: 8px;">4. Droits des utilisateurs</h3>
+        <p style="margin-bottom: 15px;">
+          Chaque vote est lié à un identifiant anonyme généré localement sur votre navigateur (visitor ID). Si vous retirez un vote en cliquant de nouveau sur le pouce concerné, <strong>toutes vos métadonnées associées à ce vote sont immédiatement et définitivement supprimées</strong> de notre base de données.
+        </p>
+      </div>
+    </div>
+  </div>
 
   <a href="#" class="back-to-top d-flex align-items-center justify-content-center">
     <i class="bi bi-arrow-up-short"></i>

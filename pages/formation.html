@@ -655,106 +655,181 @@
         <div id="modal-transport" class="modalspe">
             <div class="modal__contentspe modal-large">
                 <button class="modal__closespe">&times;</button>
-                <h1 id="transport">Transports</h1>
-                <ul>
-                    <li>Brainstorming : À quoi pensez-vous en entendant « transport » ? (Bus, car, train, avion, vomi,
-                        ceinture...)
-                    </li>
-                    <li>À l’arrivée du car, vérifier l’état général (vitres, carrosserie, etc.). En cas de problème,
-                        prévenir le
-                        conducteur. La sécurité des enfants (et des animateurs !) est une priorité, votre responsabilité
-                        pénale
-                        est
-                        engagée. Vérifier aussi la présence de la trousse de secours et du gilet jaune au besoin.
-                        Regarder
-                        également
-                        l'état de santé du chauffeur, s'il est fatigué, ou ivre, il ne doit évidemment pas conduire ->
-                        refuser de
-                        faire
-                        monter les enfants.
-                    </li>
-                    <li>Organisation des bagages : qui met les valises dans le car ? Les jeunes ou les animateurs ? ->
-                        En
-                        fonction
-                        de
-                        tranche d'âge.
-                    </li>
-                    <li>Les enfants cherchent souvent la meilleure place et rangent leurs valises sans attention. Leur
-                        rappeler
-                        de
-                        faire attention ou laisser les animateurs s’en charger.
-                    </li>
-                    <li>Le chauffeur peut demander la liste des jeunes et le nombre d’enfants/animateurs présents.</li>
-                    <li>Que prennent les jeunes dans le bus ? Boissons, nourriture ? À adapter selon la durée du trajet.
-                        Pour
-                        une
-                        sortie piscine, rien à prendre ; pour un long trajet, prévoir eau et pique-nique si un arrêt est
-                        prévu.
-                    </li>
-                    <li>Placement dans le car : où s’installent les animateurs ? -> Doivent être répartis dans le car !
-                        Éviter
-                        pour
-                        les jeunes le centre au fond, près des portes et les places sans fauteuils devant :ce sont des
-                        places
-                        déconseillé mais pas interdit. Strapontins par contre interdits.
-                    </li>
-                    <li style="list-style-type: none; padding-left: 0; text-align: center"><img
-                            src="../public/images/bus.png"
-                            alt="Bus" style="max-width:100%; width:100%; height:auto; display:block; margin:0 auto;">
-                    </li>
-                    <li>L’animateur au fond du bus remonte l’ensemble du groupe. Idéalement, les animateurs sont
-                        répartis
-                        partout.
-                    </li>
-                    <li>Avant de partir, vérifier que tout le monde a bien attaché sa ceinture de sécurité. C’est
-                        obligatoire et
-                        fondamental.
-                    </li>
-                    <li>En cas de mal des transports, placer les jeunes sujets à ce problème à l’avant et prévoir des
-                        sacs
-                        plastiques à garder sur sois !
-                    </li>
-                    <li>Attention à la hauteur de la marche lors de la montée et descente, surtout pour les enfants de
-                        moins de
-                        10
-                        ans.
-                        Toujours placer un animateur pour compter les enfants à la montée et à la descente.
-                    </li>
-                    <li>Toilettes dans le bus : les chauffeurs préfèrent souvent qu’on ne les utilise pas. Prévoir un
-                        passage
-                        aux
-                        toilettes avant le départ.
-                    </li>
-                    <li>Attention à la hauteur de la soute, les enfants peuvent se cogner.</li>
-                    <li>Organisation de la soute : selon la configuration du car, adapter la disposition des animateurs.
-                        Parfois
-                        les
-                        soutes communiquent, parfois non. Pour les petits, placer les valises à l’avant de la soute.
-                    </li>
-                    <li>Caler les bagages pour éviter qu’ils ne basculent en cas de freinage brusque.</li>
-                    <li>Des valises bien alignées donnent une bonne image du séjour. Des valises mal rangées donnent une
-                        mauvaise
-                        impression. (Cela fait parties des vitrines du séjour !)
-                    </li>
-                    <li>À l’approche de l’arrivée, réveiller les animateurs qui dorment.</li>
-                    <li>Avant de descendre, faire un point avec les animateurs et donner les consignes aux jeunes, car
-                        une fois
-                        dehors
-                        ils courent vers leurs parents.
-                    </li>
-                    <li>À l’arrivée, placer un animateur pour compter les enfants à la descente, un autre pour sortir
-                        les
-                        valises
-                        (surtout pour les petits), et un autre pour surveiller ceux qui partent et les noter.
-                    </li>
-                    <li>En fin de trajet, faire un tour du bus pour vérifier qu’aucune affaire ou enfant n’a été oublié.
-                        Dans
-                        les
-                        bus
-                        modernes, une alarme signale si un enfant est resté à bord.
-                    </li>
-                    <li>Compter systématiquement les enfants en montant et en descendant du bus.</li>
-                </ul>
+                <h1 id="transport" style="margin-bottom: 5px;">Transports & Réglementation</h1>
+                <p style="margin-bottom: 20px; color: #4a5568; font-style: italic; font-size: 0.95rem; line-height: 1.4;">
+                    <strong>Brainstorming d'introduction :</strong> À quoi pensez-vous en entendant « transport » ? (Bus, car, train, avion, vomi, ceinture...)
+                </p>
+                
+                <test class="transport-modal-grid">
+                    <!-- Colonne Visuelle (Schéma du Bus) -->
+                    <test class="transport-bus-col">
+                        <div class="transport-bus-title">Plan de Sécurité du Bus</div>
+                        <img src="../public/images/bus.png" alt="Schéma du Bus">
+                        
+                        <test class="transport-legend">
+                            <test class="transport-legend-title">Légende du Placement</test>
+                            <ul class="transport-legend-list">
+                                <li class="transport-legend-item">
+                                    <span class="legend-color-box red"></span>
+                                    <span><strong>Rouge :</strong> Sièges interdits (strapontins).</span>
+                                </li>
+                                <li class="transport-legend-item">
+                                    <span class="legend-color-box neutral"></span>
+                                    <span><strong>Gris :</strong> Sièges autorisés.</span>
+                                </li>
+                            </ul>
+                        </test>
+                    </test>
+
+                    <!-- Colonne Listes de Contrôle (Checklists) -->
+                    <test class="transport-checklists-col">
+                        <!-- Carte 1 : Sécurité & Contrôles -->
+                        <test class="transport-card card-safety">
+                            <div class="transport-card-header">
+                                <span>🛡️ Sécurité & Contrôles</span>
+                            </div>
+                            <div class="transport-card-body">
+                                <ul class="transport-checklist">
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-safety-driver">
+                                        <label for="check-safety-driver" class="transport-checklist-text">
+                                            <strong>Santé du chauffeur :</strong> Vérifier qu'il est reposé et sobre. S'il est fatigué ou ivre, refuser le départ et prévenir immédiatement la direction.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-safety-bus">
+                                        <label for="check-safety-bus" class="transport-checklist-text">
+                                            <strong>État général du car :</strong> Inspecter les vitres et la carrosserie. Signaler tout problème ou dégradation au conducteur.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-safety-equipment">
+                                        <label for="check-safety-equipment" class="transport-checklist-text">
+                                            <strong>Matériel de secours :</strong> Vérifier la présence réglementaire de la trousse de secours et du gilet jaune à bord.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-safety-belts">
+                                        <label for="check-safety-belts" class="transport-checklist-text">
+                                            <strong>Ceintures de sécurité :</strong> Vérifier systématiquement que chaque jeune a bien attaché sa ceinture avant le départ (obligatoire et fondamental).
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-safety-list">
+                                        <label for="check-safety-list" class="transport-checklist-text">
+                                            <strong>Comptage & Liste :</strong> Compter systématiquement les enfants en montant et en descendant. Avoir le nombre exact et la liste pour le chauffeur.
+                                        </label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </test>
+
+                        <!-- Carte 2 : Logistique & Bagages -->
+                        <test class="transport-card card-luggage">
+                            <div class="transport-card-header">
+                                <span>🧳 Logistique & Bagages</span>
+                            </div>
+                            <div class="transport-card-body">
+                                <ul class="transport-checklist">
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-luggage-loading">
+                                        <label for="check-luggage-loading" class="transport-checklist-text">
+                                            <strong>Rangement des valises :</strong> Déterminer qui charge la soute (jeunes ou animateurs) selon l'âge et la force des enfants.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-luggage-safety">
+                                        <label for="check-luggage-safety" class="transport-checklist-text">
+                                            <strong>Sécurité de la soute :</strong> Caler les bagages pour éviter qu'ils ne basculent en cas de freinage. Attention à la hauteur pour éviter de se cogner la tête.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-luggage-image">
+                                        <label for="check-luggage-image" class="transport-checklist-text">
+                                            <strong>Image & Organisation :</strong> Veiller à un rangement aligné et propre (vitrine du séjour !). Placer les valises à l'avant pour les petits.
+                                        </label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </test>
+
+                        <!-- Carte 3 : Trajet & Placement -->
+                        <test class="transport-card card-journey">
+                            <div class="transport-card-header">
+                                <span>🚌 Durant le Voyage & Confort</span>
+                            </div>
+                            <div class="transport-card-body">
+                                <ul class="transport-checklist">
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-journey-sickness">
+                                        <label for="check-journey-sickness" class="transport-checklist-text">
+                                            <strong>Mal des transports :</strong> Placer les jeunes sujets à ce problème à l'avant du bus et prévoir des sacs plastiques à garder sur soi.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-journey-anims">
+                                        <label for="check-journey-anims" class="transport-checklist-text">
+                                            <strong>Répartition des animateurs :</strong> S'installer partout (avant, milieu, arrière). L'animateur placé au fond remonte tout le groupe et gère la visibilité.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-journey-avoid">
+                                        <label for="check-journey-avoid" class="transport-checklist-text">
+                                            <strong>Places déconseillées :</strong> Éviter pour les jeunes le centre au fond (près des portes) et les places sans fauteuil devant (déconseillées mais non interdites).
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-journey-toilets">
+                                        <label for="check-journey-toilets" class="transport-checklist-text">
+                                            <strong>Toilettes du bus :</strong> Souvent interdites par les chauffeurs. Prévoir impérativement un passage aux toilettes avant le départ.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-journey-food">
+                                        <label for="check-journey-food" class="transport-checklist-text">
+                                            <strong>Nourriture / Boisson :</strong> À adapter selon la durée (ex: rien pour la piscine ; eau et pique-nique si arrêt prévu sur long trajet).
+                                        </label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </test>
+
+                        <!-- Carte 4 : Descente & Arrivée -->
+                        <test class="transport-card card-arrival">
+                            <div class="transport-card-header">
+                                <span>🏁 Descente & Arrivée</span>
+                            </div>
+                            <div class="transport-card-body">
+                                <ul class="transport-checklist">
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-arrival-prep">
+                                        <label for="check-arrival-prep" class="transport-checklist-text">
+                                            <strong>Préparation à l'approche :</strong> Réveiller les animateurs qui dorment. Donner les consignes aux jeunes <b>dans</b> le car avant qu'ils ne descendent.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-arrival-steps">
+                                        <label for="check-arrival-steps" class="transport-checklist-text">
+                                            <strong>Descente sécurisée :</strong> Attention à la hauteur des marches (surtout < 10 ans). Placer un animateur pour compter les enfants à la descente.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-arrival-checkout">
+                                        <label for="check-arrival-checkout" class="transport-checklist-text">
+                                            <strong>Distribution & Pointage :</strong> Un animateur sort les bagages, un autre surveille et note/pointe les enfants au fur et à mesure de leur départ avec leurs parents.
+                                        </label>
+                                    </li>
+                                    <li class="transport-checklist-item">
+                                        <input type="checkbox" id="check-arrival-final">
+                                        <label for="check-arrival-final" class="transport-checklist-text">
+                                            <strong>Contrôle de fin :</strong> Faire un tour complet du bus pour s'assurer qu'aucun enfant ou sac n'a été oublié. (Certains véhicule ont une alarme de détection au fond du car).
+                                        </label>
+                                    </li>
+                                </ul>
+                            </div>
+                        </test>
+                    </test>
+                </test>
             </div>
         </div>
 
