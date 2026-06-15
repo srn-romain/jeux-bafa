@@ -392,9 +392,7 @@ document.addEventListener("DOMContentLoaded", function () {
         'conversation.html', 
         'animateur.html', 
         'manuels.html', 
-        'calme.html', 
-        'musique.html', 
-        'bouffe.html'
+        'calme.html'
     ];
     
     const currentPath = window.location.pathname.split('/').pop() || 'index.html';
@@ -454,7 +452,7 @@ function initVotesSystem() {
     const itemsToVote = [];
 
     listItems.forEach((li, index) => {
-        if (li.closest('.regles-vie') || li.closest('.modalspe')) return;
+        if (li.closest('.regles-vie') || li.closest('.modalspe') || li.closest('.no-vote')) return;
 
         const text = li.innerText.trim();
         if (!text) return;
