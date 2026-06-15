@@ -65,11 +65,15 @@ service cloud.firestore {
         allow read: if isAdmin() || hasApprovedAccess(espaceId);
         allow create, delete: if isAdmin() || (
           hasApprovedAccess(espaceId) &&
+          get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)).data.get('espaceRole', 'anim') == 'anim-admin' &&
           get(/databases/$(database)/documents/espaces/$(espaceId)).data.get('participantsLocked', false) == false
         );
         allow update: if isAdmin() || (
           hasApprovedAccess(espaceId) && (
-            get(/databases/$(database)/documents/espaces/$(espaceId)).data.get('participantsLocked', false) == false ||
+            (
+              get(/databases/$(database)/documents/accessRequests/$(request.auth.uid + '_' + espaceId)).data.get('espaceRole', 'anim') == 'anim-admin' &&
+              get(/databases/$(database)/documents/espaces/$(espaceId)).data.get('participantsLocked', false) == false
+            ) ||
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['note'])
           )
         );

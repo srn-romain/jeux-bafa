@@ -79,6 +79,7 @@ async function toggleParticipantsLock() {
         });
         currentLocked = newLocked;
         updateParticipantsLockUI();
+        updateAddParticipantButton();
         showToast(newLocked ? 'Gestion des participants verrouillée.' : 'Gestion des participants ouverte.', 'success');
         
         // Rafraîchir les participants pour mettre à jour les boutons "Ajouter" etc.
@@ -92,6 +93,47 @@ async function toggleParticipantsLock() {
 }
 
 document.getElementById('btnToggleParticipantsLock')?.addEventListener('click', toggleParticipantsLock);
+
+function updateAddParticipantButton() {
+    const addBtn = document.getElementById('btnAddParticipant');
+    const importBtn = document.getElementById('btnImportParticipantsColo');
+    const exportBtn = document.getElementById('btnExportParticipantsColo');
+    
+    if (currentRole === 'admin' || isAnimAdmin) {
+        exportBtn?.classList.remove('hidden');
+    } else {
+        exportBtn?.classList.add('hidden');
+    }
+
+    if (currentRole === 'admin') {
+        addBtn?.classList.remove('hidden');
+        addBtn?.removeAttribute('disabled');
+        addBtn?.style.removeProperty('opacity');
+        addBtn?.style.removeProperty('cursor');
+        addBtn?.removeAttribute('title');
+
+        importBtn?.classList.remove('hidden');
+        importBtn?.removeAttribute('disabled');
+    } else if (currentRole === 'anim' && isAnimAdmin) {
+        if (!currentLocked) {
+            addBtn?.classList.remove('hidden');
+            addBtn?.removeAttribute('disabled');
+            addBtn?.style.removeProperty('opacity');
+            addBtn?.style.removeProperty('cursor');
+            addBtn?.removeAttribute('title');
+
+            importBtn?.classList.remove('hidden');
+            importBtn?.removeAttribute('disabled');
+        } else {
+            addBtn?.classList.add('hidden');
+            importBtn?.classList.add('hidden');
+        }
+    } else {
+        addBtn?.classList.add('hidden');
+        importBtn?.classList.add('hidden');
+    }
+}
+
 
 // Générateur de couleur pseudo-aléatoire basé sur un mot
 function getStringColorStyle(str) {
@@ -354,24 +396,7 @@ async function initColoContent(colo, role) {
         document.getElementById('btnAdminLink')?.classList.remove('hidden');
     }
 
-    if (role === 'admin' || isAnimAdmin) {
-        // L'admin et l'anim-admin voient les boutons d'import/export
-        document.getElementById('btnExportParticipantsColo')?.classList.remove('hidden');
-        document.getElementById('btnImportParticipantsColo')?.classList.remove('hidden');
-        
-        const addBtn = document.getElementById('btnAddParticipant');
-        document.querySelectorAll('.anim-can').forEach(el => el.classList.remove('hidden'));
-        
-        if (role === 'anim' && isAnimAdmin && currentLocked) {
-            addBtn?.setAttribute('disabled', 'true');
-            addBtn?.setAttribute('title', 'Le directeur a verrouillé la gestion des participants.');
-            addBtn?.style.setProperty('opacity', '0.45');
-            addBtn?.style.setProperty('cursor', 'not-allowed');
-        } else {
-            addBtn?.removeAttribute('disabled');
-            addBtn?.classList.remove('hidden');
-        }
-    }
+    updateAddParticipantButton();
 
     // Charger les groupes EN PREMIER (les participants en dépendent pour le filtre)
     await loadGroups(colo.id, role);
@@ -670,7 +695,7 @@ function renderParticipantsTable(role) {
     // Bannière de verrou pour les anims
     const lockBanner = document.getElementById('lockBanner');
     if (lockBanner) {
-        if (role === 'anim' && currentLocked) {
+        if (role === 'anim' && isAnimAdmin && currentLocked) {
             lockBanner.classList.remove('hidden');
         } else {
             lockBanner.classList.add('hidden');
@@ -722,7 +747,7 @@ function renderParticipantsTable(role) {
         return;
     }
 
-    const canEdit = role === 'admin' || (role === 'anim' && !currentLocked);
+    const canDelete = role === 'admin' || (role === 'anim' && isAnimAdmin && !currentLocked);
     const hasGroups = currentGroups.length > 0;
 
     // Exposer la liste filtrée pour la modale de fiche (avec tri appliqué)
@@ -730,8 +755,9 @@ function renderParticipantsTable(role) {
     window.currentFilteredParticipants = displayList;
     updateSortIndicators();
 
-    // Afficher/Cacher la colonne groupe
+    // Afficher/Cacher la colonne groupe et actions
     document.querySelectorAll('.col-groupe').forEach(el => el.classList.toggle('hidden', !hasGroups));
+    document.getElementById('thActions')?.classList.remove('hidden');
 
     tbody.innerHTML = displayList.map((p, idx) => {
         const g = hasGroups ? currentGroups.find(x => x.id === p.groupeId) : null;
@@ -800,9 +826,9 @@ function renderParticipantsTable(role) {
                     <i class="bi bi-pencil"></i>
                 </button>
                 <button class="es-btn es-btn--danger es-btn--sm" 
-                        onclick="${canEdit ? `deleteParticipant('${p.id}', ${escapeHtml(JSON.stringify(p.prenom + ' ' + p.nom))})` : 'void(0)'}"
-                        ${!canEdit ? 'disabled title="Verrouillé par le directeur"' : 'title="Supprimer"'}
-                        style="${!canEdit && role === 'anim' ? 'opacity:0.4;cursor:not-allowed;' : ''}">
+                        onclick="${canDelete ? `deleteParticipant('${p.id}', ${escapeHtml(JSON.stringify(p.prenom + ' ' + p.nom))})` : 'void(0)'}"
+                        ${!canDelete ? 'disabled title="Verrouillé par le directeur"' : 'title="Supprimer"'}
+                        style="${!canDelete && role === 'anim' ? 'opacity:0.4;cursor:not-allowed;' : ''}">
                     <i class="bi bi-trash3"></i>
                 </button>
             </td>
@@ -1018,8 +1044,8 @@ function renderParticipantView() {
     // Bouton Modifier — visible seulement si droits d'édition
     const pvBtnEdit = document.getElementById('pvBtnEdit');
     if (pvBtnEdit) {
-        const canEdit = currentRole === 'admin' || (currentRole === 'anim' && !currentLocked);
-        pvBtnEdit.classList.toggle('hidden', !canEdit);
+        const canEdit = true;
+        pvBtnEdit.classList.remove('hidden');
         pvBtnEdit.onclick = () => {
             closeModal('overlayParticipantView');
             editParticipant(p.id);
@@ -1540,11 +1566,10 @@ function editParticipant(id) {
         fieldAppreciation.classList.toggle('hidden', !isColoFormation);
     }
 
-    // Si verrouillé et anim, on ne peut changer que la remarque (et l'appréciation)
-    const isLockedAnim = (currentRole === 'anim' && currentLocked);
+    const isRestricted = (currentRole === 'anim' && !isAnimAdmin) || (currentRole === 'anim' && isAnimAdmin && currentLocked);
     ['pPrenom', 'pNom', 'pAge', 'pGenre', 'pGroup', 'pSpec', 'pAppreciation'].forEach(fId => {
         const el = document.getElementById(fId);
-        if (el && fId !== 'pAppreciation') el.disabled = isLockedAnim;
+        if (el && fId !== 'pAppreciation') el.disabled = isRestricted;
     });
 
     document.getElementById('pPrenom').value = p.prenom || '';
@@ -1604,8 +1629,9 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
         const colRef = db.collection('espaces').doc(espaceId).collection('participants');
 
         if (editingParticipantId) {
-            // Sécurité : si verrouillé par le directeur, les animateurs ne peuvent changer QUE la remarque
-            if (currentRole === 'anim' && currentLocked) {
+            // Sécurité : si l'animateur est restreint, il ne peut changer que la remarque
+            const isRestricted = (currentRole === 'anim' && !isAnimAdmin) || (currentRole === 'anim' && isAnimAdmin && currentLocked);
+            if (isRestricted) {
                 data = { note };
                 if (isColoFormation && appreciation !== undefined) {
                     data.appreciation = appreciation;
@@ -1614,9 +1640,10 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
             await colRef.doc(editingParticipantId).update(data);
             showToast('Participant modifié.', 'success');
         } else {
-            // Les animateurs ne peuvent pas ajouter si c'est verrouillé
-            if (currentRole === 'anim' && currentLocked) {
-                throw new Error("La création est verrouillée par le directeur.");
+            // Seuls le directeur et l'anim-admin (si déverrouillé) peuvent ajouter un participant
+            const canAdd = currentRole === 'admin' || (currentRole === 'anim' && isAnimAdmin && !currentLocked);
+            if (!canAdd) {
+                throw new Error("Vous n'avez pas l'autorisation d'ajouter un participant.");
             }
             await colRef.add({ ...data, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             // Incrémenter le compteur global
@@ -2970,6 +2997,16 @@ async function loadWeather(coloId, role) {
     window.weatherUnsubscribe = db.collection('espaces').doc(coloId).onSnapshot(async snap => {
         if (!snap.exists) return;
         const data = snap.data();
+
+        if (data.participantsLocked !== undefined) {
+            const newLocked = data.participantsLocked !== false;
+            if (newLocked !== currentLocked) {
+                currentLocked = newLocked;
+                updateParticipantsLockUI();
+                updateAddParticipantButton();
+                renderParticipantsTable(currentRole);
+            }
+        }
         if (role === 'admin' || isAnimAdmin) {
             document.getElementById('weatherAdminContainer')?.classList.remove('hidden');
             const deleteBtn = document.getElementById('btnDeleteLocation');
