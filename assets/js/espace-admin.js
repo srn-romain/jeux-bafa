@@ -259,6 +259,10 @@ async function loadConfig() {
             if (recapInput) {
                 recapInput.value = globalDoc.data().recapBafaUrl || '';
             }
+            const titleInput = document.getElementById('adminDashboardTitle');
+            if (titleInput) {
+                titleInput.value = globalDoc.data().dashboardTitle || '';
+            }
 
             // LOAD ADMIN NOTES
             const notesHtml = globalDoc.data().notesAdmin || '';
@@ -600,6 +604,28 @@ document.getElementById('btnSaveAdminRecapUrl')?.addEventListener('click', async
     }
 });
 
+document.getElementById('btnSaveAdminTitle')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveAdminTitle');
+    const input = document.getElementById('adminDashboardTitle');
+    if (!input) return;
+    
+    const val = input.value.trim();
+    btnLoading(btn, true);
+    
+    try {
+        await db.collection('globalSettings').doc('dashboard').set({
+            dashboardTitle: val,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast("Titre du tableau de bord mis à jour.", "success");
+    } catch (err) {
+        console.error("Erreur sauvegarde dashboardTitle:", err);
+        showToast("Erreur lors de l'enregistrement.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
+});
+
 document.getElementById('btnSaveAdminKey')?.addEventListener('click', async () => {
     const btn = document.getElementById('btnSaveAdminKey');
     const input = document.getElementById('adminGeminiKey');
@@ -746,12 +772,12 @@ function buildColoAdminCard(colo) {
                 <div class="es-colo-admin-card__title">
                     ${colo.emoji || '🏕️'} ${colo.nom || 'Sans nom'}
                     ${isUpcoming ? `
-                        <span style="background:rgba(52,152,219,0.25);color:#ffffff;border:1px solid rgba(52,152,219,0.4);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;vertical-align:middle;text-shadow:none;">
+                        <span style="background:rgba(52,152,219,0.25);color:#ffffff;border:1px solid rgba(52,152,219,0.4);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;vertical-align:middle;text-shadow:none;white-space:nowrap;">
                             À venir
                         </span>
                     ` : ''}
                     ${!visible ? `
-                        <span style="background:rgba(255,165,0,0.25);color:#ffffff;border:1px solid rgba(255,165,0,0.4);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;text-shadow:none;">
+                        <span style="background:rgba(255,165,0,0.25);color:#ffffff;border:1px solid rgba(255,165,0,0.4);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;text-shadow:none;white-space:nowrap;">
                             <i class="bi bi-eye-slash-fill"></i> Caché
                         </span>
                     ` : ''}

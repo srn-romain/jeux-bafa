@@ -26,6 +26,14 @@ db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
             disabledContent.classList.add('hidden');
         }
     }
+
+    // Mise à jour dynamique du titre du tableau de bord
+    const titleEl = document.getElementById('pageDashboardTitle');
+    if (titleEl) {
+        let rawTitle = (doc.exists && doc.data().dashboardTitle) ? doc.data().dashboardTitle : 'Le [QG] de tes colos';
+        let formattedTitle = rawTitle.replace(/\[(.*?)\]/g, `<span style="color:var(--clr-accent);">$1</span>`);
+        titleEl.innerHTML = `${formattedTitle} <span id="pageDirectorName" style="display:none;"></span>`;
+    }
 }, err => {
     // Si Firebase bloque la lecture pour les non-connectés, on ignore l'erreur
     // car la sécurité est quand même assurée lors de la tentative d'inscription.
@@ -601,12 +609,12 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
                 <div class="es-colo-card__name">
                     ${colo.nom || 'Sans nom'}
                     ${isUpcoming ? `
-                        <span style="background:rgba(52,152,219,0.25);color:#ffffff;border:1px solid rgba(52,152,219,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;">
+                        <span style="background:rgba(52,152,219,0.25);color:#ffffff;border:1px solid rgba(52,152,219,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;white-space:nowrap;">
                             À venir
                         </span>
                     ` : ''}
                     ${!visible ? `
-                        <span style="background:rgba(255,165,0,0.25);color:#ffffff;border:1px solid rgba(255,165,0,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;">
+                        <span style="background:rgba(255,165,0,0.25);color:#ffffff;border:1px solid rgba(255,165,0,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;white-space:nowrap;">
                             <i class="bi bi-eye-slash-fill"></i> Caché
                         </span>
                     ` : ''}
