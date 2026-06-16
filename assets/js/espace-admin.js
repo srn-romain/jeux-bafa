@@ -1083,12 +1083,24 @@ async function loadUsers() {
 
     try {
         const snap = await db.collection('users').orderBy('createdAt', 'desc').get();
+        
+        // Charger le nombre de demandes d'accès approuvées
+        const reqSnap = await db.collection('accessRequests').where('status', '==', 'approved').get();
+        const approvedCountMap = {};
+        reqSnap.forEach(doc => {
+            const data = doc.data();
+            const uid = data.userId;
+            if (uid) {
+                approvedCountMap[uid] = (approvedCountMap[uid] || 0) + 1;
+            }
+        });
+
         loader.classList.add('hidden');
 
         const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
         if (users.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted" style="padding:24px;">Aucun utilisateur.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted" style="padding:24px;">Aucun utilisateur.</td></tr>`;
             content.classList.remove('hidden');
             return;
         }
@@ -1098,6 +1110,17 @@ async function loadUsers() {
                 <td style="font-size:0.87rem;">${u.email || ''}</td>
                 <td style="text-align: center;">${u.displayName || '<span style="color:var(--clr-text-light)">–</span>'}</td>
                 <td style="text-align: center; font-size:0.82rem;color:var(--clr-text-muted);">${formatFullDate(u.lastLogin)}</td>
+                <td style="text-align: center;">
+                    ${u.banned === true ? `
+                        <span style="color:var(--clr-text-light)">–</span>
+                    ` : (u.role === 'admin' ? `
+                        <span class="es-badge es-badge--admin" style="opacity:0.85; background:var(--clr-surface-3); color:var(--clr-accent-dark); border:1px solid rgba(243,156,18,0.2);">Tous</span>
+                    ` : `
+                        <span class="es-badge" style="background:var(--clr-surface-3); color:var(--clr-text); font-weight:700;">
+                            ${approvedCountMap[u.id] || 0}
+                        </span>
+                    `)}
+                </td>
                 <td style="text-align: center;">
                     ${u.banned === true ? `
                         <span class="es-badge es-badge--banned">
