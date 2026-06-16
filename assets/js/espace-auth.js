@@ -216,11 +216,13 @@ document.getElementById('btnOpenSettings')?.addEventListener('click', async () =
     const roleEl = document.getElementById('settingsUserRole');
     const firstNameInput = document.getElementById('settingsFirstName');
     const lastNameInput = document.getElementById('settingsLastName');
+    const birthdateInput = document.getElementById('settingsBirthdate');
 
     if (emailEl) emailEl.textContent = user.email;
     if (roleEl) roleEl.textContent = data.role === 'admin' ? 'Directeur' : 'Animateur';
     if (firstNameInput) firstNameInput.value = data.firstName || data.displayName || '';
     if (lastNameInput) lastNameInput.value = data.lastName || '';
+    if (birthdateInput) birthdateInput.value = data.birthdate || '';
 
     const img = document.getElementById('settingsAvatarImg');
     const placeholder = document.getElementById('settingsAvatarPlaceholder');
@@ -246,12 +248,13 @@ document.getElementById('btnSaveSettings')?.addEventListener('click', async () =
     const btn = document.getElementById('btnSaveSettings');
     const firstName = document.getElementById('settingsFirstName')?.value.trim();
     const lastName = document.getElementById('settingsLastName')?.value.trim();
+    const birthdate = document.getElementById('settingsBirthdate')?.value;
     const errorEl = document.getElementById('settingsError');
     const msgEl = document.getElementById('settingsErrorMsg');
 
-    if (!firstName || !lastName) {
+    if (!firstName || !lastName || !birthdate) {
         if (msgEl && errorEl) {
-            msgEl.textContent = "Le prénom et le nom ne peuvent pas être vides.";
+            msgEl.textContent = "Le prénom, le nom et la date de naissance ne peuvent pas être vides.";
             errorEl.classList.remove('hidden');
         }
         return;
@@ -265,7 +268,8 @@ document.getElementById('btnSaveSettings')?.addEventListener('click', async () =
         await firebase.firestore().collection('users').doc(uid).update({
             firstName: firstName,
             lastName: lastName,
-            displayName: `${firstName} ${lastName}`
+            displayName: `${firstName} ${lastName}`,
+            birthdate: birthdate
         });
         showToast("Profil mis à jour !", "success");
         closeModal('overlaySettings');

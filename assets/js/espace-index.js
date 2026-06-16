@@ -103,9 +103,10 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
 
     const firstName = document.getElementById('firstNameSignup').value.trim();
     const lastName = document.getElementById('lastNameSignup').value.trim();
+    const birthdate = document.getElementById('birthdateSignup').value;
 
-    if (!firstName || !lastName) {
-        msgEl.textContent = "Le prénom et le nom sont obligatoires.";
+    if (!firstName || !lastName || !birthdate) {
+        msgEl.textContent = "Le prénom, le nom et la date de naissance sont obligatoires.";
         errorEl.classList.remove('hidden');
         return;
     }
@@ -127,6 +128,7 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
             firstName: firstName,
             lastName: lastName,
             displayName: `${firstName} ${lastName}`,
+            birthdate: birthdate,
             role: 'anim',
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });

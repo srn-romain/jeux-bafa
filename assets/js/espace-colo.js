@@ -2282,6 +2282,19 @@ async function handleImportJSONColo(file) {
     reader.readAsText(file);
 }
 
+function calculateAge(birthdateStr) {
+    if (!birthdateStr) return null;
+    const birthDate = new Date(birthdateStr);
+    if (isNaN(birthDate.getTime())) return null;
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+
 // ----------------------------------------------------------------
 // DÉTERMINATION DE LA COULEUR ET DU CONTENU DES BADGES (RÔLES)
 // ----------------------------------------------------------------
@@ -2449,7 +2462,10 @@ async function loadAnimateurs(coloId) {
                 </div>
                 <div class="es-anim-item__info">
                     <div class="es-anim-item__name">
-                        ${anim.displayName || 'Anonyme'}
+                        ${anim.displayName || 'Anonyme'}${(() => {
+                            const age = calculateAge(anim.birthdate);
+                            return age !== null ? ` <span style="color:var(--clr-text-light); font-style:italic; font-weight:normal; font-size:0.85em; margin-left:4px;">(${age} ans)</span>` : '';
+                        })()}
                         ${anim.isPending ? '<span style="font-size:0.65rem; color:var(--clr-warning); margin-left:5px; font-weight:800; text-transform:uppercase;">(En attente)</span>' : ''}
                     </div>
                     ${anim.isPending ? `
