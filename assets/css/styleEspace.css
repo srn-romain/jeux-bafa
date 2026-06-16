@@ -562,8 +562,9 @@ textarea {
 }
 
 .es-badge--admin {
-  background: linear-gradient(135deg, var(--clr-accent), var(--clr-accent-dark));
-  color: #fff;
+  background: rgba(244, 180, 26, 0.12);
+  color: #f4b41a;
+  border: 1px solid rgba(244, 180, 26, 0.25);
 }
 
 .es-badge--anim {

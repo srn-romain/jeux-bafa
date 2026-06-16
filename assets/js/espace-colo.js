@@ -2309,19 +2309,13 @@ function getRoleBadgeInfo(anim) {
 
     const role = anim.customRole || '';
     const isAnimAdmin = (anim.espaceRole === 'anim-admin');
-    const roleLabel = role 
-        ? (isAnimAdmin ? `${role} (Admin)` : role) 
-        : (isAnimAdmin ? 'Anim Admin' : 'Animateur');
-
-    if (!role) {
-        return {
-            className: 'es-badge--anim',
-            style: '',
-            label: roleLabel
-        };
-    }
-
-    const cleanRole = role.trim().toLowerCase();
+    
+    // Par défaut, si aucun rôle personnalisé n'est défini, on attribue 'Animateur polyvalent'
+    const defaultRole = 'Animateur polyvalent';
+    const finalRole = role || defaultRole;
+    
+    const roleLabel = isAnimAdmin ? `${finalRole} (Admin)` : finalRole;
+    const cleanRole = finalRole.trim().toLowerCase();
     
     // SB -> bleu
     if (cleanRole === 'sb' || cleanRole === 'animateur sb' || cleanRole.includes('sb') || cleanRole.includes('baignade')) {
@@ -2342,11 +2336,15 @@ function getRoleBadgeInfo(anim) {
 
     // Custom role -> generate consistent color using a simple hash code
     let hash = 0;
-    for (let i = 0; i < role.length; i++) {
-        hash = role.charCodeAt(i) + ((hash << 5) - hash);
+    for (let i = 0; i < finalRole.length; i++) {
+        hash = finalRole.charCodeAt(i) + ((hash << 5) - hash);
     }
     // HSL parameters for soft glassmorphic style:
-    const h = Math.abs(hash) % 360;
+    let h = Math.abs(hash) % 360;
+    // Éviter la plage de couleur or/jaune du directeur (35 à 55)
+    if (h >= 35 && h <= 55) {
+        h = (h + 25) % 360;
+    }
     const s = 60;
     const l = 65;
     
@@ -2597,9 +2595,13 @@ function openCustomRoleModal(requestId, currentCustomRole, displayName) {
     }
 
     if (select && input) {
-        const standardRoles = ["", "Animateur AS", "Animateur SB", "Animateur spécifique", "Animateur polyvalent"];
-        if (standardRoles.includes(currentCustomRole)) {
-            select.value = currentCustomRole;
+        const standardRoles = ["", "Animateur AS", "Animateur SB", "Animateur spécifique"];
+        let mappedRole = currentCustomRole;
+        if (mappedRole === "Animateur polyvalent") {
+            mappedRole = "";
+        }
+        if (standardRoles.includes(mappedRole)) {
+            select.value = mappedRole;
             input.value = '';
         } else {
             select.value = 'custom';
