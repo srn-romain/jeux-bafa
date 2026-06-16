@@ -1664,6 +1664,45 @@
     </div>
   </div>
 
+  <!-- MODALE : DÉFINIR LE RÔLE DE L'ANIMATEUR -->
+  <div id="overlayCustomRole" class="es-overlay hidden">
+    <div class="es-modal es-modal--sm">
+      <div class="es-modal__header">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:40px; height:40px; border-radius:10px; background:rgba(var(--clr-primary-rgb),0.1); display:flex; align-items:center; justify-content:center;">
+            <i class="bi bi-person-badge" style="color:var(--clr-primary); font-size:1.2rem;"></i>
+          </div>
+          <h2 class="es-modal__title" id="customRoleModalTitle">Rôle de l'animateur</h2>
+        </div>
+        <button class="es-modal__close" onclick="closeModal('overlayCustomRole')">&times;</button>
+      </div>
+      <div class="es-modal__body">
+        <p style="line-height:1.5; color:var(--clr-text-light); margin-bottom: 15px;">
+          Choisissez ou définissez le rôle spécifique de cet animateur pour ce séjour.
+        </p>
+        <div class="es-field">
+          <label class="es-field__label" for="selectCustomRole">Rôle dans la colo</label>
+          <select id="selectCustomRole" class="es-select" onchange="handleSelectCustomRoleChange()">
+            <option value="">Animateur (Par défaut)</option>
+            <option value="Animateur AS">Animateur AS</option>
+            <option value="Animateur SB">Animateur SB</option>
+            <option value="Animateur spécifique">Animateur spécifique</option>
+            <option value="Animateur polyvalent">Animateur polyvalent</option>
+            <option value="custom">Rôle personnalisé...</option>
+          </select>
+        </div>
+        <div class="es-field hidden" id="customRoleInputContainer" style="margin-top: 15px;">
+          <label class="es-field__label" for="inputCustomRoleVal">Nom du rôle personnalisé</label>
+          <input type="text" id="inputCustomRoleVal" class="es-input" placeholder="Ex: Animateur camping, Adjoint..." maxlength="40">
+        </div>
+      </div>
+      <div class="es-modal__footer" style="gap:12px;">
+        <button class="es-btn es-btn--secondary" onclick="closeModal('overlayCustomRole')">Annuler</button>
+        <button id="btnSaveCustomRole" class="es-btn es-btn--primary">Enregistrer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODALE : CONFIRMER SUPPRESSION PARTICIPANT -->
   <div id="overlayConfirmDelete" class="es-overlay hidden">
     <div class="es-modal es-modal--sm">

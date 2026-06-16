@@ -571,6 +571,30 @@ textarea {
   color: #ffffff;
 }
 
+.es-badge--sb {
+  background: rgba(41, 128, 185, 0.12);
+  color: #5dade2;
+  border: 1px solid rgba(41, 128, 185, 0.25);
+}
+
+.es-badge--as {
+  background: rgba(231, 76, 60, 0.12);
+  color: #ec7063;
+  border: 1px solid rgba(231, 76, 60, 0.25);
+}
+
+.es-badge--specifique {
+  background: rgba(155, 89, 182, 0.12);
+  color: #af7ac5;
+  border: 1px solid rgba(155, 89, 182, 0.25);
+}
+
+.es-badge--polyvalent {
+  background: rgba(39, 174, 96, 0.12);
+  color: #58d68d;
+  border: 1px solid rgba(39, 174, 96, 0.25);
+}
+
 .es-badge--pending {
   background: var(--clr-warning-soft);
   color: var(--clr-warning);
@@ -3395,6 +3419,34 @@ body.modal-open .es-topbar {
 
 .es-btn-promote--active:hover i {
   color: #fff;
+}
+
+.es-btn-edit-role {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(52, 152, 219, 0.3);
+  background: rgba(52, 152, 219, 0.05);
+  color: #3498db;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.es-btn-edit-role i {
+  font-size: 1.1rem;
+}
+
+.es-btn-edit-role:hover {
+  background: #3498db;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.35);
+  border-color: #3498db;
 }
 
 /* Glassmorphic card action buttons */

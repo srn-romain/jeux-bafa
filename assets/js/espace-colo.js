@@ -2281,6 +2281,69 @@ async function handleImportJSONColo(file) {
     };
     reader.readAsText(file);
 }
+
+// ----------------------------------------------------------------
+// DÉTERMINATION DE LA COULEUR ET DU CONTENU DES BADGES (RÔLES)
+// ----------------------------------------------------------------
+function getRoleBadgeInfo(anim) {
+    if (anim.role === 'admin' || anim.espaceRole === 'admin') {
+        return {
+            className: 'es-badge--admin',
+            style: '',
+            label: 'Directeur'
+        };
+    }
+
+    const role = anim.customRole || '';
+    const isAnimAdmin = (anim.espaceRole === 'anim-admin');
+    const roleLabel = role 
+        ? (isAnimAdmin ? `${role} (Admin)` : role) 
+        : (isAnimAdmin ? 'Anim Admin' : 'Animateur');
+
+    if (!role) {
+        return {
+            className: 'es-badge--anim',
+            style: '',
+            label: roleLabel
+        };
+    }
+
+    const cleanRole = role.trim().toLowerCase();
+    
+    // SB -> bleu
+    if (cleanRole === 'sb' || cleanRole === 'animateur sb' || cleanRole.includes('sb') || cleanRole.includes('baignade')) {
+        return { className: 'es-badge--sb', style: '', label: roleLabel };
+    }
+    // AS -> rouge
+    if (cleanRole === 'as' || cleanRole === 'animateur as' || cleanRole.includes('as') || cleanRole.includes('sanitaire')) {
+        return { className: 'es-badge--as', style: '', label: roleLabel };
+    }
+    // spécifique -> violet
+    if (cleanRole.includes('spécifique') || cleanRole.includes('specifique')) {
+        return { className: 'es-badge--specifique', style: '', label: roleLabel };
+    }
+    // polyvalent -> vert sapin
+    if (cleanRole.includes('polyvalent')) {
+        return { className: 'es-badge--polyvalent', style: '', label: roleLabel };
+    }
+
+    // Custom role -> generate consistent color using a simple hash code
+    let hash = 0;
+    for (let i = 0; i < role.length; i++) {
+        hash = role.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    // HSL parameters for soft glassmorphic style:
+    const h = Math.abs(hash) % 360;
+    const s = 60;
+    const l = 65;
+    
+    return {
+        className: '',
+        style: `background: hsla(${h}, ${s}%, 50%, 0.12); color: hsl(${h}, ${s + 15}%, ${l}%); border: 1px solid hsla(${h}, ${s}%, 50%, 0.25);`,
+        label: roleLabel
+    };
+}
+
 // ----------------------------------------------------------------
 // CHARGER LES ANIMATEURS
 // ----------------------------------------------------------------
@@ -2298,7 +2361,11 @@ async function loadAnimateurs(coloId) {
         const reqMap = {};
         snap.docs.forEach(doc => {
             const data = doc.data();
-            reqMap[data.userId] = { requestId: doc.id, espaceRole: data.espaceRole || 'anim' };
+            reqMap[data.userId] = { 
+                requestId: doc.id, 
+                espaceRole: data.espaceRole || 'anim',
+                customRole: data.customRole || ''
+            };
         });
         const userIds = Object.keys(reqMap);
 
@@ -2350,6 +2417,7 @@ async function loadAnimateurs(coloId) {
                     isPending: false, 
                     requestId: req.requestId,
                     espaceRole: req.espaceRole || 'anim',
+                    customRole: req.customRole || '',
                     ...uDoc.data()
                 });
             }
@@ -2370,7 +2438,9 @@ async function loadAnimateurs(coloId) {
         }
 
         // 4. Afficher
-        listEl.innerHTML = allAnims.map(anim => `
+        listEl.innerHTML = allAnims.map(anim => {
+            const badgeInfo = getRoleBadgeInfo(anim);
+            return `
             <div class="es-anim-item ${anim.isPending ? 'es-anim-item--pending' : ''}">
                 <div class="es-anim-item__avatar">
                     ${anim.photoURL
@@ -2409,13 +2479,16 @@ async function loadAnimateurs(coloId) {
                     </div>
                 ` : `
                     <div class="es-anim-item__actions" style="display:flex; align-items:center; gap:8px;">
-                        <div class="es-badge ${anim.role === 'admin' || anim.espaceRole === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}" style="white-space:nowrap;">
-                            ${anim.role === 'admin' || anim.espaceRole === 'admin' ? 'Directeur' : (anim.espaceRole === 'anim-admin' ? 'Anim Admin' : 'Animateur')}
+                        <div class="es-badge ${badgeInfo.className}" style="white-space:nowrap; ${badgeInfo.style}">
+                            ${escapeHtml(badgeInfo.label)}
                         </div>
 
-
-
                         ${(currentRole === 'admin' && anim.role !== 'admin' && anim.espaceRole !== 'admin' && anim.requestId) ? `
+                            <button class="es-btn-edit-role" 
+                                    onclick="openCustomRoleModal('${anim.requestId}', ${escapeHtml(JSON.stringify(anim.customRole || ''))}, ${escapeHtml(JSON.stringify(anim.displayName || 'Animateur'))})"
+                                    title="Définir le rôle dans la colo">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
                             <button class="es-btn-promote ${anim.espaceRole === 'anim-admin' ? 'es-btn-promote--active' : ''}" 
                                     onclick="toggleAnimAdmin('${anim.requestId}', '${anim.espaceRole === 'anim-admin' ? 'anim' : 'anim-admin'}')"
                                     title="${anim.espaceRole === 'anim-admin' ? 'Retirer les droits Admin' : 'Donner les droits Admin'}">
@@ -2424,8 +2497,8 @@ async function loadAnimateurs(coloId) {
                         ` : ''}
                     </div>
                 `}
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
 
     } catch (err) {
         console.error('loadAnimateurs error:', err);
@@ -2482,6 +2555,85 @@ async function toggleAnimAdmin(requestId, newRole) {
 
     openModal('overlayConfirmAdmin');
 }
+
+// ----------------------------------------------------------------
+// GESTION DU RÔLE DE L'ANIMATEUR (Directeur)
+// ----------------------------------------------------------------
+
+let currentEditRoleRequestId = null;
+
+function handleSelectCustomRoleChange() {
+    const select = document.getElementById('selectCustomRole');
+    const container = document.getElementById('customRoleInputContainer');
+    if (select && container) {
+        container.classList.toggle('hidden', select.value !== 'custom');
+    }
+}
+
+function openCustomRoleModal(requestId, currentCustomRole, displayName) {
+    currentEditRoleRequestId = requestId;
+    const select = document.getElementById('selectCustomRole');
+    const input = document.getElementById('inputCustomRoleVal');
+    const title = document.getElementById('customRoleModalTitle');
+
+    if (title) {
+        title.textContent = `Rôle de ${displayName}`;
+    }
+
+    if (select && input) {
+        const standardRoles = ["", "Animateur AS", "Animateur SB", "Animateur spécifique", "Animateur polyvalent"];
+        if (standardRoles.includes(currentCustomRole)) {
+            select.value = currentCustomRole;
+            input.value = '';
+        } else {
+            select.value = 'custom';
+            input.value = currentCustomRole || '';
+        }
+        handleSelectCustomRoleChange();
+    }
+
+    const btn = document.getElementById('btnSaveCustomRole');
+    // Clone pour supprimer les anciens event listeners
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+
+    newBtn.addEventListener('click', () => saveCustomRole(newBtn));
+
+    openModal('overlayCustomRole');
+}
+
+async function saveCustomRole(btn) {
+    if (!currentEditRoleRequestId) return;
+    
+    const select = document.getElementById('selectCustomRole');
+    const input = document.getElementById('inputCustomRoleVal');
+    if (!select || !input) return;
+
+    let finalRoleVal = select.value;
+    if (finalRoleVal === 'custom') {
+        finalRoleVal = input.value.trim();
+        if (!finalRoleVal) {
+            showToast("Veuillez saisir un rôle personnalisé ou choisir une option standard.", "error");
+            return;
+        }
+    }
+
+    btnLoading(btn, true);
+    try {
+        await db.collection('accessRequests').doc(currentEditRoleRequestId).update({
+            customRole: finalRoleVal
+        });
+        showToast("Rôle mis à jour avec succès.", "success");
+        closeModal('overlayCustomRole');
+        loadAnimateurs(espaceId);
+    } catch (err) {
+        console.error("Erreur saveCustomRole:", err);
+        showToast("Erreur lors de la mise à jour du rôle.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
+}
+
 // ----------------------------------------------------------------
 // GESTION DES GROUPES (Directeur)
 // ----------------------------------------------------------------
