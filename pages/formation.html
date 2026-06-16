@@ -994,96 +994,75 @@
         <div id="modal-reunion" class="modalspe">
             <div class="modal__contentspe modal-large">
                 <button class="modal__closespe">&times;</button>
-                <h1 id="reu">Réunions du soir</h1>
-                <p>Chaque soir, APRES le coucher des enfants, les animateurs se réunissent pour faire le point sur la
-                    journée.
-                    (L'heure dépend donc de la tranche d'âge)</p>
-                <ul>
-                    <li style="list-style-type: none;"><strong>Partie 1 : Debrief journée</strong>
-                        <ul>
-                            <li>Retour sur les activités (points forts, points faibles).</li>
-                            <li>Échange sur le comportement des enfants (cas particuliers, fatigue, petits bobos).</li>
-                            <li>Analyse du fonctionnement de l'équipe (cohésion, communication).</li>
-                        </ul>
-                    </li>
-                    <li style="list-style-type: none;"><strong>Partie 2 : Infos diverses</strong>
-                        <ul>
-                            <li>Rappels de sécurité ou d'hygiène si nécessaire.</li>
-                            <li>Logistique (matériel cassé, besoins spécifiques).</li>
-                            <li>Informations de la direction (SDJES, parents, organismes).</li>
-                        </ul>
-                    </li>
-                    <li style="list-style-type: none;"><strong>Partie 3 : Programmation</strong>
-                        <ul>
-                            <li>Validation du planning détaillé du lendemain.</li>
-                            <li>Répartition précise des rôles (qui gère quoi ?).</li>
-                            <li>Préparation du matériel et anticipation des imprévus.</li>
-                        </ul>
-                    </li>
-                    <li style="list-style-type: none;"><strong>Partie 4 : Cinquième repas</strong>
-                        <ul>
-                            <li>Partie facultative pour les anims !</li>
-                            <li>Moment de détente et de cohésion pour l'équipe d'animation.</li>
-                            <li>Débriefing informel et convivialité (=> moment potin).</li>
-                            <li>Vigilance sur le sommeil !</li>
-                        </ul>
-                    </li>
-                    <button class="openModalBtn back-button" data-modal="modal1">Petit jeu simulation réunion</button>
+                <h1 style="text-align: center; color: #2c3e50; margin-bottom: 10px;"><i class="bi bi-people-fill"></i> Réunions du Soir</h1>
+                <p style="text-align: center; font-style: italic; margin-bottom: 30px;">Chaque soir, après le coucher des enfants, l'équipe d'animation se réunit pour faire le point sur la journée.</p>
 
-                    <!-- Modale 1 -->
-                    <div id="modal1" class="modalspe">
-                        <div class="modal__contentspe">
-                            <button class="modal__closespe">&times;</button>
-                            <p><strong>JEU - SIMULATION D'UNE RÉUNION :</strong></p>
-                            <div>
-                                <p>
-                                    <b>Objectif :</b> Simuler une réunion du soir entre animateurs pour expérimenter les
-                                    dynamiques de
-                                    groupe
-                                    et la prise de décision.<br>
-                                    Chaque participant reçoit un rôle à jouer pour rendre la réunion vivante et
-                                    pédagogique.
-                                </p><br>
-                                <ul>
-                                    <li><b>Le bavard :</b> Parle beaucoup, coupe la parole, discute avec ses voisins.
-                                    </li>
-                                    <li><b>Le suiveur :</b> Toujours d'accord avec tout le monde, ne propose rien.</li>
-                                    <li><b>L'imposant :</b> Veut imposer ses idées, ne laisse pas les autres s'exprimer.
-                                    </li>
-                                    <li><b>Le fatigué :</b> Veut écourter la réunion, propose d'improvisé le lendemain.
-                                    </li>
-                                    <li><b>Le perdu :</b> Ne comprend rien, pose des questions hors sujet.</li>
-                                    <li><b>Le répétitif :</b> Revient sans cesse sur un point déjà traité.</li>
-                                    <li><b>Le participant classique :</b> S'exprime normalement, propose des idées,
-                                        écoute les autres.
-                                    </li>
-                                    <li><b>Le maître de réunion :</b> Anime, distribue la parole, recentre le débat,
-                                        veille au respect
-                                        du
-                                        temps.
-                                    </li>
-                                </ul>
-                                <br>
-                                <b>Déroulement :</b> Chacun tire un rôle au hasard. Le maître de réunion lance un sujet
-                                à discuter (ex
-                                :
-                                organisation d'une activité, gestion d'un problème du jour).<br>
-                                <b>L'objectif</b> est d'observer les interactions, de repérer les difficultés et de
-                                réfléchir ensemble
-                                à des
-                                solutions pour améliorer la communication et la prise de décision en équipe.
-                                <br><br>
-                                <p>
-                                    <i>Astuce : À la fin, faire un petit bilan sur le ressenti de chacun et les points à
-                                        améliorer pour
-                                        les
-                                        vraies réunions !</i>
-                                </p>
-                            </div>
+                <test class="grid-2col">
+                    <!-- Partie 1 & Partie 2 -->
+                    <div style="display: flex; flex-direction: column; gap: 20px; background: transparent; padding: 0; box-shadow: none;">
+                        <!-- Partie 1 : Debrief journée -->
+                        <div style="background: rgba(41, 128, 185, 0.05); border: 1px solid rgba(41, 128, 185, 0.2); padding: 20px; border-radius: 15px; box-shadow: none;">
+                            <h3 style="color: #2980b9; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-chat-left-dots"></i> Partie 1 : Debrief Journée</h3>
+                            <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                                <li><strong>Activités</strong> : Retour sur le déroulement (points forts, points faibles).</li>
+                                <li><strong>Enfants</strong> : Comportement général, fatigue, petits bobos ou cas particuliers.</li>
+                                <li><strong>Équipe</strong> : Analyse de la cohésion, communication et entraide de la journée.</li>
+                            </ul>
+                        </div>
 
+                        <!-- Partie 2 : Infos diverses -->
+                        <div style="background: rgba(243, 156, 18, 0.05); border: 1px solid rgba(243, 156, 18, 0.2); padding: 20px; border-radius: 15px; box-shadow: none;">
+                            <h3 style="color: #d35400; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-info-circle"></i> Partie 2 : Infos Diverses</h3>
+                            <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                                <li><strong>Sécurité</strong> : Rappels indispensables de sécurité ou d'hygiène.</li>
+                                <li><strong>Logistique</strong> : Matériel cassé, besoins spécifiques pour le lendemain.</li>
+                                <li><strong>Direction</strong> : Informations reçues des parents, de l'organisme ou de la direction.</li>
+                            </ul>
                         </div>
                     </div>
-                </ul>
+
+                    <!-- Partie 3 & Partie 4 -->
+                    <div style="display: flex; flex-direction: column; gap: 20px; background: transparent; padding: 0; box-shadow: none;">
+                        <!-- Partie 3 : Programmation -->
+                        <div style="background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2); padding: 20px; border-radius: 15px; box-shadow: none;">
+                            <h3 style="color: #27ae60; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-calendar-event"></i> Partie 3 : Programmation</h3>
+                            <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                                <li><strong>Planning</strong> : Validation du planning précis et détaillé du lendemain.</li>
+                                <li><strong>Rôles</strong> : Répartition des animations, temps de repas, douches et veillées.</li>
+                                <li><strong>Matériel</strong> : Anticipation de la logistique et préparation des activités.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Partie 4 : Cinquième repas -->
+                        <div style="background: rgba(155, 89, 182, 0.05); border: 1px solid rgba(155, 89, 182, 0.2); padding: 20px; border-radius: 15px; box-shadow: none;">
+                            <h3 style="color: #8e44ad; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-cup-hot"></i> Partie 4 : Cinquième Repas</h3>
+                            <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                                <li><strong>Détente</strong> : Moment convivial et informel pour décompresser en équipe (facultatif).</li>
+                                <li><strong>Sommeil</strong> : Vigilance ! Préserver son repos pour rester efficace.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </test>
+
+                <!-- Simulation de réunion -->
+                <div class="deadline-box" style="background: #34495e; margin-top: 30px;">
+                    <h3 style="color: #f1c40f;"><i class="bi bi-controller"></i> Jeu pédagogique : Simulation de Réunion</h3>
+                    <div class="no-p-style" style="font-size: 0.95rem; color: white !important;">
+                        <p><strong>Objectif :</strong> Simuler une réunion du soir entre stagiaires pour observer les dynamiques de communication et la prise de décision. Chaque participant tire au sort un rôle à jouer :</p>
+                        <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin-top: 15px; list-style-type: none;">
+                            <li>🗣️ <strong>Le bavard :</strong> Parle beaucoup, coupe la parole, discute avec ses voisins.</li>
+                            <li>🤝 <strong>Le suiveur :</strong> Toujours d'accord avec tout le monde, ne propose rien.</li>
+                            <li>👑 <strong>L'imposant :</strong> Veut imposer ses idées, ne laisse pas les autres s'exprimer.</li>
+                            <li>😴 <strong>Le fatigué :</strong> Veut écourter la réunion, propose d'improviser le lendemain.</li>
+                            <li>❓ <strong>Le perdu :</strong> Ne comprend rien, pose des questions hors sujet.</li>
+                            <li>🔄 <strong>Le répétitif :</strong> Revient sans cesse sur un point déjà traité.</li>
+                            <li>👦 <strong>Le classique :</strong> S'exprime normalement, propose des idées, écoute les autres.</li>
+                            <li>⏱️ <strong>Le maître de réunion :</strong> Anime, distribue la parole, recentre le débat, veille au respect du temps.</li>
+                        </ul>
+                        <p style="margin-top: 15px; font-style: italic; color: #cbd5e0 !important;"><strong>Déroulement :</strong> Le maître de réunion lance un sujet (ex: régler un conflit ou préparer le grand jeu). À la fin, faites un bilan sur le ressenti de chacun et dégagez les bonnes pratiques pour vos futures réunions !</p>
+                    </div>
+                </div>
+
             </div>
         </div>
 
