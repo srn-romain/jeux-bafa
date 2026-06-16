@@ -205,7 +205,7 @@ document.addEventListener('click', (e) => {
 });
 
 // Ouvrir paramètres
-document.getElementById('btnOpenSettings')?.addEventListener('click', async () => {
+async function triggerOpenSettings() {
     const user = firebase.auth().currentUser;
     if (!user) return;
 
@@ -238,7 +238,9 @@ document.getElementById('btnOpenSettings')?.addEventListener('click', async () =
     }
 
     openModal('overlaySettings');
-});
+}
+window.triggerOpenSettings = triggerOpenSettings;
+document.getElementById('btnOpenSettings')?.addEventListener('click', triggerOpenSettings);
 
 document.getElementById('btnCloseSettings')?.addEventListener('click', () => closeModal('overlaySettings'));
 document.getElementById('btnCancelSettings')?.addEventListener('click', () => closeModal('overlaySettings'));
@@ -613,6 +615,17 @@ firebase.auth().onAuthStateChanged((user) => {
                         container.remove();
                         document.body.style.overflow = '';
                         window.location.reload(); // Recharger pour restaurer l'état
+                    }
+
+                    // VÉRIFIER SI LE COMPTE EST INCOMPLET
+                    if (!userData.firstName || !userData.lastName || !userData.birthdate) {
+                        setTimeout(() => {
+                            const overlay = document.getElementById('overlaySettings');
+                            if (overlay && overlay.classList.contains('hidden')) {
+                                window.triggerOpenSettings();
+                                showToast("Merci de compléter ton profil (Prénom, Nom et Date de naissance) pour continuer.", "default", 8000);
+                            }
+                        }, 500);
                     }
                 }
             }
