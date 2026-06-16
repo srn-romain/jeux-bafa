@@ -700,9 +700,12 @@ function showTooltipForBtn(btn, voteId, direction) {
             let html = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4>`;
             html += `<ul>`;
             sortedVoters.forEach(v => {
-                const userLine = v.userName ? `<span class="vote-meta-user"><strong>${v.userName}</strong> (${v.userRole || 'Utilisateur'})</span>` : '';
+                const isInactive = v.active === false;
+                const inactiveClass = isInactive ? ' class="vote-item-inactive"' : '';
+                const statusLabel = isInactive ? ' <span class="vote-meta-status-retire">(Retiré)</span>' : '';
+                const userLine = v.userName ? `<span class="vote-meta-user"><strong>${v.userName}</strong> (${v.userRole || 'Utilisateur'})${statusLabel}</span>` : '';
                 html += `
-                    <li>
+                    <li${inactiveClass}>
                         ${userLine}
                         <span class="vote-meta-time">${v.date || 'Date inconnue'}</span>
                         <span class="vote-meta-details">${v.device || 'Appareil'} (${v.os || 'OS'}) - ${v.browser || 'Navigateur'}</span>
@@ -823,17 +826,21 @@ function handleVoteClick(voteId, direction, btnUp, btnDown, countUpSpan, countDo
 
     if (currentVote === direction) {
         localStorage.removeItem(userVoteKey);
-        updateVoteFirestore(voteId, direction, -1, visitorId, null);
+        const inactiveMetadata = { ...metadata, active: false };
+        updateVoteFirestore(voteId, direction, -1, visitorId, inactiveMetadata);
         updateLocalUI(direction, -1, btnUp, btnDown, countUpSpan, countDownSpan);
     } else if (currentVote) {
         localStorage.setItem(userVoteKey, direction);
-        updateVoteFirestore(voteId, currentVote, -1, visitorId, null);
-        updateVoteFirestore(voteId, direction, 1, visitorId, metadata);
+        const inactiveMetadata = { ...metadata, active: false };
+        updateVoteFirestore(voteId, currentVote, -1, visitorId, inactiveMetadata);
+        const activeMetadata = { ...metadata, active: true };
+        updateVoteFirestore(voteId, direction, 1, visitorId, activeMetadata);
         updateLocalUI(currentVote, -1, btnUp, btnDown, countUpSpan, countDownSpan);
         updateLocalUI(direction, 1, btnUp, btnDown, countUpSpan, countDownSpan);
     } else {
         localStorage.setItem(userVoteKey, direction);
-        updateVoteFirestore(voteId, direction, 1, visitorId, metadata);
+        const activeMetadata = { ...metadata, active: true };
+        updateVoteFirestore(voteId, direction, 1, visitorId, activeMetadata);
         updateLocalUI(direction, 1, btnUp, btnDown, countUpSpan, countDownSpan);
     }
 }

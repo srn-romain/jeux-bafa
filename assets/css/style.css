@@ -1700,6 +1700,25 @@ em {
   font-style: italic;
 }
 
+.vote-admin-tooltip li.vote-item-inactive {
+  opacity: 0.55;
+}
+
+.vote-admin-tooltip li.vote-item-inactive .vote-meta-user,
+.vote-admin-tooltip li.vote-item-inactive .vote-meta-time {
+  text-decoration: line-through;
+}
+
+.vote-admin-tooltip .vote-meta-status-retire {
+  color: #e74c3c;
+  font-weight: 700;
+  font-size: 0.65rem;
+  margin-left: 5px;
+  text-decoration: none !important;
+  display: inline-block;
+}
+
+
 /*--------------------------------------------------------------
 # Refonte Modale Transport
 --------------------------------------------------------------*/
