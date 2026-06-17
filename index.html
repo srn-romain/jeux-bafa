@@ -414,6 +414,17 @@
     .rgpd-link:hover {
       color: #f39c12 !important;
     }
+    .hidden {
+      display: none !important;
+    }
+    #public-broadcast-msg {
+      margin: 15px 20px 20px;
+    }
+    @media (max-width: 700px) {
+      #public-broadcast-msg {
+        margin: 10px 12px 15px;
+      }
+    }
   </style>
 </head>
 
@@ -429,20 +440,11 @@
       <p>Toutes vos ressources d'animation classées par thèmes. Cliquez sur une catégorie pour en savoir davantage !</p>
     </test>
 
-    <!-- Nouveauté Votes -->
-    <div class="vote-announcement">
-      <div class="vote-announcement-icon">
-        <i class="bi bi-hand-thumbs-up-fill"></i>
-      </div>
-      <test class="vote-announcement-content">
-        <test class="vote-announcement-header">
-          <span class="badge-new">NOUVEAUTÉ 🔥</span>
-          <test class="vote-announcement-title">Votez pour vos jeux préférés !</test>
-        </test>
-        <p class="vote-announcement-desc">
-          <strong>Donnez votre avis !</strong> Soutenez les meilleures idées avec un pouce vert <span class="vote-inline-emoji">👍</span> ou signalez celles qui vous plaisent moins avec un pouce rouge <span class="vote-inline-emoji">👎</span>. Cliquez sur l'une des rubriques ci-dessous pour voter !
-        </p>
-      </test>
+    <!-- Message de la direction -->
+    <div id="public-broadcast-msg" class="hidden" style="background: rgba(166, 216, 102, 0.12); border: 1.5px solid rgba(166, 216, 102, 0.25); border-radius: 12px;
+            padding: 12px 20px; display: flex; align-items: center; justify-content: center; gap: 10px; text-align: center; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);">
+      <span style="font-size: 1.2rem; flex-shrink: 0; line-height: 1;">📢</span>
+      <p id="public-broadcast-msg-text" style="margin: 0; font-size: 0.9rem; color: #2c3e2d; font-weight: 600; line-height: 1.5; white-space: pre-wrap; text-align: center;"></p>
     </div>
 
     <main class="categories-grid">

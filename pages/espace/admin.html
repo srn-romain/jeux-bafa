@@ -209,9 +209,7 @@
             <!-- ===================================================
                  ONGLET CONFIGURATION
                  =================================================== -->
-            <!-- ===================================================
-                 ONGLET CONFIGURATION
-                 =================================================== -->
+
             <div id="tab-config" class="hidden">
                 <div class="es-card">
                     
@@ -253,6 +251,32 @@
                                 </div>
                                 <p style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:10px; line-height: 1.4;">
                                     <i class="bi bi-info-circle"></i> Personnalisez le titre principal visible par les animateurs. Entourez de crochets <code>[...]</code> le mot à afficher en orange (ex: <code>Le [QG] de tes colos</code>).
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="height: 1px; background: var(--clr-surface-3); margin: 32px 0;"></div>
+
+                    <!-- Section 1.3 : Message grand public -->
+                    <div style="margin-bottom: 32px;">
+                        <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--clr-text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                            <i class="bi bi-megaphone" style="color: var(--clr-primary);"></i> Message grand public (Accueil)
+                        </h3>
+                        
+                        <div style="background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                            <div class="es-field" style="margin-bottom: 0;">
+                                <label class="es-field__label" for="adminPublicBroadcastMsg">Message à afficher sur la page d'accueil principale</label>
+                                <div style="display:flex; flex-direction:column; gap:12px;">
+                                    <textarea class="es-input" id="adminPublicBroadcastMsg" placeholder="Écris ici le message de nouveauté ou d'information générale..." style="width:100%; min-height:100px; background: var(--clr-surface); font-family: inherit; line-height: 1.5; resize: vertical; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--clr-surface-3); color: var(--clr-text);"></textarea>
+                                    <div style="display:flex; justify-content:flex-end;">
+                                        <button type="button" id="btnSavePublicBroadcastMsg" class="es-btn es-btn--primary" style="padding: 10px 20px; box-shadow: var(--shadow-sm);">
+                                            <i class="bi bi-check2"></i> <span class="brand-label">Enregistrer le message</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <p style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:10px; line-height: 1.4;">
+                                    <i class="bi bi-info-circle"></i> Ce message apparaîtra en haut de la page d'accueil publique avec un encadré 'NEW' pour attirer l'attention des visiteurs. Laissez vide pour ne rien afficher.
                                 </p>
                             </div>
                         </div>

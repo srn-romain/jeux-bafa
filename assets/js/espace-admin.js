@@ -267,6 +267,10 @@ async function loadConfig() {
             if (titleInput) {
                 titleInput.value = globalDoc.data().dashboardTitle || '';
             }
+            const publicMsgInput = document.getElementById('adminPublicBroadcastMsg');
+            if (publicMsgInput) {
+                publicMsgInput.value = globalDoc.data().publicBroadcastMessage || '';
+            }
 
             // LOAD ADMIN NOTES
             const notesHtml = globalDoc.data().notesAdmin || '';
@@ -628,6 +632,28 @@ document.getElementById('btnSaveAdminTitle')?.addEventListener('click', async ()
         showToast("Titre du tableau de bord mis à jour.", "success");
     } catch (err) {
         console.error("Erreur sauvegarde dashboardTitle:", err);
+        showToast("Erreur lors de l'enregistrement.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
+});
+
+document.getElementById('btnSavePublicBroadcastMsg')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnSavePublicBroadcastMsg');
+    const input = document.getElementById('adminPublicBroadcastMsg');
+    if (!input) return;
+    
+    const val = input.value.trim();
+    btnLoading(btn, true);
+    
+    try {
+        await db.collection('globalSettings').doc('dashboard').set({
+            publicBroadcastMessage: val,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast("Message grand public mis à jour.", "success");
+    } catch (err) {
+        console.error("Erreur sauvegarde publicBroadcastMessage:", err);
         showToast("Erreur lors de l'enregistrement.", "error");
     } finally {
         btnLoading(btn, false);

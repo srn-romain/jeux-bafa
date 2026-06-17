@@ -397,15 +397,17 @@ document.addEventListener("DOMContentLoaded", function () {
     
     const currentPath = window.location.pathname.split('/').pop() || 'index.html';
     const isTargetPage = targetPages.some(page => currentPath.includes(page));
+    const isIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || !window.location.pathname.includes('/pages/');
     
-    if (isTargetPage) {
-        loadFirebaseAndInitVotes();
+    if (isTargetPage || isIndexPage) {
+        loadFirebaseAndInit(isTargetPage, isIndexPage);
     }
 });
 
-function loadFirebaseAndInitVotes() {
+function loadFirebaseAndInit(isTargetPage, isIndexPage) {
     if (window.firebase && window.db) {
-        initVotesSystem();
+        if (isTargetPage) initVotesSystem();
+        if (isIndexPage) loadPublicBroadcastMessage();
         return;
     }
 
@@ -427,7 +429,8 @@ function loadFirebaseAndInitVotes() {
             if (window.firebase) {
                 if (!window.db) window.db = firebase.firestore();
                 if (!window.auth) window.auth = firebase.auth();
-                initVotesSystem();
+                if (isTargetPage) initVotesSystem();
+                if (isIndexPage) loadPublicBroadcastMessage();
             }
             return;
         }
@@ -443,6 +446,28 @@ function loadFirebaseAndInitVotes() {
         document.head.appendChild(script);
     }
     loadNext();
+}
+
+function loadPublicBroadcastMessage() {
+    if (!window.db) return;
+    db.collection('globalSettings').doc('dashboard').get().then(doc => {
+        if (doc.exists) {
+            const data = doc.data();
+            const msg = data.publicBroadcastMessage || '';
+            const msgContainer = document.getElementById('public-broadcast-msg');
+            const msgText = document.getElementById('public-broadcast-msg-text');
+            if (msgContainer && msgText) {
+                if (msg.trim() !== '') {
+                    msgText.textContent = msg;
+                    msgContainer.classList.remove('hidden');
+                } else {
+                    msgContainer.classList.add('hidden');
+                }
+            }
+        }
+    }).catch(err => {
+        console.error("Error loading public broadcast message:", err);
+    });
 }
 
 let currentUserData = null;
