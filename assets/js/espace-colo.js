@@ -26,6 +26,18 @@ let currentColoDateFin = null;   // Date de fin de la colo
 let currentGeminiKey = "";       // Clé API Gemini de la session (depuis Firestore)
 let isAIGeneratorEnabled = true; // Si les anims ont le droit d'utiliser l'IA
 
+// Helper pour parser les dates sans décalage de timezone UTC
+function parseLocalDate(dateStr) {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return dateStr;
+    if (dateStr.toDate && typeof dateStr.toDate === 'function') {
+        return dateStr.toDate();
+    }
+    const parts = String(dateStr).split('-');
+    if (parts.length !== 3) return new Date(dateStr);
+    return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+}
+
 // Mise à jour de l'affichage de l'état de l'IA (Activée / Non configurée)
 function updateAIStatusUI() {
     const labelEl = document.getElementById('iaStatusLabel');
@@ -310,7 +322,7 @@ async function initColoContent(colo, role) {
         if (colo.dateDebut) {
             const now = new Date();
             now.setHours(0, 0, 0, 0);
-            const startDate = new Date(colo.dateDebut);
+            const startDate = parseLocalDate(colo.dateDebut);
             startDate.setHours(0, 0, 0, 0);
             
             if (now < startDate) {
@@ -332,7 +344,7 @@ async function initColoContent(colo, role) {
         if (colo.dateFin) {
             const now = new Date();
             now.setHours(0, 0, 0, 0);
-            const endDate = new Date(colo.dateFin);
+            const endDate = parseLocalDate(colo.dateFin);
             endDate.setHours(0, 0, 0, 0);
             
             if (now > endDate) {
@@ -349,7 +361,7 @@ async function initColoContent(colo, role) {
         }
     }
 
-    currentColoDateFin = colo.dateFin ? new Date(colo.dateFin) : null;
+    currentColoDateFin = colo.dateFin ? parseLocalDate(colo.dateFin) : null;
 
     isColoFormation = colo.isFormation === true;
     isColoArchived = colo.archived === true;
@@ -3424,7 +3436,7 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
             const code = daily.weathercode[i];
             const maxT = Math.round(daily.temperature_2m_max[i]);
             const minT = Math.round(daily.temperature_2m_min[i]);
-            const d = new Date(dateStr);
+            const d = parseLocalDate(dateStr);
             const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
 
             const morningIdx = i * 24 + 10;
@@ -3477,29 +3489,33 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
     }
 }
 
-async function checkAndCreateWeatherAlerts(weatherData, locationName, role) {
+async function checkAndCreateWeatherAlerts(weatherData, locationName, role, isManual = false) {
     if (role !== 'admin' && !isAnimAdmin) return 0;
     
     let limitDate = null;
-    if (currentColoDateFin && !isNaN(new Date(currentColoDateFin).getTime())) {
-        const endDate = new Date(currentColoDateFin);
-        endDate.setHours(0, 0, 0, 0);
-        
-        limitDate = new Date(endDate);
-        limitDate.setDate(limitDate.getDate() + 2);
-        
-        const todayAtMidnight = new Date();
-        todayAtMidnight.setHours(0, 0, 0, 0);
-        
-        const wInfoMsg = document.getElementById('weatherEndInfo');
-        if (todayAtMidnight > limitDate) {
-            if (wInfoMsg) {
-                wInfoMsg.classList.remove('hidden');
-                wInfoMsg.innerHTML = `<i class="bi bi-info-circle"></i> ${isColoFormation ? "La formation est terminée. Plus aucune alerte météo ne sera générée." : "La colo est terminée. Plus aucune alerte météo ne sera générée."}`;
+    if (currentColoDateFin) {
+        const endDate = parseLocalDate(currentColoDateFin);
+        if (endDate && !isNaN(endDate.getTime())) {
+            endDate.setHours(0, 0, 0, 0);
+            
+            limitDate = new Date(endDate);
+            limitDate.setDate(limitDate.getDate() + 2);
+            
+            const todayAtMidnight = new Date();
+            todayAtMidnight.setHours(0, 0, 0, 0);
+            
+            const wInfoMsg = document.getElementById('weatherEndInfo');
+            if (todayAtMidnight > limitDate) {
+                if (!isManual) {
+                    if (wInfoMsg) {
+                        wInfoMsg.classList.remove('hidden');
+                        wInfoMsg.innerHTML = `<i class="bi bi-info-circle"></i> ${isColoFormation ? "La formation est terminée. Plus aucune alerte météo ne sera générée." : "La colo est terminée. Plus aucune alerte météo ne sera générée."}`;
+                    }
+                    return 0;
+                }
+            } else {
+                if (wInfoMsg) wInfoMsg.classList.add('hidden');
             }
-            return 0;
-        } else {
-            if (wInfoMsg) wInfoMsg.classList.add('hidden');
         }
     }
 
@@ -3519,14 +3535,14 @@ async function checkAndCreateWeatherAlerts(weatherData, locationName, role) {
         const wTableau = getWeatherWMO(code);
 
         // On ne génère des alertes que pour le futur (demain et +)
-        const d = new Date(dateStr);
+        const d = parseLocalDate(dateStr);
         d.setHours(0, 0, 0, 0);
         const todayAtMidnight = new Date();
         todayAtMidnight.setHours(0, 0, 0, 0);
         if (d <= todayAtMidnight) continue;
         
-        // On stoppe la génération si la date prévue est au-delà des +2 jours de fin
-        if (limitDate && d > limitDate) continue;
+        // On stoppe la génération si la date prévue est au-delà des +2 jours de fin (sauf en manuel)
+        if (!isManual && limitDate && d > limitDate) continue;
 
         if (wTableau.bad) {
             const morningIdx = i * 24 + 10;
@@ -3606,7 +3622,7 @@ document.getElementById('btnGenerateWeatherAlerts')?.addEventListener('click', a
     try {
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${currentMeteoParams.lat}&longitude=${currentMeteoParams.lon}&daily=weathercode,temperature_2m_max,temperature_2m_min&hourly=weathercode,temperature_2m&timezone=Europe%2FParis&forecast_days=5`);
         const data = await res.json();
-        const count = await checkAndCreateWeatherAlerts(data, currentMeteoParams.locationName, currentRole);
+        const count = await checkAndCreateWeatherAlerts(data, currentMeteoParams.locationName, currentRole, true);
 
         if (count > 0) showToast(`${count} nouvelle(s) alerte(s) météo générée(s).`, "success");
         else showToast("Aucune nouvelle alerte météo à générer sur les 5 jours à venir.", "info");
