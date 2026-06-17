@@ -205,11 +205,11 @@ auth.onAuthStateChanged(async (user) => {
     const roleToggle = document.getElementById('checkRoleToggle');
     const activeRole = (actualRole === 'admin' && roleToggle && roleToggle.checked) ? 'anim' : actualRole;
 
-    // Éléments Admin Only (Switch de simulation visuelle)
+    // Éléments Admin Only (Panneau de contrôle d'administration)
     if (actualRole === 'admin') {
-        document.getElementById('adminRoleSwitchBar')?.classList.remove('hidden');
+        document.getElementById('adminControlsPanel')?.classList.remove('hidden');
     } else {
-        document.getElementById('adminRoleSwitchBar')?.classList.add('hidden');
+        document.getElementById('adminControlsPanel')?.classList.add('hidden');
     }
 
     // Mettre à jour la date de dernière connexion

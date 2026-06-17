@@ -4076,4 +4076,95 @@ body.modal-open .es-topbar {
     font-size: 0.75rem;
   }
 }
+
+/* Panneau de Contrôle Administrateur Responsif */
+.es-admin-panel {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px 16px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+}
+
+.es-admin-panel__inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+#adminColoActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.es-admin-panel__toggles-list {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Styles responsifs pour tablettes/mobiles */
+@media (max-width: 768px) {
+  .es-admin-panel {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .es-admin-panel__inner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  #adminColoActions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .es-admin-panel__toggles-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .es-admin-panel__toggles-list .es-stats-toggle {
+    width: 100%;
+    margin: 0;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  #adminRoleSwitchBar {
+    width: 100%;
+    margin: 0;
+    justify-content: space-between;
+    box-sizing: border-box;
+  }
+
+  #adminTagToggle {
+    grid-column: span 2;
+    justify-self: center;
+    width: auto;
+    box-sizing: border-box;
+  }
+
+  #btnNewColoIndex {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    font-size: 0.9rem;
+    box-sizing: border-box;
+  }
+}
+
 
