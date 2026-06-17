@@ -377,10 +377,13 @@ function applyRoleSimulation(activeRole) {
 
     // 2. Afficher/Masquer les options et actions Admin
     const adminColoActions = document.getElementById('adminColoActions');
+    const adminPanel = document.getElementById('adminControlsPanel');
     if (activeRole === 'admin') {
         adminColoActions?.classList.remove('hidden');
+        adminPanel?.classList.remove('es-admin-panel--simulated');
     } else {
         adminColoActions?.classList.add('hidden');
+        adminPanel?.classList.add('es-admin-panel--simulated');
     }
 
     // 3. Mettre à jour le message du directeur

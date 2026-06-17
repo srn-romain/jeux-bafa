@@ -4167,4 +4167,11 @@ body.modal-open .es-topbar {
   }
 }
 
+.es-admin-panel--simulated {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin-bottom: 16px !important;
+}
+
 
