@@ -65,6 +65,10 @@ function initAdminTabs() {
         btn.addEventListener('click', () => {
             document.querySelectorAll('#adminTabs .es-nav-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
+
+            // Faire défiler l'onglet pour le centrer (utile sur mobile)
+            btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+
             const tab = btn.getAttribute('data-tab');
             ['colos', 'demandes', 'utilisateurs', 'config'].forEach(t => {
                 document.getElementById(`tab-${t}`)?.classList.toggle('hidden', t !== tab);
