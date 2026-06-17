@@ -775,8 +775,8 @@ function buildColoAdminCard(colo) {
     const isUpcoming = startDate && startDate > now;
 
     div.innerHTML = `
-        <div class="es-colo-admin-card__header">
-            <div>
+        <div class="es-colo-admin-card__header" style="position: relative;">
+            <div style="padding-right: 44px; width: 100%;">
                 <div class="es-colo-admin-card__title">
                     ${colo.emoji || '🏕️'} ${colo.nom || 'Sans nom'}
                     ${isUpcoming ? `
@@ -795,7 +795,7 @@ function buildColoAdminCard(colo) {
                         </span>
                     ` : ''}
                 </div>
-                <div style="font-size:0.78rem;color:rgba(255,255,255,0.7);margin-top:2px;display:flex;align-items:center;gap:8px;text-shadow:0 1px 2px rgba(0,0,0,0.5);">
+                <div style="font-size:0.78rem;color:rgba(255,255,255,0.7);margin-top:2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;text-shadow:0 1px 2px rgba(0,0,0,0.5);">
                     ${dateStr}
                     <span style="
                         padding:1px 7px;border-radius:20px;font-size:0.7rem;font-weight:700;text-shadow:none;
@@ -807,6 +807,9 @@ function buildColoAdminCard(colo) {
                     </span>
                 </div>
             </div>
+            <a href="espace.html?id=${colo.id}" class="es-card-action-btn" style="position: absolute; top: 20px; right: 20px; text-decoration: none; z-index: 10;" title="Accéder à l'espace">
+                <i class="bi bi-arrow-right" style="font-size: 1.1rem; color: #ffffff !important;"></i>
+            </a>
         </div>
         <div class="es-colo-admin-card__body">
             <div class="es-colo-admin-card__info">
