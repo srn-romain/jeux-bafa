@@ -32,7 +32,20 @@ function updateAIStatusUI() {
     const switchEl = document.getElementById('toggleIASwitch');
     if (!labelEl) return;
     
-    if (switchEl) switchEl.checked = isAIGeneratorEnabled;
+    if (isColoArchived) {
+        if (switchEl) {
+            switchEl.checked = false;
+            switchEl.disabled = true;
+        }
+        labelEl.style.color = 'var(--clr-warning)';
+        labelEl.innerHTML = '<i class="bi bi-archive-fill"></i> Assistant IA désactivé car l’espace est archivé.';
+        return;
+    }
+
+    if (switchEl) {
+        switchEl.checked = isAIGeneratorEnabled;
+        switchEl.disabled = false;
+    }
 
     if (!isAIGeneratorEnabled) {
         labelEl.style.color = 'var(--clr-text-muted)';
@@ -442,7 +455,13 @@ async function initColoContent(colo, role) {
     initColoQuickSwitch(colo.id, role);
 
     if (role === 'admin' || isAnimAdmin) {
-        document.querySelectorAll('.admin-only').forEach(el => el.classList.remove('hidden'));
+        document.querySelectorAll('.admin-only').forEach(el => {
+            if (el.id === 'btnManageGroups' && isColoArchived) {
+                el.classList.add('hidden');
+                return;
+            }
+            el.classList.remove('hidden');
+        });
     }
     
     if (role === 'admin') {
@@ -469,7 +488,7 @@ async function initColoContent(colo, role) {
     loadComments(colo.id);
 
     // IA - Chargement de la config session
-    isAIGeneratorEnabled = colo.allowAnimAI !== false; // true par défaut
+    isAIGeneratorEnabled = !isColoArchived && (colo.allowAnimAI !== false); // true par défaut, false si archivé
 
     // On récupère la clé du créateur de l'espace (le directeur)
     if (colo.createdBy) {
@@ -505,6 +524,32 @@ async function initColoContent(colo, role) {
     
     updateParticipantsLockUI();
     updateAIStatusUI();
+
+    // Overrides si l'espace est archivé
+    if (isColoArchived) {
+        // Cacher le formulaire de configuration du lieu météo
+        document.getElementById('weatherAdminContainer')?.classList.add('hidden');
+        
+        // Bloquer le générateur d'activités IA pour tout le monde (anims + directeurs)
+        const btnAI = document.getElementById('btnGenerateAI');
+        const btnActivity = document.getElementById('btnGenerateActivity');
+        const msgAI = document.getElementById('aiBlockMessage');
+        const msgActivity = document.getElementById('activityAIBlockMessage');
+
+        btnAI?.setAttribute('disabled', 'true');
+        btnActivity?.setAttribute('disabled', 'true');
+        btnAI?.setAttribute('title', 'L’espace est archivé.');
+        btnActivity?.setAttribute('title', 'L’espace est archivé.');
+        
+        if (msgAI) {
+            msgAI.innerHTML = `<i class="bi bi-archive-fill" style="margin-top: 0;"></i> <span>L’IA est désactivée car l’espace est archivé.</span>`;
+            msgAI.classList.remove('hidden');
+        }
+        if (msgActivity) {
+            msgActivity.innerHTML = `<i class="bi bi-archive-fill" style="margin-top: 0;"></i> <span>L’IA est désactivée car l’espace est archivé.</span>`;
+            msgActivity.classList.remove('hidden');
+        }
+    }
 
     // Onglets
     initTabs();
@@ -1993,6 +2038,11 @@ document.getElementById('toggleIASwitch')?.addEventListener('change', async (e) 
         e.target.checked = !enabled;
         return;
     }
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        e.target.checked = false;
+        return;
+    }
     try {
         await db.collection('espaces').doc(espaceId).update({
             allowAnimAI: enabled
@@ -2549,23 +2599,29 @@ async function loadAnimateurs(coloId) {
                 </div>
                 
                 ${anim.isPending ? `
-                    <div class="es-anim-item__actions" style="display:flex; gap:6px;">
-                        <button class="es-btn es-btn--sm" style="background:var(--clr-success); color:#fff; padding:4px 8px;" 
-                                onclick="handleRequestStatus('${anim.requestId}', 'approved')">
-                            <i class="bi bi-check-lg"></i>
-                        </button>
-                        <button class="es-btn es-btn--sm" style="background:var(--clr-danger); color:#fff; padding:4px 8px;" 
-                                onclick="handleRequestStatus('${anim.requestId}', 'refused')">
-                            <i class="bi bi-x-lg"></i>
-                        </button>
-                    </div>
+                    ${!isColoArchived ? `
+                        <div class="es-anim-item__actions" style="display:flex; gap:6px;">
+                            <button class="es-btn es-btn--sm" style="background:var(--clr-success); color:#fff; padding:4px 8px;" 
+                                    onclick="handleRequestStatus('${anim.requestId}', 'approved')">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            <button class="es-btn es-btn--sm" style="background:var(--clr-danger); color:#fff; padding:4px 8px;" 
+                                    onclick="handleRequestStatus('${anim.requestId}', 'refused')">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
+                    ` : `
+                        <div class="es-badge es-badge--pending" style="white-space:nowrap; background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15); color:rgba(255,255,255,0.6);">
+                            Archivé
+                        </div>
+                    `}
                 ` : `
                     <div class="es-anim-item__actions" style="display:flex; align-items:center; gap:8px;">
                         <div class="es-badge ${badgeInfo.className}" style="white-space:nowrap; ${badgeInfo.style}">
                             ${escapeHtml(badgeInfo.label)}
                         </div>
 
-                        ${(currentRole === 'admin' && anim.role !== 'admin' && anim.espaceRole !== 'admin' && anim.requestId) ? `
+                        ${(!isColoArchived && currentRole === 'admin' && anim.role !== 'admin' && anim.espaceRole !== 'admin' && anim.requestId) ? `
                             <button class="es-btn-edit-role" 
                                     onclick="openCustomRoleModal('${anim.requestId}', ${escapeHtml(JSON.stringify(anim.customRole || ''))}, ${escapeHtml(JSON.stringify(anim.displayName || 'Animateur'))})"
                                     title="Définir le rôle dans la colo">
@@ -2589,6 +2645,10 @@ async function loadAnimateurs(coloId) {
 }
 
 async function handleRequestStatus(requestId, newStatus) {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     if (!confirm(newStatus === 'approved' ? 'Accepter cette demande ?' : 'Refuser cette demande ?')) return;
 
     try {
@@ -2606,6 +2666,10 @@ async function handleRequestStatus(requestId, newStatus) {
 }
 
 async function toggleAnimAdmin(requestId, newRole) {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     const msgEl = document.getElementById('confirmAdminMsg');
     if (msgEl) {
         msgEl.textContent = newRole === 'anim-admin' 
@@ -2689,6 +2753,10 @@ function openCustomRoleModal(requestId, currentCustomRole, displayName) {
 }
 
 async function saveCustomRole(btn) {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     if (!currentEditRoleRequestId) return;
     
     const select = document.getElementById('selectCustomRole');
@@ -2745,9 +2813,11 @@ async function loadGroups(id, role) {
             select.value = val;
         }
 
-        // Afficher le bouton de gestion pour les admins et anims-admins
-        if (role === 'admin' || isAnimAdmin) {
+        // Afficher le bouton de gestion pour les admins et anims-admins (sauf si l'espace est archivé)
+        if ((role === 'admin' || isAnimAdmin) && !isColoArchived) {
             document.getElementById('btnManageGroups')?.classList.remove('hidden');
+        } else {
+            document.getElementById('btnManageGroups')?.classList.add('hidden');
         }
 
         // Mettre à jour les filtres de la table participants
@@ -3616,6 +3686,10 @@ if (meteoLocationInput && meteoSuggestionsCont) {
 
 document.getElementById('formSetLocation')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     const loc = document.getElementById('meteoLocation').value.trim();
     if (!loc) return;
     const btn = document.getElementById('btnSetLocation');
@@ -3665,6 +3739,10 @@ document.getElementById('formSetLocation')?.addEventListener('submit', async (e)
 });
 
 document.getElementById('btnDeleteLocation')?.addEventListener('click', async () => {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     if (!confirm("Supprimer le lieu du séjour ? Cela arrêtera l'affichage de la météo.")) return;
 
     const btn = document.getElementById('btnDeleteLocation');
