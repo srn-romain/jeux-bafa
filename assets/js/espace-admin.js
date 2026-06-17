@@ -286,6 +286,10 @@ async function loadConfig() {
 
         // Init notes events
         initAdminNotesEvents();
+
+        // Load Liked Games Podium
+        loadLikedGames();
+        initLikedGamesEvents();
     } catch (err) {
         console.error("loadConfig error:", err);
     }
@@ -1661,4 +1665,232 @@ window.filterAdminColos = function(type) {
     btnFormation?.classList.toggle('active', targetType === 'formation');
     btnColo?.classList.toggle('active', targetType === 'colo');
 };
+
+// =================================================================
+// PODIUM DES JEUX LES PLUS LIKÉS
+// =================================================================
+let allParsedGames = [];
+let likedGamesEventsAttached = false;
+
+async function loadLikedGames() {
+    const loader = document.getElementById('likedGamesLoader');
+    const content = document.getElementById('likedGamesContent');
+    const tbody = document.getElementById('likedGamesTbody');
+    const btnShowMore = document.getElementById('btnShowMoreLikedGames');
+    
+    if (!loader || !content || !tbody || !btnShowMore) return;
+    
+    loader.classList.remove('hidden');
+    content.classList.add('hidden');
+    tbody.innerHTML = '';
+    
+    try {
+        const targetPages = [
+            'activites.html', 
+            'veillees.html', 
+            'semaine.html', 
+            'presentation.html', 
+            'conversation.html', 
+            'animateur.html', 
+            'manuels.html', 
+            'calme.html'
+        ];
+        
+        const pageLabels = {
+            'presentation.html': 'Jeux Présentation',
+            'semaine.html': 'Jeux Fil Rouge',
+            'conversation.html': 'Débats & Echanges',
+            'animateur.html': 'Animateur',
+            'activites.html': 'Activités',
+            'veillees.html': 'Veillées',
+            'manuels.html': 'Activités Manuelles',
+            'calme.html': 'Temps Calme'
+        };
+
+        const parsedGamesMap = {};
+
+        // 1. Charger et parser les pages statiques
+        await Promise.all(targetPages.map(async (pageKey) => {
+            try {
+                const response = await fetch(`../${pageKey}`);
+                if (!response.ok) return;
+                const htmlText = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                
+                const listItems = doc.querySelectorAll('.categories ul:not(.fads-grid) li, .categories ol:not(.fads-grid) li');
+                listItems.forEach((li) => {
+                    if (li.closest('.regles-vie') || li.closest('.modalspe') || li.closest('.no-vote')) return;
+
+                    const text = li.innerText.trim();
+                    if (!text) return;
+
+                    const cleanText = text
+                        .replace(/[\s\r\n\t/]+/g, '_')
+                        .toLowerCase()
+                        .substring(0, 80);
+                    
+                    const voteId = `${pageKey}_${cleanText}`;
+                    
+                    const bElement = li.querySelector('b');
+                    let displayName = '';
+                    if (bElement) {
+                        displayName = bElement.innerText.trim();
+                    } else {
+                        const textContent = li.innerText.trim();
+                        if (textContent.includes(':')) {
+                            displayName = textContent.split(':')[0].trim();
+                        } else {
+                            displayName = textContent;
+                        }
+                    }
+                    
+                    // Nettoyage de la ponctuation de fin (comme ':' ou '-')
+                    displayName = displayName.replace(/[:\-]+$/, '').trim();
+                    
+                    parsedGamesMap[voteId] = {
+                        name: displayName,
+                        pageKey: pageKey
+                    };
+                });
+            } catch (err) {
+                console.error(`Erreur de chargement/parsing de ${pageKey}:`, err);
+            }
+        }));
+
+        // 2. Récupérer les likes depuis Firestore
+        const votesSnap = await db.collection('positive_votes').get();
+        const votesMap = {};
+        votesSnap.forEach((doc) => {
+            votesMap[doc.id] = doc.data().count || 0;
+        });
+
+        // 3. Fusionner les données
+        allParsedGames = [];
+        for (const voteId in parsedGamesMap) {
+            const parsed = parsedGamesMap[voteId];
+            const likes = votesMap[voteId] || 0;
+            allParsedGames.push({
+                voteId: voteId,
+                name: parsed.name,
+                pageKey: parsed.pageKey,
+                pageLabel: pageLabels[parsed.pageKey] || parsed.pageKey,
+                likes: likes
+            });
+        }
+
+        // Trier par mentions j'aime décroissant pour le top 10 initial
+        allParsedGames.sort((a, b) => {
+            if (b.likes !== a.likes) {
+                return b.likes - a.likes;
+            }
+            return a.name.localeCompare(b.name);
+        });
+
+        renderLikedGamesTable(false);
+
+    } catch (err) {
+        console.error("loadLikedGames error:", err);
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Erreur lors du chargement du podium.</td></tr>`;
+    } finally {
+        loader.classList.add('hidden');
+        content.classList.remove('hidden');
+    }
+}
+
+function renderLikedGamesTable(showMore = false) {
+    const tbody = document.getElementById('likedGamesTbody');
+    const btnShowMore = document.getElementById('btnShowMoreLikedGames');
+    const btnCollapse = document.getElementById('btnCollapseLikedGames');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '';
+    
+    // Le Top 10 trié par likes décroissants
+    const top10 = allParsedGames.slice(0, 10);
+    let displayedGames = [...top10];
+    
+    if (showMore) {
+        // Le reste (index 10+)
+        let theRest = allParsedGames.slice(10);
+        
+        // Trier le reste par ordre croissant de likes
+        theRest.sort((a, b) => {
+            if (a.likes !== b.likes) {
+                return a.likes - b.likes; // Ordre croissant
+            }
+            return a.name.localeCompare(b.name);
+        });
+        
+        displayedGames = top10.concat(theRest);
+        btnShowMore?.classList.add('hidden');
+        if (allParsedGames.length > 10) {
+            btnCollapse?.classList.remove('hidden');
+        } else {
+            btnCollapse?.classList.add('hidden');
+        }
+    } else {
+        if (allParsedGames.length > 10) {
+            btnShowMore?.classList.remove('hidden');
+        } else {
+            btnShowMore?.classList.add('hidden');
+        }
+        btnCollapse?.classList.add('hidden');
+    }
+    
+    if (displayedGames.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Aucun jeu trouvé.</td></tr>`;
+        return;
+    }
+    
+    displayedGames.forEach((game, index) => {
+        let rankHtml = '';
+        if (index === 0) {
+            rankHtml = '<span style="font-size: 1.25rem;">🥇</span>';
+        } else if (index === 1) {
+            rankHtml = '<span style="font-size: 1.25rem;">🥈</span>';
+        } else if (index === 2) {
+            rankHtml = '<span style="font-size: 1.25rem;">🥉</span>';
+        } else {
+            rankHtml = `<span style="font-size: 0.85rem; font-weight: 600; color: var(--clr-text-muted);">#${index + 1}</span>`;
+        }
+        
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="text-align: center; vertical-align: middle;">${rankHtml}</td>
+            <td style="font-weight: 600; color: var(--clr-text); vertical-align: middle;">${game.name}</td>
+            <td style="vertical-align: middle;">
+                <a href="../${game.pageKey}" target="_blank" style="color: var(--clr-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="bi bi-box-arrow-up-right" style="font-size: 0.8rem;"></i> ${game.pageLabel}
+                </a>
+            </td>
+            <td style="text-align: center; vertical-align: middle;">
+                <span class="es-badge" style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; font-weight: 700; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="bi bi-hand-thumbs-up-fill" style="font-size: 0.85rem;"></i> ${game.likes}
+                </span>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function initLikedGamesEvents() {
+    if (likedGamesEventsAttached) return;
+    likedGamesEventsAttached = true;
+    
+    const btnShowMore = document.getElementById('btnShowMoreLikedGames');
+    if (btnShowMore) {
+        btnShowMore.addEventListener('click', () => {
+            renderLikedGamesTable(true);
+        });
+    }
+
+    const btnCollapse = document.getElementById('btnCollapseLikedGames');
+    if (btnCollapse) {
+        btnCollapse.addEventListener('click', () => {
+            renderLikedGamesTable(false);
+            document.getElementById('sectionLikedGames')?.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+}
 
