@@ -3558,6 +3558,20 @@ body.modal-open .es-topbar {
   color: #2ecc71 !important;
 }
 
+.es-card-action-btn--warning {
+  background: rgba(243, 156, 18, 0.25);
+  border-color: rgba(243, 156, 18, 0.4);
+}
+
+.es-card-action-btn--warning:hover {
+  background: rgba(243, 156, 18, 0.4);
+  border-color: rgba(243, 156, 18, 0.65);
+}
+
+.es-card-action-btn--warning i {
+  color: #f39c12 !important;
+}
+
 .es-card-action-btn--pill {
   width: auto;
   padding: 4px 12px;

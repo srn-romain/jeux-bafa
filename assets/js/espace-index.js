@@ -618,6 +618,11 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
                             <i class="bi bi-eye-slash-fill"></i> Caché
                         </span>
                     ` : ''}
+                    ${colo.archived && (role === 'admin' || accessStatus === 'approved' || accessStatus === 'admin') ? `
+                        <span style="background:rgba(243,156,18,0.25);color:#ffffff;border:1px solid rgba(243,156,18,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;white-space:nowrap;">
+                            <i class="bi bi-archive-fill"></i> Archivé
+                        </span>
+                    ` : ''}
                 </div>
                 <div class="es-colo-card__dates">${dateStr}</div>
             </div>

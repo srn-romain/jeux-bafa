@@ -21,6 +21,7 @@ let currentViewIndex = -1;       // Index dans currentFilteredParticipants pour 
 let sortColumn    = 'nom';      // Colonne de tri active ('prenom'|'nom'|'age'|'genre'|'groupe')
 let sortDirection = 'asc';       // 'asc' | 'desc'
 let isColoFormation = false;     // Si la colo est marquée comme "Formation"
+let isColoArchived = false;      // Si la colo est archivée
 let currentColoDateFin = null;   // Date de fin de la colo
 let currentGeminiKey = "";       // Clé API Gemini de la session (depuis Firestore)
 let isAIGeneratorEnabled = true; // Si les anims ont le droit d'utiliser l'IA
@@ -65,6 +66,10 @@ function updateParticipantsLockUI() {
 
 async function toggleParticipantsLock() {
     if (currentRole !== 'admin') return;
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     
     const newLocked = !currentLocked;
     const btn = document.getElementById('btnToggleParticipantsLock');
@@ -98,6 +103,17 @@ function updateAddParticipantButton() {
     const addBtn = document.getElementById('btnAddParticipant');
     const importBtn = document.getElementById('btnImportParticipantsColo');
     const exportBtn = document.getElementById('btnExportParticipantsColo');
+    
+    if (isColoArchived) {
+        addBtn?.classList.add('hidden');
+        importBtn?.classList.add('hidden');
+        if (currentRole === 'admin' || isAnimAdmin) {
+            exportBtn?.classList.remove('hidden');
+        } else {
+            exportBtn?.classList.add('hidden');
+        }
+        return;
+    }
     
     if (currentRole === 'admin' || isAnimAdmin) {
         exportBtn?.classList.remove('hidden');
@@ -323,8 +339,27 @@ async function initColoContent(colo, role) {
     currentColoDateFin = colo.dateFin ? new Date(colo.dateFin) : null;
 
     isColoFormation = colo.isFormation === true;
+    isColoArchived = colo.archived === true;
     const btnAppr = document.getElementById('btnShowAppreciation');
     const btnInfoD = document.getElementById('btnInfoDRAJES');
+
+    // Affichage/Masquage de la bannière d'archivage
+    const archivedBanner = document.getElementById('archivedBanner');
+    if (archivedBanner) {
+        if (isColoArchived) {
+            archivedBanner.classList.remove('hidden');
+        } else {
+            archivedBanner.classList.add('hidden');
+        }
+    }
+
+    if (isColoArchived) {
+        // Cacher le verrou des participants
+        document.getElementById('btnToggleParticipantsLock')?.parentElement?.classList.add('hidden');
+        // Masquer le bouton de réinitialisation et d'archivage dans la zone de danger
+        document.getElementById('btnDeleteAllParticipants')?.classList.add('hidden');
+        document.getElementById('btnArchiveColo')?.classList.add('hidden');
+    }
 
     // Mise à jour dynamique des labels d'onglets, stats, recherche et modales selon le type
     const tabParticipants = document.querySelector('[data-tab="participants"]');
@@ -345,8 +380,8 @@ async function initColoContent(colo, role) {
     const searchInput = document.getElementById('searchParticipant');
     if (searchInput) {
         searchInput.placeholder = isColoFormation
-            ? 'Rechercher un stagiaire (prénom, nom, tags...)'
-            : 'Rechercher un jeune (prénom, nom, tags...)';
+            ? 'Rechercher un stagiaire...'
+            : 'Rechercher un jeune...';
     }
 
     const manageGroupsDesc = document.querySelector('#overlayManageGroups .es-modal__body p');
@@ -766,7 +801,7 @@ function renderParticipantsTable(role) {
         return;
     }
 
-    const canDelete = role === 'admin' || (role === 'anim' && isAnimAdmin && !currentLocked);
+    const canDelete = !isColoArchived && (role === 'admin' || (role === 'anim' && isAnimAdmin && !currentLocked));
     const hasGroups = currentGroups.length > 0;
 
     // Exposer la liste filtrée pour la modale de fiche (avec tri appliqué)
@@ -840,14 +875,16 @@ function renderParticipantsTable(role) {
                 ` : '<span class="text-muted" style="font-size:0.8rem;">–</span>'}
             </td>
             <td class="es-table__actions" data-html2canvas-ignore="true" onclick="event.stopPropagation()" style="text-align:center;">
-                <button class="es-btn es-btn--ghost es-btn--sm" title="Modifier"
-                        onclick="editParticipant('${p.id}')">
+                <button class="es-btn es-btn--ghost es-btn--sm" 
+                        onclick="${!isColoArchived ? `editParticipant('${p.id}')` : 'void(0)'}"
+                        ${isColoArchived ? 'disabled title="Espace archivé"' : 'title="Modifier"'}
+                        style="${isColoArchived ? 'opacity:0.4;cursor:not-allowed;' : ''}">
                     <i class="bi bi-pencil"></i>
                 </button>
                 <button class="es-btn es-btn--danger es-btn--sm" 
                         onclick="${canDelete ? `deleteParticipant('${p.id}', ${escapeHtml(JSON.stringify(p.prenom + ' ' + p.nom))})` : 'void(0)'}"
-                        ${!canDelete ? 'disabled title="Verrouillé par le directeur"' : 'title="Supprimer"'}
-                        style="${!canDelete && role === 'anim' ? 'opacity:0.4;cursor:not-allowed;' : ''}">
+                        ${isColoArchived ? 'disabled title="Espace archivé"' : (!canDelete ? 'disabled title="Verrouillé par le directeur"' : 'title="Supprimer"')}
+                        style="${isColoArchived || (!canDelete && role === 'anim') ? 'opacity:0.4;cursor:not-allowed;' : ''}">
                     <i class="bi bi-trash3"></i>
                 </button>
             </td>
@@ -1063,12 +1100,15 @@ function renderParticipantView() {
     // Bouton Modifier — visible seulement si droits d'édition
     const pvBtnEdit = document.getElementById('pvBtnEdit');
     if (pvBtnEdit) {
-        const canEdit = true;
-        pvBtnEdit.classList.remove('hidden');
-        pvBtnEdit.onclick = () => {
-            closeModal('overlayParticipantView');
-            editParticipant(p.id);
-        };
+        if (isColoArchived) {
+            pvBtnEdit.classList.add('hidden');
+        } else {
+            pvBtnEdit.classList.remove('hidden');
+            pvBtnEdit.onclick = () => {
+                closeModal('overlayParticipantView');
+                editParticipant(p.id);
+            };
+        }
     }
 }
 
@@ -1616,6 +1656,11 @@ document.getElementById('btnCloseParticipant')?.addEventListener('click', () => 
 document.getElementById('btnCancelParticipant')?.addEventListener('click', () => closeModal('overlayParticipant'));
 
 document.getElementById('btnSaveParticipant')?.addEventListener('click', async () => {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        closeModal('overlayParticipant');
+        return;
+    }
     const btn = document.getElementById('btnSaveParticipant');
     const errEl = document.getElementById('participantError');
     const errMsg = document.getElementById('participantErrorMsg');
@@ -1685,6 +1730,10 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
 });
 
 async function deleteParticipant(id, nom) {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     const pLabel = isColoFormation ? 'le stagiaire' : 'le participant';
     const msgEl = document.getElementById('confirmDeleteMsg');
     if (msgEl) msgEl.textContent = `Voulez-vous vraiment supprimer ${pLabel} "${nom}" ? Cette action est irréversible.`;
@@ -2745,6 +2794,7 @@ function renderGroupsNameList() {
                 <div class="es-anim-item__info">
                     <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
                 </div>
+                ${!isColoArchived ? `
                 <div style="display:flex;gap:4px;">
                     <button class="es-btn es-btn--secondary es-btn--sm" onclick="setEditingGroupId('${g.id}')" title="Modifier">
                         <i class="bi bi-pencil"></i>
@@ -2753,6 +2803,7 @@ function renderGroupsNameList() {
                         <i class="bi bi-trash3"></i>
                     </button>
                 </div>
+                ` : ''}
             </div>`;
         }
     }).join('');
@@ -2770,6 +2821,10 @@ function renderGroupsNameList() {
 }
 
 document.getElementById('btnAddGroupName')?.addEventListener('click', async () => {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     const input = document.getElementById('inputNewGroupName');
     const name = input.value.trim();
     if (!name) return;
@@ -2787,6 +2842,10 @@ document.getElementById('btnAddGroupName')?.addEventListener('click', async () =
 });
 
 async function deleteGroupName(id, name) {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     const pLabel = isColoFormation ? 'stagiaires' : 'jeunes';
     if (!confirm(`Supprimer le groupe "${name}" ? Cela ne supprimera pas les ${pLabel}, mais ils n'auront plus de groupe attribué.`)) return;
 
@@ -2812,6 +2871,10 @@ function cancelEditGroupName() {
 }
 
 async function saveEditedGroupName(id) {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     const input = document.getElementById(`editGroupInput_${id}`);
     if (!input) return;
     const newName = input.value.trim();
@@ -3118,6 +3181,10 @@ document.addEventListener("visibilitychange", () => {
 
 document.getElementById('formCreateAlert')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     const btn = document.getElementById('btnCreateAlert');
     const message = document.getElementById('alertMessage').value.trim();
     const type = document.getElementById('alertType').value;
@@ -3166,6 +3233,10 @@ document.getElementById('formCreateAlert')?.addEventListener('submit', async (e)
 });
 
 async function deleteAlert(alertId) {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     try {
         await db.collection('espaces').doc(espaceId).collection('alerts').doc(alertId).delete();
         showToast("Alerte levée.", "success");
@@ -3708,7 +3779,7 @@ function loadPhotos(colo, role) {
     }
 
     // Upload permissions
-    const canUpload = role === 'admin' || isAnimAdmin || (role === 'anim' && colo.photoUploadEnabled === true);
+    const canUpload = !isColoArchived && (role === 'admin' || isAnimAdmin || (role === 'anim' && colo.photoUploadEnabled === true));
     if (canUpload) {
         uploadBtn?.classList.remove('hidden');
         uploadDisabledMsg?.classList.add('hidden');
@@ -3759,7 +3830,7 @@ function renderPhotos(colo, role) {
 
     // Then subcollection photos
     currentPhotos.forEach((p, idx) => {
-        const canDelete = role === 'admin' || (role === 'anim' && currentUser && currentUser.uid === p.authorId);
+        const canDelete = !isColoArchived && (role === 'admin' || (role === 'anim' && currentUser && currentUser.uid === p.authorId));
         const actualIdx = lightboxPhotos.length;
         lightboxPhotos.push({ src: p.base64, author: p.authorName });
 
@@ -3795,6 +3866,10 @@ document.getElementById('btnUploadPhoto')?.addEventListener('click', () => {
 });
 
 document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) {
@@ -3884,6 +3959,10 @@ document.getElementById('photoUploadInput')?.addEventListener('change', (e) => {
 });
 
 async function deletePhoto(coloId, photoId) {
+    if (isColoArchived) {
+        showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
+        return;
+    }
     if (!confirm("Voulez-vous vraiment supprimer cette photo ?")) return;
     try {
         await db.collection('espaces').doc(coloId).collection('photos').doc(photoId).delete();
@@ -4540,7 +4619,29 @@ async function loadComments(coloId) {
 
         const isSimpleAnim = (currentRole === 'anim' && !isAnimAdmin);
 
-        if (isSimpleAnim && commentsLocked) {
+        if (isColoArchived) {
+            btnEdit.setAttribute('disabled', 'true');
+            btnEdit.style.opacity = '0.35';
+            btnEdit.style.cursor = 'not-allowed';
+            btnEdit.setAttribute('title', 'Cet espace est archivé.');
+            
+            document.getElementById('btnToggleCommentsLock')?.classList.add('hidden');
+
+            if (editCont.classList.contains('hidden')) {
+                lockText.innerHTML = `Cet espace est archivé (lecture seule). Plus aucune modification n'est possible.`;
+                lockIndicator.classList.remove('es-alert--info');
+                lockIndicator.classList.add('es-alert--warning');
+                const lockIcon = document.getElementById('commentLockIcon');
+                if (lockIcon) {
+                    lockIcon.className = 'bi bi-archive-fill';
+                }
+                lockIndicator.classList.remove('hidden');
+            } else {
+                editCont.classList.add('hidden');
+                readCont.classList.remove('hidden');
+                btnEdit.classList.remove('hidden');
+            }
+        } else if (isSimpleAnim && commentsLocked) {
             btnEdit.setAttribute('disabled', 'true');
             btnEdit.style.opacity = '0.35';
             btnEdit.style.cursor = 'not-allowed';
@@ -4624,4 +4725,44 @@ async function toggleCommentsLock(coloId, currentCommentsLocked) {
         btnLoading(btn, false);
     }
 }
+
+// ----------------------------------------------------------------
+// ARCHIVAGE / DÉSARCHIVAGE (Directeur/Admin seulement)
+// ----------------------------------------------------------------
+async function archiveSpace() {
+    if (currentRole !== 'admin') {
+        showToast("Seul le directeur peut archiver l'espace.", "error");
+        return;
+    }
+    if (!confirm("Attention ! Si vous archivez cet espace, plus aucune modification, ajout ou suppression ne sera possible par quiconque (directeurs et animateurs compris). Pour faire des modifications à nouveau, il faudra désarchiver l'espace.\n\nVoulez-vous vraiment archiver cet espace ?")) {
+        return;
+    }
+    try {
+        await db.collection('espaces').doc(espaceId).update({ archived: true });
+        showToast("L'espace a été archivé. (Lecture seule)", "success");
+        window.location.reload();
+    } catch (err) {
+        console.error("archiveSpace error:", err);
+        showToast("Erreur lors de l'archivage.", "error");
+    }
+}
+
+async function unarchiveSpace() {
+    if (currentRole !== 'admin') {
+        showToast("Seul le directeur peut désarchiver l'espace.", "error");
+        return;
+    }
+    try {
+        await db.collection('espaces').doc(espaceId).update({ archived: false });
+        showToast("L'espace a été désarchivé. Les modifications sont à nouveau possibles.", "success");
+        window.location.reload();
+    } catch (err) {
+        console.error("unarchiveSpace error:", err);
+        showToast("Erreur lors du désarchivage.", "error");
+    }
+}
+
+document.getElementById('btnArchiveColo')?.addEventListener('click', archiveSpace);
+document.getElementById('btnUnarchiveColo')?.addEventListener('click', unarchiveSpace);
+
 

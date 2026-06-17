@@ -785,6 +785,11 @@ function buildColoAdminCard(colo) {
                             <i class="bi bi-eye-slash-fill"></i> Caché
                         </span>
                     ` : ''}
+                    ${colo.archived ? `
+                        <span style="background:rgba(243,156,18,0.25);color:#ffffff;border:1px solid rgba(243,156,18,0.4);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;margin-left:8px;font-weight:800;text-shadow:none;white-space:nowrap;">
+                            <i class="bi bi-archive-fill"></i> Archivé
+                        </span>
+                    ` : ''}
                 </div>
                 <div style="font-size:0.78rem;color:rgba(255,255,255,0.7);margin-top:2px;display:flex;align-items:center;gap:8px;text-shadow:0 1px 2px rgba(0,0,0,0.5);">
                     ${dateStr}
@@ -814,6 +819,11 @@ function buildColoAdminCard(colo) {
                         title="Invisibilité pour les animateurs"
                         onclick="toggleColoVisibility('${colo.id}', ${visible})">
                     <i class="bi bi-${visible ? 'eye' : 'eye-slash'}"></i>
+                </button>
+                <button class="es-card-action-btn ${colo.archived ? 'es-card-action-btn--warning' : ''}"
+                        title="${colo.archived ? 'Désarchiver l\'espace' : 'Archiver l\'espace'}"
+                        onclick="toggleColoArchived('${colo.id}', ${colo.archived === true})">
+                    <i class="bi bi-${colo.archived ? 'folder-symlink' : 'archive'}"></i>
                 </button>
                 <div style="width:1px;height:24px;background:rgba(255,255,255,0.15);margin:4px 4px 0 4px;"></div>
                 <button class="es-card-action-btn es-card-action-btn--pill ${locked ? 'es-card-action-btn--danger' : 'es-card-action-btn--success'}"
@@ -860,6 +870,19 @@ async function toggleColoVisibility(coloId, currentVisible) {
     } catch (err) {
         console.error('toggleColoVisibility:', err);
         showToast('Erreur lors du changement de visibilité.', 'error');
+    }
+}
+
+async function toggleColoArchived(coloId, currentlyArchived) {
+    const newArchived = !currentlyArchived;
+    const label = newArchived ? 'archivé' : 'désarchivé';
+    try {
+        await db.collection('espaces').doc(coloId).update({ archived: newArchived });
+        showToast(`L'espace est maintenant ${label}.`, newArchived ? 'default' : 'success');
+        loadColos();
+    } catch (err) {
+        console.error('toggleColoArchived:', err);
+        showToast('Erreur lors du changement d\'archivage.', 'error');
     }
 }
 
