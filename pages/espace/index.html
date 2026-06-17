@@ -246,10 +246,22 @@
         <main class="es-page">
             <div class="es-container">
                 <div class="es-page__header">
-                    <div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
                         <h1 class="es-page__title" id="pageDashboardTitle">Le <span style="color:var(--clr-accent);">QG</span> de tes colos <span id="pageDirectorName" style="display:none;"></span></h1>
-                        <p class="es-page__subtitle" id="dashSubtitle">Sélectionne une colonie pour accéder à son
-                            espace.</p>
+                        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                            <p class="es-page__subtitle" id="dashSubtitle" style="margin: 0;">Sélectionne une colonie pour accéder à son
+                                espace.</p>
+                            <!-- Switch Rôle Admin / Anim -->
+                            <div id="adminRoleSwitchBar" class="es-stats-toggle hidden" style="background: rgba(166, 216, 102, 0.12); border-color: rgba(166, 216, 102, 0.25);">
+                                <span class="es-stats-toggle__label" style="color: #a6d866; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-eye"></i> Vue Animateur
+                                </span>
+                                <label class="es-switch">
+                                    <input type="checkbox" id="checkRoleToggle">
+                                    <span class="es-slider"></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                     <!-- Actions Admin (Stats toggle + Nouvelle colo) -->
                     <div id="adminColoActions" class="hidden">
@@ -264,6 +276,13 @@
                             <span class="es-stats-toggle__label">Organismes</span>
                             <label class="es-switch">
                                 <input type="checkbox" id="checkShowOrg" checked>
+                                <span class="es-slider"></span>
+                            </label>
+                        </div>
+                        <div class="es-stats-toggle" id="adminTagToggle">
+                            <span class="es-stats-toggle__label">Tags</span>
+                            <label class="es-switch">
+                                <input type="checkbox" id="checkShowTags" checked>
                                 <span class="es-slider"></span>
                             </label>
                         </div>

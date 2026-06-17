@@ -191,12 +191,26 @@ auth.onAuthStateChanged(async (user) => {
     if (userData.banned === true) {
         return; // Centralized handler will show ban screen
     }
-    const role = userData.role;
+    
+    // Initialiser les données de l'utilisateur
+    currentUser = user;
+    actualRole = userData.role;
+    actualUserData = userData;
 
     // Masquer login, afficher dashboard
     loginView.classList.add('hidden');
     dashboardView.classList.remove('hidden');
-    updateTopbarUser(user, role, userData);
+
+    // Déterminer le rôle simulé/actif
+    const roleToggle = document.getElementById('checkRoleToggle');
+    const activeRole = (actualRole === 'admin' && roleToggle && roleToggle.checked) ? 'anim' : actualRole;
+
+    // Éléments Admin Only (Switch de simulation visuelle)
+    if (actualRole === 'admin') {
+        document.getElementById('adminRoleSwitchBar')?.classList.remove('hidden');
+    } else {
+        document.getElementById('adminRoleSwitchBar')?.classList.add('hidden');
+    }
 
     // Mettre à jour la date de dernière connexion
     try {
@@ -205,12 +219,6 @@ auth.onAuthStateChanged(async (user) => {
         });
     } catch (err) {
         console.error("Erreur mise à jour profil :", err);
-    }
-
-    // Éléments Admin Only
-    if (role === 'admin') {
-        document.getElementById('linkAdmin')?.classList.remove('hidden');
-        document.getElementById('adminColoActions')?.classList.remove('hidden');
     }
 
     // Gérer les désabonnements pour éviter les doublons
@@ -222,9 +230,11 @@ auth.onAuthStateChanged(async (user) => {
         if (doc.exists) {
             showStats = doc.data().showColoStats !== false;
             showOrg = doc.data().showColoOrg !== false;
+            showTags = doc.data().showColoTags !== false;
         } else {
             showStats = true; // Par défaut
             showOrg = true; // Par défaut
+            showTags = true; // Par défaut
         }
 
         // Mettre à jour l'état du toggle (si présent)
@@ -234,6 +244,9 @@ auth.onAuthStateChanged(async (user) => {
         const toggleOrg = document.getElementById('checkShowOrg');
         if (toggleOrg) toggleOrg.checked = showOrg;
 
+        const toggleTags = document.getElementById('checkShowTags');
+        if (toggleTags) toggleTags.checked = showTags;
+
         // Appliquer aux cartes existantes sans recharger tout
         document.querySelectorAll('.es-colo-card__stats').forEach(el => {
             el.classList.toggle('es-stats--hidden', !showStats);
@@ -241,43 +254,19 @@ auth.onAuthStateChanged(async (user) => {
         document.querySelectorAll('.es-colo-card__lock').forEach(el => {
             el.classList.toggle('es-org--hidden', !showOrg);
         });
+        document.querySelectorAll('.es-colo-card__badge-tag').forEach(el => {
+            el.classList.toggle('es-tags--hidden', !showTags);
+        });
     });
 
     // Écouter le message global du directeur
     window.dashMsgUnsub = db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
-        const wrap = document.getElementById('dashDirectorMsgWrap');
-        const viewAdmin = document.getElementById('dashDirectorMsgAdmin');
-        const viewAnim = document.getElementById('dashDirectorMsgAnim');
-        const textArea = document.getElementById('inputDirectorMsg');
-        const textDisplay = document.getElementById('dashDirectorMsgText');
-
-        if (doc.exists && doc.data().directorMessage) {
-            const msg = doc.data().directorMessage;
-            wrap.classList.remove('hidden');
-
-            if (role === 'admin') {
-                viewAdmin.classList.remove('hidden');
-                viewAnim.classList.add('hidden');
-                // On n'écrase pas le textarea s'il est focus pour laisser l'admin écrire
-                if (document.activeElement !== textArea) textArea.value = msg;
-            } else {
-                viewAnim.classList.remove('hidden');
-                viewAdmin.classList.add('hidden');
-                textDisplay.textContent = msg;
-            }
-        } else {
-            // Pas de message ou supprimé
-            if (role === 'admin') {
-                wrap.classList.remove('hidden');
-                viewAdmin.classList.remove('hidden');
-                viewAnim.classList.add('hidden');
-            } else {
-                wrap.classList.add('hidden');
-            }
-        }
+        currentDirectorMessage = doc.exists ? (doc.data().directorMessage || '') : '';
+        const currentActiveRole = (actualRole === 'admin' && document.getElementById('checkRoleToggle')?.checked) ? 'anim' : actualRole;
+        updateDirectorMsgView(currentActiveRole);
     });
 
-    loadColos(user, role);
+    applyRoleSimulation(activeRole);
 });
 
 // Listener enregistrement message directeur
@@ -330,6 +319,84 @@ document.getElementById('checkShowOrg')?.addEventListener('change', async (e) =>
     }
 });
 
+// Listener toggle tags (Admins seulement car visible que pour eux)
+document.getElementById('checkShowTags')?.addEventListener('change', async (e) => {
+    const val = e.target.checked;
+    try {
+        await db.collection('globalSettings').doc('dashboard').set({
+            showColoTags: val,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast(`Visibilité des tags mise à jour.`, 'success');
+    } catch (err) {
+        console.error("Erreur sauvegarde global tags:", err);
+        showToast("Erreur lors de la modification globale.", "error");
+    }
+});
+
+// ----------------------------------------------------------------
+// SIMULATION VISUELLE DU RÔLE ANIMATEUR (Pour l'Admin)
+// ----------------------------------------------------------------
+let currentDirectorMessage = '';
+
+function updateDirectorMsgView(activeRole) {
+    const wrap = document.getElementById('dashDirectorMsgWrap');
+    const viewAdmin = document.getElementById('dashDirectorMsgAdmin');
+    const viewAnim = document.getElementById('dashDirectorMsgAnim');
+    const textArea = document.getElementById('inputDirectorMsg');
+    const textDisplay = document.getElementById('dashDirectorMsgText');
+    const msg = currentDirectorMessage;
+
+    if (msg) {
+        wrap.classList.remove('hidden');
+        if (activeRole === 'admin') {
+            viewAdmin.classList.remove('hidden');
+            viewAnim.classList.add('hidden');
+            if (document.activeElement !== textArea) textArea.value = msg;
+        } else {
+            viewAnim.classList.remove('hidden');
+            viewAdmin.classList.add('hidden');
+            textDisplay.textContent = msg;
+        }
+    } else {
+        if (activeRole === 'admin') {
+            wrap.classList.remove('hidden');
+            viewAdmin.classList.remove('hidden');
+            viewAnim.classList.add('hidden');
+        } else {
+            wrap.classList.add('hidden');
+        }
+    }
+}
+
+function applyRoleSimulation(activeRole) {
+    if (!currentUser) return;
+
+    // 1. Mettre à jour la Topbar
+    updateTopbarUser(currentUser, activeRole, actualUserData);
+
+    // 2. Afficher/Masquer les options et actions Admin
+    const adminColoActions = document.getElementById('adminColoActions');
+    if (activeRole === 'admin') {
+        adminColoActions?.classList.remove('hidden');
+    } else {
+        adminColoActions?.classList.add('hidden');
+    }
+
+    // 3. Mettre à jour le message du directeur
+    updateDirectorMsgView(activeRole);
+
+    // 4. Recharger la liste des colonies
+    loadColos(currentUser, activeRole);
+}
+
+// Écouteur pour la case à cocher de simulation du rôle
+document.getElementById('checkRoleToggle')?.addEventListener('change', (e) => {
+    const simulateAnim = e.target.checked;
+    const targetRole = simulateAnim ? 'anim' : 'admin';
+    applyRoleSimulation(targetRole);
+});
+
 // ----------------------------------------------------------------
 // CHARGEMENT DES COLOS
 // ----------------------------------------------------------------
@@ -337,8 +404,11 @@ let currentColoId = null;
 let currentColoData = null;
 let currentUser = null;
 let currentRole = null;
+let actualRole = null;
+let actualUserData = null;
 let showStats = true;
 let showOrg = true;
+let showTags = true;
 let activeTypeFilter = 'all';
 let activeYearFilter = 'all';
 let globalRecapBafaUrl = '';
@@ -609,7 +679,7 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
                 <div class="es-colo-card__name">
                     ${colo.nom || 'Sans nom'}
                     ${isUpcoming ? `
-                        <span style="background:rgba(52,152,219,0.25);color:#ffffff;border:1px solid rgba(52,152,219,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;white-space:nowrap;">
+                        <span class="es-colo-card__badge-tag ${!showTags ? 'es-tags--hidden' : ''}" style="background:rgba(52,152,219,0.25);color:#ffffff;border:1px solid rgba(52,152,219,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;white-space:nowrap;">
                             À venir
                         </span>
                     ` : ''}
@@ -619,7 +689,7 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
                         </span>
                     ` : ''}
                     ${colo.archived && (role === 'admin' || accessStatus === 'approved' || accessStatus === 'admin') ? `
-                        <span style="background:rgba(243,156,18,0.25);color:#ffffff;border:1px solid rgba(243,156,18,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;white-space:nowrap;">
+                        <span class="es-colo-card__badge-tag ${!showTags ? 'es-tags--hidden' : ''}" style="background:rgba(243,156,18,0.25);color:#ffffff;border:1px solid rgba(243,156,18,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;white-space:nowrap;">
                             <i class="bi bi-archive-fill"></i> Archivé
                         </span>
                     ` : ''}

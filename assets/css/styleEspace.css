@@ -1459,6 +1459,10 @@ input:checked+.es-slider:before {
   display: none;
 }
 
+.es-colo-card__badge-tag.es-tags--hidden {
+  display: none !important;
+}
+
 .es-colo-card__stat {
   display: flex;
   align-items: center;
