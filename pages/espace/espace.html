@@ -663,10 +663,9 @@
 
             <div class="es-table-wrap" id="participantsTableContainer">
               <!-- Bannière verrou (visible anim si verrouillé) -->
-              <div id="lockBanner" class="es-alert es-alert--warning hidden" style="margin-bottom:12px;">
-                <i class="bi bi-lock-fill"></i>
-                <span>Le directeur a verrouillé la gestion des participants. Vous pouvez consulter la liste mais pas la
-                  modifier.</span>
+              <div id="lockBanner" class="es-alert es-alert--warning hidden" style="margin-bottom:12px; justify-content: center; align-items: center; text-align: center;">
+                <i class="bi bi-lock-fill" style="margin-top: 0;"></i>
+                <span>Le directeur a verrouillé la gestion des participants. Vous pouvez consulter la liste mais pas la modifier.</span>
               </div>
               <table class="es-table" id="participantsTable">
                 <thead>
@@ -806,8 +805,9 @@
 
 
 
-            <div id="activityAIBlockMessage" class="hidden" style="background:rgba(212,0,0,0.1); color:var(--clr-danger); padding:10px; border-radius:8px; font-size:0.8rem; margin-top:20px; text-align:center; border:1px solid rgba(212,0,0,0.2);">
-              <i class="bi bi-lock-fill"></i> L'assistant IA est désactivé par le directeur.
+            <div id="activityAIBlockMessage" class="es-alert es-alert--warning hidden" style="margin-top:20px; justify-content: center; align-items: center; text-align: center;">
+              <i class="bi bi-lock-fill" style="margin-top: 0;"></i>
+              <span>L'assistant IA est désactivé par le directeur.</span>
             </div>
             <button id="btnGenerateActivity" class="es-btn es-btn--primary" style="width:100%; margin-top:20px;">
               <i class="bi bi-stars"></i> Générer une idée
@@ -890,7 +890,8 @@
             </div>
 
             <!-- Indicateur de verrouillage par un autre utilisateur -->
-            <div id="commentLockIndicator" class="hidden es-alert es-alert--info" style="margin-top: 12px; padding: 8px 12px; font-size: 0.78rem;">
+            <div id="commentLockIndicator" class="hidden es-alert es-alert--info" style="margin-top: 12px; padding: 8px 12px; font-size: 0.78rem; justify-content: center; align-items: center; text-align: center;">
+              <i id="commentLockIcon" class="bi bi-pencil" style="flex-shrink:0; font-size:14px;"></i>
               <span id="commentLockText">Un autre animateur est en train de modifier cette section.</span>
             </div>
           </div>
@@ -921,10 +922,9 @@
                   <span class="es-btn__text"><i class="bi bi-cloud-arrow-up"></i> Ajouter une photo</span>
                   <span class="es-btn__spinner"></span>
                 </button>
-                <div id="photoUploadDisabledMsg" class="es-alert es-alert--info hidden" style="width: 100%;">
-                  <i class="bi bi-info-circle"></i>
-                  <span>L'ajout de photo est actuellement suspendu par la direction. Vous pouvez cependant continuer à
-                    consulter la bibliothèque.</span>
+                <div id="photoUploadDisabledMsg" class="es-alert es-alert--warning hidden" style="width: 100%; justify-content: center; align-items: center; text-align: center;">
+                  <i class="bi bi-lock-fill" style="margin-top: 0;"></i>
+                  <span>L'ajout de photo est actuellement suspendu par la direction. Vous pouvez cependant continuer à consulter la bibliothèque.</span>
                 </div>
               </div>
             </div>
@@ -1608,8 +1608,9 @@
         </div>
       </div>
       <div class="es-modal__footer" style="flex-direction:column; gap:12px;">
-        <div id="aiBlockMessage" class="hidden" style="width:100%; background:rgba(212,0,0,0.1); color:var(--clr-danger); padding:10px; border-radius:8px; font-size:0.8rem; text-align:center; border:1px solid rgba(212,0,0,0.2);">
-          <i class="bi bi-lock-fill"></i> L'assistant IA est désactivé par le directeur.
+        <div id="aiBlockMessage" class="es-alert es-alert--warning hidden" style="width:100%; justify-content: center; align-items: center; text-align: center;">
+          <i class="bi bi-lock-fill" style="margin-top: 0;"></i>
+          <span>L'assistant IA est désactivé par le directeur.</span>
         </div>
         <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
           <button class="es-btn es-btn--ghost" onclick="closeModal('overlayAIGenerator')">Annuler</button>

@@ -4528,7 +4528,13 @@ async function loadComments(coloId) {
             btnEdit.setAttribute('title', 'La direction a verrouillé la modification des notes.');
 
             if (editCont.classList.contains('hidden')) {
-                lockText.innerHTML = `🔒 <strong>La direction a verrouillé la modification des notes d'équipe.</strong> Vous pouvez les consulter mais pas les modifier.`;
+                lockText.innerHTML = `La direction a verrouillé la modification des notes d'équipe. Vous pouvez les consulter mais pas les modifier.`;
+                lockIndicator.classList.remove('es-alert--info');
+                lockIndicator.classList.add('es-alert--warning');
+                const lockIcon = document.getElementById('commentLockIcon');
+                if (lockIcon) {
+                    lockIcon.className = 'bi bi-lock-fill';
+                }
                 lockIndicator.classList.remove('hidden');
             } else {
                 editCont.classList.add('hidden');
@@ -4551,7 +4557,13 @@ async function loadComments(coloId) {
                 btnEdit.style.cursor = 'not-allowed';
                 btnEdit.setAttribute('title', `Modifié par ${editByName}...`);
 
-                lockText.innerHTML = `🔒 <strong>${editByName}</strong> est en train de modifier cette section (depuis ${editAt.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}). Veuillez patienter.`;
+                lockText.innerHTML = `${editByName} est en train de modifier cette section (depuis ${editAt.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}). Veuillez patienter.`;
+                lockIndicator.classList.remove('es-alert--warning');
+                lockIndicator.classList.add('es-alert--info');
+                const lockIcon = document.getElementById('commentLockIcon');
+                if (lockIcon) {
+                    lockIcon.className = 'bi bi-pencil';
+                }
                 lockIndicator.classList.remove('hidden');
             } else {
                 btnEdit.removeAttribute('disabled');
