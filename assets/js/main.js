@@ -457,7 +457,7 @@ function formatBroadcastMessage(rawMsg) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     safeMsg = safeMsg.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    safeMsg = safeMsg.replace(/\[(.*?)\]/g, '<span style="color:#f39c12; font-weight:700;">$1</span>');
+    safeMsg = safeMsg.replace(/\[(.*?)\]/g, '<span style="color:#f39c12;">$1</span>');
     safeMsg = safeMsg.replace(/\n/g, '<br>');
     return safeMsg;
 }
