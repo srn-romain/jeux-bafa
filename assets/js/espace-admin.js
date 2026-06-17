@@ -1802,26 +1802,56 @@ function renderLikedGamesTable(showMore = false) {
     const tbody = document.getElementById('likedGamesTbody');
     const btnShowMore = document.getElementById('btnShowMoreLikedGames');
     const btnCollapse = document.getElementById('btnCollapseLikedGames');
+    const switchSort = document.getElementById('switchSortOrder');
     if (!tbody) return;
     
     tbody.innerHTML = '';
     
-    // Le Top 10 trié par likes décroissants
-    const top10 = allParsedGames.slice(0, 10);
-    let displayedGames = [...top10];
+    const isReversed = switchSort ? switchSort.checked : false;
     
-    if (showMore) {
-        // Le reste (index 10+)
-        let theRest = allParsedGames.slice(10);
-        
-        // Trier le reste par ordre croissant de likes
-        theRest.sort((a, b) => {
-            if (a.likes !== b.likes) {
-                return a.likes - b.likes; // Ordre croissant
+    // Trier et segmenter les jeux en fonction de la direction de tri sélectionnée
+    let top10, theRest;
+    if (!isReversed) {
+        // Mode Normal : Top 10 le plus aimé (décroissant), le reste croissant
+        allParsedGames.sort((a, b) => {
+            if (b.likes !== a.likes) {
+                return b.likes - a.likes; // Décroissant
             }
             return a.name.localeCompare(b.name);
         });
         
+        top10 = allParsedGames.slice(0, 10);
+        theRest = allParsedGames.slice(10);
+        
+        theRest.sort((a, b) => {
+            if (a.likes !== b.likes) {
+                return a.likes - b.likes; // Croissant
+            }
+            return a.name.localeCompare(b.name);
+        });
+    } else {
+        // Mode Inversé : Top 10 le moins aimé (croissant), le reste décroissant
+        allParsedGames.sort((a, b) => {
+            if (a.likes !== b.likes) {
+                return a.likes - b.likes; // Croissant
+            }
+            return a.name.localeCompare(b.name);
+        });
+        
+        top10 = allParsedGames.slice(0, 10);
+        theRest = allParsedGames.slice(10);
+        
+        theRest.sort((a, b) => {
+            if (b.likes !== a.likes) {
+                return b.likes - a.likes; // Décroissant
+            }
+            return a.name.localeCompare(b.name);
+        });
+    }
+    
+    let displayedGames = [...top10];
+    
+    if (showMore) {
         displayedGames = top10.concat(theRest);
         btnShowMore?.classList.add('hidden');
         if (allParsedGames.length > 10) {
@@ -1836,6 +1866,23 @@ function renderLikedGamesTable(showMore = false) {
             btnShowMore?.classList.add('hidden');
         }
         btnCollapse?.classList.add('hidden');
+    }
+    
+    // Mettre à jour les icônes de tri du header
+    const sortDirectIcon = document.getElementById('sortDirectIcon');
+    const sortReverseIcon = document.getElementById('sortReverseIcon');
+    if (sortDirectIcon && sortReverseIcon) {
+        if (isReversed) {
+            sortDirectIcon.className = 'bi bi-hand-thumbs-up';
+            sortDirectIcon.style.color = 'var(--clr-text-muted)';
+            sortReverseIcon.className = 'bi bi-hand-thumbs-down-fill';
+            sortReverseIcon.style.color = '#e74c3c'; // rouge/orange
+        } else {
+            sortDirectIcon.className = 'bi bi-hand-thumbs-up-fill';
+            sortDirectIcon.style.color = '#2ecc71'; // vert
+            sortReverseIcon.className = 'bi bi-hand-thumbs-down';
+            sortReverseIcon.style.color = 'var(--clr-text-muted)';
+        }
     }
     
     if (displayedGames.length === 0) {
@@ -1855,6 +1902,13 @@ function renderLikedGamesTable(showMore = false) {
             rankHtml = `<span style="font-size: 0.85rem; font-weight: 600; color: var(--clr-text-muted);">#${index + 1}</span>`;
         }
         
+        // Couleur dynamique du badge de likes
+        const badgeBg = isReversed 
+            ? 'rgba(231, 76, 60, 0.15)' 
+            : 'rgba(46, 204, 113, 0.15)';
+        const badgeColor = isReversed ? '#e74c3c' : '#2ecc71';
+        const badgeIcon = isReversed ? 'bi-hand-thumbs-down-fill' : 'bi-hand-thumbs-up-fill';
+        
         const row = document.createElement('tr');
         row.innerHTML = `
             <td style="text-align: center; vertical-align: middle;">${rankHtml}</td>
@@ -1865,8 +1919,8 @@ function renderLikedGamesTable(showMore = false) {
                 </a>
             </td>
             <td style="text-align: center; vertical-align: middle;">
-                <span class="es-badge" style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; font-weight: 700; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
-                    <i class="bi bi-hand-thumbs-up-fill" style="font-size: 0.85rem;"></i> ${game.likes}
+                <span class="es-badge" style="background: ${badgeBg}; color: ${badgeColor}; font-weight: 700; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                    <i class="bi ${badgeIcon}" style="font-size: 0.85rem;"></i> ${game.likes}
                 </span>
             </td>
         `;
@@ -1890,6 +1944,15 @@ function initLikedGamesEvents() {
         btnCollapse.addEventListener('click', () => {
             renderLikedGamesTable(false);
             document.getElementById('sectionLikedGames')?.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
+    const switchSort = document.getElementById('switchSortOrder');
+    if (switchSort) {
+        switchSort.addEventListener('change', () => {
+            const btnCollapse = document.getElementById('btnCollapseLikedGames');
+            const isExpanded = btnCollapse ? !btnCollapse.classList.contains('hidden') : false;
+            renderLikedGamesTable(isExpanded);
         });
     }
 }
