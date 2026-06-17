@@ -325,6 +325,35 @@ async function initColoContent(colo, role) {
     isColoFormation = colo.isFormation === true;
     const btnAppr = document.getElementById('btnShowAppreciation');
     const btnInfoD = document.getElementById('btnInfoDRAJES');
+
+    // Mise à jour dynamique des labels d'onglets, stats, recherche et modales selon le type
+    const tabParticipants = document.querySelector('[data-tab="participants"]');
+    if (tabParticipants) {
+        tabParticipants.innerHTML = `<i class="bi bi-people"></i> ${isColoFormation ? 'Stagiaires' : 'Jeunes'}`;
+    }
+
+    const statTotalLabel = document.querySelector('.es-stat-card--total .es-stat-card__label');
+    if (statTotalLabel) {
+        statTotalLabel.textContent = isColoFormation ? 'Stagiaires' : 'Jeunes';
+    }
+
+    const listTitle = document.querySelector('#tab-participants h3');
+    if (listTitle) {
+        listTitle.innerHTML = `<i class="bi bi-people" style="color:var(--clr-primary)"></i> Liste des ${isColoFormation ? 'stagiaires' : 'jeunes'}`;
+    }
+
+    const searchInput = document.getElementById('searchParticipant');
+    if (searchInput) {
+        searchInput.placeholder = isColoFormation
+            ? 'Rechercher un stagiaire (prénom, nom, tags...)'
+            : 'Rechercher un jeune (prénom, nom, tags...)';
+    }
+
+    const manageGroupsDesc = document.querySelector('#overlayManageGroups .es-modal__body p');
+    if (manageGroupsDesc) {
+        manageGroupsDesc.innerHTML = `Créez ici les noms des groupes (ex: Aventuriers, Artistes...). Ils seront ensuite disponibles dans la fiche des ${isColoFormation ? 'stagiaires' : 'jeunes'}.`;
+    }
+
     if (isColoFormation) {
         if (btnAppr) btnAppr.classList.remove('hidden');
         if (btnInfoD) btnInfoD.classList.remove('hidden');
@@ -332,23 +361,13 @@ async function initColoContent(colo, role) {
         document.getElementById('btnBulkClearAppreciation')?.classList.remove('hidden');
         document.getElementById('btnBulkAppreciation')?.classList.remove('hidden');
 
-        // Mise à jour des labels spécifiques "Formation"
-        const statTotalLabel = document.getElementById('statTotal')?.parentElement;
-        if (statTotalLabel) statTotalLabel.innerHTML = statTotalLabel.innerHTML.replace('participants', 'stagiaires');
-        
-        const manageGroupsDesc = document.querySelector('#overlayManageGroups .es-modal__body p');
-        if (manageGroupsDesc) manageGroupsDesc.innerHTML = manageGroupsDesc.innerHTML.replace('jeunes', 'stagiaires');
-
-        const searchInput = document.getElementById('searchParticipant');
-        if (searchInput) searchInput.placeholder = searchInput.placeholder.replace('participant', 'stagiaire');
-        
         document.getElementById('aiActivityGeneratorSection')?.classList.add('hidden');
     } else {
         if (btnAppr) btnAppr.classList.add('hidden');
         if (btnInfoD) btnInfoD.classList.add('hidden');
         document.getElementById('btnBulkClearAppreciation')?.classList.add('hidden');
         document.getElementById('btnBulkAppreciation')?.classList.add('hidden');
-        
+
         // Afficher le générateur d'activités pour les colos
         document.getElementById('aiActivityGeneratorSection')?.classList.remove('hidden');
     }
