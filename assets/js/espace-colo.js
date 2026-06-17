@@ -3349,7 +3349,7 @@ async function loadWeather(coloId, role) {
                 renderParticipantsTable(currentRole);
             }
         }
-        if (role === 'admin' || isAnimAdmin) {
+        if ((role === 'admin' || isAnimAdmin) && !isColoArchived) {
             document.getElementById('weatherAdminContainer')?.classList.remove('hidden');
             const deleteBtn = document.getElementById('btnDeleteLocation');
             if (data.meteoLocation) {
@@ -3361,6 +3361,8 @@ async function loadWeather(coloId, role) {
             } else {
                 deleteBtn?.classList.add('hidden');
             }
+        } else if (isColoArchived) {
+            document.getElementById('weatherAdminContainer')?.classList.add('hidden');
         }
 
         if (data.meteoLat && data.meteoLon) {
@@ -3491,6 +3493,7 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
 
 async function checkAndCreateWeatherAlerts(weatherData, locationName, role, isManual = false) {
     if (role !== 'admin' && !isAnimAdmin) return 0;
+    if (isColoArchived) return 0;
     
     let limitDate = null;
     if (currentColoDateFin) {
@@ -3612,6 +3615,10 @@ async function checkAndCreateWeatherAlerts(weatherData, locationName, role, isMa
 }
 
 document.getElementById('btnGenerateWeatherAlerts')?.addEventListener('click', async () => {
+    if (isColoArchived) {
+        showToast("Cet espace est archivé. Impossible de générer des alertes météo.", "warning");
+        return;
+    }
     const btn = document.getElementById('btnGenerateWeatherAlerts');
     if (!currentMeteoParams.lat || !currentMeteoParams.lon) {
         showToast("Veuillez d'abord définir un lieu pour la météo.", "warning");
