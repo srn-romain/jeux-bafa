@@ -448,6 +448,20 @@ function loadFirebaseAndInit(isTargetPage, isIndexPage) {
     loadNext();
 }
 
+function formatBroadcastMessage(rawMsg) {
+    if (!rawMsg) return '';
+    let safeMsg = rawMsg
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    safeMsg = safeMsg.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    safeMsg = safeMsg.replace(/\[(.*?)\]/g, '<span style="color:#f39c12; font-weight:700;">$1</span>');
+    safeMsg = safeMsg.replace(/\n/g, '<br>');
+    return safeMsg;
+}
+
 function loadPublicBroadcastMessage() {
     if (!window.db) return;
     db.collection('globalSettings').doc('dashboard').get().then(doc => {
@@ -458,7 +472,7 @@ function loadPublicBroadcastMessage() {
             const msgText = document.getElementById('public-broadcast-msg-text');
             if (msgContainer && msgText) {
                 if (msg.trim() !== '') {
-                    msgText.textContent = msg;
+                    msgText.innerHTML = formatBroadcastMessage(msg);
                     msgContainer.classList.remove('hidden');
                 } else {
                     msgContainer.classList.add('hidden');
