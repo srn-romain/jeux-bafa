@@ -271,6 +271,11 @@ async function loadConfig() {
             if (publicMsgInput) {
                 publicMsgInput.value = globalDoc.data().publicBroadcastMessage || '';
             }
+            const publicMsgType = globalDoc.data().publicBroadcastType || 'utile';
+            const radioToCheck = document.querySelector(`input[name="adminPublicBroadcastType"][value="${publicMsgType}"]`);
+            if (radioToCheck) {
+                radioToCheck.checked = true;
+            }
 
             // LOAD ADMIN NOTES
             const notesHtml = globalDoc.data().notesAdmin || '';
@@ -644,11 +649,14 @@ document.getElementById('btnSavePublicBroadcastMsg')?.addEventListener('click', 
     if (!input) return;
     
     const val = input.value.trim();
+    const typeRadio = document.querySelector('input[name="adminPublicBroadcastType"]:checked');
+    const typeVal = typeRadio ? typeRadio.value : 'utile';
     btnLoading(btn, true);
     
     try {
         await db.collection('globalSettings').doc('dashboard').set({
             publicBroadcastMessage: val,
+            publicBroadcastType: typeVal,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
         showToast("Message grand public mis à jour.", "success");

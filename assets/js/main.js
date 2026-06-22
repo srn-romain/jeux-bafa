@@ -470,9 +470,14 @@ function loadPublicBroadcastMessage() {
             const msg = data.publicBroadcastMessage || '';
             const msgContainer = document.getElementById('public-broadcast-msg');
             const msgText = document.getElementById('public-broadcast-msg-text');
+            const msgTitle = document.getElementById('public-broadcast-msg-title');
             if (msgContainer && msgText) {
                 if (msg.trim() !== '') {
                     msgText.innerHTML = formatBroadcastMessage(msg);
+                    if (msgTitle) {
+                        const isUtile = data.publicBroadcastType !== 'pas_utile';
+                        msgTitle.innerText = isUtile ? 'news utile du jour' : 'news pas utile du jour';
+                    }
                     msgContainer.classList.remove('hidden');
                 } else {
                     msgContainer.classList.add('hidden');

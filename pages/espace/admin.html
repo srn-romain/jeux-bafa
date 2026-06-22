@@ -266,6 +266,16 @@
                         
                         <div style="background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
                             <div class="es-field" style="margin-bottom: 0;">
+                                <div style="display:flex; gap:16px; margin-bottom:16px;">
+                                    <label class="es-radio-label">
+                                        <input type="radio" name="adminPublicBroadcastType" value="utile" checked>
+                                        <span>Info utile</span>
+                                    </label>
+                                    <label class="es-radio-label">
+                                        <input type="radio" name="adminPublicBroadcastType" value="pas_utile">
+                                        <span>Info pas utile</span>
+                                    </label>
+                                </div>
                                 <label class="es-field__label" for="adminPublicBroadcastMsg">Message à afficher sur la page d'accueil principale</label>
                                 <div style="display:flex; flex-direction:column; gap:12px;">
                                     <textarea class="es-input" id="adminPublicBroadcastMsg" placeholder="Écris ici le message de nouveauté ou d'information générale..." style="width:100%; min-height:100px; background: var(--clr-surface); font-family: inherit; line-height: 1.5; resize: vertical; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--clr-surface-3); color: var(--clr-text);"></textarea>

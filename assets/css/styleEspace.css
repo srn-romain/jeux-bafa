@@ -2496,6 +2496,22 @@ body.modal-open .es-topbar {
   height: 15px;
 }
 
+.es-radio-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.87rem;
+  color: var(--clr-text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.es-radio-label input[type="radio"] {
+  accent-color: var(--clr-primary);
+  width: 16px;
+  height: 16px;
+}
+
 /* ================================================================
    LOADER
    ================================================================ */
