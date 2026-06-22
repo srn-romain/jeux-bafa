@@ -363,6 +363,7 @@ function updateDirectorMsgView(activeRole) {
             wrap.classList.remove('hidden');
             viewAdmin.classList.remove('hidden');
             viewAnim.classList.add('hidden');
+            if (document.activeElement !== textArea) textArea.value = '';
         } else {
             wrap.classList.add('hidden');
         }

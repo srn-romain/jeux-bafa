@@ -277,6 +277,11 @@ async function loadConfig() {
                 radioToCheck.checked = true;
             }
 
+            const directorMsgInput = document.getElementById('adminDirectorMsg');
+            if (directorMsgInput) {
+                directorMsgInput.value = globalDoc.data().directorMessage || '';
+            }
+
             // LOAD ADMIN NOTES
             const notesHtml = globalDoc.data().notesAdmin || '';
             currentAdminNotesContent = notesHtml;
@@ -662,6 +667,28 @@ document.getElementById('btnSavePublicBroadcastMsg')?.addEventListener('click', 
         showToast("Message grand public mis à jour.", "success");
     } catch (err) {
         console.error("Erreur sauvegarde publicBroadcastMessage:", err);
+        showToast("Erreur lors de l'enregistrement.", "error");
+    } finally {
+        btnLoading(btn, false);
+    }
+});
+
+document.getElementById('btnSaveAdminDirectorMsg')?.addEventListener('click', async () => {
+    const btn = document.getElementById('btnSaveAdminDirectorMsg');
+    const input = document.getElementById('adminDirectorMsg');
+    if (!input) return;
+    
+    const val = input.value.trim();
+    btnLoading(btn, true);
+    
+    try {
+        await db.collection('globalSettings').doc('dashboard').set({
+            directorMessage: val,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast("Message direction mis à jour.", "success");
+    } catch (err) {
+        console.error("Erreur sauvegarde directorMessage:", err);
         showToast("Erreur lors de l'enregistrement.", "error");
     } finally {
         btnLoading(btn, false);
