@@ -476,7 +476,7 @@ function loadPublicBroadcastMessage() {
                     msgText.innerHTML = formatBroadcastMessage(msg);
                     if (msgTitle) {
                         const isUtile = data.publicBroadcastType !== 'pas_utile';
-                        msgTitle.innerText = isUtile ? 'news utile du jour' : 'news pas utile du jour';
+                        msgTitle.innerHTML = isUtile ? 'news <span style="color: #f39c12;">utile</span> du jour' : 'news <span style="color: #f39c12;">pas utile</span> du jour';
                     }
                     msgContainer.classList.remove('hidden');
                 } else {
