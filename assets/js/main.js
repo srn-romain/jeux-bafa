@@ -42,7 +42,7 @@ function injectNavbar() {
         { n: '10', e: '🚫', t: 'Idées de Gages', l: 'gage.html' },
         { n: '11', e: '📜', t: 'Règles de Vie', l: 'regles.html' },
         { n: '12', e: '🎶', t: 'Musiques', l: 'musique.html' },
-        { n: '13', e: '🍽️', t: 'Alimentation', l: 'bouffe.html' },
+        { n: '13', e: '🍽️', t: 'Alimentation', l: 'nourriture.html' },
         { n: '14', e: '💼', t: 'Direction', l: 'direction.html' },
         { n: '15', e: '⚖️', t: 'Réglementation', l: 'reglementation.html' },
         { n: '16', e: '🎓', t: 'Formation', l: 'formation.html' }

@@ -12,7 +12,7 @@ const pageOrder = [
   { file: 'gage.html', name: 'Idées de gages' },
   { file: 'regles.html', name: 'Exemple règles de vie' },
   { file: 'musique.html', name: 'Musiques de colo' },
-  { file: 'bouffe.html', name: 'Nourriture en camp' },
+  { file: 'nourriture.html', name: 'Nourriture en camp' },
   { file: 'direction.html', name: 'Mémo direction' },
   { file: 'reglementation.html', name: 'Mémo réglementation' },
   { file: 'formation.html', name: 'Mémo formation' }
