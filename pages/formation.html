@@ -997,52 +997,47 @@
                 <h1 style="text-align: center; color: #2c3e50; margin-bottom: 10px;"><i class="bi bi-people-fill"></i> Réunions du Soir</h1>
                 <p style="text-align: center; font-style: italic; margin-bottom: 30px;">Chaque soir, après le coucher des enfants, l'équipe d'animation se réunit pour faire le point sur la journée.</p>
 
-                <test class="grid-2col">
-                    <!-- Partie 1 & Partie 2 -->
-                    <div style="display: flex; flex-direction: column; gap: 20px; background: transparent; padding: 0; box-shadow: none;">
-                        <!-- Partie 1 : Debrief journée -->
-                        <div style="background: rgba(41, 128, 185, 0.05); border: 1px solid rgba(41, 128, 185, 0.2); padding: 20px; border-radius: 15px; box-shadow: none;">
-                            <h3 style="color: #2980b9; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-chat-left-dots"></i> Partie 1 : Debrief Journée</h3>
-                            <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
-                                <li><strong>Activités</strong> : Retour sur le déroulement (points forts, points faibles).</li>
-                                <li><strong>Enfants</strong> : Comportement général, fatigue, petits bobos ou cas particuliers.</li>
-                                <li><strong>Équipe</strong> : Analyse de la cohésion, communication et entraide de la journée.</li>
-                            </ul>
-                        </div>
-
-                        <!-- Partie 2 : Infos diverses -->
-                        <div style="background: rgba(243, 156, 18, 0.05); border: 1px solid rgba(243, 156, 18, 0.2); padding: 20px; border-radius: 15px; box-shadow: none;">
-                            <h3 style="color: #d35400; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-info-circle"></i> Partie 2 : Infos Diverses</h3>
-                            <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
-                                <li><strong>Sécurité</strong> : Rappels indispensables de sécurité ou d'hygiène.</li>
-                                <li><strong>Logistique</strong> : Matériel cassé, besoins spécifiques pour le lendemain.</li>
-                                <li><strong>Direction</strong> : Informations reçues des parents, de l'organisme ou de la direction.</li>
-                            </ul>
-                        </div>
+                <test style="display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; gap: 20px;">
+                    <!-- Partie 1 : Debrief journée -->
+                    <div style="background: rgba(41, 128, 185, 0.05); border: 1px solid rgba(41, 128, 185, 0.2); padding: 20px; border-radius: 15px;">
+                        <h3 style="color: #2980b9; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-chat-left-dots"></i> Partie 1 : Debrief Journée</h3>
+                        <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                            <li><strong>Activités</strong> : Retour sur le déroulement (points forts, points faibles).</li>
+                            <li><strong>Enfants</strong> : Comportement général, fatigue, petits bobos ou cas particuliers.</li>
+                            <li><strong>Équipe</strong> : Analyse de la cohésion, communication et entraide de la journée.</li>
+                        </ul>
                     </div>
 
-                    <!-- Partie 3 & Partie 4 -->
-                    <div style="display: flex; flex-direction: column; gap: 20px; background: transparent; padding: 0; box-shadow: none;">
-                        <!-- Partie 3 : Programmation -->
-                        <div style="background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2); padding: 20px; border-radius: 15px; box-shadow: none;">
-                            <h3 style="color: #27ae60; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-calendar-event"></i> Partie 3 : Programmation</h3>
-                            <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
-                                <li><strong>Planning</strong> : Validation du planning précis et détaillé du lendemain.</li>
-                                <li><strong>Rôles</strong> : Répartition des animations, temps de repas, douches et veillées.</li>
-                                <li><strong>Matériel</strong> : Anticipation de la logistique et préparation des activités.</li>
-                            </ul>
-                        </div>
+                    <!-- Partie 3 : Programmation -->
+                    <div style="background: rgba(46, 204, 113, 0.05); border: 1px solid rgba(46, 204, 113, 0.2); padding: 20px; border-radius: 15px;">
+                        <h3 style="color: #27ae60; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-calendar-event"></i> Partie 3 : Programmation</h3>
+                        <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                            <li><strong>Planning</strong> : Validation du planning précis et détaillé du lendemain.</li>
+                            <li><strong>Rôles</strong> : Répartition des animations, temps de repas, douches et veillées.</li>
+                            <li><strong>Matériel</strong> : Anticipation de la logistique et préparation des activités.</li>
+                        </ul>
+                    </div>
 
-                        <!-- Partie 4 : Cinquième repas -->
-                        <div style="background: rgba(155, 89, 182, 0.05); border: 1px solid rgba(155, 89, 182, 0.2); padding: 20px; border-radius: 15px; box-shadow: none;">
-                            <h3 style="color: #8e44ad; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-cup-hot"></i> Partie 4 : Cinquième Repas</h3>
-                            <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
-                                <li><strong>Détente</strong> : Moment convivial et informel pour décompresser en équipe (facultatif).</li>
-                                <li><strong>Sommeil</strong> : Vigilance ! Préserver son repos pour rester efficace.</li>
-                            </ul>
-                        </div>
+                    <!-- Partie 2 : Infos diverses -->
+                    <div style="background: rgba(243, 156, 18, 0.05); border: 1px solid rgba(243, 156, 18, 0.2); padding: 20px; border-radius: 15px;">
+                        <h3 style="color: #d35400; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-info-circle"></i> Partie 2 : Infos Diverses</h3>
+                        <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                            <li><strong>Sécurité</strong> : Rappels indispensables de sécurité ou d'hygiène.</li>
+                            <li><strong>Logistique</strong> : Matériel cassé, besoins spécifiques pour le lendemain.</li>
+                            <li><strong>Direction</strong> : Informations reçues des parents, de l'organisme ou de la direction.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Partie 4 : Cinquième repas -->
+                    <div style="background: rgba(155, 89, 182, 0.05); border: 1px solid rgba(155, 89, 182, 0.2); padding: 20px; border-radius: 15px;">
+                        <h3 style="color: #8e44ad; margin-top: 0; margin-bottom: 12px;"><i class="bi bi-cup-hot"></i> Partie 4 : Cinquième Repas</h3>
+                        <ul style="font-size: 0.95rem; padding-left: 20px; display: flex; flex-direction: column; gap: 8px;">
+                            <li><strong>Détente</strong> : Moment convivial et informel pour décompresser en équipe (facultatif).</li>
+                            <li><strong>Sommeil</strong> : Vigilance ! Préserver son repos pour rester efficace.</li>
+                        </ul>
                     </div>
                 </test>
+
 
                 <!-- Simulation de réunion -->
                 <div class="deadline-box" style="background: #34495e; margin-top: 30px;">
@@ -1050,7 +1045,7 @@
                     <div class="no-p-style" style="font-size: 0.95rem; color: white !important;">
                         <p><strong>Objectif :</strong> Simuler une réunion du soir entre stagiaires pour observer les dynamiques de communication et la prise de décision. Chaque participant tire au sort un rôle à jouer :</p>
                         <ul style="padding-left: 20px; display: flex; flex-direction: column; gap: 8px; margin-top: 15px; list-style-type: none;">
-                            <li>🗣️ <strong>Le bavard :</strong> Parle beaucoup, coupe la parole, discute avec ses voisins.</li>
+                            <li>💬 <strong>Le bavard :</strong> Parle beaucoup, coupe la parole, discute avec ses voisins.</li>
                             <li>🤝 <strong>Le suiveur :</strong> Toujours d'accord avec tout le monde, ne propose rien.</li>
                             <li>👑 <strong>L'imposant :</strong> Veut imposer ses idées, ne laisse pas les autres s'exprimer.</li>
                             <li>😴 <strong>Le fatigué :</strong> Veut écourter la réunion, propose d'improviser le lendemain.</li>
