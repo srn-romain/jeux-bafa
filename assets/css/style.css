@@ -1202,11 +1202,22 @@ em {
 
 .planning-container {
   overflow-x: auto;
-  margin: 20px 0;
+  margin: 20px auto;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   background: #fff;
+  max-width: 100%;
 }
+
+@media (min-width: 1024px) {
+  .planning-container.planning-generale {
+    max-width: 1115px;
+  }
+  .planning-container.planning-approfondissement {
+    max-width: 1000px;
+  }
+}
+
 
 .planning-table {
   width: 100%;
@@ -1267,6 +1278,7 @@ em {
   transition: all 0.2s;
   padding: 10px 8px;
   height: 100%;
+  width: 100%;
   box-sizing: border-box;
 }
 
