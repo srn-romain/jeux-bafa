@@ -3099,6 +3099,7 @@ function renderAlerts(alerts, role) {
 
     if (activeAlerts.length === 0) {
         container.innerHTML = '';
+        container.style.marginBottom = '0';
     } else {
         // Fonction simple pour parser le markdown (**gras**, *italique*)
         const parseMarkdown = (text) => {
@@ -3169,6 +3170,7 @@ function renderAlerts(alerts, role) {
                 </div>
             `;
         }).join('');
+        container.style.marginBottom = '16px';
     }
 
     // Gérer l'affichage des alertes futures (pour le créateur/admin)
