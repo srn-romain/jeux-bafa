@@ -63,6 +63,9 @@ auth.onAuthStateChanged(async (user) => {
 function initAdminTabs() {
     document.querySelectorAll('#adminTabs .es-nav-tab').forEach(btn => {
         btn.addEventListener('click', () => {
+            // Cacher tout tooltip actif lors d'un changement d'onglet
+            if (typeof hideTooltip === 'function') hideTooltip();
+
             document.querySelectorAll('#adminTabs .es-nav-tab').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
@@ -1736,6 +1739,98 @@ window.filterAdminColos = function(type) {
 let allParsedGames = [];
 let likedGamesEventsAttached = false;
 
+// Variable globale et fonctions pour le tooltip des votes (comme sur le site principal)
+let activeBtn = null;
+
+function setupAdminTooltipEl() {
+    let tooltipEl = document.getElementById('vote-admin-tooltip');
+    if (!tooltipEl) {
+        tooltipEl = document.createElement('div');
+        tooltipEl.id = 'vote-admin-tooltip';
+        tooltipEl.className = 'vote-admin-tooltip';
+        document.body.appendChild(tooltipEl);
+    }
+}
+
+function showTooltipForBtn(btn, voteId, direction) {
+    if (activeBtn === btn) return;
+    activeBtn = btn;
+    
+    const rect = btn.getBoundingClientRect();
+    const tooltip = document.getElementById('vote-admin-tooltip');
+    if (!tooltip) return;
+    
+    tooltip.innerHTML = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4><span class="vote-meta-loading">Chargement...</span>`;
+    tooltip.style.left = `${window.scrollX + rect.left + rect.width / 2}px`;
+    tooltip.style.top = `${window.scrollY + rect.top - 8}px`;
+    tooltip.style.transform = 'translate(-50%, -100%) translateY(-5px)';
+    tooltip.classList.add('active');
+
+    const colName = direction === 'up' ? 'positive_votes' : 'negative_votes';
+    
+    db.collection(colName).doc(voteId).get().then(doc => {
+        if (activeBtn !== btn) return;
+        
+        let voters = {};
+        if (doc.exists) {
+            const data = doc.data() || {};
+            
+            // 1. Essayer de récupérer le map imbriqué "voters"
+            if (data.voters && typeof data.voters === 'object') {
+                voters = { ...data.voters };
+            }
+            
+            // 2. Récupérer également les clés plates "voters.v_xxxxx" créées par .set(..., {merge: true})
+            Object.keys(data).forEach(key => {
+                if (key.startsWith('voters.')) {
+                    const visitorId = key.substring(7); // "voters.".length
+                    voters[visitorId] = data[key];
+                }
+            });
+        }
+        
+        const sortedVoters = Object.values(voters).sort((a, b) => (b.rawTimestamp || 0) - (a.rawTimestamp || 0));
+        
+        if (doc.exists && sortedVoters.length > 0) {
+            let html = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4>`;
+            html += `<ul>`;
+            sortedVoters.forEach(v => {
+                const isInactive = v.active === false;
+                const inactiveClass = isInactive ? ' class="vote-item-inactive"' : '';
+                const statusLabel = isInactive ? ' <span class="vote-meta-status-retire">(Retiré)</span>' : '';
+                const userLine = v.userName ? `<span class="vote-meta-user"><strong>${v.userName}</strong> (${v.userRole || 'Utilisateur'})${statusLabel}</span>` : '';
+                html += `
+                    <li${inactiveClass}>
+                        ${userLine}
+                        <span class="vote-meta-time">${v.date || 'Date inconnue'}</span>
+                        <span class="vote-meta-details">${v.device || 'Appareil'} (${v.os || 'OS'}) - ${v.browser || 'Navigateur'}</span>
+                    </li>
+                `;
+            });
+            html += `</ul>`;
+            tooltip.innerHTML = html;
+        } else {
+            tooltip.innerHTML = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4><span class="vote-meta-loading">Aucune donnée enregistrée.</span>`;
+        }
+        
+        const newRect = btn.getBoundingClientRect();
+        tooltip.style.left = `${window.scrollX + newRect.left + newRect.width / 2}px`;
+        tooltip.style.top = `${window.scrollY + newRect.top - 8}px`;
+    }).catch(err => {
+        if (activeBtn !== btn) return;
+        tooltip.innerHTML = `<h4>Erreur</h4><span class="vote-meta-loading">Impossible de charger les données.</span>`;
+    });
+}
+
+function hideTooltip() {
+    activeBtn = null;
+    const tooltip = document.getElementById('vote-admin-tooltip');
+    if (tooltip) {
+        tooltip.classList.remove('active');
+    }
+}
+
+
 async function loadLikedGames() {
     const loader = document.getElementById('likedGamesLoader');
     const content = document.getElementById('likedGamesContent');
@@ -1895,6 +1990,9 @@ async function loadLikedGames() {
 }
 
 function renderLikedGamesTable(showMore = false) {
+    // Cacher le tooltip actif pour éviter les bulles orphelines
+    hideTooltip();
+
     const tbody = document.getElementById('likedGamesTbody');
     const btnShowMore = document.getElementById('btnShowMoreLikedGames');
     const btnCollapse = document.getElementById('btnCollapseLikedGames');
@@ -2002,12 +2100,23 @@ function renderLikedGamesTable(showMore = false) {
                 </a>
             </td>
             <td style="text-align: center; vertical-align: middle;">
-                <span class="es-badge" style="background: ${badgeBg}; color: ${badgeColor}; font-weight: 700; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
+                <span class="es-badge" style="background: ${badgeBg}; color: ${badgeColor}; font-weight: 700; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
                     <i class="bi ${badgeIcon}" style="font-size: 0.85rem;"></i> ${displayCount}
                 </span>
             </td>
         `;
         tbody.appendChild(row);
+
+        const badge = row.querySelector('.es-badge');
+        if (badge) {
+            badge.addEventListener('mouseenter', () => {
+                setupAdminTooltipEl();
+                showTooltipForBtn(badge, game.voteId, isReversed ? 'down' : 'up');
+            });
+            badge.addEventListener('mouseleave', () => {
+                hideTooltip();
+            });
+        }
     });
 }
 
