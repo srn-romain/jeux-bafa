@@ -1252,16 +1252,26 @@ em {
 .bg-gouter { background-color: #9b59b6 !important; }
 .bg-veillee { background-color: #e74c3c !important; }Prefix
 
+.planning-table td:has(a) {
+  padding: 0;
+  height: 1px;
+}
+
 .planning-table td a {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   text-decoration: none;
   color: inherit;
   transition: all 0.2s;
-  padding: 5px;
-  border-radius: 4px;
+  padding: 10px 8px;
+  height: 100%;
+  box-sizing: border-box;
 }
 
-.planning-table td a:hover {
+.planning-table td a:hover,
+.planning-table td a:active {
   background: rgba(243, 156, 18, 0.1);
   color: #f39c12;
   transform: scale(1.02);
