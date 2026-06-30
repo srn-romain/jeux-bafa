@@ -566,11 +566,11 @@ function initVotesSystem() {
     db.collection('positive_votes').get().then(snapshot => {
         const votesMap = {};
         snapshot.forEach(doc => {
-            votesMap[doc.id] = doc.data().count || 0;
+            votesMap[doc.id] = Math.max(0, doc.data().count || 0);
         });
 
         itemsToVote.forEach(item => {
-            const count = votesMap[item.voteId] || 0;
+            const count = Math.max(0, votesMap[item.voteId] || 0);
             const container = item.li.querySelector(`.vote-container[data-vote-id="${item.voteId}"]`);
             if (container) {
                 container.querySelector('.vote-count-up').innerText = count;
@@ -592,11 +592,11 @@ function initVotesSystem() {
                         db.collection('negative_votes').get().then(snapshot => {
                             const negVotesMap = {};
                             snapshot.forEach(doc => {
-                                negVotesMap[doc.id] = doc.data().count || 0;
+                                negVotesMap[doc.id] = Math.max(0, doc.data().count || 0);
                             });
 
                             itemsToVote.forEach(item => {
-                                const count = negVotesMap[item.voteId] || 0;
+                                const count = Math.max(0, negVotesMap[item.voteId] || 0);
                                 const container = item.li.querySelector(`.vote-container[data-vote-id="${item.voteId}"]`);
                                 if (container) {
                                     const countDownSpan = container.querySelector('.vote-count-down');
@@ -891,22 +891,29 @@ function handleVoteClick(voteId, direction, btnUp, btnDown, countUpSpan, countDo
 
 function updateVoteFirestore(voteId, direction, val, visitorId, metadata) {
     const colName = direction === 'up' ? 'positive_votes' : 'negative_votes';
-    const updateData = {
-        count: firebase.firestore.FieldValue.increment(val)
-    };
+    const docRef = db.collection(colName).doc(voteId);
 
-    if (visitorId) {
-        if (metadata) {
-            updateData[`voters.${visitorId}`] = metadata;
-        } else {
-            updateData[`voters.${visitorId}`] = firebase.firestore.FieldValue.delete();
+    db.runTransaction(async (transaction) => {
+        const docSnap = await transaction.get(docRef);
+        const currentCount = docSnap.exists ? (docSnap.data().count || 0) : 0;
+        const newCount = Math.max(0, currentCount + val);
+
+        const updateData = { count: newCount };
+
+        if (visitorId) {
+            if (metadata) {
+                updateData[`voters.${visitorId}`] = metadata;
+            } else {
+                updateData[`voters.${visitorId}`] = firebase.firestore.FieldValue.delete();
+            }
         }
-    }
 
-    db.collection(colName).doc(voteId).set(updateData, { merge: true }).catch(err => {
+        transaction.set(docRef, updateData, { merge: true });
+    }).catch(err => {
         console.error(`Erreur mise à jour vote ${direction} dans Firestore:`, err);
     });
 }
+
 
 function updateLocalUI(direction, val, btnUp, btnDown, countUpSpan, countDownSpan) {
     if (direction === 'up') {

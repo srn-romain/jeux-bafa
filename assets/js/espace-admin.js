@@ -1822,24 +1822,56 @@ async function loadLikedGames() {
             }
         }));
 
-        // 2. Récupérer les likes depuis Firestore
-        const votesSnap = await db.collection('positive_votes').get();
-        const votesMap = {};
-        votesSnap.forEach((doc) => {
-            votesMap[doc.id] = doc.data().count || 0;
+        // 2. Récupérer les votes depuis Firestore (positifs ET négatifs)
+        const [posSnap, negSnap] = await Promise.all([
+            db.collection('positive_votes').get(),
+            db.collection('negative_votes').get()
+        ]);
+
+        const posVotesMap = {};
+        const negVotesMap = {};
+        const fixBatch = db.batch();
+        let hasNegativeToFix = false;
+
+        posSnap.forEach((doc) => {
+            const raw = doc.data().count;
+            const count = (typeof raw === 'number' && !isNaN(raw)) ? raw : 0;
+            if (count < 0) {
+                // Corriger le document en base
+                fixBatch.update(doc.ref, { count: 0 });
+                hasNegativeToFix = true;
+            }
+            posVotesMap[doc.id] = Math.max(0, count);
         });
+
+        negSnap.forEach((doc) => {
+            const raw = doc.data().count;
+            const count = (typeof raw === 'number' && !isNaN(raw)) ? raw : 0;
+            if (count < 0) {
+                fixBatch.update(doc.ref, { count: 0 });
+                hasNegativeToFix = true;
+            }
+            negVotesMap[doc.id] = Math.max(0, count);
+        });
+
+        if (hasNegativeToFix) {
+            await fixBatch.commit();
+            console.log('[Admin] Valeurs négatives détectées et corrigées en base (remises à 0).');
+        }
 
         // 3. Fusionner les données
         allParsedGames = [];
         for (const voteId in parsedGamesMap) {
             const parsed = parsedGamesMap[voteId];
-            const likes = votesMap[voteId] || 0;
+            const likes = posVotesMap[voteId] ?? 0;
+            const dislikes = negVotesMap[voteId] ?? 0;
             allParsedGames.push({
                 voteId: voteId,
                 name: parsed.name,
                 pageKey: parsed.pageKey,
                 pageLabel: pageLabels[parsed.pageKey] || parsed.pageKey,
-                likes: likes
+                likes: likes,
+                dislikes: dislikes
             });
         }
 
@@ -1876,39 +1908,27 @@ function renderLikedGamesTable(showMore = false) {
     // Trier et segmenter les jeux en fonction de la direction de tri sélectionnée
     let top10, theRest;
     if (!isReversed) {
-        // Mode Normal : Top 10 le plus aimé (décroissant), le reste croissant
+        // Mode Normal : Top 10 le plus aimé par likes positifs (décroissant)
         allParsedGames.sort((a, b) => {
-            if (b.likes !== a.likes) {
-                return b.likes - a.likes; // Décroissant
-            }
+            if (b.likes !== a.likes) return b.likes - a.likes;
             return a.name.localeCompare(b.name);
         });
-        
         top10 = allParsedGames.slice(0, 10);
         theRest = allParsedGames.slice(10);
-        
         theRest.sort((a, b) => {
-            if (a.likes !== b.likes) {
-                return a.likes - b.likes; // Croissant
-            }
+            if (a.likes !== b.likes) return a.likes - b.likes;
             return a.name.localeCompare(b.name);
         });
     } else {
-        // Mode Inversé : Top 10 le moins aimé (croissant), le reste décroissant
+        // Mode Inversé : Top 10 le plus détesté par votes négatifs (décroissant)
         allParsedGames.sort((a, b) => {
-            if (a.likes !== b.likes) {
-                return a.likes - b.likes; // Croissant
-            }
+            if (b.dislikes !== a.dislikes) return b.dislikes - a.dislikes;
             return a.name.localeCompare(b.name);
         });
-        
         top10 = allParsedGames.slice(0, 10);
         theRest = allParsedGames.slice(10);
-        
         theRest.sort((a, b) => {
-            if (b.likes !== a.likes) {
-                return b.likes - a.likes; // Décroissant
-            }
+            if (a.dislikes !== b.dislikes) return a.dislikes - b.dislikes;
             return a.name.localeCompare(b.name);
         });
     }
@@ -1940,10 +1960,10 @@ function renderLikedGamesTable(showMore = false) {
             sortDirectIcon.className = 'bi bi-hand-thumbs-up';
             sortDirectIcon.style.color = 'var(--clr-text-muted)';
             sortReverseIcon.className = 'bi bi-hand-thumbs-down-fill';
-            sortReverseIcon.style.color = '#e74c3c'; // rouge/orange
+            sortReverseIcon.style.color = '#e74c3c';
         } else {
             sortDirectIcon.className = 'bi bi-hand-thumbs-up-fill';
-            sortDirectIcon.style.color = '#2ecc71'; // vert
+            sortDirectIcon.style.color = '#2ecc71';
             sortReverseIcon.className = 'bi bi-hand-thumbs-down';
             sortReverseIcon.style.color = 'var(--clr-text-muted)';
         }
@@ -1966,10 +1986,9 @@ function renderLikedGamesTable(showMore = false) {
             rankHtml = `<span style="font-size: 0.85rem; font-weight: 600; color: var(--clr-text-muted);">#${index + 1}</span>`;
         }
         
-        // Couleur dynamique du badge de likes
-        const badgeBg = isReversed 
-            ? 'rgba(231, 76, 60, 0.15)' 
-            : 'rgba(46, 204, 113, 0.15)';
+        // En mode inversé, on affiche les dislikes réels depuis negative_votes
+        const displayCount = isReversed ? game.dislikes : game.likes;
+        const badgeBg = isReversed ? 'rgba(231, 76, 60, 0.15)' : 'rgba(46, 204, 113, 0.15)';
         const badgeColor = isReversed ? '#e74c3c' : '#2ecc71';
         const badgeIcon = isReversed ? 'bi-hand-thumbs-down-fill' : 'bi-hand-thumbs-up-fill';
         
@@ -1984,13 +2003,14 @@ function renderLikedGamesTable(showMore = false) {
             </td>
             <td style="text-align: center; vertical-align: middle;">
                 <span class="es-badge" style="background: ${badgeBg}; color: ${badgeColor}; font-weight: 700; padding: 4px 8px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
-                    <i class="bi ${badgeIcon}" style="font-size: 0.85rem;"></i> ${game.likes}
+                    <i class="bi ${badgeIcon}" style="font-size: 0.85rem;"></i> ${displayCount}
                 </span>
             </td>
         `;
         tbody.appendChild(row);
     });
 }
+
 
 function initLikedGamesEvents() {
     if (likedGamesEventsAttached) return;
