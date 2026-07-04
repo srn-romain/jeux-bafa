@@ -10,8 +10,7 @@ const firebaseConfig = {
     projectId: "repertoirecolo",
     storageBucket: "repertoirecolo.firebasestorage.app",
     messagingSenderId: "209396252707",
-    appId: "1:209396252707:web:9d26e076a97a598a43f196",
-    measurementId: "G-M5DKCK37X2"
+    appId: "1:209396252707:web:9d26e076a97a598a43f196"
 };
 
 // Initialisation Firebase
