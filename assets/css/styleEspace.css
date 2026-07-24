@@ -1849,6 +1849,30 @@ input:checked+.es-slider:before {
   border-bottom: none;
 }
 
+/* Skeleton loader pour le tableau participants */
+.es-skeleton {
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--clr-surface-2) 25%, var(--clr-surface-3, rgba(255,255,255,0.07)) 50%, var(--clr-surface-2) 75%);
+  background-size: 200% 100%;
+  animation: es-shimmer 1.4s infinite;
+}
+
+@keyframes es-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.es-table tr.es-skeleton-row td {
+  padding: 12px 10px;
+  vertical-align: middle;
+}
+
+.es-table tr.es-skeleton-row:hover td {
+  background: transparent;
+}
+
+
+
 .es-table tr:hover td {
   background: var(--clr-surface-2);
 }

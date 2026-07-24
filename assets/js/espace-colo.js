@@ -441,9 +441,8 @@ async function initColoContent(colo, role) {
         driveBtn.classList.remove('hidden');
     }
 
-    // Récap BAFA
-    try {
-        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+    // Récap BAFA (fire-and-forget : ne bloque pas le chargement des participants)
+    db.collection('globalSettings').doc('dashboard').get().then(globalDoc => {
         if (globalDoc.exists && globalDoc.data().recapBafaUrl) {
             const globalRecapBafaUrl = globalDoc.data().recapBafaUrl;
             let finalUrl = globalRecapBafaUrl;
@@ -458,9 +457,7 @@ async function initColoContent(colo, role) {
                 recapBtn.style.display = 'inline-flex';
             }
         }
-    } catch (err) {
-        console.error("Erreur chargement recapBafaUrl global:", err);
-    }
+    }).catch(err => console.error("Erreur chargement recapBafaUrl global:", err));
 
     // Gestion du verrou participants
     currentLocked = colo.participantsLocked !== false; // true par défaut
@@ -490,10 +487,11 @@ async function initColoContent(colo, role) {
 
     updateAddParticipantButton();
 
-    // Charger les groupes EN PREMIER (les participants en dépendent pour le filtre)
-    await loadGroups(colo.id, role);
-    // Charger les participants (buildFilters s'exécute avec currentGroups déjà remplis)
-    loadParticipants(colo.id, role);
+    // Charger groupes ET participants en parallèle (gain d'un aller-retour réseau)
+    Promise.all([
+        loadGroups(colo.id, role),
+        loadParticipants(colo.id, role)
+    ]);
     // Charger les animateurs
     loadAnimateurs(colo.id);
     // Charger les alertes
@@ -509,16 +507,14 @@ async function initColoContent(colo, role) {
     // IA - Chargement de la config session
     isAIGeneratorEnabled = !isColoArchived && (colo.allowAnimAI !== false); // true par défaut, false si archivé
 
-    // On récupère la clé du créateur de l'espace (le directeur)
+    // On récupère la clé du créateur en arrière-plan (fire-and-forget)
     if (colo.createdBy) {
-        try {
-            const creatorDoc = await db.collection('users').doc(colo.createdBy).get();
+        db.collection('users').doc(colo.createdBy).get().then(creatorDoc => {
             if (creatorDoc.exists) {
                 currentGeminiKey = creatorDoc.data().geminiKey || "";
             }
-        } catch (err) {
-            console.error("Erreur chargement geminiKey du créateur:", err);
-        }
+            updateAIStatusUI();
+        }).catch(err => console.error("Erreur chargement geminiKey du créateur:", err));
     }
 
     // Mise à jour visuelle des boutons IA (si blocage)
@@ -750,6 +746,22 @@ function initTabs() {
 // CHARGER LES PARTICIPANTS
 // ----------------------------------------------------------------
 async function loadParticipants(coloId, role) {
+    // Afficher un skeleton pendant le chargement
+    const tbodyEarly = document.getElementById('participantsTbody');
+    if (tbodyEarly && tbodyEarly.children.length === 0) {
+        tbodyEarly.innerHTML = Array.from({ length: 5 }, () => `
+            <tr class="es-skeleton-row">
+                <td><div class="es-skeleton" style="width:20px;height:16px;"></div></td>
+                <td><div class="es-skeleton" style="width:90px;height:16px;"></div></td>
+                <td><div class="es-skeleton" style="width:80px;height:16px;"></div></td>
+                <td><div class="es-skeleton" style="width:30px;height:16px;"></div></td>
+                <td><div class="es-skeleton" style="width:40px;height:16px;"></div></td>
+                <td><div class="es-skeleton" style="width:60px;height:16px;"></div></td>
+                <td><div class="es-skeleton" style="width:120px;height:16px;"></div></td>
+                <td><div class="es-skeleton" style="width:50px;height:16px;"></div></td>
+                <td></td>
+            </tr>`).join('');
+    }
     try {
         const snap = await db.collection('espaces').doc(coloId).collection('participants').orderBy('nom').get();
         participants = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -772,7 +784,29 @@ async function loadParticipants(coloId, role) {
         regenerateGroups();
     } catch (err) {
         console.error('loadParticipants:', err);
-        showToast('Erreur lors du chargement des participants.', 'error');
+        // Afficher un message d'erreur réseau dans le tableau (et non "Aucun participant")
+        const tbody = document.getElementById('participantsTbody');
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="padding:36px 24px; text-align:center;">
+                        <div style="display:inline-flex; flex-direction:column; align-items:center; gap:12px; max-width:340px;">
+                            <div style="width:52px; height:52px; border-radius:50%; background:rgba(var(--clr-danger-rgb,212,0,0),0.1); display:flex; align-items:center; justify-content:center;">
+                                <i class="bi bi-wifi-off" style="font-size:1.5rem; color:var(--clr-danger, #d40000);"></i>
+                            </div>
+                            <div>
+                                <p style="margin:0 0 4px; font-weight:600; color:var(--clr-text);">Impossible de charger les participants</p>
+                                <p style="margin:0; font-size:0.85rem; color:var(--clr-text-muted);">Vérifiez votre connexion internet et réessayez.</p>
+                            </div>
+                            <button class="es-btn es-btn--sm" onclick="loadParticipants('${coloId}', '${role}')" style="margin-top:4px;">
+                                <i class="bi bi-arrow-clockwise"></i> Réessayer
+                            </button>
+                        </div>
+                    </td>
+                </tr>`;
+        }
+        const counter = document.getElementById('participantsCounter');
+        if (counter) counter.textContent = '';
     }
 }
 
