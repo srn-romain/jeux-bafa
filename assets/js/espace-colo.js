@@ -384,6 +384,8 @@ async function initColoContent(colo, role) {
         // Masquer le bouton de réinitialisation et d'archivage dans la zone de danger
         document.getElementById('btnDeleteAllParticipants')?.classList.add('hidden');
         document.getElementById('btnArchiveColo')?.classList.add('hidden');
+        // Masquer l'option "Autoriser les anims à ajouter des photos" (inutile si archivé)
+        document.getElementById('toggleAnimUpload')?.closest('.admin-only')?.classList.add('hidden');
     }
 
     // Mise à jour dynamique des labels d'onglets, stats, recherche et modales selon le type
@@ -469,6 +471,11 @@ async function initColoContent(colo, role) {
     if (role === 'admin' || isAnimAdmin) {
         document.querySelectorAll('.admin-only').forEach(el => {
             if (el.id === 'btnManageGroups' && isColoArchived) {
+                el.classList.add('hidden');
+                return;
+            }
+            // Masquer le toggle "autoriser les anims à ajouter des photos" si l'espace est archivé
+            if (el.contains(document.getElementById('toggleAnimUpload')) && isColoArchived) {
                 el.classList.add('hidden');
                 return;
             }
@@ -3495,7 +3502,14 @@ async function fetchAndDisplayWeather(lat, lon, role, locationName) {
 
 async function checkAndCreateWeatherAlerts(weatherData, locationName, role, isManual = false) {
     if (role !== 'admin' && !isAnimAdmin) return 0;
-    if (isColoArchived) return 0;
+    if (isColoArchived) {
+        const wInfoMsg = document.getElementById('weatherEndInfo');
+        if (wInfoMsg) {
+            wInfoMsg.classList.remove('hidden');
+            wInfoMsg.innerHTML = `<i class="bi bi-info-circle"></i> ${isColoFormation ? "La formation est terminée. Plus aucune alerte météo ne sera générée." : "La colo est terminée. Plus aucune alerte météo ne sera générée."}`;
+        }
+        return 0;
+    }
     
     let limitDate = null;
     if (currentColoDateFin) {
