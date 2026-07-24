@@ -5007,21 +5007,32 @@ async function toggleCommentsLock(coloId, currentCommentsLocked) {
 // ----------------------------------------------------------------
 // ARCHIVAGE / DÉSARCHIVAGE (Directeur/Admin seulement)
 // ----------------------------------------------------------------
-async function archiveSpace() {
+function archiveSpace() {
     if (currentRole !== 'admin') {
         showToast("Seul le directeur peut archiver l'espace.", "error");
         return;
     }
-    if (!confirm("Attention ! Si vous archivez cet espace, plus aucune modification, ajout ou suppression ne sera possible par quiconque (directeurs et animateurs compris). Pour faire des modifications à nouveau, il faudra désarchiver l'espace.\n\nVoulez-vous vraiment archiver cet espace ?")) {
+    openModal('overlayArchiveColo');
+}
+
+async function confirmArchiveSpace() {
+    if (currentRole !== 'admin') {
+        showToast("Seul le directeur peut archiver l'espace.", "error");
+        closeModal('overlayArchiveColo');
         return;
     }
+    const btn = document.getElementById('btnConfirmArchiveColo');
     try {
+        if (btn) btnLoading(btn, true);
         await db.collection('espaces').doc(espaceId).update({ archived: true });
         showToast("L'espace a été archivé. (Lecture seule)", "success");
+        closeModal('overlayArchiveColo');
         window.location.reload();
     } catch (err) {
         console.error("archiveSpace error:", err);
         showToast("Erreur lors de l'archivage.", "error");
+    } finally {
+        if (btn) btnLoading(btn, false);
     }
 }
 
@@ -5041,6 +5052,9 @@ async function unarchiveSpace() {
 }
 
 document.getElementById('btnArchiveColo')?.addEventListener('click', archiveSpace);
+document.getElementById('btnCloseArchiveColo')?.addEventListener('click', () => closeModal('overlayArchiveColo'));
+document.getElementById('btnCancelArchiveColo')?.addEventListener('click', () => closeModal('overlayArchiveColo'));
+document.getElementById('btnConfirmArchiveColo')?.addEventListener('click', confirmArchiveSpace);
 document.getElementById('btnUnarchiveColo')?.addEventListener('click', unarchiveSpace);
 
 

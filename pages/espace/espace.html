@@ -976,6 +976,32 @@
     </div>
   </main>
 
+  <!-- Modal d'archivage d'espace -->
+  <div class="es-overlay hidden" id="overlayArchiveColo" role="dialog" aria-modal="true" onclick="if(event.target===this)closeModal('overlayArchiveColo')">
+    <div class="es-modal" style="max-width: 460px;">
+      <div class="es-modal__header">
+        <h2 class="es-modal__title"><i class="bi bi-archive" style="color:var(--clr-warning); margin-right:8px;"></i>Archiver l'espace ?</h2>
+        <button class="es-modal__close" id="btnCloseArchiveColo"><i class="bi bi-x"></i></button>
+      </div>
+      <div class="es-modal__body">
+        <p style="line-height:1.5; color:var(--clr-text); font-weight:500; margin-bottom:10px;">
+          Attention ! Si vous archivez cet espace, plus aucune modification, ajout ou suppression ne sera possible par quiconque (directeurs et animateurs compris).
+        </p>
+        <p style="line-height:1.4; color:var(--clr-text-light); font-size:0.9rem;">
+          Pour effectuer à nouveau des modifications, il faudra désarchiver l'espace depuis la zone de danger.
+        </p>
+      </div>
+      <div class="es-modal__footer">
+        <button class="es-btn es-btn--ghost" id="btnCancelArchiveColo">Annuler</button>
+        <button class="es-btn" id="btnConfirmArchiveColo" style="background:var(--clr-warning); color:#fff; border:none;">
+          <i class="bi bi-archive"></i>
+          <span class="es-btn__text">Archiver l'espace</span>
+          <span class="es-btn__spinner"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal ajout/édition participant (admin) -->
   <div class="es-overlay hidden" id="overlayParticipant" role="dialog" aria-modal="true">
     <div class="es-modal">
