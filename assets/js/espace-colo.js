@@ -1288,6 +1288,17 @@ document.getElementById('btnExportImage')?.addEventListener('click', async () =>
     tableContainer.style.width = 'max-content';
     tableContainer.style.maxWidth = 'none';
 
+    // Retirer temporairement les indicateurs visuels de tri (couleur active + icônes de flèche)
+    // pour que l'image exportée affiche des titres de colonnes neutres et uniformes
+    const activeSortThs = tableContainer.querySelectorAll('.es-th-sortable.sort-active');
+    activeSortThs.forEach(th => th.classList.remove('sort-active'));
+    const resetTh = tableContainer.querySelector('.es-th-reset');
+    const resetThOriginalColor = resetTh ? resetTh.style.color : null;
+    if (resetTh) resetTh.style.color = '';
+    // Masquer les flèches de tri
+    const sortIcons = tableContainer.querySelectorAll('.sort-icon');
+    sortIcons.forEach(icon => { icon.style.display = 'none'; });
+
     try {
         const canvas = await html2canvas(tableContainer, {
             backgroundColor: '#ffffff',
@@ -1307,6 +1318,10 @@ document.getElementById('btnExportImage')?.addEventListener('click', async () =>
         console.error('Export PNG:', e);
         showToast('Erreur lors de la capture d\'écran', 'error');
     } finally {
+        // Restaurer les indicateurs de tri
+        activeSortThs.forEach(th => th.classList.add('sort-active'));
+        if (resetTh && resetThOriginalColor !== null) resetTh.style.color = resetThOriginalColor;
+        sortIcons.forEach(icon => { icon.style.display = ''; });
         // Restaurer styles originaux
         tableContainer.style.overflow = originalOverflow;
         tableContainer.style.width = originalWidth;
