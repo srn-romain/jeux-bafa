@@ -1274,168 +1274,151 @@ document.getElementById('btnExportImage')?.addEventListener('click', async () =>
     const btn = document.getElementById('btnExportImage');
     if (!tableContainer || !btn) return;
 
-    // Etat chargement
     btnLoading(btn, true);
 
-    // Sauvegarde des styles pour annuler le scroll bar sur mobile
-    // Cela permet à html2canvas de "voir" toute la largeur du tableau
-    const originalOverflow = tableContainer.style.overflow || '';
-    const originalWidth = tableContainer.style.width || '';
-    const originalMaxWidth = tableContainer.style.maxWidth || '';
-    const origBodyOverflow = document.body.style.overflow || '';
-
-    // Verrouiller le scroll du document pendant la capture
-    document.body.style.overflow = 'hidden';
-
-    // Afficher un overlay plein écran "Génération de l'image en cours" parfaitement centré (mobile & desktop)
-    // L'attribut data-html2canvas-ignore="true" permet à html2canvas d'ignorer cet overlay
+    // 1. Créer l'overlay plein écran parfaitement centré pour l'utilisateur
     const overlay = document.createElement('div');
     overlay.setAttribute('data-html2canvas-ignore', 'true');
     overlay.style.cssText = `
-        position: fixed;
-        inset: 0;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        height: 100%;
-        height: 100dvh;
-        background: rgba(30, 42, 26, 0.88);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        z-index: 9999999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 16px;
-        box-sizing: border-box;
-        margin: 0;
+        position: fixed !important;
+        inset: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        background: rgba(20, 30, 18, 0.92) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        z-index: 2147483647 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 20px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
     `;
     overlay.innerHTML = `
         <style>
             @keyframes esSpinOverlay { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-            @keyframes esPulseOverlay { 0% { opacity: 0.5; transform: scale(0.97); } 100% { opacity: 1; transform: scale(1); } }
+            @keyframes esPulseOverlay { 0% { opacity: 0.6; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1); } }
         </style>
         <div style="
-            background: linear-gradient(145deg, rgba(45, 58, 42, 0.95), rgba(30, 42, 26, 0.98));
-            border: 1px solid rgba(166, 216, 102, 0.3);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 30px rgba(166, 216, 102, 0.15);
+            background: linear-gradient(145deg, rgba(45, 58, 42, 0.98), rgba(25, 36, 22, 0.98));
+            border: 1px solid rgba(166, 216, 102, 0.35);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(166, 216, 102, 0.2);
             border-radius: 20px;
             padding: 30px 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 18px;
-            max-width: 350px;
-            width: 100%;
+            max-width: 340px;
+            width: 90%;
             margin: auto;
             text-align: center;
             color: #ffffff;
             box-sizing: border-box;
-            animation: esPulseOverlay 1.5s ease-in-out infinite alternate;
+            animation: esPulseOverlay 1.4s ease-in-out infinite alternate;
         ">
-            <div style="position: relative; width: 68px; height: 68px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <div style="position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
                 <div style="
                     position: absolute;
                     inset: 0;
                     border: 3.5px solid rgba(166, 216, 102, 0.2);
-                    border-top-color: var(--clr-primary, #a6d866);
+                    border-top-color: #a6d866;
                     border-radius: 50%;
-                    animation: esSpinOverlay 0.9s linear infinite;
+                    animation: esSpinOverlay 0.85s linear infinite;
                 "></div>
                 <div style="
-                    width: 48px;
-                    height: 48px;
-                    background: rgba(166, 216, 102, 0.12);
+                    width: 46px;
+                    height: 46px;
+                    background: rgba(166, 216, 102, 0.15);
                     border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: var(--clr-primary, #a6d866);
+                    color: #a6d866;
                 ">
-                    <i class="bi bi-camera-fill" style="font-size: 1.4rem;"></i>
+                    <i class="bi bi-camera-fill" style="font-size: 1.35rem;"></i>
                 </div>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
                 <h3 style="margin: 0; font-size: 1.15rem; font-weight: 700; color: #ffffff; letter-spacing: -0.2px;">
                     Génération de l'image
                 </h3>
-                <p style="margin: 0; font-size: 0.85rem; color: var(--clr-text-light, #8fa882); line-height: 1.4;">
-                    Export en cours…
+                <p style="margin: 0; font-size: 0.84rem; color: #8fa882; line-height: 1.4;">
+                    Capture haute définition du tableau en cours…
                 </p>
             </div>
             <div style="
                 display: inline-flex;
                 align-items: center;
                 gap: 8px;
-                background: rgba(166, 216, 102, 0.1);
-                border: 1px solid rgba(166, 216, 102, 0.2);
+                background: rgba(166, 216, 102, 0.12);
+                border: 1px solid rgba(166, 216, 102, 0.25);
                 padding: 6px 14px;
                 border-radius: 20px;
                 font-size: 0.78rem;
                 font-weight: 600;
-                color: var(--clr-primary, #a6d866);
+                color: #a6d866;
             ">
-                <span style="width: 7px; height: 7px; border-radius: 50%; background: var(--clr-primary, #a6d866); display: inline-block;"></span>
-                Capture en cours…
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #a6d866; display: inline-block;"></span>
+                Veuillez patienter…
             </div>
         </div>
     `;
     document.body.appendChild(overlay);
 
-    // Forcer l'affichage entier (débordement)
-    tableContainer.style.overflow = 'visible';
-    tableContainer.style.width = 'max-content';
-    tableContainer.style.maxWidth = 'none';
+    // 2. Créer un conteneur hors-écran avec le clone du tableau pour html2canvas sans déformer l'écran de l'utilisateur
+    const renderContainer = document.createElement('div');
+    renderContainer.style.cssText = `
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: max-content !important;
+        height: auto !important;
+        z-index: -9999 !important;
+        opacity: 0.01 !important;
+        pointer-events: none !important;
+        overflow: visible !important;
+    `;
 
-    // Retirer temporairement les indicateurs visuels de tri (couleur active + icônes de flèche)
-    // pour que l'image exportée affiche des titres de colonnes neutres et uniformes
-    const activeSortThs = tableContainer.querySelectorAll('.es-th-sortable.sort-active');
-    activeSortThs.forEach(th => th.classList.remove('sort-active'));
-    const resetTh = tableContainer.querySelector('.es-th-reset');
-    const resetThOriginalColor = resetTh ? resetTh.style.color : null;
+    const clone = tableContainer.cloneNode(true);
+    clone.style.overflow = 'visible';
+    clone.style.width = 'max-content';
+    clone.style.maxWidth = 'none';
+
+    // Nettoyage et mise en forme du clone pour l'export :
+    // - Retirer la classe sort-active et couleur du th réinitialisation
+    clone.querySelectorAll('.es-th-sortable.sort-active').forEach(th => th.classList.remove('sort-active'));
+    const resetTh = clone.querySelector('.es-th-reset');
     if (resetTh) resetTh.style.color = '';
-    // Masquer les flèches de tri
-    const sortIcons = tableContainer.querySelectorAll('.sort-icon');
-    sortIcons.forEach(icon => { icon.style.display = 'none'; });
 
-    // Masquer les boutons d'œil et afficher le texte intégral des remarques/appréciations
-    const eyeIgnoredElements = tableContainer.querySelectorAll('.col-note [data-html2canvas-ignore="true"], .col-appreciation [data-html2canvas-ignore="true"]');
-    const origEyeDisplays = [];
-    eyeIgnoredElements.forEach(el => {
-        origEyeDisplays.push({ el, display: el.style.display });
+    // - Masquer les flèches de tri
+    clone.querySelectorAll('.sort-icon').forEach(icon => { icon.style.display = 'none'; });
+
+    // - Masquer les icônes/boutons de l'œil
+    clone.querySelectorAll('.col-note [data-html2canvas-ignore="true"], .col-appreciation [data-html2canvas-ignore="true"]').forEach(el => {
         el.style.display = 'none';
     });
 
-    const noteCells = tableContainer.querySelectorAll('.col-note, .col-appreciation');
-    const origCellStyles = [];
-    noteCells.forEach(cell => {
-        origCellStyles.push({
-            el: cell,
-            maxWidth: cell.style.maxWidth,
-            width: cell.style.width
-        });
+    // - Déplier complètement les remarques et appréciations
+    clone.querySelectorAll('.col-note, .col-appreciation').forEach(cell => {
         cell.style.maxWidth = 'none';
         cell.style.width = 'auto';
     });
-
-    const noteTexts = tableContainer.querySelectorAll('.es-note-text');
-    const origTextStyles = [];
-    noteTexts.forEach(txt => {
-        origTextStyles.push({
-            el: txt,
-            whiteSpace: txt.style.whiteSpace,
-            overflow: txt.style.overflow,
-            textOverflow: txt.style.textOverflow
-        });
+    clone.querySelectorAll('.es-note-text').forEach(txt => {
         txt.style.whiteSpace = 'normal';
         txt.style.overflow = 'visible';
         txt.style.textOverflow = 'clip';
     });
 
+    renderContainer.appendChild(clone);
+    document.body.appendChild(renderContainer);
+
     try {
-        const canvas = await html2canvas(tableContainer, {
+        const canvas = await html2canvas(clone, {
             backgroundColor: '#ffffff',
             scale: 2 // Export HD
         });
@@ -1453,24 +1436,8 @@ document.getElementById('btnExportImage')?.addEventListener('click', async () =>
         console.error('Export PNG:', e);
         showToast('Erreur lors de la capture d\'écran', 'error');
     } finally {
-        // Supprimer l'overlay plein écran de chargement et déverrouiller le scroll body
-        if (overlay && overlay.parentNode) {
-            overlay.parentNode.removeChild(overlay);
-        }
-        document.body.style.overflow = origBodyOverflow;
-
-        // Restaurer les indicateurs de tri
-        activeSortThs.forEach(th => th.classList.add('sort-active'));
-        if (resetTh && resetThOriginalColor !== null) resetTh.style.color = resetThOriginalColor;
-        sortIcons.forEach(icon => { icon.style.display = ''; });
-        // Restaurer l'affichage des notes et des icônes d'œil
-        origEyeDisplays.forEach(s => { s.el.style.display = s.display; });
-        origCellStyles.forEach(s => { s.el.style.maxWidth = s.maxWidth; s.el.style.width = s.width; });
-        origTextStyles.forEach(s => { s.el.style.whiteSpace = s.whiteSpace; s.el.style.overflow = s.overflow; s.el.style.textOverflow = s.textOverflow; });
-        // Restaurer styles originaux du conteneur
-        tableContainer.style.overflow = originalOverflow;
-        tableContainer.style.width = originalWidth;
-        tableContainer.style.maxWidth = originalMaxWidth;
+        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        if (renderContainer && renderContainer.parentNode) renderContainer.parentNode.removeChild(renderContainer);
         btnLoading(btn, false);
     }
 });
