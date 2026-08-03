@@ -1,6 +1,6 @@
 {
   "name": "Espace Anim & Ressources BAFA",
-  "short_name": "Ressources BAFA",
+  "short_name": "Ressources",
   "description": "Plateforme complète pour les animateurs et directeurs de colonies de vacances. Activités, gestion de participants, et ressources diverses.",
   "start_url": "/jeux-bafa/index.html",
   "display": "standalone",
