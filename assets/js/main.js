@@ -1194,12 +1194,16 @@ document.addEventListener('DOMContentLoaded', function () {
         if (targetEl) {
             setTimeout(function () {
                 targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                targetEl.style.transition = 'background 0.3s ease';
+                targetEl.style.transition = 'background 0.3s ease, border-radius 0.3s ease, padding 0.3s ease';
+                targetEl.style.borderRadius = '10px';
+                targetEl.style.padding = '6px 12px';
                 targetEl.style.background = 'rgba(39, 174, 96, 0.18)';
                 setTimeout(function () {
                     targetEl.style.background = '';
-                }, 2200);
+                    targetEl.style.borderRadius = '';
+                    targetEl.style.padding = '';
+                }, 2500);
             }, 350);
         }
     }
-});
+});

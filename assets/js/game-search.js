@@ -325,17 +325,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Si l'URL contient une ancre, faire défiler vers l'élément
     if (window.location.hash) {
-        var targetId = window.location.hash.substring(1);
+        var targetId = decodeURIComponent(window.location.hash.substring(1));
         var targetEl = document.getElementById(targetId);
         if (targetEl) {
             setTimeout(function () {
                 targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                // Flash vert bref pour signaler l'élément
-                targetEl.style.transition = 'background 0.3s ease';
-                targetEl.style.background = 'rgba(39, 174, 96, 0.14)';
+                // Flash vert bref avec bords arrondis pour signaler l'élément
+                targetEl.style.transition = 'background 0.3s ease, border-radius 0.3s ease, padding 0.3s ease';
+                targetEl.style.borderRadius = '10px';
+                targetEl.style.padding = '6px 12px';
+                targetEl.style.background = 'rgba(39, 174, 96, 0.18)';
                 setTimeout(function () {
                     targetEl.style.background = '';
-                }, 2000);
+                    targetEl.style.borderRadius = '';
+                    targetEl.style.padding = '';
+                }, 2500);
             }, 350);
         }
     }
