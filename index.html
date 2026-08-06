@@ -435,6 +435,155 @@
         margin: 10px 12px 15px;
       }
     }
+
+    /* =====================================================
+       BARRE DE RECHERCHE GLOBALE (connectés seulement)
+       ===================================================== */
+    #search-bar-container {
+      position: relative;
+      max-width: 560px;
+      margin: 0 auto;
+      padding: 14px 20px 6px;
+      display: none; /* hidden by default, shown via JS when logged in */
+      box-sizing: border-box;
+    }
+
+    .search-bar-icon {
+      position: absolute;
+      left: 34px;
+      top: calc(50% + 4px);
+      transform: translateY(-50%);
+      color: #9ca3af;
+      font-size: 1rem;
+      pointer-events: none;
+      transition: color 0.2s;
+    }
+
+    #game-search-input {
+      width: 100%;
+      padding: 11px 16px 11px 40px;
+      border: 1.5px solid #e0e4e8;
+      border-radius: 12px;
+      font-size: 0.9rem;
+      font-family: 'Roboto', sans-serif;
+      color: #2c3e2d;
+      background: #f8fafc;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      box-sizing: border-box;
+    }
+
+    #game-search-input:focus {
+      border-color: #27ae60;
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.10);
+    }
+
+    #game-search-input:focus ~ .search-bar-icon,
+    #search-bar-container:focus-within .search-bar-icon {
+      color: #27ae60;
+    }
+
+    #game-search-input::placeholder {
+      color: #b0b8c1;
+    }
+
+    /* Dropdown résultats */
+    #game-search-results {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1.5px solid #e0e4e8;
+      border-radius: 12px;
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+      z-index: 9999;
+      max-height: 320px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #dde2e6 transparent;
+    }
+
+    #game-search-results.active {
+      display: block;
+      animation: dropdownFadeIn 0.18s ease;
+    }
+
+    @keyframes dropdownFadeIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f2f4;
+      transition: background 0.14s;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-result-item:hover,
+    .search-result-item.keyboard-focused {
+      background: #f0faf3;
+    }
+
+    .search-result-cat {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      background: #e8f5e9;
+      color: #2e7d32;
+    }
+
+    .search-result-name {
+      font-size: 0.88rem;
+      color: #2c3e2d;
+      font-weight: 600;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .search-result-name mark {
+      background: #fff176;
+      border-radius: 2px;
+      padding: 0 1px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .search-result-arrow {
+      color: #b0b8c1;
+      font-size: 0.8rem;
+      flex-shrink: 0;
+    }
+
+    .search-no-results {
+      padding: 16px;
+      text-align: center;
+      color: #9ca3af;
+      font-size: 0.87rem;
+    }
+
+    @media (max-width: 700px) {
+      #search-bar-container {
+        padding: 10px 12px 4px;
+      }
+    }
   </style>
 </head>
 
@@ -464,6 +613,20 @@
         <p id="public-broadcast-msg-text" style="margin: 0; font-size: 0.9rem; color: #2c3e2d; line-height: 1.5; white-space: pre-wrap; text-align: center;"></p>
       </test>
     </div>
+
+
+      <!-- Barre de recherche globale (visible si connecté + non banni) -->
+      <test id="search-bar-container">
+          <i class="bi bi-search search-bar-icon"></i>
+          <input
+                  type="text"
+                  id="game-search-input"
+                  placeholder="Rechercher un jeu ou une activité…"
+                  autocomplete="off"
+                  aria-label="Rechercher un jeu"
+          >
+          <test id="game-search-results" role="listbox" aria-label="Résultats de recherche"></test>
+      </test>
 
     <main class="categories-grid">
 
@@ -632,6 +795,7 @@
   </a>
 
   <script src="assets/js/main.js"></script>
+  <script src="assets/js/game-search.js"></script>
 </body>
 
 </html>

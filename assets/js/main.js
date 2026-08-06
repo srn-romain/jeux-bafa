@@ -407,7 +407,10 @@ document.addEventListener("DOMContentLoaded", function () {
 function loadFirebaseAndInit(isTargetPage, isIndexPage) {
     if (window.firebase && window.db) {
         if (isTargetPage) initVotesSystem();
-        if (isIndexPage) loadPublicBroadcastMessage();
+        if (isIndexPage) {
+            loadPublicBroadcastMessage();
+            if (typeof initGameSearch === 'function') initGameSearch();
+        }
         return;
     }
 
@@ -430,7 +433,10 @@ function loadFirebaseAndInit(isTargetPage, isIndexPage) {
                 if (!window.db) window.db = firebase.firestore();
                 if (!window.auth) window.auth = firebase.auth();
                 if (isTargetPage) initVotesSystem();
-                if (isIndexPage) loadPublicBroadcastMessage();
+                if (isIndexPage) {
+                    loadPublicBroadcastMessage();
+                    if (typeof initGameSearch === 'function') initGameSearch();
+                }
             }
             return;
         }
@@ -1148,3 +1154,52 @@ function showVoteWelcomeModal() {
         }
     });
 }
+
+/*--------------------------------------------------------------
+# Auto-ancrage et défilement pour la recherche de jeux
+--------------------------------------------------------------*/
+document.addEventListener('DOMContentLoaded', function () {
+    const isContentPage = window.location.pathname.includes('/pages/');
+    if (!isContentPage) return;
+
+    function generateSlug(str) {
+        return str
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\w\s-]/g, ' ')
+            .trim()
+            .replace(/[\s_]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+
+    // Injecter un id="slug" sur chaque <li> qui commence par un <b>
+    const listItems = document.querySelectorAll('.categories li');
+    listItems.forEach(function (li) {
+        const firstB = li.querySelector(':scope > b');
+        if (!firstB) return;
+        const rawName = firstB.textContent.trim();
+        if (!rawName) return;
+        const slug = generateSlug(rawName);
+        if (slug && !li.id) {
+            li.id = slug;
+        }
+    });
+
+    // Si l'URL contient une ancre (#slug), faire défiler vers l'élément
+    if (window.location.hash) {
+        const targetId = decodeURIComponent(window.location.hash.substring(1));
+        const targetEl = document.getElementById(targetId);
+        if (targetEl) {
+            setTimeout(function () {
+                targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                targetEl.style.transition = 'background 0.3s ease';
+                targetEl.style.background = 'rgba(39, 174, 96, 0.18)';
+                setTimeout(function () {
+                    targetEl.style.background = '';
+                }, 2200);
+            }, 350);
+        }
+    }
+});
