@@ -631,9 +631,55 @@ function setupGameSearchUI() {
     }
 
     function bindChipClickListeners() {
+        var chipsBar = results.querySelector('.search-chips-bar');
         var chips = results.querySelectorAll('.search-chip');
+        var isDragging = false;
+
+        // Glisser-déposer / Drag-to-scroll à la souris sur ordinateur
+        if (chipsBar) {
+            var isMouseDown = false;
+            var startX = 0;
+            var scrollLeft = 0;
+
+            chipsBar.addEventListener('mousedown', function (e) {
+                isMouseDown = true;
+                isDragging = false;
+                chipsBar.classList.add('dragging');
+                startX = e.pageX - chipsBar.offsetLeft;
+                scrollLeft = chipsBar.scrollLeft;
+            });
+
+            chipsBar.addEventListener('mouseleave', function () {
+                isMouseDown = false;
+                chipsBar.classList.remove('dragging');
+            });
+
+            chipsBar.addEventListener('mouseup', function () {
+                isMouseDown = false;
+                chipsBar.classList.remove('dragging');
+            });
+
+            chipsBar.addEventListener('mousemove', function (e) {
+                if (!isMouseDown) return;
+                var x = e.pageX - chipsBar.offsetLeft;
+                var walk = (x - startX) * 1.5; // Vitesse de défilement
+                if (Math.abs(x - startX) > 6) {
+                    isDragging = true;
+                }
+                if (isDragging) {
+                    e.preventDefault();
+                    chipsBar.scrollLeft = scrollLeft - walk;
+                }
+            });
+        }
+
         chips.forEach(function (chip) {
             chip.addEventListener('click', function (e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
                 e.stopPropagation();
                 activeCategoryFilter = chip.getAttribute('data-cat') || 'Tout';
                 renderResults(input.value);
