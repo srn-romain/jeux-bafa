@@ -437,15 +437,20 @@
     }
 
     /* =====================================================
-       BARRE DE RECHERCHE GLOBALE (connectés seulement)
+       BARRE DE RECHERCHE GLOBALE
        ===================================================== */
     #search-bar-container {
       position: relative;
-      max-width: 560px;
+      max-width: 580px;
       margin: 0 auto;
       padding: 14px 20px 6px;
       display: none; /* hidden by default, shown via JS when logged in */
       box-sizing: border-box;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      width: 100%;
     }
 
     .search-bar-icon {
@@ -461,7 +466,7 @@
 
     #game-search-input {
       width: 100%;
-      padding: 11px 16px 11px 40px;
+      padding: 11px 40px 11px 40px;
       border: 1.5px solid #e0e4e8;
       border-radius: 12px;
       font-size: 0.9rem;
@@ -476,16 +481,39 @@
     #game-search-input:focus {
       border-color: #27ae60;
       background: #fff;
-      box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.10);
+      box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.12);
     }
 
-    #game-search-input:focus ~ .search-bar-icon,
     #search-bar-container:focus-within .search-bar-icon {
       color: #27ae60;
     }
 
     #game-search-input::placeholder {
-      color: #b0b8c1;
+      color: #94a3b8;
+    }
+
+    #search-clear-btn {
+      position: absolute;
+      right: 27px;
+      top: 50%;
+      transform: translateY(-30%);
+      background: #e2e8f0;
+      border: none;
+      color: #64748b;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    #search-clear-btn:hover {
+      background: #cbd5e1;
+      color: #1e293b;
     }
 
     /* Dropdown résultats */
@@ -497,10 +525,10 @@
       right: 0;
       background: #fff;
       border: 1.5px solid #e0e4e8;
-      border-radius: 12px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+      border-radius: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.13);
       z-index: 9999;
-      max-height: 320px;
+      max-height: 380px;
       overflow-y: auto;
       scrollbar-width: thin;
       scrollbar-color: #dde2e6 transparent;
@@ -516,13 +544,79 @@
       to   { opacity: 1; transform: translateY(0); }
     }
 
+    /* Chips de filtrage par catégorie (défilable horizontalement) */
+    .search-chips-bar {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 6px;
+      padding: 8px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      background: #f8fafc;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .search-chips-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .search-chip {
+      font-size: 0.73rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 16px;
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+
+    .search-chip:hover,
+    .search-chip.active {
+      background: #27ae60;
+      border-color: #27ae60;
+      color: #fff;
+    }
+
+    /* Headers dans le dropdown */
+    .search-results-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 14px;
+      background: #f8fafc;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .search-clear-history {
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: none;
+    }
+
+    .search-clear-history:hover {
+      text-decoration: underline;
+    }
+
     .search-result-item {
       display: flex;
       align-items: center;
       gap: 12px;
-      padding: 10px 16px;
+      padding: 10px 14px;
       cursor: pointer;
-      border-bottom: 1px solid #f0f2f4;
+      border-bottom: 1px solid #f1f5f9;
       transition: background 0.14s;
       text-decoration: none;
       color: inherit;
@@ -540,7 +634,7 @@
     .search-result-cat {
       font-size: 0.7rem;
       font-weight: 700;
-      padding: 2px 7px;
+      padding: 2px 8px;
       border-radius: 20px;
       white-space: nowrap;
       flex-shrink: 0;
@@ -548,40 +642,62 @@
       color: #2e7d32;
     }
 
+    .search-result-content {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      flex: 1;
+      overflow: hidden;
+    }
+
     .search-result-name {
       font-size: 0.88rem;
-      color: #2c3e2d;
+      color: #1e293b;
       font-weight: 600;
-      flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .search-result-name mark {
-      background: #fff176;
+    .search-result-desc {
+      font-size: 0.76rem;
+      color: #64748b;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .search-result-name mark,
+    .search-result-desc mark {
+      background: #fef08a;
       border-radius: 2px;
-      padding: 0 1px;
+      padding: 0 2px;
       font-weight: 700;
-      color: #1a1a1a;
+      color: #0f172a;
     }
 
     .search-result-arrow {
-      color: #b0b8c1;
+      color: #cbd5e1;
       font-size: 0.8rem;
       flex-shrink: 0;
     }
 
     .search-no-results {
-      padding: 16px;
+      padding: 18px 16px;
       text-align: center;
-      color: #9ca3af;
+      color: #64748b;
       font-size: 0.87rem;
     }
 
     @media (max-width: 700px) {
       #search-bar-container {
         padding: 10px 12px 4px;
+      }
+      .search-shortcut-badge {
+        display: none;
+      }
+      #game-search-input {
+        padding-right: 40px;
       }
     }
   </style>
@@ -625,6 +741,7 @@
                   autocomplete="off"
                   aria-label="Rechercher un jeu"
           >
+          <button id="search-clear-btn" title="Effacer la recherche" type="button"><i class="bi bi-x"></i></button>
           <test id="game-search-results" role="listbox" aria-label="Résultats de recherche"></test>
       </test>
 
