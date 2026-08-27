@@ -180,7 +180,7 @@ async function signInWithGoogle() {
             if (!allowSignup) {
                 try { await user.delete(); } catch(e) {}
                 await auth.signOut();
-                showError(loginError, "La création de compte est actuellement fermée par le directeur.");
+                showError(loginError, "La création de compte est actuellement fermée.");
                 return;
             }
             await db.collection('users').doc(user.uid).set({
