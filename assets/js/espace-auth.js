@@ -417,11 +417,55 @@ document.getElementById('btnLogout')?.addEventListener('click', async () => {
 async function signInWithGoogle() {
     window.isSigningUp = true; // Empêcher onAuthStateChanged d'interférer
     try {
+        // 1. Vérifier si l'inscription globale est autorisée
+        const globalDoc = await firebase.firestore().collection('globalSettings').doc('dashboard').get();
+        const allowSignup = !globalDoc.exists || globalDoc.data().allowSignup !== false;
+
+        // 2. Connexion / Auth Google via popup
         const result = await firebase.auth().signInWithPopup(googleProvider);
         const user = result.user;
+
+        // 3. Vérifier si le profil utilisateur existe dans Firestore
         const doc = await firebase.firestore().collection('users').doc(user.uid).get();
+
         if (!doc.exists) {
-            // Créer le document utilisateur D'ABORD pour satisfaire les règles Firebase
+            // NOUVELLE INSCRIPTION !
+            if (!allowSignup) {
+                // Inscription fermée : ne PAS créer le document Firestore
+                // Supprimer le compte Auth temporaire généré par Google
+                try {
+                    await user.delete();
+                } catch (delErr) {
+                    console.warn("Impossible de supprimer le compte auth Google:", delErr);
+                }
+                await firebase.auth().signOut();
+                window.isSigningUp = false;
+
+                const msg = "La création de compte est actuellement fermée par le directeur.";
+                showToast(msg, "error");
+
+                // Afficher l'erreur également dans les alertes de la page d'accueil si présentes
+                const loginErr = document.getElementById('loginError');
+                const loginErrMsg = document.getElementById('loginErrorMsg');
+                if (loginErr && loginErrMsg) {
+                    loginErrMsg.textContent = msg;
+                    loginErr.classList.remove('hidden');
+                }
+                const signupErr = document.getElementById('signupError');
+                const signupErrMsg = document.getElementById('signupErrorMsg');
+                if (signupErr && signupErrMsg) {
+                    signupErrMsg.textContent = msg;
+                    signupErr.classList.remove('hidden');
+                }
+
+                if (window.loginView) {
+                    window.loginView.classList.remove('hidden');
+                    window.dashboardView?.classList.add('hidden');
+                }
+                return;
+            }
+
+            // Inscription autorisée : créer le document Firestore
             await firebase.firestore().collection('users').doc(user.uid).set({
                 email: user.email,
                 displayName: user.displayName || '',
@@ -429,28 +473,12 @@ async function signInWithGoogle() {
                 role: 'anim',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-
-            // Vérifier ensuite si l'inscription est autorisée
-            const globalDoc = await firebase.firestore().collection('globalSettings').doc('dashboard').get();
-            if (globalDoc.exists && globalDoc.data().allowSignup === false) {
-                // Inscription fermée : on annule tout
-                await firebase.firestore().collection('users').doc(user.uid).delete();
-                await user.delete(); // Supprimer le compte auth
-                await firebase.auth().signOut();
-                window.isSigningUp = false;
-                showToast("La création de compte est fermée par le directeur.", "error");
-                if (window.loginView) {
-                    window.loginView.classList.remove('hidden');
-                    window.dashboardView?.classList.add('hidden');
-                }
-                return;
-            }
         } else {
-            // Uniquement si pas déjà de photo (ou si l'admin veut forcer la synchro)
+            // UTILISATEUR EXISTANT : Connexion normale
             const currentData = doc.data();
-            if (!currentData.photoURL) {
+            if (!currentData.photoURL && user.photoURL) {
                 await firebase.firestore().collection('users').doc(user.uid).update({
-                    photoURL: user.photoURL || ''
+                    photoURL: user.photoURL
                 });
             }
         }

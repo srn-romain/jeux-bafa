@@ -169,11 +169,20 @@ async function signInWithGoogle() {
     clearError(loginError);
     clearError(signupError);
     try {
+        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+        const allowSignup = !globalDoc.exists || globalDoc.data().allowSignup !== false;
+
         const result = await auth.signInWithPopup(googleProvider);
         const user = result.user;
-        // Créer le document Firestore si c'est la première connexion Google
         const doc = await db.collection('users').doc(user.uid).get();
+
         if (!doc.exists) {
+            if (!allowSignup) {
+                try { await user.delete(); } catch(e) {}
+                await auth.signOut();
+                showError(loginError, "La création de compte est actuellement fermée par le directeur.");
+                return;
+            }
             await db.collection('users').doc(user.uid).set({
                 email: user.email,
                 displayName: user.displayName,

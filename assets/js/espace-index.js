@@ -125,12 +125,22 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
     window.isSigningUp = true; // Empêcher onAuthStateChanged de couper le processus
 
     try {
+        // Sécurité supplémentaire : vérifier l'autorisation D'ABORD
+        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+        if (globalDoc.exists && globalDoc.data().allowSignup === false) {
+            window.isSigningUp = false;
+            btnLoading(btn, false);
+            msgEl.textContent = "La création de compte est actuellement fermée par le directeur.";
+            errorEl.classList.remove('hidden');
+            return;
+        }
+
         const cred = await auth.createUserWithEmailAndPassword(
             document.getElementById('emailSignup').value.trim(),
             document.getElementById('passwordSignup').value
         );
         
-        // Créer le document utilisateur D'ABORD pour satisfaire les règles Firebase
+        // Créer le document utilisateur dans Firestore
         await db.collection('users').doc(cred.user.uid).set({
             email: cred.user.email,
             firstName: firstName,
@@ -141,24 +151,12 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        // Sécurité supplémentaire : vérifier l'autorisation
-        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
-        if (globalDoc.exists && globalDoc.data().allowSignup === false) {
-            await db.collection('users').doc(cred.user.uid).delete();
-            await cred.user.delete();
-            await auth.signOut();
-            throw new Error("signup_disabled");
-        }
         // Si tout est ok, on recharge la page pour charger le dashboard proprement
         window.location.reload();
     } catch (err) {
         window.isSigningUp = false;
         btnLoading(btn, false);
-        if (err.message === "signup_disabled") {
-            msgEl.textContent = "La création de compte est actuellement fermée par le directeur.";
-        } else {
-            msgEl.textContent = authErrorMessage(err.code);
-        }
+        msgEl.textContent = authErrorMessage(err.code);
         errorEl.classList.remove('hidden');
     }
 });
