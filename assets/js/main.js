@@ -130,6 +130,7 @@ document.addEventListener('click', (event) => {
     // Ouverture
     const openBtn = event.target.closest('.openModalBtn');
     if (openBtn) {
+        event.preventDefault();
         const modalId = openBtn.getAttribute('data-modal');
         const modal = document.getElementById(modalId);
         if (modal) {
@@ -142,6 +143,7 @@ document.addEventListener('click', (event) => {
     // Fermeture par la croix
     const closeBtn = event.target.closest('.modal__closespe');
     if (closeBtn) {
+        event.preventDefault();
         const modal = closeBtn.closest('.modalspe');
         if (modal) {
             modal.style.display = 'none';
@@ -152,6 +154,7 @@ document.addEventListener('click', (event) => {
 
     // Fermeture par clic extérieur
     if (event.target.classList.contains('modalspe')) {
+        event.preventDefault();
         event.target.style.display = 'none';
         document.body.style.overflow = '';
     }

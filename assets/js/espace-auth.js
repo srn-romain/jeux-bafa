@@ -102,6 +102,7 @@ function togglePwd(inputId, btn) {
 // Fermer les modals en cliquant sur l'overlay (pas le modal lui-même)
 document.addEventListener('click', (e) => {
     if (e.target.classList.contains('es-overlay')) {
+        e.preventDefault();
         e.target.classList.add('hidden');
         if (!document.querySelector('.es-overlay:not(.hidden)')) {
             document.body.classList.remove('modal-open');

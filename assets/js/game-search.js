@@ -443,29 +443,14 @@ function clearRecentSearches() {
 }
 
 /**
- * Initialise la barre de recherche si l'utilisateur est connecté et non banni.
- * Appelé depuis main.js → loadFirebaseAndInit() sur index.html uniquement.
+ * Initialise la barre de recherche (ouverte à absolument tous les visiteurs, connectés, non connectés ou bannis).
  */
 function initGameSearch() {
-    if (!window.auth || !window.db) return;
+    var container = document.getElementById('search-bar-container');
+    if (!container) return;
 
-    auth.onAuthStateChanged(function (user) {
-        if (!user) return; // non connecté : on ne montre rien
-
-        db.collection('users').doc(user.uid).get().then(function (doc) {
-            if (!doc.exists) return;
-            var data = doc.data();
-            if (data.banned === true) return; // banni : on ne montre rien
-
-            // Utilisateur connecté et non banni : afficher la barre
-            var container = document.getElementById('search-bar-container');
-            if (container) container.style.display = 'block';
-
-            setupGameSearchUI();
-        }).catch(function (err) {
-            console.error('Erreur vérification utilisateur (recherche):', err);
-        });
-    });
+    container.style.display = 'block';
+    setupGameSearchUI();
 }
 
 /**
@@ -845,3 +830,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 });
+
+// Auto-initialisation au chargement de la page pour tous les visiteurs
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () {
+        if (document.getElementById('search-bar-container')) {
+            initGameSearch();
+        }
+    });
+} else {
+    if (document.getElementById('search-bar-container')) {
+        initGameSearch();
+    }
+}
