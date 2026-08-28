@@ -26,6 +26,27 @@
     .todo-list { list-style: none; padding-left: 0; }
     .todo-list li { margin-bottom: 1px; }
     .no-p-style { text-align: left !important; margin-left: 0 !important; max-width: 100% !important; }
+    .valise-header { display: flex; align-items: center; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+    .valise-header h3 { margin: 0; }
+    .btn-uncheck-all {
+      background-color: #f8f9fa;
+      color: #666;
+      border: 1px solid #cbd5e1;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+    .btn-uncheck-all:hover {
+      background-color: #f1f5f9;
+      color: #f39c12;
+      border-color: #f39c12;
+    }
   </style>
 </head>
 <body>
@@ -62,7 +83,12 @@
       <li><b>Pénale :</b> Responsabilité personnelle en cas d'infraction à la loi.</li>
     </ul><br>
 
-    <h3>Dans la valise :</h3><br>
+    <test class="valise-header">
+      <h3>Dans la valise :</h3>
+      <button type="button" id="uncheckValiseBtn" class="btn-uncheck-all" onclick="uncheckValiseCheckboxes()" title="Décocher toutes les cases de la valise">
+        <i class="bi bi-arrow-counterclockwise"></i> Tout décocher
+      </button>
+    </test>
     <h4>📑 Documents & Administratif</h4>
     <ul class="todo-list">
       <li><label><input type="checkbox"> Papiers d'identité et de santé (Carte Nationale d'Identité, Carte Vitale, Permis de conduire, Carte Européenne d'Assurance Maladie / CEAM)</label></li>
@@ -296,5 +322,33 @@
 
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/navigation.js"></script>
+<script>
+  function updateValiseButtonVisibility() {
+    const btn = document.getElementById('uncheckValiseBtn');
+    if (!btn) return;
+    const checkboxes = document.querySelectorAll('.todo-list input[type="checkbox"]');
+    const hasChecked = Array.from(checkboxes).some(function(cb) { return cb.checked; });
+    btn.style.display = hasChecked ? 'inline-flex' : 'none';
+  }
+
+  function uncheckValiseCheckboxes() {
+    document.querySelectorAll('.todo-list input[type="checkbox"]').forEach(function(cb) {
+      cb.checked = false;
+    });
+    updateValiseButtonVisibility();
+  }
+
+  document.addEventListener('change', function(e) {
+    if (e.target && e.target.matches && e.target.matches('.todo-list input[type="checkbox"]')) {
+      updateValiseButtonVisibility();
+    }
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateValiseButtonVisibility);
+  } else {
+    updateValiseButtonVisibility();
+  }
+</script>
 </body>
 </html>
