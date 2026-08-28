@@ -315,7 +315,7 @@ body {
 /*--------------------------------------------------------------
 # Principale
 --------------------------------------------------------------*/
-div {
+.container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
@@ -777,11 +777,6 @@ em {
   background-color: #45a049;
 }
 
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-}
 
 .groups-container {
   display: grid;

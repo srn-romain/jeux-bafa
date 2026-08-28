@@ -520,14 +520,14 @@ function setupGameSearchUI() {
     }
 
     function renderFilterChipsHTML() {
-        return '<test class="search-chips-bar">' +
+        return '<div class="search-chips-bar">' +
             categoriesList.map(function (c) {
                 var isActive = (activeCategoryFilter === c.name) ? ' active' : '';
                 return '<button type="button" class="search-chip' + isActive + '" data-cat="' + escapeHtml(c.name) + '">' +
                     c.emoji + ' ' + escapeHtml(c.name) +
                     '</button>';
             }).join('') +
-            '</test>';
+            '</div>';
     }
 
     function renderRecentSearches() {
@@ -540,17 +540,17 @@ function setupGameSearchUI() {
             return;
         }
 
-        var html = '<test class="search-results-header">' +
+        var html = '<div class="search-results-header">' +
             '<span>🕒 Recherches récentes</span>' +
             '<span class="search-clear-history" id="clear-search-history-btn">Effacer</span>' +
-            '</test>';
+            '</div>';
 
         html += recents.map(function (item, i) {
             return '<a class="search-result-item" href="' + item.page + '#' + item.slug + '" data-idx="' + i + '" role="option" tabindex="-1">' +
                 '<span class="search-result-cat">' + item.emoji + ' ' + escapeHtml(item.cat) + '</span>' +
-                '<test class="search-result-content">' +
+                '<div class="search-result-content">' +
                 '<span class="search-result-name">' + escapeHtml(item.name) + '</span>' +
-                '</test>' +
+                '</div>' +
                 '<i class="bi bi-clock-history search-result-arrow"></i>' +
                 '</a>';
         }).join('');
@@ -602,22 +602,22 @@ function setupGameSearchUI() {
         var html = renderFilterChipsHTML();
 
         if (filtered.length === 0) {
-            html += '<test class="search-no-results">Aucun résultat trouvé pour « <strong>' + escapeHtml(rawQ) + '</strong> » dans <em>' + escapeHtml(activeCategoryFilter) + '</em></test>';
+            html += '<div class="search-no-results">Aucun résultat trouvé pour « <strong>' + escapeHtml(rawQ) + '</strong> » dans <em>' + escapeHtml(activeCategoryFilter) + '</em></div>';
         } else {
-            html += '<test class="search-results-header">' +
+            html += '<div class="search-results-header">' +
                 '<span>' + filtered.length + ' résultat' + (filtered.length > 1 ? 's' : '') + '</span>' +
                 '<span>' + (activeCategoryFilter === 'Tout' ? 'Toutes catégories' : escapeHtml(activeCategoryFilter)) + '</span>' +
-                '</test>';
+                '</div>';
 
             html += filtered.map(function (item, i) {
                 var highlightedName = highlightMatch(item.name, tokens);
                 var highlightedDesc = highlightMatch(item.desc, tokens);
                 return '<a class="search-result-item" href="' + item.page + '#' + item.slug + '" data-idx="' + i + '" role="option" tabindex="-1" data-slug="' + item.slug + '" data-name="' + escapeHtml(item.name) + '" data-page="' + item.page + '" data-cat="' + escapeHtml(item.cat) + '" data-emoji="' + item.emoji + '">' +
                     '<span class="search-result-cat">' + item.emoji + ' ' + escapeHtml(item.cat) + '</span>' +
-                    '<test class="search-result-content">' +
+                    '<div class="search-result-content">' +
                     '<span class="search-result-name">' + highlightedName + '</span>' +
                     (item.desc ? '<span class="search-result-desc">' + highlightedDesc + '</span>' : '') +
-                    '</test>' +
+                    '</div>' +
                     '<i class="bi bi-arrow-right search-result-arrow"></i>' +
                     '</a>';
             }).join('');

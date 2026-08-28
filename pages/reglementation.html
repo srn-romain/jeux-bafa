@@ -47,6 +47,106 @@
       color: #f39c12;
       border-color: #f39c12;
     }
+    /* Dépliant itinérance personnalisé */
+    .depliant-container {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 2px dashed #f39c12;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 25px;
+      box-shadow: 0 4px 15px rgba(243, 156, 18, 0.12);
+      transition: all 0.3s ease;
+    }
+    .depliant-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .depliant-header h4 {
+      margin: 0;
+      color: #1e293b;
+      font-size: 1.1rem;
+    }
+    .depliant-badge {
+      background: #f39c12;
+      color: #ffffff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .depliant-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 640px) {
+      .depliant-columns {
+        grid-template-columns: 1fr;
+      }
+    }
+    .depliant-col {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 14px;
+      border: 1px solid #cbd5e1;
+    }
+    .depliant-col--chaud {
+      border-top: 4px solid #f97316;
+    }
+    .depliant-col--froid {
+      border-top: 4px solid #3b82f6;
+    }
+    .depliant-col h5 {
+      margin-top: 0;
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .depliant-col--chaud h5 {
+      color: #ea580c;
+    }
+    .depliant-col--froid h5 {
+      color: #2563eb;
+    }
+    .depliant-row-shared {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 14px;
+      position: relative;
+    }
+    .depliant-row-shared::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 8px solid #cbd5e1;
+    }
+    .depliant-shared-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: #334155;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
   </style>
 </head>
 <body>
@@ -83,12 +183,14 @@
       <li><b>Pénale :</b> Responsabilité personnelle en cas d'infraction à la loi.</li>
     </ul><br>
 
-    <test class="valise-header">
+      <button class="back-button"><a href="../public/pdfs/reglementation/docBAFA.pdf" style="color: white">Voir la doc</a></button>
+
+      <div class="valise-header">
       <h3>Dans la valise :</h3>
       <button type="button" id="uncheckValiseBtn" class="btn-uncheck-all" onclick="uncheckValiseCheckboxes()" title="Décocher toutes les cases de la valise">
         <i class="bi bi-arrow-counterclockwise"></i> Tout décocher
       </button>
-    </test>
+    </div>
     <h4>📑 Documents & Administratif</h4>
     <ul class="todo-list">
       <li><label><input type="checkbox"> Papiers d'identité et de santé (Carte Nationale d'Identité, Carte Vitale, Permis de conduire, Carte Européenne d'Assurance Maladie / CEAM)</label></li>
@@ -139,7 +241,39 @@
       <li><label><input type="checkbox"> Pastilles pour la gorge (pour soulager les cordes vocales fatiguées par l'animation)</label></li>
       <li><label><input type="checkbox"> Sac banane ou petite sacoche (pour garder vos papiers, clés, sifflet et stylo toujours à portée de main)</label></li>
     </ul>
-    <button class="back-button"><a href="../public/pdfs/reglementation/docBAFA.pdf" style="color: white">Voir la doc</a></button>
+
+    <!-- Dépliant personnalisé (visible pour Admin UID htY99Hx1OgTZDDbwfgeLgMw2n6B3) -->
+    <div id="depliantPersonalise" class="depliant-container" style="display: none;">
+      <div class="depliant-header">
+        <h4>🗺️ Dépliant valise personnalisé — Itinérance</h4>
+        <span class="depliant-badge"><i class="bi bi-star-fill"></i> Spécial Admin</span>
+      </div>
+      <div class="depliant-columns">
+        <div class="depliant-col depliant-col--chaud">
+          <h5>☀️ Itinérance pays chaud</h5>
+          <ul class="todo-list">
+            <li><label><input type="checkbox"> Casquette ou bob respirant anti-UV</label></li>
+            <li><label><input type="checkbox"> Vêtements légers et respirants</label></li>
+            <li><label><input type="checkbox"> Crème solaire Haute Protection</label></li>
+            <li><label><input type="checkbox"> Lunettes de soleil catégorie 3 ou 4</label></li>
+          </ul>
+        </div>
+        <div class="depliant-col depliant-col--froid">
+          <h5>❄️ Itinérance pays froid</h5>
+          <ul class="todo-list">
+            <li><label><input type="checkbox"> Cache-nez du LUT by night</label></li>
+            <li><label><input type="checkbox"> Gros pull chaud</label></li>
+            <li><label><input type="checkbox"> Blouson chaud</label></li>
+          </ul>
+        </div>
+      </div>
+      <div class="depliant-row-shared">
+        <div class="depliant-shared-title">🔗 Dans les deux itinérances :</div>
+        <ul class="todo-list">
+          <li><label><input type="checkbox"> Gobelet métallique accroché au sac à dos</label></li>
+        </ul>
+      </div>
+    </div>
   </div>
 
   <!-- SECTION 2: ANIMATEUR SB -->
@@ -320,6 +454,11 @@
 
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
+<!-- Firebase SDKs & Config -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="../assets/js/firebase-config.js"></script>
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/navigation.js"></script>
 <script>
@@ -349,6 +488,29 @@
   } else {
     updateValiseButtonVisibility();
   }
+
+  // Vérification de l'utilisateur connecté (Admin + UID spécifique)
+  firebase.auth().onAuthStateChanged(async function(user) {
+    const depliant = document.getElementById('depliantPersonalise');
+    if (!depliant) return;
+
+    const TARGET_UID = 'htY99Hx1OgTZDDbwfgeLgMw2n6B3';
+
+    if (user && user.uid === TARGET_UID) {
+      try {
+        const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
+        if (userDoc.exists && userDoc.data().role === 'admin') {
+          depliant.style.display = 'block';
+          updateValiseButtonVisibility();
+          return;
+        }
+      } catch (err) {
+        console.error('Erreur lors de la vérification du profil utilisateur:', err);
+      }
+    }
+
+    depliant.style.display = 'none';
+  });
 </script>
 </body>
 </html>

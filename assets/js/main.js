@@ -55,18 +55,18 @@ function injectNavbar() {
                 <span>🏕️ BAFA & BAFD</span>
             </a>
 
-            <test class="navbar-links">
+            <div class="navbar-links">
                 <a href="${basePath}index.html" class="nav-link">Accueil</a>
-                <test class="nav-dropdown">
+                <div class="nav-dropdown">
                     <button class="nav-link" id="themesToggle">Thèmes <i class="bi bi-chevron-down"></i></button>
                     <div class="themes-grid" id="themesGrid">
                         ${themes.map(t => `<a href="${pagesPath}${t.l}" class="theme-item"><span>${t.e}</span> ${t.t}</a>`).join('')}
                     </div>
-                </test>
+                </div>
                 <a href="${pagesPath}espace/index.html" class="nav-btn-espace">
                     <i class="bi bi-lock-fill"></i> Espace Anim
                 </a>
-            </test>
+            </div>
 
             <button class="nav-toggle" id="navToggle">
                 <i class="bi bi-list"></i>
@@ -76,11 +76,11 @@ function injectNavbar() {
 
     <div class="nav-menu-mobile" id="navMobileMenu">
         <a href="${basePath}index.html" class="mobile-link"><i class="bi bi-house"></i> Accueil</a>
-        <test class="mobile-section-title">Thèmes</test>
-        <test class="mobile-themes-grid text-white">
+        <div class="mobile-section-title">Thèmes</div>
+        <div class="mobile-themes-grid text-white">
             ${themes.map(t => `<a href="${pagesPath}${t.l}" class="mobile-theme-item">${t.e} ${t.t}</a>`).join('')}
-        </test>
-        <test class="mobile-section-title">Plus</test>
+        </div>
+        <div class="mobile-section-title">Plus</div>
         <a href="${pagesPath}espace/index.html" class="mobile-link active" style="background:var(--clr-primary); color:#fff; font-size: medium">
             <i class="bi bi-lock-fill"></i> Espace Animateur Privé
         </a>
