@@ -513,7 +513,10 @@ function initVotesSystem() {
         if (!text) return;
 
         const cleanText = text
-            .replace(/[\s\r\n\t/]+/g, '_')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-zA-Z0-9]/g, '_')
+            .replace(/_+/g, '_')
             .toLowerCase()
             .substring(0, 80);
         
@@ -531,6 +534,7 @@ function initVotesSystem() {
         const voteContainer = document.createElement('span');
         voteContainer.className = 'vote-container';
         voteContainer.setAttribute('data-vote-id', item.voteId);
+        item.container = voteContainer; // Référence directe pour éviter querySelector
 
         const userVoteKey = `vote_${item.voteId}`;
         const localVote = localStorage.getItem(userVoteKey);
@@ -580,9 +584,10 @@ function initVotesSystem() {
 
         itemsToVote.forEach(item => {
             const count = Math.max(0, votesMap[item.voteId] || 0);
-            const container = item.li.querySelector(`.vote-container[data-vote-id="${item.voteId}"]`);
+            const container = item.container || item.li.querySelector(`.vote-container`);
             if (container) {
-                container.querySelector('.vote-count-up').innerText = count;
+                const countUpSpan = container.querySelector('.vote-count-up');
+                if (countUpSpan) countUpSpan.innerText = count;
             }
         });
     }).catch(err => {
@@ -606,11 +611,13 @@ function initVotesSystem() {
 
                             itemsToVote.forEach(item => {
                                 const count = Math.max(0, negVotesMap[item.voteId] || 0);
-                                const container = item.li.querySelector(`.vote-container[data-vote-id="${item.voteId}"]`);
+                                const container = item.container || item.li.querySelector(`.vote-container`);
                                 if (container) {
                                     const countDownSpan = container.querySelector('.vote-count-down');
-                                    countDownSpan.innerText = count;
-                                    countDownSpan.style.display = 'inline';
+                                    if (countDownSpan) {
+                                        countDownSpan.innerText = count;
+                                        countDownSpan.style.display = 'inline';
+                                    }
                                 }
                             });
                         }).catch(err => {
@@ -798,7 +805,7 @@ function setupAdminTooltips(itemsToVote) {
     }
 
     itemsToVote.forEach(item => {
-        const container = item.li.querySelector(`.vote-container[data-vote-id="${item.voteId}"]`);
+        const container = item.container || item.li.querySelector('.vote-container');
         if (!container) return;
 
         const btnUp = container.querySelector('.vote-up');
