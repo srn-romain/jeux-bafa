@@ -17,8 +17,9 @@ db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
     const disabledContent = document.getElementById('signupDisabledContent');
     
     if (enabledContent && disabledContent) {
-        // La création est désactivée si allowSignup === false
-        if (doc.exists && doc.data().allowSignup === false) {
+        // La création est désactivée si allowSignup === false ou "false"
+        const isSignupDisabled = doc.exists && (doc.data().allowSignup === false || doc.data().allowSignup === 'false');
+        if (isSignupDisabled) {
             enabledContent.classList.add('hidden');
             disabledContent.classList.remove('hidden');
         } else {
@@ -127,7 +128,7 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
     try {
         // Sécurité supplémentaire : vérifier l'autorisation D'ABORD
         const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
-        if (globalDoc.exists && globalDoc.data().allowSignup === false) {
+        if (globalDoc.exists && (globalDoc.data().allowSignup === false || globalDoc.data().allowSignup === 'false')) {
             window.isSigningUp = false;
             btnLoading(btn, false);
             msgEl.textContent = "La création de compte est actuellement fermée par le directeur.";
@@ -179,20 +180,39 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
 
-    // Récupérer les données utilisateur (rôle)
-    const userDoc = await db.collection('users').doc(user.uid).get();
-    if (!userDoc.exists) {
-        await auth.signOut();
-        return;
+    // Récupérer les données utilisateur (rôle) avec fallback hors ligne
+    let userData = null;
+    try {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (!userDoc.exists) {
+            await auth.signOut();
+            return;
+        }
+        userData = userDoc.data();
+        if (typeof setCachedUserData === 'function') {
+            setCachedUserData(user.uid, userData);
+        }
+    } catch (err) {
+        console.warn("Offline auth fallback for userDoc:", err);
+        if (typeof getCachedUserData === 'function') {
+            userData = getCachedUserData(user.uid);
+        }
+        if (!userData) {
+            userData = {
+                displayName: user.displayName || user.email,
+                email: user.email,
+                role: localStorage.getItem('offline_user_role_' + user.uid) || localStorage.getItem('offline_user_role') || 'anim'
+            };
+        }
     }
-    const userData = userDoc.data();
+
     if (userData.banned === true) {
         return; // Centralized handler will show ban screen
     }
     
     // Initialiser les données de l'utilisateur
     currentUser = user;
-    actualRole = userData.role;
+    actualRole = userData.role || 'anim';
     actualUserData = userData;
 
     // Masquer login, afficher dashboard
@@ -210,13 +230,15 @@ auth.onAuthStateChanged(async (user) => {
         document.getElementById('adminControlsPanel')?.classList.add('hidden');
     }
 
-    // Mettre à jour la date de dernière connexion
-    try {
-        await db.collection('users').doc(user.uid).update({
-            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-        });
-    } catch (err) {
-        console.error("Erreur mise à jour profil :", err);
+    // Mettre à jour la date de dernière connexion si en ligne
+    if (navigator.onLine) {
+        try {
+            await db.collection('users').doc(user.uid).update({
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (err) {
+            console.warn("Erreur mise à jour lastLogin profil :", err);
+        }
     }
 
     // Gérer les désabonnements pour éviter les doublons
@@ -430,165 +452,259 @@ async function loadColos(user, role) {
     grid.classList.add('hidden');
     empty.classList.add('hidden');
 
+    // Cacher la bannière hors ligne par défaut
+    const existingOfflineBanner = document.getElementById('dashOfflineBanner');
+    if (existingOfflineBanner) existingOfflineBanner.classList.add('hidden');
+
+    let colosList = [];
+    let animCounts = {};
+    let accessMap = {};
+    let isOfflineMode = !navigator.onLine;
+
     try {
         // Récupérer toutes les colos triées par date de début (la plus récente en haut)
         const snapshot = await db.collection('espaces').orderBy('dateDebut', 'desc').get();
+        colosList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
         // Récupérer la configuration globale Récap BAFA
-        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
-        globalRecapBafaUrl = globalDoc.exists ? (globalDoc.data().recapBafaUrl || '') : '';
-
-        // Récupérer tous les accès approuvés pour compter les anims par colo (une seule requête)
-        const animCounts = {};
-        const allApprovedSnap = await db.collection('accessRequests').where('status', '==', 'approved').get();
-        allApprovedSnap.forEach(d => {
-            const eid = d.data().espaceId;
-            animCounts[eid] = (animCounts[eid] || 0) + 1;
-        });
-
-        loader.classList.add('hidden');
-
-        // Calcul et affichage de la bannière de statistiques globales admin
-        let totalEspaces = snapshot.docs.length;
-        let nbFormations = 0;
-        let nbColos = 0;
-
-        snapshot.docs.forEach(doc => {
-            if (doc.data().isFormation === true) {
-                nbFormations++;
-            } else {
-                nbColos++;
+        try {
+            const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+            globalRecapBafaUrl = globalDoc.exists ? (globalDoc.data().recapBafaUrl || '') : '';
+            if (globalDoc.exists) {
+                localStorage.setItem('offline_global_settings', JSON.stringify(globalDoc.data()));
             }
-        });
+        } catch (e) {}
 
-        const adminBanner = document.getElementById('adminGlobalStatsBanner');
-        if (role === 'admin' && adminBanner) {
-            adminBanner.innerHTML = `
-                <div class="es-admin-stats-banner">
-                    <div class="es-admin-stat-card active" id="statCardTotal" onclick="filterColos('all')" title="Afficher tous les espaces">
-                        <div class="es-admin-stat-card__icon es-admin-stat-card__icon--total">
-                            <i class="bi bi-grid-fill"></i>
-                        </div>
-                        <div class="es-admin-stat-card__content">
-                            <div class="es-admin-stat-card__value">${totalEspaces}</div>
-                            <div class="es-admin-stat-card__label">Total Espaces</div>
-                        </div>
-                    </div>
-                    <div class="es-admin-stat-card" id="statCardFormation" onclick="filterColos('formation')" title="Filtrer les formations">
-                        <div class="es-admin-stat-card__icon es-admin-stat-card__icon--formation">
-                            <i class="bi bi-mortarboard-fill"></i>
-                        </div>
-                        <div class="es-admin-stat-card__content">
-                            <div class="es-admin-stat-card__value">${nbFormations}</div>
-                            <div class="es-admin-stat-card__label">Formations</div>
-                        </div>
-                    </div>
-                    <div class="es-admin-stat-card" id="statCardColo" onclick="filterColos('colo')" title="Filtrer les colonies">
-                        <div class="es-admin-stat-card__icon es-admin-stat-card__icon--colo">
-                            <i class="bi bi-tree-fill"></i>
-                        </div>
-                        <div class="es-admin-stat-card__content">
-                            <div class="es-admin-stat-card__value">${nbColos}</div>
-                            <div class="es-admin-stat-card__label">Colonies</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            adminBanner.classList.remove('hidden');
-        } else if (adminBanner) {
-            adminBanner.classList.add('hidden');
-            adminBanner.innerHTML = '';
-        }
-
-        // Calcul et affichage de la barre de filtrage par année
-        const yearsSet = new Set();
-        snapshot.docs.forEach(doc => {
-            const data = doc.data();
-            const visible = data.visible !== false;
-            if (role === 'anim' && !visible) return; // ignore les espaces invisibles pour les anims
-
-            if (data.dateDebut) {
-                const year = data.dateDebut.split('-')[0];
-                if (year && year.length === 4) {
-                    yearsSet.add(year);
-                }
-            }
-        });
-        const uniqueYears = Array.from(yearsSet).sort((a, b) => b - a);
-
-        const yearBanner = document.getElementById('yearFilterBar');
-        if (yearBanner && uniqueYears.length > 0) {
-            let pillsHtml = `
-                <div class="es-year-filter-bar">
-                    <div class="es-year-filter-label">
-                        <i class="bi bi-calendar3"></i> Années :
-                    </div>
-                    <div class="es-year-filter-pill active" data-year="all" onclick="filterColosYear('all')">
-                        Toutes
-                    </div>
-            `;
-            uniqueYears.forEach(yr => {
-                pillsHtml += `
-                    <div class="es-year-filter-pill" data-year="${yr}" onclick="filterColosYear('${yr}')">
-                        ${yr}
-                    </div>
-                `;
+        // Récupérer tous les accès approuvés pour compter les anims par colo
+        try {
+            const allApprovedSnap = await db.collection('accessRequests').where('status', '==', 'approved').get();
+            allApprovedSnap.forEach(d => {
+                const eid = d.data().espaceId;
+                animCounts[eid] = (animCounts[eid] || 0) + 1;
             });
-            pillsHtml += `</div>`;
-            yearBanner.innerHTML = pillsHtml;
-            yearBanner.classList.remove('hidden');
-        } else if (yearBanner) {
-            yearBanner.classList.add('hidden');
-            yearBanner.innerHTML = '';
-        }
-
-        if (snapshot.empty) {
-            empty.classList.remove('hidden');
-            return;
-        }
+        } catch (e) {}
 
         // Si animateur, récupérer ses propres demandes d'accès
-        let accessMap = {};
         if (role === 'anim') {
-            const accessSnap = await db.collection('accessRequests')
-                .where('userId', '==', user.uid).get();
-            accessSnap.forEach(d => {
-                accessMap[d.data().espaceId] = d.data().status;
-            });
+            try {
+                const accessSnap = await db.collection('accessRequests')
+                    .where('userId', '==', user.uid).get();
+                accessSnap.forEach(d => {
+                    accessMap[d.data().espaceId] = d.data().status;
+                });
+            } catch (e) {}
         }
 
-        grid.innerHTML = '';
-        for (const doc of snapshot.docs) {
-            const colo = { id: doc.id, ...doc.data() };
-            const visible = colo.visible !== false;
-
-            // SI ANIMATEUR : On cache totalement si non visible
-            if (role === 'anim' && !visible) continue;
-
-            let accessStatus = role === 'admin' ? 'admin' : (accessMap[colo.id] || 'none');
-            const nbAnims = animCounts[colo.id] || 0;
-
-            // Compter participants (Utilise le champ 'nbParticipants' s'il existe, sinon 0 pour éviter N+1 reads)
-            // Note: Pour une optimisation totale, incrémenter ce champ lors de l'ajout d'un participant.
-            let nbParticipants = colo.nbParticipants || 0;
-
-            grid.appendChild(buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role));
-        }
-
-        grid.classList.remove('hidden');
-
-        if (role === 'anim') {
-            subtitle.textContent = 'Clique sur une colonie pour demander ou accéder à son espace.';
-        } else {
-            subtitle.textContent = 'Gérez vos espaces ci-dessous ou ouvrez le panneau admin.';
+        // Sauvegarder dans le cache local (en nettoyant les images base64 lourdes pour éviter QuotaExceededError)
+        try {
+            const sanitizedColos = colosList.map(c => ({
+                id: c.id,
+                nom: c.nom || '',
+                emoji: c.emoji || '🏕️',
+                organisme: c.organisme || '',
+                dateDebut: c.dateDebut || '',
+                dateFin: c.dateFin || '',
+                isFormation: !!c.isFormation,
+                archived: !!c.archived,
+                visible: c.visible !== false,
+                nbParticipants: c.nbParticipants || 0,
+                bgImage: (c.bgImage && !c.bgImage.startsWith('data:')) ? c.bgImage : ''
+            }));
+            localStorage.setItem('offline_espaces_list', JSON.stringify(sanitizedColos));
+            localStorage.setItem('offline_anim_counts', JSON.stringify(animCounts));
+            localStorage.setItem('offline_access_map_' + user.uid, JSON.stringify(accessMap));
+            localStorage.setItem('offline_dashboard_sync', Date.now().toString());
+        } catch (storageErr) {
+            console.warn("Erreur sauvegarde cache colos:", storageErr);
         }
 
     } catch (err) {
-        loader.classList.add('hidden');
-        console.error('Erreur chargement colos:', err);
-        showToast('Erreur lors du chargement des espaces.', 'error');
+        console.warn('Mode hors ligne ou échec réseau sur le dashboard:', err);
+        isOfflineMode = true;
+
+        // Fallback local storage
+        try {
+            const cachedList = localStorage.getItem('offline_espaces_list');
+            if (cachedList) {
+                colosList = JSON.parse(cachedList);
+            }
+            const cachedAnimCounts = localStorage.getItem('offline_anim_counts');
+            if (cachedAnimCounts) {
+                animCounts = JSON.parse(cachedAnimCounts);
+            }
+            const cachedAccess = localStorage.getItem('offline_access_map_' + user.uid);
+            if (cachedAccess) {
+                accessMap = JSON.parse(cachedAccess);
+            }
+            const cachedGlobal = localStorage.getItem('offline_global_settings');
+            if (cachedGlobal) {
+                const gData = JSON.parse(cachedGlobal);
+                globalRecapBafaUrl = gData.recapBafaUrl || '';
+            }
+        } catch (parseErr) {
+            console.error("Erreur lecture cache local:", parseErr);
+        }
+    }
+
+    loader.classList.add('hidden');
+
+    // Afficher la bannière hors ligne si en mode hors ligne
+    if (isOfflineMode) {
+        let banner = document.getElementById('dashOfflineBanner');
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = 'dashOfflineBanner';
+            banner.className = 'es-offline-banner';
+            grid.parentElement.insertBefore(banner, grid);
+        }
+        const syncTime = localStorage.getItem('offline_dashboard_sync');
+        const syncDateStr = syncTime ? new Date(parseInt(syncTime, 10)).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+        banner.innerHTML = `
+            <i class="bi bi-wifi-off"></i>
+            <div>
+                <strong>Mode hors ligne</strong>
+                <span class="es-offline-time">Affichage des séjours enregistrés en cache ${syncDateStr ? `(dernière synchronisation : ${syncDateStr})` : ''}.</span>
+            </div>
+        `;
+        banner.classList.remove('hidden');
+    }
+
+    // Calcul et affichage de la bannière de statistiques globales admin
+    let totalEspaces = colosList.length;
+    let nbFormations = 0;
+    let nbColos = 0;
+
+    colosList.forEach(colo => {
+        if (colo.isFormation === true) {
+            nbFormations++;
+        } else {
+            nbColos++;
+        }
+    });
+
+    const adminBanner = document.getElementById('adminGlobalStatsBanner');
+    if (role === 'admin' && adminBanner) {
+        adminBanner.innerHTML = `
+            <div class="es-admin-stats-banner">
+                <div class="es-admin-stat-card active" id="statCardTotal" onclick="filterColos('all')" title="Afficher tous les espaces">
+                    <div class="es-admin-stat-card__icon es-admin-stat-card__icon--total">
+                        <i class="bi bi-grid-fill"></i>
+                    </div>
+                    <div class="es-admin-stat-card__content">
+                        <div class="es-admin-stat-card__value">${totalEspaces}</div>
+                        <div class="es-admin-stat-card__label">Total Espaces</div>
+                    </div>
+                </div>
+                <div class="es-admin-stat-card" id="statCardFormation" onclick="filterColos('formation')" title="Filtrer les formations">
+                    <div class="es-admin-stat-card__icon es-admin-stat-card__icon--formation">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
+                    <div class="es-admin-stat-card__content">
+                        <div class="es-admin-stat-card__value">${nbFormations}</div>
+                        <div class="es-admin-stat-card__label">Formations</div>
+                    </div>
+                </div>
+                <div class="es-admin-stat-card" id="statCardColo" onclick="filterColos('colo')" title="Filtrer les colonies">
+                    <div class="es-admin-stat-card__icon es-admin-stat-card__icon--colo">
+                        <i class="bi bi-tree-fill"></i>
+                    </div>
+                    <div class="es-admin-stat-card__content">
+                        <div class="es-admin-stat-card__value">${nbColos}</div>
+                        <div class="es-admin-stat-card__label">Colonies</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        adminBanner.classList.remove('hidden');
+    } else if (adminBanner) {
+        adminBanner.classList.add('hidden');
+        adminBanner.innerHTML = '';
+    }
+
+    // Calcul et affichage de la barre de filtrage par année
+    const yearsSet = new Set();
+    colosList.forEach(colo => {
+        const visible = colo.visible !== false;
+        if (role === 'anim' && !visible) return;
+
+        if (colo.dateDebut) {
+            const year = colo.dateDebut.split('-')[0];
+            if (year && year.length === 4) {
+                yearsSet.add(year);
+            }
+        }
+    });
+    const uniqueYears = Array.from(yearsSet).sort((a, b) => b - a);
+
+    const yearBanner = document.getElementById('yearFilterBar');
+    if (yearBanner && uniqueYears.length > 0) {
+        let pillsHtml = `
+            <div class="es-year-filter-bar">
+                <div class="es-year-filter-label">
+                    <i class="bi bi-calendar3"></i> Années :
+                </div>
+                <div class="es-year-filter-pill active" data-year="all" onclick="filterColosYear('all')">
+                    Toutes
+                </div>
+        `;
+        uniqueYears.forEach(yr => {
+            pillsHtml += `
+                <div class="es-year-filter-pill" data-year="${yr}" onclick="filterColosYear('${yr}')">
+                    ${yr}
+                </div>
+            `;
+        });
+        pillsHtml += `</div>`;
+        yearBanner.innerHTML = pillsHtml;
+        yearBanner.classList.remove('hidden');
+    } else if (yearBanner) {
+        yearBanner.classList.add('hidden');
+        yearBanner.innerHTML = '';
+    }
+
+    if (colosList.length === 0) {
+        empty.classList.remove('hidden');
+        if (isOfflineMode) {
+            empty.innerHTML = `
+                <div style="padding:40px 20px; text-align:center;">
+                    <i class="bi bi-wifi-off" style="font-size:2.5rem; opacity:0.4; margin-bottom:12px; display:block;"></i>
+                    <h3 style="margin-bottom:6px;">Aucun séjour disponible hors ligne</h3>
+                    <p style="color:var(--clr-text-muted);">Connectez-vous une première fois à Internet pour synchroniser vos séjours.</p>
+                </div>
+            `;
+        }
+        return;
+    }
+
+    grid.innerHTML = '';
+    for (const colo of colosList) {
+        const visible = colo.visible !== false;
+
+        // SI ANIMATEUR : On cache totalement si non visible
+        if (role === 'anim' && !visible) continue;
+
+        let accessStatus = role === 'admin' ? 'admin' : (accessMap[colo.id] || 'none');
+        const nbAnims = animCounts[colo.id] || 0;
+        let nbParticipants = colo.nbParticipants || 0;
+
+        grid.appendChild(buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role));
+    }
+
+    grid.classList.remove('hidden');
+
+    if (role === 'anim') {
+        subtitle.textContent = 'Clique sur une colonie pour demander ou accéder à son espace.';
+    } else {
+        subtitle.textContent = 'Gérez vos espaces ci-dessous ou ouvrez le panneau admin.';
     }
 }
+
+// Rafraîchir automatiquement le dashboard lorsque la connexion revient
+window.addEventListener('online', () => {
+    if (currentUser && currentRole) {
+        loadColos(currentUser, currentRole);
+    }
+});
 
 // ----------------------------------------------------------------
 // CONSTRUCTION D'UNE CARTE COLO
@@ -675,11 +791,18 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
         `;
     }
 
+    const isOfflineReady = !!localStorage.getItem('offline_participants_' + colo.id);
+
     card.innerHTML = `
         <div class="es-colo-card__header">
             <div>
                 <div class="es-colo-card__name">
                     ${colo.nom || 'Sans nom'}
+                    ${isOfflineReady ? `
+                        <span title="Liste des participants enregistrée pour consultation hors ligne" style="color:var(--clr-primary); margin-left:4px; font-size:0.85rem; vertical-align:middle; display:inline-flex; align-items:center;" class="offline-ready-icon">
+                            <i class="bi bi-cloud-check-fill"></i>
+                        </span>
+                    ` : ''}
                     ${isUpcoming ? `
                         <span class="es-colo-card__badge-tag ${!showTags ? 'es-tags--hidden' : ''}" style="background:rgba(52,152,219,0.25);color:#ffffff;border:1px solid rgba(52,152,219,0.4);padding:1px 6px;border-radius:4px;font-size:0.6rem;text-transform:uppercase;margin-left:5px;font-weight:800;vertical-align:middle;text-shadow:none;white-space:nowrap;">
                             À venir
@@ -748,6 +871,11 @@ function handleColoClick(colo, accessStatus) {
     if (accessStatus === 'admin' || accessStatus === 'approved') {
         // Accès direct → rediriger vers espace.html?id=...
         window.location.href = `espace.html?id=${colo.id}`;
+        return;
+    }
+
+    if (!navigator.onLine) {
+        showToast("Vous êtes hors ligne. La demande d'accès nécessite une connexion internet.", "warning");
         return;
     }
 

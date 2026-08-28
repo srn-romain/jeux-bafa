@@ -195,10 +195,36 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
 
-    const userDoc = await db.collection('users').doc(user.uid).get();
-    if (!userDoc.exists) { auth.signOut(); window.location.href = 'index.html'; return; }
-    const role = userDoc.data().role;
-    const userData = userDoc.data();
+    let userData = null;
+    let role = 'anim';
+
+    try {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+            userData = userDoc.data();
+            role = userData.role || 'anim';
+            if (typeof setCachedUserData === 'function') {
+                setCachedUserData(user.uid, userData);
+            }
+        } else {
+            await auth.signOut();
+            window.location.href = 'index.html';
+            return;
+        }
+    } catch (err) {
+        console.warn("Mode hors ligne pour le profil utilisateur:", err);
+        if (typeof getCachedUserData === 'function') {
+            userData = getCachedUserData(user.uid);
+        }
+        if (!userData) {
+            userData = {
+                displayName: user.displayName || user.email,
+                email: user.email,
+                role: localStorage.getItem('offline_user_role_' + user.uid) || localStorage.getItem('offline_user_role') || 'anim'
+            };
+        }
+        role = userData.role || 'anim';
+    }
 
     if (userData.banned === true) {
         return; // Centralized handler will show ban screen
@@ -209,15 +235,17 @@ auth.onAuthStateChanged(async (user) => {
         localStorage.setItem('pinnedColos', JSON.stringify(userData.pinnedColos));
     } else {
         const localPinned = localStorage.getItem('pinnedColos');
-        if (localPinned) {
+        if (localPinned && navigator.onLine) {
             db.collection('users').doc(user.uid).update({
                 pinnedColos: JSON.parse(localPinned)
             }).catch(err => console.error("Erreur init pinnedColos BDD:", err));
         }
     }
 
-    // Mettre à jour lastLogin
-    db.collection('users').doc(user.uid).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
+    // Mettre à jour lastLogin si en ligne
+    if (navigator.onLine) {
+        db.collection('users').doc(user.uid).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+    }
 
     currentUser = user;
     currentRole = role;
@@ -228,30 +256,67 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
 
-    // Vérifier si l'espace existe
+    // Vérifier si l'espace existe (avec support hors ligne)
+    let colo = null;
     try {
         const espaceDoc = await db.collection('espaces').doc(espaceId).get();
-        if (!espaceDoc.exists) {
+        if (espaceDoc.exists) {
+            colo = { id: espaceDoc.id, ...espaceDoc.data() };
+            try {
+                const sanitized = {
+                    id: colo.id,
+                    nom: colo.nom || '',
+                    emoji: colo.emoji || '🏕️',
+                    organisme: colo.organisme || '',
+                    dateDebut: colo.dateDebut || '',
+                    dateFin: colo.dateFin || '',
+                    isFormation: !!colo.isFormation,
+                    archived: !!colo.archived,
+                    visible: colo.visible !== false,
+                    nbParticipants: colo.nbParticipants || 0,
+                    bgImage: (colo.bgImage && !colo.bgImage.startsWith('data:')) ? colo.bgImage : ''
+                };
+                localStorage.setItem('offline_colo_' + espaceId, JSON.stringify(sanitized));
+            } catch (e) {}
+        } else {
             showAccessDenied('❓', 'Espace introuvable', 'Cet espace n\'existe pas ou a été supprimé.');
             return;
         }
-
-        const colo = { id: espaceDoc.id, ...espaceDoc.data() };
-        const visible = colo.visible !== false;
-
-        // SI ANIMATEUR : On bloque l'accès si la colo est masquée par le directeur
-        if (role === 'anim' && !visible) {
-            showAccessDenied('🔒', 'Bientôt disponible', 'Le directeur a temporairement masqué cet espace le temps de sa préparation.', true);
+    } catch (err) {
+        console.warn('Mode hors ligne pour les données de la colonie:', err);
+        const cachedColo = localStorage.getItem('offline_colo_' + espaceId);
+        if (cachedColo) {
+            colo = JSON.parse(cachedColo);
+        } else {
+            // Chercher dans la liste globale du dashboard
+            try {
+                const list = JSON.parse(localStorage.getItem('offline_espaces_list') || '[]');
+                colo = list.find(c => c.id === espaceId);
+            } catch (e) {}
+        }
+        if (!colo) {
+            showAccessDenied('⚠️', 'Mode hors ligne', 'Ce séjour n\'est pas encore enregistré dans votre cache local. Connectez-vous à Internet une première fois.');
             return;
         }
+    }
 
-        // Admin → accès direct
-        if (role === 'admin') {
-            initColoContent(colo, role);
-            return;
-        }
+    const visible = colo.visible !== false;
 
-        // Anim → vérifier le statut d'accès
+    // SI ANIMATEUR : On bloque l'accès si la colo est masquée par le directeur
+    if (role === 'anim' && !visible) {
+        showAccessDenied('🔒', 'Bientôt disponible', 'Le directeur a temporairement masqué cet espace le temps de sa préparation.', true);
+        return;
+    }
+
+    // Admin → accès direct
+    if (role === 'admin') {
+        initColoContent(colo, role);
+        return;
+    }
+
+    // Anim → vérifier le statut d'accès (avec support hors ligne)
+    let req = null;
+    try {
         const reqSnap = await db.collection('accessRequests')
             .where('userId', '==', user.uid)
             .where('espaceId', '==', espaceId)
@@ -262,24 +327,41 @@ auth.onAuthStateChanged(async (user) => {
             return;
         }
 
-        const req = reqSnap.docs[0].data();
-        if (req.status === 'pending') {
-            showAccessDenied('⏳', 'Demande en attente', 'Ta demande d\'accès est en cours de validation par le directeur.', true);
-            return;
-        }
-        if (req.status === 'refused') {
-            showAccessDenied('🚫', 'Accès refusé', 'Ton accès à cet espace a été refusé. Contacte le directeur.', false, true);
-            return;
-        }
-
-        // approved
-        isAnimAdmin = (req.espaceRole === 'anim-admin');
-        initColoContent(colo, role);
-
+        req = reqSnap.docs[0].data();
+        localStorage.setItem(`offline_access_${user.uid}_${espaceId}`, JSON.stringify(req));
     } catch (err) {
-        console.error('Erreur vérification accès:', err);
-        showAccessDenied('⚠️', 'Erreur', 'Impossible de vérifier tes droits d\'accès.');
+        console.warn('Mode hors ligne pour la vérification des accès:', err);
+        const cachedReq = localStorage.getItem(`offline_access_${user.uid}_${espaceId}`);
+        if (cachedReq) {
+            req = JSON.parse(cachedReq);
+        } else {
+            // Vérifier dans la map d'accès du dashboard
+            try {
+                const accessMap = JSON.parse(localStorage.getItem('offline_access_map_' + user.uid) || '{}');
+                if (accessMap[espaceId] === 'approved') {
+                    req = { status: 'approved', espaceRole: 'anim' };
+                }
+            } catch (e) {}
+        }
+
+        if (!req) {
+            showAccessDenied('⚠️', 'Mode hors ligne', 'Impossible de vérifier vos droits d\'accès en mode hors ligne.');
+            return;
+        }
     }
+
+    if (req.status === 'pending') {
+        showAccessDenied('⏳', 'Demande en attente', 'Ta demande d\'accès est en cours de validation par le directeur.', true);
+        return;
+    }
+    if (req.status === 'refused') {
+        showAccessDenied('🚫', 'Accès refusé', 'Ton accès à cet espace a été refusé. Contacte le directeur.', false, true);
+        return;
+    }
+
+    // approved
+    isAnimAdmin = (req.espaceRole === 'anim-admin');
+    initColoContent(colo, role);
 });
 
 // ----------------------------------------------------------------
@@ -743,12 +825,63 @@ function initTabs() {
 }
 
 // ----------------------------------------------------------------
+// BANNIÈRE HORS LIGNE PARTICIPANTS
+// ----------------------------------------------------------------
+function updateOfflineParticipantsBanner(isOffline, syncTime = null) {
+    let banner = document.getElementById('participantsOfflineBanner');
+    const card = document.querySelector('#tab-participants .es-card');
+    if (isOffline) {
+        if (!banner && card) {
+            banner = document.createElement('div');
+            banner.id = 'participantsOfflineBanner';
+            banner.className = 'es-offline-banner';
+            card.insertBefore(banner, card.firstChild);
+        }
+        if (banner) {
+            const syncDateStr = syncTime ? new Date(parseInt(syncTime, 10)).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+            banner.innerHTML = `
+                <i class="bi bi-wifi-off"></i>
+                <div>
+                    <strong>Mode hors ligne actif</strong>
+                    <span class="es-offline-time">Affichage des participants enregistrés en cache local ${syncDateStr ? `(dernière synchronisation : ${syncDateStr})` : ''}.</span>
+                </div>
+            `;
+            banner.classList.remove('hidden');
+        }
+    } else {
+        if (banner) banner.classList.add('hidden');
+    }
+}
+
+// ----------------------------------------------------------------
 // CHARGER LES PARTICIPANTS
 // ----------------------------------------------------------------
 async function loadParticipants(coloId, role) {
-    // Afficher un skeleton pendant le chargement
+    // 1. Essayer de charger immédiatement depuis le cache local (pour un affichage instantané)
+    let hasLoadedFromCache = false;
+    try {
+        const cached = localStorage.getItem('offline_participants_' + coloId);
+        if (cached) {
+            participants = JSON.parse(cached);
+            hasLoadedFromCache = true;
+            buildFilters();
+            renderParticipantsTable(role);
+            buildAgeGroupCheckboxes();
+            updateStats();
+            selectDefaultAIAgeRange();
+            regenerateGroups();
+            if (!navigator.onLine) {
+                const syncTime = localStorage.getItem('offline_participants_sync_' + coloId);
+                updateOfflineParticipantsBanner(true, syncTime);
+            }
+        }
+    } catch (e) {
+        console.warn("Erreur lecture participants cache local:", e);
+    }
+
+    // Afficher un skeleton pendant le chargement si aucun participant n'est encore affiché
     const tbodyEarly = document.getElementById('participantsTbody');
-    if (tbodyEarly && tbodyEarly.children.length === 0) {
+    if (!hasLoadedFromCache && tbodyEarly && tbodyEarly.children.length === 0) {
         tbodyEarly.innerHTML = Array.from({ length: 5 }, () => `
             <tr class="es-skeleton-row">
                 <td><div class="es-skeleton" style="width:20px;height:16px;"></div></td>
@@ -762,9 +895,20 @@ async function loadParticipants(coloId, role) {
                 <td></td>
             </tr>`).join('');
     }
+
     try {
         const snap = await db.collection('espaces').doc(coloId).collection('participants').orderBy('nom').get();
         participants = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Sauvegarder dans le cache local
+        try {
+            localStorage.setItem('offline_participants_' + coloId, JSON.stringify(participants));
+            localStorage.setItem('offline_participants_sync_' + coloId, Date.now().toString());
+        } catch (storageErr) {
+            console.warn("Erreur stockage offline participants:", storageErr);
+        }
+
+        updateOfflineParticipantsBanner(false);
 
         // Gérer la visibilité du bouton réinitialiser (uniquement si admin et liste non vide)
         const deleteAllBtn = document.getElementById('btnDeleteAllParticipants');
@@ -783,30 +927,44 @@ async function loadParticipants(coloId, role) {
         selectDefaultAIAgeRange();
         regenerateGroups();
     } catch (err) {
-        console.error('loadParticipants:', err);
-        // Afficher un message d'erreur réseau dans le tableau (et non "Aucun participant")
-        const tbody = document.getElementById('participantsTbody');
-        if (tbody) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="9" style="padding:36px 24px; text-align:center;">
-                        <div style="display:inline-flex; flex-direction:column; align-items:center; gap:12px; max-width:340px;">
-                            <div style="width:52px; height:52px; border-radius:50%; background:rgba(var(--clr-danger-rgb,212,0,0),0.1); display:flex; align-items:center; justify-content:center;">
-                                <i class="bi bi-wifi-off" style="font-size:1.5rem; color:var(--clr-danger, #d40000);"></i>
+        console.warn('loadParticipants échec réseau / mode hors ligne:', err);
+        const cached = localStorage.getItem('offline_participants_' + coloId);
+        if (cached) {
+            participants = JSON.parse(cached);
+            const syncTime = localStorage.getItem('offline_participants_sync_' + coloId);
+            updateOfflineParticipantsBanner(true, syncTime);
+
+            buildFilters();
+            renderParticipantsTable(role);
+            buildAgeGroupCheckboxes();
+            updateStats();
+            selectDefaultAIAgeRange();
+            regenerateGroups();
+        } else {
+            // Afficher un message d'erreur réseau dans le tableau (uniquement si aucun cache)
+            const tbody = document.getElementById('participantsTbody');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="9" style="padding:36px 24px; text-align:center;">
+                            <div style="display:inline-flex; flex-direction:column; align-items:center; gap:12px; max-width:340px;">
+                                <div style="width:52px; height:52px; border-radius:50%; background:rgba(var(--clr-danger-rgb,212,0,0),0.1); display:flex; align-items:center; justify-content:center;">
+                                    <i class="bi bi-wifi-off" style="font-size:1.5rem; color:var(--clr-danger, #d40000);"></i>
+                                </div>
+                                <div>
+                                    <p style="margin:0 0 4px; font-weight:600; color:var(--clr-text);">Impossible de charger les participants</p>
+                                    <p style="margin:0; font-size:0.85rem; color:var(--clr-text-muted);">Vérifiez votre connexion internet et réessayez.</p>
+                                </div>
+                                <button class="es-btn es-btn--sm" onclick="loadParticipants('${coloId}', '${role}')" style="margin-top:4px;">
+                                    <i class="bi bi-arrow-clockwise"></i> Réessayer
+                                </button>
                             </div>
-                            <div>
-                                <p style="margin:0 0 4px; font-weight:600; color:var(--clr-text);">Impossible de charger les participants</p>
-                                <p style="margin:0; font-size:0.85rem; color:var(--clr-text-muted);">Vérifiez votre connexion internet et réessayez.</p>
-                            </div>
-                            <button class="es-btn es-btn--sm" onclick="loadParticipants('${coloId}', '${role}')" style="margin-top:4px;">
-                                <i class="bi bi-arrow-clockwise"></i> Réessayer
-                            </button>
-                        </div>
-                    </td>
-                </tr>`;
+                        </td>
+                    </tr>`;
+            }
+            const counter = document.getElementById('participantsCounter');
+            if (counter) counter.textContent = '';
         }
-        const counter = document.getElementById('participantsCounter');
-        if (counter) counter.textContent = '';
     }
 }
 
@@ -1814,6 +1972,10 @@ document.getElementById('btnInfoDRAJES')?.addEventListener('click', () => {
 });
 
 document.getElementById('btnAddParticipant')?.addEventListener('click', () => {
+    if (!navigator.onLine) {
+        showToast("Vous êtes hors ligne. L'ajout d'un participant nécessite une connexion internet.", "warning");
+        return;
+    }
     editingParticipantId = null;
     document.getElementById('participantModalTitle').textContent = 'Ajouter un participant';
     document.getElementById('participantForm')?.reset();
@@ -1881,6 +2043,10 @@ document.getElementById('btnCloseParticipant')?.addEventListener('click', () => 
 document.getElementById('btnCancelParticipant')?.addEventListener('click', () => closeModal('overlayParticipant'));
 
 document.getElementById('btnSaveParticipant')?.addEventListener('click', async () => {
+    if (!navigator.onLine) {
+        showToast("Vous êtes hors ligne. L'enregistrement nécessite une connexion internet.", "warning");
+        return;
+    }
     if (isColoArchived) {
         showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
         closeModal('overlayParticipant');
@@ -1955,6 +2121,10 @@ document.getElementById('btnSaveParticipant')?.addEventListener('click', async (
 });
 
 async function deleteParticipant(id, nom) {
+    if (!navigator.onLine) {
+        showToast("Vous êtes hors ligne. La suppression nécessite une connexion internet.", "warning");
+        return;
+    }
     if (isColoArchived) {
         showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
         return;
@@ -2974,41 +3144,52 @@ async function saveCustomRole(btn) {
 
 async function loadGroups(id, role) {
     if (!id) return;
+
+    // Charger immédiatement depuis le cache si disponible
+    try {
+        const cached = localStorage.getItem('offline_groups_' + id);
+        if (cached) {
+            currentGroups = JSON.parse(cached);
+        }
+    } catch (e) {}
+
     try {
         const snap = await db.collection('espaces').doc(id).collection('groups').orderBy('name').get();
         currentGroups = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        // Afficher/Cacher le champ groupe dans le formulaire participant
-        const field = document.getElementById('fieldParticipantGroup');
-        if (field) {
-            field.classList.toggle('hidden', currentGroups.length === 0);
-        }
-
-        // Mettre à jour le select dans le formulaire participant
-        const select = document.getElementById('pGroup');
-        if (select) {
-            const val = select.value;
-            select.innerHTML = '<option value="">-- Aucun groupe --</option>' +
-                currentGroups.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
-            select.value = val;
-        }
-
-        // Afficher le bouton de gestion pour les admins et anims-admins (sauf si l'espace est archivé)
-        if ((role === 'admin' || isAnimAdmin) && !isColoArchived) {
-            document.getElementById('btnManageGroups')?.classList.remove('hidden');
-        } else {
-            document.getElementById('btnManageGroups')?.classList.add('hidden');
-        }
-
-        // Mettre à jour les filtres de la table participants
-        buildFilters();
-
-        // Re-render le tableau pour la colonne groupe
-        renderParticipantsTable(role);
-
+        try {
+            localStorage.setItem('offline_groups_' + id, JSON.stringify(currentGroups));
+        } catch (e) {}
     } catch (err) {
-        console.error('loadGroups error:', err);
+        console.warn('loadGroups mode hors ligne / échec réseau:', err);
     }
+
+    // Afficher/Cacher le champ groupe dans le formulaire participant
+    const field = document.getElementById('fieldParticipantGroup');
+    if (field) {
+        field.classList.toggle('hidden', currentGroups.length === 0);
+    }
+
+    // Mettre à jour le select dans le formulaire participant
+    const select = document.getElementById('pGroup');
+    if (select) {
+        const val = select.value;
+        select.innerHTML = '<option value="">-- Aucun groupe --</option>' +
+            currentGroups.map(g => `<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
+        select.value = val;
+    }
+
+    // Afficher le bouton de gestion pour les admins et anims-admins (sauf si l'espace est archivé)
+    if ((role === 'admin' || isAnimAdmin) && !isColoArchived) {
+        document.getElementById('btnManageGroups')?.classList.remove('hidden');
+    } else {
+        document.getElementById('btnManageGroups')?.classList.add('hidden');
+    }
+
+    // Mettre à jour les filtres de la table participants
+    buildFilters();
+
+    // Re-render le tableau pour la colonne groupe
+    renderParticipantsTable(role);
 }
 
 document.getElementById('btnManageGroups')?.addEventListener('click', () => {
@@ -5056,5 +5237,14 @@ document.getElementById('btnCloseArchiveColo')?.addEventListener('click', () => 
 document.getElementById('btnCancelArchiveColo')?.addEventListener('click', () => closeModal('overlayArchiveColo'));
 document.getElementById('btnConfirmArchiveColo')?.addEventListener('click', confirmArchiveSpace);
 document.getElementById('btnUnarchiveColo')?.addEventListener('click', unarchiveSpace);
+
+// Rafraîchissement automatique à la reconnexion
+window.addEventListener('online', () => {
+    if (espaceId && currentRole) {
+        loadParticipants(espaceId, currentRole);
+        loadGroups(espaceId, currentRole);
+    }
+});
+
 
 

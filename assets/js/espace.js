@@ -183,9 +183,18 @@ async function signInWithGoogle() {
                 showError(loginError, "La création de compte est actuellement fermée.");
                 return;
             }
+            let gFirstName = '';
+            let gLastName = '';
+            if (user.displayName) {
+                const parts = user.displayName.trim().split(' ');
+                gFirstName = parts[0] || '';
+                gLastName = parts.slice(1).join(' ') || '';
+            }
             await db.collection('users').doc(user.uid).set({
                 email: user.email,
-                displayName: user.displayName,
+                displayName: user.displayName || `${gFirstName} ${gLastName}`.trim(),
+                firstName: gFirstName,
+                lastName: gLastName,
                 role: 'anim',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });

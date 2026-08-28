@@ -21,6 +21,20 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
+// Activer la persistance hors ligne pour Firestore
+if (db.enablePersistence) {
+    db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
+        if (err.code === 'failed-precondition') {
+            console.warn('Persistance Firestore : plusieurs onglets ouverts.');
+        } else if (err.code === 'unimplemented') {
+            console.warn('Persistance Firestore non supportée par ce navigateur.');
+        } else {
+            console.warn('Erreur activation persistance Firestore:', err);
+        }
+    });
+}
+
 // Provider Google
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
+

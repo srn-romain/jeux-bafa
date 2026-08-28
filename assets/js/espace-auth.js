@@ -113,17 +113,60 @@ document.addEventListener('click', (e) => {
 // ----------------------------------------------------------------
 // Auth Google Provider (déclaré dans firebase-config.js)
 // ----------------------------------------------------------------
+// Gestion du cache local Utilisateur & Statut Réseau
+// ----------------------------------------------------------------
+function getCachedUserData(uid) {
+    try {
+        const stored = localStorage.getItem('offline_user_' + uid);
+        return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+function setCachedUserData(uid, data) {
+    if (!uid || !data) return;
+    try {
+        const cleanData = { ...data };
+        if (cleanData.photoURL && cleanData.photoURL.startsWith('data:') && cleanData.photoURL.length > 50000) {
+            delete cleanData.photoURL;
+        }
+        localStorage.setItem('offline_user_' + uid, JSON.stringify(cleanData));
+        localStorage.setItem('offline_last_uid', uid);
+        if (data.role) {
+            localStorage.setItem('offline_user_role_' + uid, data.role);
+            localStorage.setItem('offline_user_role', data.role);
+        }
+    } catch (e) {
+        console.warn("setCachedUserData quota warning:", e);
+    }
+}
+
+// Détection de connexion en ligne / hors ligne
+window.addEventListener('online', () => {
+    showToast("Connexion internet rétablie !", "success", 3000);
+});
+
+window.addEventListener('offline', () => {
+    showToast("Vous êtes hors ligne. Les données enregistrées restent accessibles.", "warning", 4500);
+});
 
 // ----------------------------------------------------------------
-// Récupérer le rôle depuis Firestore
+// Récupérer le rôle depuis Firestore ou le cache local
 // ----------------------------------------------------------------
 async function getUserRole(uid) {
+    if (!uid) return null;
     try {
         const doc = await firebase.firestore().collection('users').doc(uid).get();
-        return doc.exists ? (doc.data().role || null) : null;
-    } catch (e) {
-        console.error('getUserRole:', e);
+        if (doc.exists) {
+            const role = doc.data().role || null;
+            if (role) localStorage.setItem('offline_user_role_' + uid, role);
+            return role;
+        }
         return null;
+    } catch (e) {
+        console.warn('getUserRole fallback to local cache:', e);
+        return localStorage.getItem('offline_user_role_' + uid) || localStorage.getItem('offline_user_role') || 'anim';
     }
 }
 
@@ -131,6 +174,7 @@ async function getUserRole(uid) {
 // Mettre à jour le nom affiché dans la topbar
 // ----------------------------------------------------------------
 function updateTopbarUser(user, role, userData = null) {
+    if (user && userData) setCachedUserData(user.uid, userData);
     const nameEl = document.getElementById('userDisplayName');
     const badgeEl = document.getElementById('userBadge');
     const avatarEl = document.getElementById('userAvatar');
@@ -219,10 +263,21 @@ async function triggerOpenSettings() {
     const lastNameInput = document.getElementById('settingsLastName');
     const birthdateInput = document.getElementById('settingsBirthdate');
 
+    let firstName = data.firstName || '';
+    let lastName = data.lastName || '';
+
+    // Si le prénom et le nom ne sont pas renseignés séparément (ex: compte Google), on découpe automatiquement le displayName
+    if (!firstName && !lastName && (data.displayName || user.displayName)) {
+        const full = (data.displayName || user.displayName).trim();
+        const parts = full.split(' ');
+        firstName = parts[0] || '';
+        lastName = parts.slice(1).join(' ') || '';
+    }
+
     if (emailEl) emailEl.textContent = user.email;
     if (roleEl) roleEl.textContent = data.role === 'admin' ? 'Directeur' : 'Animateur';
-    if (firstNameInput) firstNameInput.value = data.firstName || data.displayName || '';
-    if (lastNameInput) lastNameInput.value = data.lastName || '';
+    if (firstNameInput) firstNameInput.value = firstName;
+    if (lastNameInput) lastNameInput.value = lastName;
     if (birthdateInput) birthdateInput.value = data.birthdate || '';
 
     const img = document.getElementById('settingsAvatarImg');
@@ -420,7 +475,8 @@ async function signInWithGoogle() {
     try {
         // 1. Vérifier si l'inscription globale est autorisée
         const globalDoc = await firebase.firestore().collection('globalSettings').doc('dashboard').get();
-        const allowSignup = !globalDoc.exists || globalDoc.data().allowSignup !== false;
+        const isSignupExplicitlyClosed = globalDoc.exists && (globalDoc.data().allowSignup === false || globalDoc.data().allowSignup === 'false');
+        const allowSignup = !isSignupExplicitlyClosed;
 
         // 2. Connexion / Auth Google via popup
         const result = await firebase.auth().signInWithPopup(googleProvider);
@@ -466,10 +522,21 @@ async function signInWithGoogle() {
                 return;
             }
 
+            // Découper le displayName Google en Prénom et Nom
+            let gFirstName = '';
+            let gLastName = '';
+            if (user.displayName) {
+                const parts = user.displayName.trim().split(' ');
+                gFirstName = parts[0] || '';
+                gLastName = parts.slice(1).join(' ') || '';
+            }
+
             // Inscription autorisée : créer le document Firestore
             await firebase.firestore().collection('users').doc(user.uid).set({
                 email: user.email,
-                displayName: user.displayName || '',
+                displayName: user.displayName || `${gFirstName} ${gLastName}`.trim(),
+                firstName: gFirstName,
+                lastName: gLastName,
                 photoURL: user.photoURL || '',
                 role: 'anim',
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -477,10 +544,21 @@ async function signInWithGoogle() {
         } else {
             // UTILISATEUR EXISTANT : Connexion normale
             const currentData = doc.data();
+            const updates = {};
+
+            // Si le prénom et le nom sont manquants, les extraire automatiquement du compte Google
+            if (!currentData.firstName && !currentData.lastName && (user.displayName || currentData.displayName)) {
+                const parts = (user.displayName || currentData.displayName).trim().split(' ');
+                updates.firstName = parts[0] || '';
+                updates.lastName = parts.slice(1).join(' ') || '';
+            }
+
             if (!currentData.photoURL && user.photoURL) {
-                await firebase.firestore().collection('users').doc(user.uid).update({
-                    photoURL: user.photoURL
-                });
+                updates.photoURL = user.photoURL;
+            }
+
+            if (Object.keys(updates).length > 0) {
+                await firebase.firestore().collection('users').doc(user.uid).update(updates);
             }
         }
         
