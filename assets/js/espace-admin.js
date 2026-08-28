@@ -249,15 +249,17 @@ function applyAdminNotesHighlight(color) {
 async function loadConfig() {
     if (!currentAdminUser) return;
     try {
+        let loadedGeminiKey = '';
         const doc = await db.collection('users').doc(currentAdminUser.uid).get();
-        if (doc.exists) {
-            const data = doc.data();
-            const input = document.getElementById('adminGeminiKey');
-            if (input) input.value = data.geminiKey || '';
+        if (doc.exists && doc.data().geminiKey) {
+            loadedGeminiKey = doc.data().geminiKey;
         }
 
         const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
         if (globalDoc.exists) {
+            if (globalDoc.data().geminiKey && !loadedGeminiKey) {
+                loadedGeminiKey = globalDoc.data().geminiKey;
+            }
             const checkSignup = document.getElementById('checkAllowSignup');
             if (checkSignup) {
                 checkSignup.checked = globalDoc.data().allowSignup !== false; // true par défaut
@@ -297,6 +299,9 @@ async function loadConfig() {
                 }
             }
         }
+
+        const input = document.getElementById('adminGeminiKey');
+        if (input) input.value = loadedGeminiKey || '';
 
         // Load Espaces for Batch Export
         await loadConfigExportEspaces();
@@ -705,10 +710,16 @@ document.getElementById('btnSaveAdminKey')?.addEventListener('click', async () =
 
     btnLoading(btn, true);
     try {
-        await db.collection('users').doc(currentAdminUser.uid).update({
+        await db.collection('users').doc(currentAdminUser.uid).set({
             geminiKey: key,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        }, { merge: true });
+
+        await db.collection('globalSettings').doc('dashboard').set({
+            geminiKey: key,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
         showToast("Clé API enregistrée avec succès.", "success");
     } catch (err) {
         console.error("Save admin key error:", err);

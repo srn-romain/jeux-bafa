@@ -589,15 +589,60 @@ async function initColoContent(colo, role) {
     // IA - Chargement de la config session
     isAIGeneratorEnabled = !isColoArchived && (colo.allowAnimAI !== false); // true par défaut, false si archivé
 
-    // On récupère la clé du créateur en arrière-plan (fire-and-forget)
-    if (colo.createdBy) {
-        db.collection('users').doc(colo.createdBy).get().then(creatorDoc => {
-            if (creatorDoc.exists) {
-                currentGeminiKey = creatorDoc.data().geminiKey || "";
+    // Récupérer la clé API Gemini de manière exhaustive (globalSettings, profil admin, créateur, fallback)
+    async function resolveGeminiKey() {
+        try {
+            // 1. Essayer depuis globalSettings/dashboard (partage global de la clé du directeur)
+            const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+            if (globalDoc.exists && globalDoc.data().geminiKey) {
+                currentGeminiKey = globalDoc.data().geminiKey.trim();
+                updateAIStatusUI();
+                return;
             }
+
+            // 2. Essayer depuis l'utilisateur actuel s'il est admin
+            if (currentUser) {
+                const userDoc = await db.collection('users').doc(currentUser.uid).get();
+                if (userDoc.exists && userDoc.data().geminiKey) {
+                    currentGeminiKey = userDoc.data().geminiKey.trim();
+                    updateAIStatusUI();
+                    return;
+                }
+            }
+
+            // 3. Essayer depuis le créateur de la colonie (s'il existe encore)
+            if (colo.createdBy) {
+                const creatorDoc = await db.collection('users').doc(colo.createdBy).get();
+                if (creatorDoc.exists && creatorDoc.data().geminiKey) {
+                    currentGeminiKey = creatorDoc.data().geminiKey.trim();
+                    updateAIStatusUI();
+                    return;
+                }
+            }
+
+            // 4. Parcourir les administrateurs pour trouver une clé configurée
+            const adminSnap = await db.collection('users').where('role', '==', 'admin').get();
+            for (const d of adminSnap.docs) {
+                if (d.data().geminiKey) {
+                    currentGeminiKey = d.data().geminiKey.trim();
+                    updateAIStatusUI();
+                    return;
+                }
+            }
+
+            // 5. Fallback localStorage
+            const localSaved = localStorage.getItem('GEMINI_API_KEY');
+            if (localSaved) {
+                currentGeminiKey = localSaved.trim();
+            }
+
             updateAIStatusUI();
-        }).catch(err => console.error("Erreur chargement geminiKey du créateur:", err));
+        } catch (err) {
+            console.warn("Erreur résolution geminiKey:", err);
+            updateAIStatusUI();
+        }
     }
+    resolveGeminiKey();
 
     // Mise à jour visuelle des boutons IA (si blocage)
     if (role !== 'admin') {
@@ -2449,8 +2494,21 @@ document.getElementById('btnGenerateActivity')?.addEventListener('click', async 
 
     let effectiveKey = currentGeminiKey || GEMINI_API_KEY;
     if (!effectiveKey) {
-        showToast("Aucune clé API configurée pour la session.", "error");
-        return;
+        const savedKey = localStorage.getItem('GEMINI_API_KEY');
+        if (savedKey) {
+            effectiveKey = savedKey.trim();
+            GEMINI_API_KEY = effectiveKey;
+        } else {
+            const key = prompt("Aucune clé IA n'est configurée pour cette session. Veuillez saisir votre clé Google AI (Gemini) :");
+            if (key) {
+                effectiveKey = key.trim();
+                GEMINI_API_KEY = effectiveKey;
+                localStorage.setItem('GEMINI_API_KEY', effectiveKey);
+            } else {
+                showToast("Clé API manquante. Impossible de générer l'animation.", "error");
+                return;
+            }
+        }
     }
 
     btnLoading(btn, true);
