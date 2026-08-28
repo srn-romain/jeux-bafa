@@ -333,7 +333,7 @@
       <li><label><input type="checkbox"> Sac banane ou petite sacoche (pour garder vos papiers, clés, sifflet et stylo toujours à portée de main)</label></li>
     </ul>
 
-    <!-- Dépliant personnalisé (visible uniquement par Admin UID htY99Hx1OgTZDDbwfgeLgMw2n6B3) -->
+    <!-- Dépliant personnalisé -->
     <div id="depliantPersonalise" class="depliant-container" style="display: none;">
       <div class="depliant-header" onclick="toggleDepliant()" title="Cliquez pour replier ou déplier la section">
         <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -926,14 +926,12 @@
     return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
   }
 
-  // Vérification de l'utilisateur connecté (Admin + UID spécifique)
+  // Vérification de l'utilisateur connecté (Rôle Admin)
   firebase.auth().onAuthStateChanged(async function(user) {
     const depliant = document.getElementById('depliantPersonalise');
     if (!depliant) return;
 
-    const TARGET_UID = 'htY99Hx1OgTZDDbwfgeLgMw2n6B3';
-
-    if (user && user.uid === TARGET_UID) {
+    if (user) {
       try {
         const userDoc = await firebase.firestore().collection('users').doc(user.uid).get();
         if (userDoc.exists && userDoc.data().role === 'admin') {
