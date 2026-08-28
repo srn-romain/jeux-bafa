@@ -47,7 +47,7 @@
       color: #f39c12;
       border-color: #f39c12;
     }
-    /* Dépliant itinérance personnalisé (Design épuré) */
+    /* Dépliant itinérance personnalisé (Design épuré & Mobile-friendly) */
     .depliant-container {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -82,13 +82,18 @@
       padding: 2px 8px;
       border-radius: 4px;
     }
+    .depliant-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
     .depliant-toggle-btn {
       background: #ffffff;
       border: 1px solid #cbd5e1;
       color: #475569;
       border-radius: 6px;
-      padding: 4px 10px;
-      font-size: 0.8rem;
+      padding: 5px 12px;
+      font-size: 0.82rem;
       font-weight: 600;
       cursor: pointer;
       display: inline-flex;
@@ -101,6 +106,60 @@
       color: #0f172a;
       border-color: #94a3b8;
     }
+    .depliant-form-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .depliant-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.88rem;
+      margin-bottom: 5px;
+      gap: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+    }
+    .depliant-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .depliant-action-btn {
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      color: #475569;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 32px;
+      min-height: 32px;
+      transition: all 0.2s ease;
+    }
+    .depliant-action-btn:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .depliant-action-btn--edit {
+      color: #2563eb;
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    .depliant-action-btn--delete {
+      color: #dc2626;
+      background: #fef2f2;
+      border-color: #fecaca;
+    }
     .depliant-columns {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -108,8 +167,50 @@
       margin-bottom: 12px;
     }
     @media (max-width: 640px) {
+      .depliant-container {
+        padding: 12px;
+      }
+      .depliant-header-actions {
+        width: 100%;
+        margin-top: 4px;
+      }
+      .depliant-header-actions .depliant-toggle-btn {
+        flex: 1;
+        justify-content: center;
+        padding: 8px 10px;
+        font-size: 0.85rem;
+      }
+      .depliant-form-row {
+        flex-direction: column;
+        gap: 8px;
+      }
+      .depliant-form-row input,
+      .depliant-form-row select,
+      .depliant-form-row button {
+        width: 100% !important;
+        font-size: 0.92rem !important;
+        padding: 8px 12px !important;
+        box-sizing: border-box;
+      }
       .depliant-columns {
         grid-template-columns: 1fr;
+      }
+      .depliant-item-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px;
+      }
+      .depliant-item-actions {
+        width: 100%;
+        justify-content: flex-end;
+        border-top: 1px dashed #e2e8f0;
+        padding-top: 6px;
+      }
+      .depliant-action-btn {
+        min-width: 38px;
+        min-height: 36px;
+        font-size: 1.1rem;
       }
     }
     .depliant-col {
@@ -239,7 +340,7 @@
           <h4>🗺️ Dépliant valise personnalisé — Itinérance</h4>
           <span class="depliant-badge"><i class="bi bi-star-fill"></i> Spécial Admin</span>
         </div>
-        <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="depliant-header-actions">
           <button type="button" id="adminManageDepliantBtn" class="depliant-toggle-btn" onclick="event.stopPropagation(); toggleAdminDepliantPanel();" title="Ajouter, modifier ou supprimer des items">
             <i class="bi bi-pencil-square"></i> <span>Gérer la liste</span>
           </button>
@@ -258,8 +359,8 @@
           </h5>
           
           <!-- Formulaire d'ajout rapide -->
-          <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
-            <input type="text" id="newDepliantItemText" placeholder="Nouvel élément (ex: Gourde isotherme...)" style="flex: 1; min-width: 200px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.88rem;">
+          <div class="depliant-form-row">
+            <input type="text" id="newDepliantItemText" placeholder="Nouvel élément (ex: Gourde isotherme...)" style="flex: 1; min-width: 180px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.88rem;">
             <select id="newDepliantItemCategory" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.88rem; background: #fff;">
               <option value="chaud">☀️ Pays chaud</option>
               <option value="froid">❄️ Pays froid</option>
@@ -273,9 +374,9 @@
           <!-- Formulaire de modification -->
           <div id="editDepliantForm" style="display: none; background: #f8fafc; border: 1px solid #94a3b8; border-radius: 4px; padding: 10px; margin-bottom: 12px;">
             <strong style="font-size: 0.85rem; color: #334155;">Modifier l'élément sélectionné :</strong>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+            <div class="depliant-form-row" style="margin-top: 6px; margin-bottom: 0;">
               <input type="hidden" id="editDepliantDocId">
-              <input type="text" id="editDepliantItemText" style="flex: 1; min-width: 180px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem;">
+              <input type="text" id="editDepliantItemText" style="flex: 1; min-width: 160px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem;">
               <select id="editDepliantItemCategory" style="padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; background: #fff;">
                 <option value="chaud">☀️ Pays chaud</option>
                 <option value="froid">❄️ Pays froid</option>
@@ -287,8 +388,8 @@
           </div>
 
           <!-- Liste des items enregistrés -->
-          <div style="max-height: 220px; overflow-y: auto; border-top: 1px solid #e2e8f0; padding-top: 8px;">
-            <div id="adminDepliantItemsList" style="display: flex; flex-direction: column; gap: 6px;"></div>
+          <div style="max-height: 280px; overflow-y: auto; border-top: 1px solid #e2e8f0; padding-top: 8px;">
+            <div id="adminDepliantItemsList"></div>
           </div>
         </div>
 
@@ -669,21 +770,21 @@
         const isLast = catIndex === categoryItems.length - 1;
 
         html += `
-          <div style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 4px; font-size: 0.85rem; margin-bottom: 4px;">
+          <div class="depliant-item-row">
             <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
               <span style="color: #1e293b; font-weight: 500;">${escapeHtml(item.label)}</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <button type="button" onclick="moveCategoryItemUp('${item.id}')" ${isFirst ? 'disabled style="opacity:0.25; cursor:not-allowed;"' : 'style="background:none; border:none; color:#475569; cursor:pointer; padding:2px 4px;"'} title="Monter d'un cran dans la catégorie">
-                <i class="bi bi-arrow-up-short" style="font-size: 1.1rem; font-weight: bold;"></i>
+            <div class="depliant-item-actions">
+              <button type="button" class="depliant-action-btn" onclick="moveCategoryItemUp('${item.id}')" ${isFirst ? 'disabled style="opacity:0.25; cursor:not-allowed;"' : ''} title="Monter d'un cran">
+                <i class="bi bi-arrow-up-short"></i>
               </button>
-              <button type="button" onclick="moveCategoryItemDown('${item.id}')" ${isLast ? 'disabled style="opacity:0.25; cursor:not-allowed;"' : 'style="background:none; border:none; color:#475569; cursor:pointer; padding:2px 4px;"'} title="Descendre d'un cran dans la catégorie">
-                <i class="bi bi-arrow-down-short" style="font-size: 1.1rem; font-weight: bold;"></i>
+              <button type="button" class="depliant-action-btn" onclick="moveCategoryItemDown('${item.id}')" ${isLast ? 'disabled style="opacity:0.25; cursor:not-allowed;"' : ''} title="Descendre d'un cran">
+                <i class="bi bi-arrow-down-short"></i>
               </button>
-              <button type="button" onclick="startEditDepliantItem('${item.id}', '${escapeJs(item.label)}', '${item.category}')" style="background: none; border: none; color: #2980b9; cursor: pointer; padding: 2px 5px;" title="Modifier">
+              <button type="button" class="depliant-action-btn depliant-action-btn--edit" onclick="startEditDepliantItem('${item.id}', '${escapeJs(item.label)}', '${item.category}')" title="Modifier">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button type="button" onclick="deleteDepliantItem('${item.id}')" style="background: none; border: none; color: #e74c3c; cursor: pointer; padding: 2px 5px;" title="Supprimer">
+              <button type="button" class="depliant-action-btn depliant-action-btn--delete" onclick="deleteDepliantItem('${item.id}')" title="Supprimer">
                 <i class="bi bi-trash"></i>
               </button>
             </div>
