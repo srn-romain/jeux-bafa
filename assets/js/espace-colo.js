@@ -1909,8 +1909,8 @@ function displayGroups(groups) {
                         </span>
                         <div class="es-participant__info">
                             <span class="es-pill es-pill--age">${p.age} ans</span>
-                            <span class="es-pill ${p.genre === 'masculin' ? 'es-pill--m' : 'es-pill--f'}">
-                                ${p.genre === 'masculin' ? '♂' : '♀'}
+                            <span class="es-pill es-pill--gender ${p.genre === 'masculin' ? 'es-pill--m' : 'es-pill--f'}" title="${p.genre === 'masculin' ? 'Garçon' : 'Fille'}">
+                                <i class="bi ${p.genre === 'masculin' ? 'bi-gender-male' : 'bi-gender-female'}"></i>
                             </span>
                         </div>
                     </li>
