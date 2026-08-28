@@ -382,6 +382,19 @@ var GAMES_INDEX = (function () {
                 { n: 'Popcorn', d: 'Soirée cinéma popcorn maison' },
                 { n: 'Brochettes sucrées', d: 'Brochettes de bonbons ou fruits' }
             ]
+        },
+        {
+            page: 'pages/conversation.html', cat: 'Conversations & débats', emoji: '🗣️',
+            items: [
+                { n: 'In the dark', d: "Jeu de rôle et de débat devant un bunker d'urgence après une catastrophe" },
+                { n: "L'Infiltré du Débat", d: 'Jeu de débat à identités cachées avec saboteur à démasquer' },
+                { n: 'Le Speed-Debating Éclair', d: 'Duels 1v1 chrono de 2 min avec rotation au gong' },
+                { n: 'Les 6 Chapeaux de De Bono', d: 'Débat d’angles de vue selon des couleurs de chapeau' },
+                { n: 'Le Procès des Idées & Objets', d: 'Plaidoiries et réquisitoires devant un tribunal d’éloquence' },
+                { n: 'La Négociation des Ambassadeurs', d: 'Diplomatie secrète et dilemme du prisonnier entre factions' },
+                { n: 'Les 36 questions d’Arthur Aron', d: '36 questions pour créer du lien et de l’amitié' },
+                { n: 'Débats de société', d: 'Questions engagées sur le sport, les réseaux, la guerre et l’école' }
+            ]
         }
     ];
 
@@ -468,6 +481,7 @@ function setupGameSearchUI() {
     // Liste des catégories pour les chips de filtre
     var categoriesList = [
         { name: 'Tout', emoji: '🔍' },
+        { name: 'Conversations & débats', emoji: '🗣️' },
         { name: 'Activités', emoji: '⚽' },
         { name: 'Veillées', emoji: '🌙' },
         { name: 'Jeux présentation', emoji: '🤝' },
@@ -504,9 +518,34 @@ function setupGameSearchUI() {
         }
     }
 
-    function renderFilterChipsHTML() {
+    function renderFilterChipsHTML(queryTokens) {
+        if (!queryTokens || queryTokens.length === 0) return '';
+
+        // Récupérer tous les résultats qui correspondent aux mots-clés (sans filtre de catégorie)
+        var allMatches = GAMES_INDEX.filter(function (item) {
+            return queryTokens.every(function (tok) {
+                return item.keywords.indexOf(tok) !== -1;
+            });
+        });
+
+        // Compter le nombre de résultats par catégorie
+        var catCounts = {};
+        allMatches.forEach(function (item) {
+            catCounts[item.cat] = (catCounts[item.cat] || 0) + 1;
+        });
+
+        // Ne garder que les filtres de catégories ayant au moins 1 item correspondant (ou la catégorie actuellement sélectionnée)
+        var validChips = categoriesList.filter(function (c) {
+            if (c.name === 'Tout') {
+                return allMatches.length > 0;
+            }
+            return (catCounts[c.name] && catCounts[c.name] > 0) || (c.name === activeCategoryFilter);
+        });
+
+        if (validChips.length === 0) return '';
+
         return '<div class="search-chips-bar">' +
-            categoriesList.map(function (c) {
+            validChips.map(function (c) {
                 var isActive = (activeCategoryFilter === c.name) ? ' active' : '';
                 return '<button type="button" class="search-chip' + isActive + '" data-cat="' + escapeHtml(c.name) + '">' +
                     c.emoji + ' ' + escapeHtml(c.name) +
@@ -584,7 +623,7 @@ function setupGameSearchUI() {
 
         keyboardIndex = -1;
 
-        var html = renderFilterChipsHTML();
+        var html = renderFilterChipsHTML(tokens);
 
         if (filtered.length === 0) {
             html += '<div class="search-no-results">Aucun résultat trouvé pour « <strong>' + escapeHtml(rawQ) + '</strong> » dans <em>' + escapeHtml(activeCategoryFilter) + '</em></div>';
@@ -608,20 +647,49 @@ function setupGameSearchUI() {
             }).join('');
         }
 
+        var existingChipsBar = results.querySelector('.search-chips-bar');
+        var savedScrollLeft = existingChipsBar ? existingChipsBar.scrollLeft : null;
+
         results.innerHTML = html;
         results.classList.add('active');
 
-        bindChipClickListeners();
+        bindChipClickListeners(savedScrollLeft);
         bindItemClickListeners();
     }
 
-    function bindChipClickListeners() {
+    function bindChipClickListeners(savedScrollLeft) {
         var chipsBar = results.querySelector('.search-chips-bar');
         var chips = results.querySelectorAll('.search-chip');
         var isDragging = false;
 
         // Glisser-déposer / Drag-to-scroll à la souris sur ordinateur
         if (chipsBar) {
+            var activeChip = chipsBar.querySelector('.search-chip.active');
+            if (activeChip) {
+                var chipOffsetLeft = activeChip.offsetLeft;
+                var chipWidth = activeChip.offsetWidth;
+                var barWidth = chipsBar.clientWidth;
+                var targetLeft = Math.max(0, chipOffsetLeft - (barWidth / 2) + (chipWidth / 2));
+
+                if (savedScrollLeft !== null && savedScrollLeft !== undefined) {
+                    // Placer d'abord le ruban à sa position courante pour éviter tout saut à 0
+                    chipsBar.style.scrollBehavior = 'auto';
+                    chipsBar.scrollLeft = savedScrollLeft;
+
+                    // Animer ensuite de manière fluide de la position courante vers le centre
+                    requestAnimationFrame(function () {
+                        chipsBar.scrollTo({
+                            left: targetLeft,
+                            behavior: 'smooth'
+                        });
+                    });
+                } else {
+                    // Premier affichage de la recherche : centrer directement
+                    chipsBar.style.scrollBehavior = 'auto';
+                    chipsBar.scrollLeft = targetLeft;
+                }
+            }
+
             var isMouseDown = false;
             var startX = 0;
             var scrollLeft = 0;
