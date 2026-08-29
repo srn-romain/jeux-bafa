@@ -49,7 +49,7 @@
         <li><b>Imprimer une petite image</b> : Imprimer une image et imaginer son contour ou la compléter créativement.</li>
         <li><b>Jeux de société personnalisé</b> : Sur des feuilles ou du carton, imprimés des photos de personnes de l'ACM et en faire un "jeu des 7 familles", ou un "Qui est-ce ?" ou autres...</li>
         <li><b>Land Art</b> : Créer des œuvres avec des matériaux naturels collectés dans l’environnement (feuilles, pierres, bois…).</li>
-        <li><b>L’histoire du pêcheur (Texte à trous)</b> : Retrouver quel mot sur le thème de la mer (poissons, crustacés, mollusques) va dans chaque trou de cette histoire humoristique. <a href="#" class="openModalBtn" data-modal="modalHistoirePecheur"><u>Voir l'histoire et les règles</u></a>.</li>
+        <li><b>Textes à trous humoristiques (Plusieurs chapitres)</b> : Retrouver quel mot va dans chaque trou selon les thèmes (animaux marins, fruits & légumes...). <a href="#" class="openModalBtn" data-modal="modalHistoirePecheur"><u>Voir les histoires et les règles</u></a>.</li>
         <li><b>Maquillage</b> : Réaliser des maquillages créatifs pour personnages ou thèmes divers.</li>
         <li><b>Origami</b> : Plier des feuilles pour créer des formes et animaux en papier.</li>
         <li><b>P'tit bac</b> : Trouver des mots commençant par une lettre donnée dans différentes catégories. <a href="#" class="openModalBtn" data-modal="modalPetitBac"><u>Voir les thèmes et générer une lettre</u></a>.</li>
@@ -158,95 +158,180 @@
     </div>
   </div>
 
-  <!-- Modale - L'histoire du pêcheur -->
+  <!-- Modale - Textes à trous (Plusieurs chapitres) -->
   <div id="modalHistoirePecheur" class="modalspe">
-    <div class="modal__contentspe">
+    <div class="modal__contentspe modal-large">
       <button class="modal__closespe">&times;</button>
-      <h3 style="margin-top: 0; margin-bottom: 12px; color: #f39c12; font-size: 1.3rem; display: flex; align-items: center; gap: 8px;">
-        <span>🎣</span> L'HISTOIRE DU PÊCHEUR
+      <h3 style="margin-top: 0; margin-bottom: 8px; color: #f39c12; font-size: 1.25rem;">
+        Textes à trous humoristiques
       </h3>
       
-      <p style="background: #fff8ee; border-left: 4px solid #f39c12; padding: 10px 14px; border-radius: 4px; color: #333; line-height: 1.5; margin-bottom: 16px;">
-        <strong>🎯 Consignes :</strong> Retrouvez quel mot marin va dans chaque trou. Les 28 mots à placer sont tous issus du monde marin (poissons, crustacés, mollusques, mammifères marins). Chaque mot de la liste est utilisé une seule fois.
+      <p style="margin-bottom: 18px; line-height: 1.5; color: #444;">
+        <strong>Consignes :</strong> Choisissez une histoire ci-dessous. Retrouvez quel mot va dans chaque trou pour reconstituer l'histoire et ses calembours. Chaque mot est utilisé une seule fois par texte.
       </p>
 
-      <div id="copyContentPecheur">
-        <p style="margin-bottom: 10px;">
-          <strong style="color: #d35400;">L’histoire d’un pêcheur de poissons, crustacés, mollusques et mammifères marins.</strong>
-        </p>
+      <!-- CHAPITRE 1 : PÊCHEUR -->
+      <details class="chapter-block" open>
+        <summary class="chapter-header">
+          <span><strong>Chapitre 1 :</strong> L’histoire du pêcheur (Animaux marins)</span>
+          <span style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: 600;">⚠️ Ados / Adultes (+14 ans)</span>
+        </summary>
+        <div class="chapter-inner">
+          <div id="copyContentPecheur">
+            <p style="margin-bottom: 10px;">
+              <strong>L’histoire d’un pêcheur de poissons, crustacés, mollusques et mammifères marins.</strong>
+            </p>
 
-        <p style="line-height: 1.8; text-align: justify; margin-bottom: 12px;">
-          Un samedi soir, il est <span class="pecheur-trou" data-answer="tétard">...</span>, assis au <span class="pecheur-trou" data-answer="bar">...</span>, j’ai cru apercevoir une <span class="pecheur-trou" data-answer="sirène">...</span>, vêtue d’une robe couleur <span class="pecheur-trou" data-answer="saumon">...</span> avec un grand décolleté. On pouvait deviner la <span class="pecheur-trou" data-answer="baleine">...</span> de son soutien-gorge. Elle me regardait avec des yeux de <span class="pecheur-trou" data-answer="merlan">...</span>frit.
-        </p>
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Un samedi soir, il est <span class="pecheur-trou" data-answer="tétard">...</span>, assis au <span class="pecheur-trou" data-answer="bar">...</span>, j’ai cru apercevoir une <span class="pecheur-trou" data-answer="sirène">...</span>, vêtue d’une robe couleur <span class="pecheur-trou" data-answer="saumon">...</span> avec un grand décolleté. On pouvait deviner la <span class="pecheur-trou" data-answer="baleine">...</span> de son soutien-gorge. Elle me regardait avec des yeux de <span class="pecheur-trou" data-answer="merlan">...</span>frit.
+            </p>
 
-        <p style="line-height: 1.8; text-align: justify; margin-bottom: 12px;">
-          J’engageais la conversation, elle se ferma comme une <span class="pecheur-trou" data-answer="huitre">...</span> et resta muette comme une <span class="pecheur-trou" data-answer="carpe">...</span>. Au bout de quelques minutes, elle me demanda de quitter ce <span class="pecheur-trou" data-answer="lieu">...</span>. Je partis en marchant en <span class="pecheur-trou" data-answer="crabe">...</span>.
-        </p>
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              J’engageais la conversation, elle se ferma comme une <span class="pecheur-trou" data-answer="huitre">...</span> et resta muette comme une <span class="pecheur-trou" data-answer="carpe">...</span>. Au bout de quelques minutes, elle me demanda de quitter ce <span class="pecheur-trou" data-answer="lieu">...</span>. Je partis en marchant en <span class="pecheur-trou" data-answer="crabe">...</span>.
+            </p>
 
-        <p style="line-height: 1.8; text-align: justify; margin-bottom: 12px;">
-          Elle m’emmena dans son appartement, je l’ai portée pour entrer, elle n’était <span class="pecheur-trou" data-answer="palourde">...</span>.<br>
-          A peine arrivés, on se déshabilla, mais elle s’exclama : « Michel, vu l’odeur, <span class="pecheur-trou" data-answer="gardon">...</span> nos chaussettes ».
-        </p>
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Elle m’emmena dans son appartement, je l’ai portée pour entrer, elle n’était <span class="pecheur-trou" data-answer="palourde">...</span>.<br>
+              A peine arrivés, on se déshabilla, mais elle s’exclama : « Michel, vu l’odeur, <span class="pecheur-trou" data-answer="gardon">...</span> nos chaussettes ».
+            </p>
 
-        <p style="line-height: 1.8; text-align: justify; margin-bottom: 12px;">
-          Je vis alors ses seins, qu’elle a <span class="pecheur-trou" data-answer="veron">...</span>. Nous nous sommes allongés sur le <span class="pecheur-trou" data-answer="sole">...</span> et au bas de son <span class="pecheur-trou" data-answer="dauphin">...</span> j’entrevis sa <span class="pecheur-trou" data-answer="raie">...</span>. Je deviens rouge comme une <span class="pecheur-trou" data-answer="écrevisse">...</span>. C’est alors que je sortis ma <span class="pecheur-trou" data-answer="perche">...</span> dilatée, surplombant <span class="pecheur-trou" data-answer="mérou">...</span>pettes bien gonflées. J’ai donc décidé de lui farcir la <span class="pecheur-trou" data-answer="moule">...</span>. Malheureusement, elle l’avait bien <span class="pecheur-trou" data-answer="sèche">...</span>.
-        </p>
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Je vis alors ses seins, qu’elle a <span class="pecheur-trou" data-answer="veron">...</span>. Nous nous sommes allongés sur le <span class="pecheur-trou" data-answer="sole">...</span> et au bas de son <span class="pecheur-trou" data-answer="dauphin">...</span> j’entrevis sa <span class="pecheur-trou" data-answer="raie">...</span>. Je deviens rouge comme une <span class="pecheur-trou" data-answer="écrevisse">...</span>. C’est alors que je sortis ma <span class="pecheur-trou" data-answer="perche">...</span> dilatée, surplombant <span class="pecheur-trou" data-answer="mérou">...</span>pettes bien gonflées. J’ai donc décidé de lui farcir la <span class="pecheur-trou" data-answer="moule">...</span>. Malheureusement, elle l’avait bien <span class="pecheur-trou" data-answer="sèche">...</span>.
+            </p>
 
-        <p style="line-height: 1.8; text-align: justify; margin-bottom: 12px;">
-          Mais où l’histoire se corse, c’est au petit matin, elle m’annonça le prix, d’un drôle de <span class="pecheur-trou" data-answer="thon">...</span>, comme je refusais de payer, elle appela son <span class="pecheur-trou" data-answer="maquereau">...</span>. Celui-ci ordonna : « Paye ta dette ou je t’en <span class="pecheur-trou" data-answer="colin">...</span> ! » Sans avoir sorti un sou, je m’enfuyais en mettant le <span class="pecheur-trou" data-answer="turbo">...</span> et la traitait de vieille <span class="pecheur-trou" data-answer="morue">...</span>.
-        </p>
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Mais où l’histoire se corse, c’est au petit matin, elle m’annonça le prix, d’un drôle de <span class="pecheur-trou" data-answer="thon">...</span>, comme je refusais de payer, elle appela son <span class="pecheur-trou" data-answer="maquereau">...</span>. Celui-ci ordonna : « Paye ta dette ou je t’en <span class="pecheur-trou" data-answer="colin">...</span> ! » Sans avoir sorti un sou, je m’enfuyais en mettant le <span class="pecheur-trou" data-answer="turbo">...</span> et la traitait de vieille <span class="pecheur-trou" data-answer="morue">...</span>.
+            </p>
 
-        <p style="line-height: 1.8; text-align: justify; margin-bottom: 16px;">
-          La morale de cette soirée : quand tu rencontres une <span class="pecheur-trou" data-answer="vieille">...</span>, méfie-toi, il peut y avoir <span class="pecheur-trou" data-answer="anguille">...</span>sous roche.
-        </p>
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 14px;">
+              La morale de cette soirée : quand tu rencontres une <span class="pecheur-trou" data-answer="vieille">...</span>, méfie-toi, il peut y avoir <span class="pecheur-trou" data-answer="anguille">...</span>sous roche.
+            </p>
 
-        <p style="line-height: 1.6; margin-top: 15px;">
-          <strong style="color: #d35400;">Mots à replacer (mélangés) :</strong><br>
-          crabe, saumon, anguille, merlan, mérou, bar, dauphin, morue, carpe, tétard, raie, sèche, sole, colin, sirène, maquereau, palourde, turbo, veron, écrevisse, thon, huitre, baleine, gardon, perche, moule, vieille, lieu.
-        </p>
-      </div>
+            <p style="line-height: 1.6; margin-top: 12px;">
+              <strong>Mots à replacer (mélangés) :</strong><br>
+              crabe, saumon, anguille, merlan, mérou, bar, dauphin, morue, carpe, tétard, raie, sèche, sole, colin, sirène, maquereau, palourde, turbo, veron, écrevisse, thon, huitre, baleine, gardon, perche, moule, vieille, lieu.
+            </p>
+          </div>
 
-      <div style="text-align: center; margin: 20px 0 12px 0;">
-        <button type="button" id="btnToggleAnswersPecheur" class="back-button" style="background: white; border: 1.5px solid #f39c12; color: #d35400; padding: 6px 18px; font-size: 14px; font-weight: bold; border-radius: 20px; cursor: pointer; transition: all 0.2s;">
-          <i class="bi bi-eye"></i> (voir les réponses)
-        </button>
-      </div>
+          <div style="text-align: center; margin: 16px 0 10px 0;">
+            <button type="button" id="btnToggleAnswersPecheur" class="back-button" style="background: none; border: 1px solid #ccc; color: #555; padding: 5px 14px; font-size: 13px;">
+              (voir les réponses)
+            </button>
+          </div>
 
-      <div id="pecheurAnswersBlock" style="display: none; margin-top: 15px; margin-bottom: 20px; background: #fffcf8; border: 1px solid #fce4c4; border-radius: 8px; padding: 15px;">
-        <p style="margin-top: 0; color: #d35400; font-weight: bold;">✅ Réponses dans l'ordre chronologique :</p>
-        <ol style="columns: 2; column-gap: 20px; padding-left: 20px; line-height: 1.7; margin-bottom: 0;">
-          <li><strong style="color: #f39c12;">tétard</strong> <span style="color: #888; font-size: 0.85rem;">(il est tard)</span></li>
-          <li><strong style="color: #f39c12;">bar</strong> <span style="color: #888; font-size: 0.85rem;">(au bar)</span></li>
-          <li><strong style="color: #f39c12;">sirène</strong> <span style="color: #888; font-size: 0.85rem;">(une sirène)</span></li>
-          <li><strong style="color: #f39c12;">saumon</strong> <span style="color: #888; font-size: 0.85rem;">(robe couleur saumon)</span></li>
-          <li><strong style="color: #f39c12;">baleine</strong> <span style="color: #888; font-size: 0.85rem;">(baleine de soutien-gorge)</span></li>
-          <li><strong style="color: #f39c12;">merlan</strong> <span style="color: #888; font-size: 0.85rem;">(yeux de merlan frit)</span></li>
-          <li><strong style="color: #f39c12;">huitre</strong> <span style="color: #888; font-size: 0.85rem;">(fermé comme une huître)</span></li>
-          <li><strong style="color: #f39c12;">carpe</strong> <span style="color: #888; font-size: 0.85rem;">(muet comme une carpe)</span></li>
-          <li><strong style="color: #f39c12;">lieu</strong> <span style="color: #888; font-size: 0.85rem;">(quitter ce lieu)</span></li>
-          <li><strong style="color: #f39c12;">crabe</strong> <span style="color: #888; font-size: 0.85rem;">(marcher en crabe)</span></li>
-          <li><strong style="color: #f39c12;">palourde</strong> <span style="color: #888; font-size: 0.85rem;">(pas lourde)</span></li>
-          <li><strong style="color: #f39c12;">gardon</strong> <span style="color: #888; font-size: 0.85rem;">(garde donc)</span></li>
-          <li><strong style="color: #f39c12;">veron</strong> <span style="color: #888; font-size: 0.85rem;">(beaux et ronds / véron)</span></li>
-          <li><strong style="color: #f39c12;">sole</strong> <span style="color: #888; font-size: 0.85rem;">(sur le sol)</span></li>
-          <li><strong style="color: #f39c12;">dauphin</strong> <span style="color: #888; font-size: 0.85rem;">(au bas de son dos fin)</span></li>
-          <li><strong style="color: #f39c12;">raie</strong> <span style="color: #888; font-size: 0.85rem;">(sa raie)</span></li>
-          <li><strong style="color: #f39c12;">écrevisse</strong> <span style="color: #888; font-size: 0.85rem;">(rouge comme une écrevisse)</span></li>
-          <li><strong style="color: #f39c12;">perche</strong> <span style="color: #888; font-size: 0.85rem;">(ma perche)</span></li>
-          <li><strong style="color: #f39c12;">mérou</strong> <span style="color: #888; font-size: 0.85rem;">(surplombant méroupettes)</span></li>
-          <li><strong style="color: #f39c12;">moule</strong> <span style="color: #888; font-size: 0.85rem;">(farcir la moule)</span></li>
-          <li><strong style="color: #f39c12;">sèche</strong> <span style="color: #888; font-size: 0.85rem;">(bien sèche)</span></li>
-          <li><strong style="color: #f39c12;">thon</strong> <span style="color: #888; font-size: 0.85rem;">(d'un drôle de ton)</span></li>
-          <li><strong style="color: #f39c12;">maquereau</strong> <span style="color: #888; font-size: 0.85rem;">(son maquereau)</span></li>
-          <li><strong style="color: #f39c12;">colin</strong> <span style="color: #888; font-size: 0.85rem;">(je t'en colle une)</span></li>
-          <li><strong style="color: #f39c12;">turbo</strong> <span style="color: #888; font-size: 0.85rem;">(mettre le turbo)</span></li>
-          <li><strong style="color: #f39c12;">morue</strong> <span style="color: #888; font-size: 0.85rem;">(vieille morue)</span></li>
-          <li><strong style="color: #f39c12;">vieille</strong> <span style="color: #888; font-size: 0.85rem;">(rencontrer une vieille)</span></li>
-          <li><strong style="color: #f39c12;">anguille</strong> <span style="color: #888; font-size: 0.85rem;">(anguille sous roche)</span></li>
-        </ol>
-      </div>
+          <div id="pecheurAnswersBlock" style="display: none; margin-top: 12px; margin-bottom: 12px; border-top: 1px solid #eee; padding-top: 10px;">
+            <p><strong>Réponses (dans l'ordre) :</strong></p>
+            <ol style="columns: 2; column-gap: 20px; padding-left: 20px; line-height: 1.6;">
+              <li><strong style="color: #f39c12;">tétard</strong> <span style="color: #888; font-size: 0.85rem;">(il est tard)</span></li>
+              <li><strong style="color: #f39c12;">bar</strong> <span style="color: #888; font-size: 0.85rem;">(au bar)</span></li>
+              <li><strong style="color: #f39c12;">sirène</strong> <span style="color: #888; font-size: 0.85rem;">(une sirène)</span></li>
+              <li><strong style="color: #f39c12;">saumon</strong> <span style="color: #888; font-size: 0.85rem;">(robe couleur saumon)</span></li>
+              <li><strong style="color: #f39c12;">baleine</strong> <span style="color: #888; font-size: 0.85rem;">(baleine de soutien-gorge)</span></li>
+              <li><strong style="color: #f39c12;">merlan</strong> <span style="color: #888; font-size: 0.85rem;">(yeux de merlan frit)</span></li>
+              <li><strong style="color: #f39c12;">huitre</strong> <span style="color: #888; font-size: 0.85rem;">(fermé comme une huître)</span></li>
+              <li><strong style="color: #f39c12;">carpe</strong> <span style="color: #888; font-size: 0.85rem;">(muet comme une carpe)</span></li>
+              <li><strong style="color: #f39c12;">lieu</strong> <span style="color: #888; font-size: 0.85rem;">(quitter ce lieu)</span></li>
+              <li><strong style="color: #f39c12;">crabe</strong> <span style="color: #888; font-size: 0.85rem;">(marcher en crabe)</span></li>
+              <li><strong style="color: #f39c12;">palourde</strong> <span style="color: #888; font-size: 0.85rem;">(pas lourde)</span></li>
+              <li><strong style="color: #f39c12;">gardon</strong> <span style="color: #888; font-size: 0.85rem;">(garde donc)</span></li>
+              <li><strong style="color: #f39c12;">veron</strong> <span style="color: #888; font-size: 0.85rem;">(beaux et ronds / véron)</span></li>
+              <li><strong style="color: #f39c12;">sole</strong> <span style="color: #888; font-size: 0.85rem;">(sur le sol)</span></li>
+              <li><strong style="color: #f39c12;">dauphin</strong> <span style="color: #888; font-size: 0.85rem;">(au bas de son dos fin)</span></li>
+              <li><strong style="color: #f39c12;">raie</strong> <span style="color: #888; font-size: 0.85rem;">(sa raie)</span></li>
+              <li><strong style="color: #f39c12;">écrevisse</strong> <span style="color: #888; font-size: 0.85rem;">(rouge comme une écrevisse)</span></li>
+              <li><strong style="color: #f39c12;">perche</strong> <span style="color: #888; font-size: 0.85rem;">(ma perche)</span></li>
+              <li><strong style="color: #f39c12;">mérou</strong> <span style="color: #888; font-size: 0.85rem;">(surplombant méroupettes)</span></li>
+              <li><strong style="color: #f39c12;">moule</strong> <span style="color: #888; font-size: 0.85rem;">(farcir la moule)</span></li>
+              <li><strong style="color: #f39c12;">sèche</strong> <span style="color: #888; font-size: 0.85rem;">(bien sèche)</span></li>
+              <li><strong style="color: #f39c12;">thon</strong> <span style="color: #888; font-size: 0.85rem;">(d'un drôle de ton)</span></li>
+              <li><strong style="color: #f39c12;">maquereau</strong> <span style="color: #888; font-size: 0.85rem;">(son maquereau)</span></li>
+              <li><strong style="color: #f39c12;">colin</strong> <span style="color: #888; font-size: 0.85rem;">(je t'en colle une)</span></li>
+              <li><strong style="color: #f39c12;">turbo</strong> <span style="color: #888; font-size: 0.85rem;">(mettre le turbo)</span></li>
+              <li><strong style="color: #f39c12;">morue</strong> <span style="color: #888; font-size: 0.85rem;">(vieille morue)</span></li>
+              <li><strong style="color: #f39c12;">vieille</strong> <span style="color: #888; font-size: 0.85rem;">(rencontrer une vieille)</span></li>
+              <li><strong style="color: #f39c12;">anguille</strong> <span style="color: #888; font-size: 0.85rem;">(anguille sous roche)</span></li>
+            </ol>
+          </div>
 
-      <button class="back-button" id="copyMessagePecheur">Copier le message</button>
+          <button class="back-button" id="copyMessagePecheur" style="margin-top: 10px;">Copier le chapitre 1</button>
+        </div>
+      </details>
+
+      <!-- CHAPITRE 2 : MARCHÉ (FRUITS & LÉGUMES) -->
+      <details class="chapter-block" open>
+        <summary class="chapter-header">
+          <span><strong>Chapitre 2 :</strong> L'escapade au marché (Fruits & Légumes)</span>
+          <span style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: 600;">🌿 Tout public</span>
+        </summary>
+        <div class="chapter-inner">
+          <div id="copyContentMarche">
+            <p style="margin-bottom: 10px;">
+              <strong>L’escapade au marché de deux amis un samedi matin.</strong>
+            </p>
+
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Ce matin, je me lève avec la <span class="marche-trou" data-answer="banane">...</span> ! En sortant de chez moi, je croise mon ami Marc, qui travaille comme <span class="marche-trou" data-answer="avocat">...</span> au tribunal. Il me dit : « Viens, on va faire un tour au marché, mon petit <span class="marche-trou" data-answer="chou">...</span>, ne fais pas ta bonne <span class="marche-trou" data-answer="poire">...</span> et viens m'aider ! »
+            </p>
+
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Sur la route, un chauffard a failli nous percuter, Marc a crié : « <span class="marche-trou" data-answer="ail">...</span> ! » en écrasant le <span class="marche-trou" data-answer="champignon">...</span> pour freiner au feu <span class="marche-trou" data-answer="orange">...</span> Mais la police nous a arrêtés et nous a collé une sacrée <span class="marche-trou" data-answer="prune">...</span> Comme je n'avais plus un <span class="marche-trou" data-answer="radis">...</span>, Marc a dû sortir toute son <span class="marche-trou" data-answer="oseille">...</span>
+            </p>
+
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Arrivés au marché, il y avait un vendeur qui avait un sacré <span class="marche-trou" data-answer="melon">...</span>, il se prenait pour le roi du quartier et n'arrêtait pas de raconter des <span class="marche-trou" data-answer="salade">...</span>s. Il nous proposait un film en DVD, mais c'était un vrai <span class="marche-trou" data-answer="navet">...</span> ! Quand un passant a osé ramener sa <span class="marche-trou" data-answer="fraise">...</span>, le marchand est devenu tout rouge comme une <span class="marche-trou" data-answer="tomate">...</span> et a menacé de lui coller un <span class="marche-trou" data-answer="marron">...</span> en pleine figure !
+            </p>
+
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Après avoir fait le <span class="marche-trou" data-answer="poireau">...</span> pendant une demi-heure devant l'étal, nous étions pressés comme des <span class="marche-trou" data-answer="citron">...</span>s. Tout d'un coup, une dame a failli tomber dans les <span class="marche-trou" data-answer="pomme">...</span>s à cause de la chaleur. Marc s'est alors écrié : « Les <span class="marche-trou" data-answer="carotte">...</span>s sont cuites, rentrons avant qu'on ne nous prenne pour des <span class="marche-trou" data-answer="courge">...</span>s ! »
+            </p>
+
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 14px;">
+              La morale de l'histoire : pour toujours garder la <span class="marche-trou" data-answer="pêche">...</span>, ne ramène jamais ta fraise sans un radis en poche !
+            </p>
+
+            <p style="line-height: 1.6; margin-top: 12px;">
+              <strong>Mots à replacer (mélangés) :</strong><br>
+              melon, avocat, prune, champignon, chou, orange, banane, ail, salade, poire, radis, pêche, tomate, oseille, marron, carotte, navet, poireau, courge, fraise, citron, pomme.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 16px 0 10px 0;">
+            <button type="button" id="btnToggleAnswersMarche" class="back-button" style="background: none; border: 1px solid #ccc; color: #555; padding: 5px 14px; font-size: 13px;">
+              (voir les réponses)
+            </button>
+          </div>
+
+          <div id="marcheAnswersBlock" style="display: none; margin-top: 12px; margin-bottom: 12px; border-top: 1px solid #eee; padding-top: 10px;">
+            <p><strong>Réponses (dans l'ordre) :</strong></p>
+            <ol style="columns: 2; column-gap: 20px; padding-left: 20px; line-height: 1.6;">
+              <li><strong style="color: #f39c12;">banane</strong> <span style="color: #888; font-size: 0.85rem;">(avoir la banane)</span></li>
+              <li><strong style="color: #f39c12;">avocat</strong> <span style="color: #888; font-size: 0.85rem;">(mon ami l'avocat)</span></li>
+              <li><strong style="color: #f39c12;">chou</strong> <span style="color: #888; font-size: 0.85rem;">(mon petit chou)</span></li>
+              <li><strong style="color: #f39c12;">poire</strong> <span style="color: #888; font-size: 0.85rem;">(bonne poire)</span></li>
+              <li><strong style="color: #f39c12;">ail</strong> <span style="color: #888; font-size: 0.85rem;">(Ail ! / Aïe !)</span></li>
+              <li><strong style="color: #f39c12;">champignon</strong> <span style="color: #888; font-size: 0.85rem;">(appuyer sur le champignon)</span></li>
+              <li><strong style="color: #f39c12;">orange</strong> <span style="color: #888; font-size: 0.85rem;">(au feu orange)</span></li>
+              <li><strong style="color: #f39c12;">prune</strong> <span style="color: #888; font-size: 0.85rem;">(prendre une prune / amende)</span></li>
+              <li><strong style="color: #f39c12;">radis</strong> <span style="color: #888; font-size: 0.85rem;">(ne plus avoir un radis)</span></li>
+              <li><strong style="color: #f39c12;">oseille</strong> <span style="color: #888; font-size: 0.85rem;">(sortir son oseille)</span></li>
+              <li><strong style="color: #f39c12;">melon</strong> <span style="color: #888; font-size: 0.85rem;">(avoir le melon)</span></li>
+              <li><strong style="color: #f39c12;">salade</strong> <span style="color: #888; font-size: 0.85rem;">(raconter des salades)</span></li>
+              <li><strong style="color: #f39c12;">navet</strong> <span style="color: #888; font-size: 0.85rem;">(un vrai navet)</span></li>
+              <li><strong style="color: #f39c12;">fraise</strong> <span style="color: #888; font-size: 0.85rem;">(ramener sa fraise)</span></li>
+              <li><strong style="color: #f39c12;">tomate</strong> <span style="color: #888; font-size: 0.85rem;">(rouge comme une tomate)</span></li>
+              <li><strong style="color: #f39c12;">marron</strong> <span style="color: #888; font-size: 0.85rem;">(coller un marron)</span></li>
+              <li><strong style="color: #f39c12;">poireau</strong> <span style="color: #888; font-size: 0.85rem;">(faire le poireau)</span></li>
+              <li><strong style="color: #f39c12;">citron</strong> <span style="color: #888; font-size: 0.85rem;">(pressés comme des citrons)</span></li>
+              <li><strong style="color: #f39c12;">pomme</strong> <span style="color: #888; font-size: 0.85rem;">(tomber dans les pommes)</span></li>
+              <li><strong style="color: #f39c12;">carotte</strong> <span style="color: #888; font-size: 0.85rem;">(les carottes sont cuites)</span></li>
+              <li><strong style="color: #f39c12;">courge</strong> <span style="color: #888; font-size: 0.85rem;">(prendre pour des courges)</span></li>
+              <li><strong style="color: #f39c12;">pêche</strong> <span style="color: #888; font-size: 0.85rem;">(garder la pêche)</span></li>
+            </ol>
+          </div>
+
+          <button class="back-button" id="copyMessageMarche" style="margin-top: 10px;">Copier le chapitre 2</button>
+        </div>
+      </details>
     </div>
   </div>
 
@@ -269,16 +354,37 @@
 <a href="#" class="back-to-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
 
 <style>
-  .pecheur-trou {
-    font-weight: bold;
-    letter-spacing: 1px;
-    transition: all 0.2s ease;
+  .chapter-block {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    margin-bottom: 14px;
   }
-  .pecheur-trou.revealed {
+  .chapter-header {
+    padding: 10px 14px;
+    background: #fafafa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    font-size: 1rem;
+    border-radius: 6px;
+  }
+  .chapter-block[open] .chapter-header {
+    border-bottom: 1px solid #e0e0e0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+  .chapter-inner {
+    padding: 14px;
+  }
+  .pecheur-trou, .marche-trou {
+    font-weight: bold;
+  }
+  .pecheur-trou.revealed, .marche-trou.revealed {
     color: #f39c12 !important;
     font-weight: bold !important;
     text-decoration: underline !important;
-    letter-spacing: normal !important;
   }
 </style>
 
@@ -333,29 +439,27 @@
       });
     }
 
-    // Toggle réponses pour l'histoire du pêcheur
-    const toggleAnswersBtn = document.getElementById('btnToggleAnswersPecheur');
-    const answersBlock = document.getElementById('pecheurAnswersBlock');
+    // --- CHAPITRE 1 : PÊCHEUR ---
+    const toggleAnswersPecheurBtn = document.getElementById('btnToggleAnswersPecheur');
+    const answersPecheurBlock = document.getElementById('pecheurAnswersBlock');
     const pecheurTrous = document.querySelectorAll('.pecheur-trou');
 
-    if (toggleAnswersBtn && answersBlock) {
-      toggleAnswersBtn.addEventListener('click', function() {
-        const isHidden = answersBlock.style.display === 'none';
+    if (toggleAnswersPecheurBtn && answersPecheurBlock) {
+      toggleAnswersPecheurBtn.addEventListener('click', function() {
+        const isHidden = answersPecheurBlock.style.display === 'none';
         if (isHidden) {
-          answersBlock.style.display = 'block';
-          toggleAnswersBtn.innerHTML = '<i class="bi bi-eye-slash"></i> (masquer les réponses)';
-          toggleAnswersBtn.style.background = '#fef5e7';
-          // Afficher les réponses en orange dans le texte
+          answersPecheurBlock.style.display = 'block';
+          toggleAnswersPecheurBtn.innerHTML = '<i class="bi bi-eye-slash"></i> (masquer les réponses)';
+          toggleAnswersPecheurBtn.style.background = '#fef5e7';
           pecheurTrous.forEach(trou => {
             const answer = trou.getAttribute('data-answer');
             trou.textContent = answer;
             trou.classList.add('revealed');
           });
         } else {
-          answersBlock.style.display = 'none';
-          toggleAnswersBtn.innerHTML = '<i class="bi bi-eye"></i> (voir les réponses)';
-          toggleAnswersBtn.style.background = 'white';
-          // Remettre les trous "..."
+          answersPecheurBlock.style.display = 'none';
+          toggleAnswersPecheurBtn.innerHTML = '<i class="bi bi-eye"></i> (voir les réponses)';
+          toggleAnswersPecheurBtn.style.background = 'white';
           pecheurTrous.forEach(trou => {
             trou.textContent = '...';
             trou.classList.remove('revealed');
@@ -364,16 +468,58 @@
       });
     }
 
-    // Bouton copier pour l'histoire du pêcheur
     const copyPecheurBtn = document.getElementById('copyMessagePecheur');
     if (copyPecheurBtn) {
       copyPecheurBtn.addEventListener('click', function() {
         const content = document.getElementById('copyContentPecheur');
         const text = content.innerText || content.textContent;
         navigator.clipboard.writeText(text).then(() => {
-          copyPecheurBtn.textContent = '✓ Copié !';
+          copyPecheurBtn.textContent = '✓ Chapitre 1 copié !';
           setTimeout(() => {
-            copyPecheurBtn.textContent = 'Copier le message';
+            copyPecheurBtn.textContent = '📋 Copier le chapitre 1';
+          }, 2000);
+        });
+      });
+    }
+
+    // --- CHAPITRE 2 : MARCHÉ (FRUITS & LÉGUMES) ---
+    const toggleAnswersMarcheBtn = document.getElementById('btnToggleAnswersMarche');
+    const answersMarcheBlock = document.getElementById('marcheAnswersBlock');
+    const marcheTrous = document.querySelectorAll('.marche-trou');
+
+    if (toggleAnswersMarcheBtn && answersMarcheBlock) {
+      toggleAnswersMarcheBtn.addEventListener('click', function() {
+        const isHidden = answersMarcheBlock.style.display === 'none';
+        if (isHidden) {
+          answersMarcheBlock.style.display = 'block';
+          toggleAnswersMarcheBtn.innerHTML = '<i class="bi bi-eye-slash"></i> (masquer les réponses)';
+          toggleAnswersMarcheBtn.style.background = '#fef5e7';
+          marcheTrous.forEach(trou => {
+            const answer = trou.getAttribute('data-answer');
+            trou.textContent = answer;
+            trou.classList.add('revealed');
+          });
+        } else {
+          answersMarcheBlock.style.display = 'none';
+          toggleAnswersMarcheBtn.innerHTML = '<i class="bi bi-eye"></i> (voir les réponses)';
+          toggleAnswersMarcheBtn.style.background = 'white';
+          marcheTrous.forEach(trou => {
+            trou.textContent = '...';
+            trou.classList.remove('revealed');
+          });
+        }
+      });
+    }
+
+    const copyMarcheBtn = document.getElementById('copyMessageMarche');
+    if (copyMarcheBtn) {
+      copyMarcheBtn.addEventListener('click', function() {
+        const content = document.getElementById('copyContentMarche');
+        const text = content.innerText || content.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          copyMarcheBtn.textContent = '✓ Chapitre 2 copié !';
+          setTimeout(() => {
+            copyMarcheBtn.textContent = '📋 Copier le chapitre 2';
           }, 2000);
         });
       });
