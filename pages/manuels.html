@@ -170,10 +170,86 @@
         <strong>Consignes :</strong> Choisissez une histoire ci-dessous. Retrouvez quel mot va dans chaque trou pour reconstituer l'histoire et ses calembours. Chaque mot est utilisé une seule fois par texte.
       </p>
 
-      <!-- CHAPITRE 1 : PÊCHEUR -->
+      <!-- CHAPITRE 1 : MARCHÉ (FRUITS & LÉGUMES) -->
       <details class="chapter-block" open>
         <summary class="chapter-header">
-          <span><strong>Chapitre 1 :</strong> L’histoire du pêcheur (Animaux marins)</span>
+          <span><strong>Chapitre 1 :</strong> L'escapade au marché (Fruits & Légumes)</span>
+          <span style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: 600;">🌿 Tout public</span>
+        </summary>
+        <div class="chapter-inner">
+          <div id="copyContentMarche">
+            <p style="margin-bottom: 10px;">
+              <strong>L’escapade au marché de deux amis un samedi matin.</strong>
+            </p>
+
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Ce matin, je me lève avec la <span class="marche-trou" data-answer="banane">...</span> ! En sortant de chez moi, je croise mon ami Marc, qui travaille comme <span class="marche-trou" data-answer="avocat">...</span> au tribunal. Il me dit : « Viens, on va faire un tour au marché, mon petit <span class="marche-trou" data-answer="chou">...</span>, ne fais pas ta bonne <span class="marche-trou" data-answer="poire">...</span> et viens m'aider ! »
+            </p>
+
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Sur la route, un chauffard a failli nous percuter, Marc a crié : « <span class="marche-trou" data-answer="ail">...</span> ! » en écrasant le <span class="marche-trou" data-answer="champignon">...</span> pour freiner au feu <span class="marche-trou" data-answer="orange">...</span> Mais la police nous a arrêtés et nous a collé une sacrée <span class="marche-trou" data-answer="prune">...</span> Comme je n'avais plus un <span class="marche-trou" data-answer="radis">...</span>, Marc a dû sortir toute son <span class="marche-trou" data-answer="oseille">...</span>
+            </p>
+
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Arrivés au marché, il y avait un vendeur qui avait un sacré <span class="marche-trou" data-answer="melon">...</span>, il se prenait pour le roi du quartier et n'arrêtait pas de raconter des <span class="marche-trou" data-answer="salade">...</span>s. Il nous proposait un film en DVD, mais c'était un vrai <span class="marche-trou" data-answer="navet">...</span> ! Quand un passant a osé ramener sa <span class="marche-trou" data-answer="fraise">...</span>, le marchand est devenu tout rouge comme une <span class="marche-trou" data-answer="tomate">...</span> et a menacé de lui coller un <span class="marche-trou" data-answer="marron">...</span> en pleine figure !
+            </p>
+
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
+              Après avoir fait le <span class="marche-trou" data-answer="poireau">...</span> pendant une demi-heure devant l'étal, nous étions pressés comme des <span class="marche-trou" data-answer="citron">...</span>s. Tout d'un coup, une dame a failli tomber dans les <span class="marche-trou" data-answer="pomme">...</span>s à cause de la chaleur. Marc s'est alors écrié : « Les <span class="marche-trou" data-answer="carotte">...</span>s sont cuites, rentrons avant qu'on ne nous prenne pour des <span class="marche-trou" data-answer="courge">...</span>s ! »
+            </p>
+
+            <p style="line-height: 1.7; text-align: justify; margin-bottom: 14px;">
+              La morale de l'histoire : pour toujours garder la <span class="marche-trou" data-answer="pêche">...</span>, ne ramène jamais ta fraise sans un radis en poche !
+            </p>
+
+            <p style="line-height: 1.6; margin-top: 12px;">
+              <strong>Mots à replacer (mélangés) :</strong><br>
+              melon, avocat, prune, champignon, chou, orange, banane, ail, salade, poire, radis, pêche, tomate, oseille, marron, carotte, navet, poireau, courge, fraise, citron, pomme.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 16px 0 10px 0;">
+            <button type="button" id="btnToggleAnswersMarche" class="back-button" style="background: none; border: 1px solid #ccc; color: #555; padding: 5px 14px; font-size: 13px;">
+              (voir les réponses)
+            </button>
+          </div>
+
+          <div id="marcheAnswersBlock" style="display: none; margin-top: 12px; margin-bottom: 12px; border-top: 1px solid #eee; padding-top: 10px;">
+            <p><strong>Réponses (dans l'ordre) :</strong></p>
+            <ol style="columns: 2; column-gap: 20px; padding-left: 20px; line-height: 1.6;">
+              <li><strong style="color: #f39c12;">banane</strong> <span style="color: #888; font-size: 0.85rem;">(avoir la banane)</span></li>
+              <li><strong style="color: #f39c12;">avocat</strong> <span style="color: #888; font-size: 0.85rem;">(mon ami l'avocat)</span></li>
+              <li><strong style="color: #f39c12;">chou</strong> <span style="color: #888; font-size: 0.85rem;">(mon petit chou)</span></li>
+              <li><strong style="color: #f39c12;">poire</strong> <span style="color: #888; font-size: 0.85rem;">(bonne poire)</span></li>
+              <li><strong style="color: #f39c12;">ail</strong> <span style="color: #888; font-size: 0.85rem;">(Ail ! / Aïe !)</span></li>
+              <li><strong style="color: #f39c12;">champignon</strong> <span style="color: #888; font-size: 0.85rem;">(appuyer sur le champignon)</span></li>
+              <li><strong style="color: #f39c12;">orange</strong> <span style="color: #888; font-size: 0.85rem;">(au feu orange)</span></li>
+              <li><strong style="color: #f39c12;">prune</strong> <span style="color: #888; font-size: 0.85rem;">(prendre une prune / amende)</span></li>
+              <li><strong style="color: #f39c12;">radis</strong> <span style="color: #888; font-size: 0.85rem;">(ne plus avoir un radis)</span></li>
+              <li><strong style="color: #f39c12;">oseille</strong> <span style="color: #888; font-size: 0.85rem;">(sortir son oseille)</span></li>
+              <li><strong style="color: #f39c12;">melon</strong> <span style="color: #888; font-size: 0.85rem;">(avoir le melon)</span></li>
+              <li><strong style="color: #f39c12;">salade</strong> <span style="color: #888; font-size: 0.85rem;">(raconter des salades)</span></li>
+              <li><strong style="color: #f39c12;">navet</strong> <span style="color: #888; font-size: 0.85rem;">(un vrai navet)</span></li>
+              <li><strong style="color: #f39c12;">fraise</strong> <span style="color: #888; font-size: 0.85rem;">(ramener sa fraise)</span></li>
+              <li><strong style="color: #f39c12;">tomate</strong> <span style="color: #888; font-size: 0.85rem;">(rouge comme une tomate)</span></li>
+              <li><strong style="color: #f39c12;">marron</strong> <span style="color: #888; font-size: 0.85rem;">(coller un marron)</span></li>
+              <li><strong style="color: #f39c12;">poireau</strong> <span style="color: #888; font-size: 0.85rem;">(faire le poireau)</span></li>
+              <li><strong style="color: #f39c12;">citron</strong> <span style="color: #888; font-size: 0.85rem;">(pressés comme des citrons)</span></li>
+              <li><strong style="color: #f39c12;">pomme</strong> <span style="color: #888; font-size: 0.85rem;">(tomber dans les pommes)</span></li>
+              <li><strong style="color: #f39c12;">carotte</strong> <span style="color: #888; font-size: 0.85rem;">(les carottes sont cuites)</span></li>
+              <li><strong style="color: #f39c12;">courge</strong> <span style="color: #888; font-size: 0.85rem;">(prendre pour des courges)</span></li>
+              <li><strong style="color: #f39c12;">pêche</strong> <span style="color: #888; font-size: 0.85rem;">(garder la pêche)</span></li>
+            </ol>
+          </div>
+
+          <button class="back-button" id="copyMessageMarche" style="margin-top: 10px;">Copier le chapitre 1</button>
+        </div>
+      </details>
+
+      <!-- CHAPITRE 2 : PÊCHEUR -->
+      <details class="chapter-block">
+        <summary class="chapter-header">
+          <span><strong>Chapitre 2 :</strong> L’histoire du pêcheur (Animaux marins)</span>
           <span style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: 600;">⚠️ Ados / Adultes (+14 ans)</span>
         </summary>
         <div class="chapter-inner">
@@ -253,83 +329,7 @@
             </ol>
           </div>
 
-          <button class="back-button" id="copyMessagePecheur" style="margin-top: 10px;">Copier le chapitre 1</button>
-        </div>
-      </details>
-
-      <!-- CHAPITRE 2 : MARCHÉ (FRUITS & LÉGUMES) -->
-      <details class="chapter-block" open>
-        <summary class="chapter-header">
-          <span><strong>Chapitre 2 :</strong> L'escapade au marché (Fruits & Légumes)</span>
-          <span style="background: #dcfce7; color: #15803d; border: 1px solid #86efac; font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: 600;">🌿 Tout public</span>
-        </summary>
-        <div class="chapter-inner">
-          <div id="copyContentMarche">
-            <p style="margin-bottom: 10px;">
-              <strong>L’escapade au marché de deux amis un samedi matin.</strong>
-            </p>
-
-            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
-              Ce matin, je me lève avec la <span class="marche-trou" data-answer="banane">...</span> ! En sortant de chez moi, je croise mon ami Marc, qui travaille comme <span class="marche-trou" data-answer="avocat">...</span> au tribunal. Il me dit : « Viens, on va faire un tour au marché, mon petit <span class="marche-trou" data-answer="chou">...</span>, ne fais pas ta bonne <span class="marche-trou" data-answer="poire">...</span> et viens m'aider ! »
-            </p>
-
-            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
-              Sur la route, un chauffard a failli nous percuter, Marc a crié : « <span class="marche-trou" data-answer="ail">...</span> ! » en écrasant le <span class="marche-trou" data-answer="champignon">...</span> pour freiner au feu <span class="marche-trou" data-answer="orange">...</span> Mais la police nous a arrêtés et nous a collé une sacrée <span class="marche-trou" data-answer="prune">...</span> Comme je n'avais plus un <span class="marche-trou" data-answer="radis">...</span>, Marc a dû sortir toute son <span class="marche-trou" data-answer="oseille">...</span>
-            </p>
-
-            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
-              Arrivés au marché, il y avait un vendeur qui avait un sacré <span class="marche-trou" data-answer="melon">...</span>, il se prenait pour le roi du quartier et n'arrêtait pas de raconter des <span class="marche-trou" data-answer="salade">...</span>s. Il nous proposait un film en DVD, mais c'était un vrai <span class="marche-trou" data-answer="navet">...</span> ! Quand un passant a osé ramener sa <span class="marche-trou" data-answer="fraise">...</span>, le marchand est devenu tout rouge comme une <span class="marche-trou" data-answer="tomate">...</span> et a menacé de lui coller un <span class="marche-trou" data-answer="marron">...</span> en pleine figure !
-            </p>
-
-            <p style="line-height: 1.7; text-align: justify; margin-bottom: 12px;">
-              Après avoir fait le <span class="marche-trou" data-answer="poireau">...</span> pendant une demi-heure devant l'étal, nous étions pressés comme des <span class="marche-trou" data-answer="citron">...</span>s. Tout d'un coup, une dame a failli tomber dans les <span class="marche-trou" data-answer="pomme">...</span>s à cause de la chaleur. Marc s'est alors écrié : « Les <span class="marche-trou" data-answer="carotte">...</span>s sont cuites, rentrons avant qu'on ne nous prenne pour des <span class="marche-trou" data-answer="courge">...</span>s ! »
-            </p>
-
-            <p style="line-height: 1.7; text-align: justify; margin-bottom: 14px;">
-              La morale de l'histoire : pour toujours garder la <span class="marche-trou" data-answer="pêche">...</span>, ne ramène jamais ta fraise sans un radis en poche !
-            </p>
-
-            <p style="line-height: 1.6; margin-top: 12px;">
-              <strong>Mots à replacer (mélangés) :</strong><br>
-              melon, avocat, prune, champignon, chou, orange, banane, ail, salade, poire, radis, pêche, tomate, oseille, marron, carotte, navet, poireau, courge, fraise, citron, pomme.
-            </p>
-          </div>
-
-          <div style="text-align: center; margin: 16px 0 10px 0;">
-            <button type="button" id="btnToggleAnswersMarche" class="back-button" style="background: none; border: 1px solid #ccc; color: #555; padding: 5px 14px; font-size: 13px;">
-              (voir les réponses)
-            </button>
-          </div>
-
-          <div id="marcheAnswersBlock" style="display: none; margin-top: 12px; margin-bottom: 12px; border-top: 1px solid #eee; padding-top: 10px;">
-            <p><strong>Réponses (dans l'ordre) :</strong></p>
-            <ol style="columns: 2; column-gap: 20px; padding-left: 20px; line-height: 1.6;">
-              <li><strong style="color: #f39c12;">banane</strong> <span style="color: #888; font-size: 0.85rem;">(avoir la banane)</span></li>
-              <li><strong style="color: #f39c12;">avocat</strong> <span style="color: #888; font-size: 0.85rem;">(mon ami l'avocat)</span></li>
-              <li><strong style="color: #f39c12;">chou</strong> <span style="color: #888; font-size: 0.85rem;">(mon petit chou)</span></li>
-              <li><strong style="color: #f39c12;">poire</strong> <span style="color: #888; font-size: 0.85rem;">(bonne poire)</span></li>
-              <li><strong style="color: #f39c12;">ail</strong> <span style="color: #888; font-size: 0.85rem;">(Ail ! / Aïe !)</span></li>
-              <li><strong style="color: #f39c12;">champignon</strong> <span style="color: #888; font-size: 0.85rem;">(appuyer sur le champignon)</span></li>
-              <li><strong style="color: #f39c12;">orange</strong> <span style="color: #888; font-size: 0.85rem;">(au feu orange)</span></li>
-              <li><strong style="color: #f39c12;">prune</strong> <span style="color: #888; font-size: 0.85rem;">(prendre une prune / amende)</span></li>
-              <li><strong style="color: #f39c12;">radis</strong> <span style="color: #888; font-size: 0.85rem;">(ne plus avoir un radis)</span></li>
-              <li><strong style="color: #f39c12;">oseille</strong> <span style="color: #888; font-size: 0.85rem;">(sortir son oseille)</span></li>
-              <li><strong style="color: #f39c12;">melon</strong> <span style="color: #888; font-size: 0.85rem;">(avoir le melon)</span></li>
-              <li><strong style="color: #f39c12;">salade</strong> <span style="color: #888; font-size: 0.85rem;">(raconter des salades)</span></li>
-              <li><strong style="color: #f39c12;">navet</strong> <span style="color: #888; font-size: 0.85rem;">(un vrai navet)</span></li>
-              <li><strong style="color: #f39c12;">fraise</strong> <span style="color: #888; font-size: 0.85rem;">(ramener sa fraise)</span></li>
-              <li><strong style="color: #f39c12;">tomate</strong> <span style="color: #888; font-size: 0.85rem;">(rouge comme une tomate)</span></li>
-              <li><strong style="color: #f39c12;">marron</strong> <span style="color: #888; font-size: 0.85rem;">(coller un marron)</span></li>
-              <li><strong style="color: #f39c12;">poireau</strong> <span style="color: #888; font-size: 0.85rem;">(faire le poireau)</span></li>
-              <li><strong style="color: #f39c12;">citron</strong> <span style="color: #888; font-size: 0.85rem;">(pressés comme des citrons)</span></li>
-              <li><strong style="color: #f39c12;">pomme</strong> <span style="color: #888; font-size: 0.85rem;">(tomber dans les pommes)</span></li>
-              <li><strong style="color: #f39c12;">carotte</strong> <span style="color: #888; font-size: 0.85rem;">(les carottes sont cuites)</span></li>
-              <li><strong style="color: #f39c12;">courge</strong> <span style="color: #888; font-size: 0.85rem;">(prendre pour des courges)</span></li>
-              <li><strong style="color: #f39c12;">pêche</strong> <span style="color: #888; font-size: 0.85rem;">(garder la pêche)</span></li>
-            </ol>
-          </div>
-
-          <button class="back-button" id="copyMessageMarche" style="margin-top: 10px;">Copier le chapitre 2</button>
+          <button class="back-button" id="copyMessagePecheur" style="margin-top: 10px;">Copier le chapitre 2</button>
         </div>
       </details>
     </div>
@@ -439,50 +439,7 @@
       });
     }
 
-    // --- CHAPITRE 1 : PÊCHEUR ---
-    const toggleAnswersPecheurBtn = document.getElementById('btnToggleAnswersPecheur');
-    const answersPecheurBlock = document.getElementById('pecheurAnswersBlock');
-    const pecheurTrous = document.querySelectorAll('.pecheur-trou');
-
-    if (toggleAnswersPecheurBtn && answersPecheurBlock) {
-      toggleAnswersPecheurBtn.addEventListener('click', function() {
-        const isHidden = answersPecheurBlock.style.display === 'none';
-        if (isHidden) {
-          answersPecheurBlock.style.display = 'block';
-          toggleAnswersPecheurBtn.innerHTML = '<i class="bi bi-eye-slash"></i> (masquer les réponses)';
-          toggleAnswersPecheurBtn.style.background = '#fef5e7';
-          pecheurTrous.forEach(trou => {
-            const answer = trou.getAttribute('data-answer');
-            trou.textContent = answer;
-            trou.classList.add('revealed');
-          });
-        } else {
-          answersPecheurBlock.style.display = 'none';
-          toggleAnswersPecheurBtn.innerHTML = '<i class="bi bi-eye"></i> (voir les réponses)';
-          toggleAnswersPecheurBtn.style.background = 'white';
-          pecheurTrous.forEach(trou => {
-            trou.textContent = '...';
-            trou.classList.remove('revealed');
-          });
-        }
-      });
-    }
-
-    const copyPecheurBtn = document.getElementById('copyMessagePecheur');
-    if (copyPecheurBtn) {
-      copyPecheurBtn.addEventListener('click', function() {
-        const content = document.getElementById('copyContentPecheur');
-        const text = content.innerText || content.textContent;
-        navigator.clipboard.writeText(text).then(() => {
-          copyPecheurBtn.textContent = '✓ Chapitre 1 copié !';
-          setTimeout(() => {
-            copyPecheurBtn.textContent = '📋 Copier le chapitre 1';
-          }, 2000);
-        });
-      });
-    }
-
-    // --- CHAPITRE 2 : MARCHÉ (FRUITS & LÉGUMES) ---
+    // --- CHAPITRE 1 : MARCHÉ (FRUITS & LÉGUMES) ---
     const toggleAnswersMarcheBtn = document.getElementById('btnToggleAnswersMarche');
     const answersMarcheBlock = document.getElementById('marcheAnswersBlock');
     const marcheTrous = document.querySelectorAll('.marche-trou');
@@ -492,8 +449,7 @@
         const isHidden = answersMarcheBlock.style.display === 'none';
         if (isHidden) {
           answersMarcheBlock.style.display = 'block';
-          toggleAnswersMarcheBtn.innerHTML = '<i class="bi bi-eye-slash"></i> (masquer les réponses)';
-          toggleAnswersMarcheBtn.style.background = '#fef5e7';
+          toggleAnswersMarcheBtn.textContent = '(masquer les réponses)';
           marcheTrous.forEach(trou => {
             const answer = trou.getAttribute('data-answer');
             trou.textContent = answer;
@@ -501,8 +457,7 @@
           });
         } else {
           answersMarcheBlock.style.display = 'none';
-          toggleAnswersMarcheBtn.innerHTML = '<i class="bi bi-eye"></i> (voir les réponses)';
-          toggleAnswersMarcheBtn.style.background = 'white';
+          toggleAnswersMarcheBtn.textContent = '(voir les réponses)';
           marcheTrous.forEach(trou => {
             trou.textContent = '...';
             trou.classList.remove('revealed');
@@ -517,9 +472,50 @@
         const content = document.getElementById('copyContentMarche');
         const text = content.innerText || content.textContent;
         navigator.clipboard.writeText(text).then(() => {
-          copyMarcheBtn.textContent = '✓ Chapitre 2 copié !';
+          copyMarcheBtn.textContent = '✓ Chapitre 1 copié !';
           setTimeout(() => {
-            copyMarcheBtn.textContent = '📋 Copier le chapitre 2';
+            copyMarcheBtn.textContent = 'Copier le chapitre 1';
+          }, 2000);
+        });
+      });
+    }
+
+    // --- CHAPITRE 2 : PÊCHEUR (ANIMAUX MARINS) ---
+    const toggleAnswersPecheurBtn = document.getElementById('btnToggleAnswersPecheur');
+    const answersPecheurBlock = document.getElementById('pecheurAnswersBlock');
+    const pecheurTrous = document.querySelectorAll('.pecheur-trou');
+
+    if (toggleAnswersPecheurBtn && answersPecheurBlock) {
+      toggleAnswersPecheurBtn.addEventListener('click', function() {
+        const isHidden = answersPecheurBlock.style.display === 'none';
+        if (isHidden) {
+          answersPecheurBlock.style.display = 'block';
+          toggleAnswersPecheurBtn.textContent = '(masquer les réponses)';
+          pecheurTrous.forEach(trou => {
+            const answer = trou.getAttribute('data-answer');
+            trou.textContent = answer;
+            trou.classList.add('revealed');
+          });
+        } else {
+          answersPecheurBlock.style.display = 'none';
+          toggleAnswersPecheurBtn.textContent = '(voir les réponses)';
+          pecheurTrous.forEach(trou => {
+            trou.textContent = '...';
+            trou.classList.remove('revealed');
+          });
+        }
+      });
+    }
+
+    const copyPecheurBtn = document.getElementById('copyMessagePecheur');
+    if (copyPecheurBtn) {
+      copyPecheurBtn.addEventListener('click', function() {
+        const content = document.getElementById('copyContentPecheur');
+        const text = content.innerText || content.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          copyPecheurBtn.textContent = '✓ Chapitre 2 copié !';
+          setTimeout(() => {
+            copyPecheurBtn.textContent = 'Copier le chapitre 2';
           }, 2000);
         });
       });
