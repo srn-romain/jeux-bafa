@@ -265,7 +265,7 @@ var GAMES_INDEX = (function () {
                 { n: 'Imprimer une petite image', d: 'Transfers et décalcomanies sur supports' },
                 { n: 'Jeux de société personnalisé', d: 'Créer son plateau de jeu de l’oie ou petits chevaux' },
                 { n: 'Land Art', d: 'Œuvres éphémères réalisées en forêt avec bois et feuilles' },
-                { n: 'Textes à trous humoristiques', d: 'Jeux de mots et textes à trous par chapitres (marché, bricolage, école, mer)' },
+                { n: 'Textes à trous humoristiques', d: 'Jeux de mots et textes à trous par chapitres (marché, fournitures scolaires, mer)' },
                 { n: 'Maquillage', d: 'Atelier grimage pour grands jeux et fées' },
                 { n: 'Origami', d: 'Pliages japonais traditionnels (grenouille, avion, cocotte)' },
                 { n: "P'tit bac", d: 'Fabrication de grille personnalisée pour petit bac' },
