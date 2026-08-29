@@ -1197,9 +1197,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Si l'URL contient une ancre (#slug), faire défiler vers l'élément
-    if (window.location.hash) {
-        const targetId = decodeURIComponent(window.location.hash.substring(1));
+    function highlightAndScrollToTarget(targetId) {
+        if (!targetId) return;
         const targetEl = document.getElementById(targetId);
         if (targetEl) {
             setTimeout(function () {
@@ -1216,4 +1215,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 350);
         }
     }
+
+    // Si l'URL contient une ancre (#slug), faire défiler vers l'élément
+    if (window.location.hash) {
+        const targetId = decodeURIComponent(window.location.hash.substring(1));
+        highlightAndScrollToTarget(targetId);
+    }
+
+    // Réagir aux changements dynamiques d'ancre
+    window.addEventListener('hashchange', function () {
+        if (window.location.hash) {
+            const targetId = decodeURIComponent(window.location.hash.substring(1));
+            highlightAndScrollToTarget(targetId);
+        }
+    });
 });

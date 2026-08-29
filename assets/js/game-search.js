@@ -210,7 +210,6 @@ var GAMES_INDEX = (function () {
                 { n: 'Devine le bébé', d: 'Reconnaître les photos d’enfance des animateurs et jeunes' },
                 { n: 'Écureuil', d: 'Protéger ses noisettes au centre avec les yeux bandés' },
                 { n: 'Fureur', d: 'Blind test musical, karaoké et chansons à compléter' },
-                { n: 'In the dark', d: 'Jeu de rôle et débat dans le noir pour 15 personnes' },
                 { n: 'Karaoké', d: 'Chanter ses tubes préférés micro en main' },
                 { n: "L'empire", d: 'Retrouver les identités secrètes des joueurs pour créer un empire' },
                 { n: "L'homme en noir", d: 'Reconstituer une combinaison de couleurs mystères' },
@@ -878,9 +877,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Si l'URL contient une ancre, faire défiler vers l'élément
-    if (window.location.hash) {
-        var targetId = decodeURIComponent(window.location.hash.substring(1));
+    function highlightAndScrollToTarget(targetId) {
+        if (!targetId) return;
         var targetEl = document.getElementById(targetId);
         if (targetEl) {
             setTimeout(function () {
@@ -898,6 +896,20 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 350);
         }
     }
+
+    // Si l'URL contient une ancre, faire défiler vers l'élément
+    if (window.location.hash) {
+        var targetId = decodeURIComponent(window.location.hash.substring(1));
+        highlightAndScrollToTarget(targetId);
+    }
+
+    // Réagir aux changements dynamiques d'ancre
+    window.addEventListener('hashchange', function () {
+        if (window.location.hash) {
+            var targetId = decodeURIComponent(window.location.hash.substring(1));
+            highlightAndScrollToTarget(targetId);
+        }
+    });
 });
 
 // Auto-initialisation au chargement de la page pour tous les visiteurs
