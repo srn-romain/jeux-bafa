@@ -582,6 +582,7 @@ function authErrorMessage(code) {
         'auth/email-already-in-use': 'Cet email est déjà utilisé.',
         'auth/weak-password': 'Mot de passe trop faible (6 caractères minimum).',
         'auth/invalid-credential': 'Identifiants incorrects.',
+        'auth/user-disabled': 'Ce compte a été désactivé par l\'administrateur.',
     };
     return map[code] || 'Identifiant ou mot de passe incorrect.';
 }
