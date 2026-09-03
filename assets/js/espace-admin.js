@@ -73,13 +73,14 @@ function initAdminTabs() {
             btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 
             const tab = btn.getAttribute('data-tab');
-            ['colos', 'demandes', 'utilisateurs', 'config'].forEach(t => {
+            ['colos', 'demandes', 'utilisateurs', 'recherche', 'config'].forEach(t => {
                 document.getElementById(`tab-${t}`)?.classList.toggle('hidden', t !== tab);
             });
             // Charger les données de l'onglet sélectionné à la demande
             if (tab === 'demandes') loadDemandes();
             if (tab === 'utilisateurs') loadUsers();
             if (tab === 'config') loadConfig();
+            if (tab === 'recherche') initGlobalSearch();
         });
     });
 }
@@ -742,6 +743,251 @@ document.getElementById('btnToggleAdminKeyVisibility')?.addEventListener('click'
         }
     }
 });
+
+
+// ================================================================
+// ONGLET RECHERCHE GLOBALE PARTICIPANTS
+// Stratégie Firestore économique :
+//   - 1 lecture de la collection espaces (déjà faite par loadColos en général)
+//   - 1 lecture par espace de la sous-collection participants (au premier lancement)
+//   - Cache mémoire : re-use si données déjà chargées (pas de re-fetch à chaque recherche)
+//   - Recherche 100 % en mémoire après le premier chargement
+//   - Invalidation manuelle du cache via le bouton "Rafraîchir"
+// ================================================================
+
+let _globalParticipantsCache = null;   // null = pas chargé | [] = vide | [...] = données
+let _globalCacheTimestamp = null;
+let _globalSearchEventsAttached = false;
+
+/**
+ * Charge TOUS les participants de TOUS les espaces en parallèle.
+ * Retourne un tableau plat : [{ participantId, coloId, coloNom, coloEmoji, ...participantData }]
+ * Attention : N lectures Firestore où N = nombre d'espaces. Donc on ne le fait qu'une fois.
+ */
+async function fetchAllParticipantsFromFirestore() {
+    const loaderText = document.getElementById('globalSearchLoaderText');
+    if (loaderText) loaderText.textContent = 'Chargement de la liste des espaces…';
+
+    // 1. Charger la liste des espaces (1 requête sur la collection espaces)
+    const espacesSnap = await db.collection('espaces').orderBy('nom').get();
+
+    if (espacesSnap.empty) return [];
+
+    const totalEspaces = espacesSnap.docs.length;
+    let loaded = 0;
+
+    // 2. Charger en parallèle les sous-collections participants
+    //    (N lectures simultanées, chacune retourne N documents participants)
+    const promises = espacesSnap.docs.map(async (espaceDoc) => {
+        const espaceData = espaceDoc.data();
+        const pSnap = await db.collection('espaces').doc(espaceDoc.id).collection('participants')
+            .orderBy('nom', 'asc').get();
+        loaded++;
+        if (loaderText) {
+            loaderText.textContent = `Chargement des participants… (${loaded}/${totalEspaces} espaces)`;
+        }
+        return pSnap.docs.map(pDoc => ({
+            participantId: pDoc.id,
+            coloId: espaceDoc.id,
+            coloNom: espaceData.nom || 'Sans nom',
+            coloEmoji: espaceData.emoji || '🏕️',
+            coloDateDebut: espaceData.dateDebut || '',
+            ...pDoc.data()
+        }));
+    });
+
+    const results = await Promise.all(promises);
+    // Aplatir le tableau 2D → tableau 1D
+    return results.flat();
+}
+
+/**
+ * Effectue la recherche en mémoire sur le cache.
+ */
+function runGlobalSearchInMemory(query) {
+    if (!_globalParticipantsCache) return [];
+    if (!query || query.trim().length < 2) return [];
+
+    const q = query.trim().toLowerCase();
+    const filterPrenom = document.getElementById('searchFilterPrenom')?.checked ?? true;
+    const filterNom    = document.getElementById('searchFilterNom')?.checked ?? true;
+    const filterNote   = document.getElementById('searchFilterNote')?.checked ?? true;
+    const filterSpec   = document.getElementById('searchFilterSpec')?.checked ?? false;
+
+    return _globalParticipantsCache.filter(p => {
+        if (filterPrenom && (p.prenom || '').toLowerCase().includes(q)) return true;
+        if (filterNom    && (p.nom || '').toLowerCase().includes(q)) return true;
+        if (filterNote   && (p.note || '').toLowerCase().includes(q)) return true;
+        if (filterNote   && (p.appreciation || '').toLowerCase().includes(q)) return true;
+        if (filterSpec   && Array.isArray(p.spec) && p.spec.some(s => s.toLowerCase().includes(q))) return true;
+        return false;
+    });
+}
+
+/**
+ * Surligne les occurrences de `query` dans `text` avec un <mark>.
+ */
+function highlightMatch(text, query) {
+    if (!text || !query) return escapeHtml(text || '');
+    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(${escaped})`, 'gi');
+    return escapeHtml(text).replace(re, '<mark style="background:#fef08a;color:#333;border-radius:2px;padding:0 2px;">$1</mark>');
+}
+
+/**
+ * Affiche les résultats de recherche dans le DOM.
+ */
+function renderGlobalSearchResults(results, query) {
+    const container = document.getElementById('globalSearchResults');
+    const countEl   = document.getElementById('globalSearchCount');
+    const countText = document.getElementById('globalSearchCountText');
+    const cacheInfo = document.getElementById('globalSearchCacheInfo');
+    const emptyEl   = document.getElementById('globalSearchEmpty');
+    const promptEl  = document.getElementById('globalSearchPrompt');
+
+    if (promptEl) promptEl.classList.add('hidden');
+    if (countEl) countEl.classList.remove('hidden');
+
+    const total = _globalParticipantsCache ? _globalParticipantsCache.length : 0;
+    const stamp = _globalCacheTimestamp
+        ? new Date(_globalCacheTimestamp).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' })
+        : '';
+    if (cacheInfo) cacheInfo.textContent = stamp ? `Cache chargé à ${stamp} · ${total} participants au total` : '';
+
+    if (results.length === 0) {
+        container.innerHTML = '';
+        if (emptyEl) emptyEl.classList.remove('hidden');
+        if (countText) countText.textContent = 'Aucun résultat';
+        return;
+    }
+
+    if (emptyEl) emptyEl.classList.add('hidden');
+    if (countText) countText.textContent = `${results.length} participant${results.length > 1 ? 's' : ''} trouvé${results.length > 1 ? 's' : ''}`;
+
+    // Grouper par espace
+    const grouped = {};
+    results.forEach(p => {
+        const key = p.coloId;
+        if (!grouped[key]) grouped[key] = { coloNom: p.coloNom, coloEmoji: p.coloEmoji, coloDateDebut: p.coloDateDebut, coloId: p.coloId, items: [] };
+        grouped[key].items.push(p);
+    });
+
+    let html = '';
+    Object.values(grouped).forEach(group => {
+        const year = group.coloDateDebut ? new Date(group.coloDateDebut).getFullYear() : '';
+        html += `
+        <div style="margin-bottom:20px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; padding-bottom:8px; border-bottom:1px solid var(--clr-surface-3);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:1.2rem;">${group.coloEmoji}</span>
+                    <span style="font-weight:700; font-size:0.95rem; color:var(--clr-text);">${escapeHtml(group.coloNom)}${year ? ` <span style="font-weight:400; font-size:0.78rem; opacity:0.6;">(${year})</span>` : ''}</span>
+                    <span style="font-size:0.75rem; background:rgba(var(--clr-primary-rgb,99,102,241),0.15); color:var(--clr-primary); border:1px solid rgba(var(--clr-primary-rgb,99,102,241),0.3); padding:1px 8px; border-radius:20px; font-weight:600;">${group.items.length}</span>
+                </div>
+                <a href="espace.html?id=${group.coloId}" target="_blank" class="es-btn es-btn--ghost es-btn--sm" title="Ouvrir l'espace">
+                    <i class="bi bi-arrow-up-right"></i>
+                </a>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                ${group.items.map(p => {
+                    const specStr = Array.isArray(p.spec) && p.spec.length ? p.spec.join(', ') : '';
+                    const noteStr = p.note || '';
+                    const appreciationStr = p.appreciation || '';
+                    return `
+                    <div style="display:flex; align-items:flex-start; gap:12px; padding:12px; background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:8px; transition:background 0.15s;"
+                         onmouseover="this.style.background='var(--clr-surface-3)'" onmouseout="this.style.background='var(--clr-surface-2)'">
+                        <div style="width:36px; height:36px; border-radius:50%; background:var(--clr-primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.85rem; color:#fff; flex-shrink:0; text-transform:uppercase; box-shadow:0 2px 6px rgba(0,0,0,0.2);">
+                            ${escapeHtml((p.prenom || '?').charAt(0))}
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:700; font-size:0.9rem; color:var(--clr-text); line-height:1.2;">
+                                ${highlightMatch(p.prenom || '', query)} ${highlightMatch(p.nom || '', query)}
+                                ${p.age ? `<span style="font-weight:400; font-size:0.78rem; color:var(--clr-text-muted); margin-left:6px;">${p.age} ans</span>` : ''}
+                                ${p.genre ? `<span style="font-weight:400; font-size:0.78rem; color:var(--clr-text-muted);">${p.genre === 'garcon' ? '♂' : p.genre === 'fille' ? '♀' : ''}</span>` : ''}
+                            </div>
+                            ${noteStr ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px; line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;"><i class="bi bi-chat-left-text" style="opacity:0.6;"></i> ${highlightMatch(noteStr, query)}</div>` : ''}
+                            ${appreciationStr ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:2px;"><i class="bi bi-star" style="opacity:0.6;"></i> ${highlightMatch(appreciationStr, query)}</div>` : ''}
+                            ${specStr ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:2px;"><i class="bi bi-tag" style="opacity:0.6;"></i> ${highlightMatch(specStr, query)}</div>` : ''}
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`;
+    });
+
+    container.innerHTML = html;
+}
+
+/**
+ * Point d'entrée de l'onglet Recherche.
+ * Attache les événements une seule fois.
+ */
+function initGlobalSearch() {
+    if (_globalSearchEventsAttached) return;
+    _globalSearchEventsAttached = true;
+
+    const btnSearch  = document.getElementById('btnGlobalSearch');
+    const inputEl    = document.getElementById('globalSearchInput');
+    const btnRefresh = document.getElementById('btnRefreshParticipantsCache');
+
+    const doSearch = async () => {
+        const query = document.getElementById('globalSearchInput')?.value?.trim() || '';
+        if (query.length < 2) {
+            showToast('Saisissez au moins 2 caractères.', 'default');
+            return;
+        }
+
+        const loader   = document.getElementById('globalSearchLoader');
+        const resultsEl = document.getElementById('globalSearchResults');
+        const promptEl = document.getElementById('globalSearchPrompt');
+        const emptyEl  = document.getElementById('globalSearchEmpty');
+
+        if (promptEl) promptEl.classList.add('hidden');
+        if (emptyEl) emptyEl.classList.add('hidden');
+        if (resultsEl) resultsEl.innerHTML = '';
+
+        // Si pas encore chargé, charger depuis Firestore (une seule fois)
+        if (_globalParticipantsCache === null) {
+            if (loader) loader.classList.remove('hidden');
+            if (btnSearch) { btnSearch.querySelector('.es-btn__text').classList.add('hidden'); btnSearch.querySelector('.es-btn__spinner').classList.remove('hidden'); btnSearch.disabled = true; }
+            try {
+                _globalParticipantsCache = await fetchAllParticipantsFromFirestore();
+                _globalCacheTimestamp = Date.now();
+            } catch(err) {
+                console.error('fetchAllParticipants error:', err);
+                showToast("Erreur lors du chargement des participants.", 'error');
+                _globalParticipantsCache = null; // retry next time
+                if (loader) loader.classList.add('hidden');
+                if (btnSearch) { btnSearch.querySelector('.es-btn__text').classList.remove('hidden'); btnSearch.querySelector('.es-btn__spinner').classList.add('hidden'); btnSearch.disabled = false; }
+                return;
+            } finally {
+                if (loader) loader.classList.add('hidden');
+                if (btnSearch) { btnSearch.querySelector('.es-btn__text').classList.remove('hidden'); btnSearch.querySelector('.es-btn__spinner').classList.add('hidden'); btnSearch.disabled = false; }
+            }
+        }
+
+        // Recherche en mémoire (0 lecture Firestore)
+        const results = runGlobalSearchInMemory(query);
+        renderGlobalSearchResults(results, query);
+    };
+
+    btnSearch?.addEventListener('click', doSearch);
+    inputEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter') doSearch(); });
+
+    btnRefresh?.addEventListener('click', async () => {
+        _globalParticipantsCache = null;
+        _globalCacheTimestamp = null;
+        const countEl = document.getElementById('globalSearchCount');
+        const resultsEl = document.getElementById('globalSearchResults');
+        const promptEl = document.getElementById('globalSearchPrompt');
+        const emptyEl = document.getElementById('globalSearchEmpty');
+        if (countEl) countEl.classList.add('hidden');
+        if (resultsEl) resultsEl.innerHTML = '';
+        if (emptyEl) emptyEl.classList.add('hidden');
+        if (promptEl) promptEl.classList.remove('hidden');
+        document.getElementById('globalSearchInput') && (document.getElementById('globalSearchInput').value = '');
+        showToast('Cache effacé. La prochaine recherche rechargera depuis Firestore.', 'default');
+    });
+}
 
 
 // ================================================================

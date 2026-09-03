@@ -109,6 +109,9 @@
                 <button class="es-nav-tab" data-tab="utilisateurs" role="tab">
                     <i class="bi bi-people"></i> Utilisateurs
                 </button>
+                <button class="es-nav-tab" data-tab="recherche" role="tab">
+                    <i class="bi bi-search"></i> Recherche
+                </button>
                 <button class="es-nav-tab" data-tab="config" role="tab">
                     <i class="bi bi-gear"></i> Configuration
                 </button>
@@ -140,6 +143,104 @@
                     <p class="es-empty__text">Crée la première colonie pour commencer.</p>
                 </div>
             </div>
+
+
+            <!-- ===================================================
+         ONGLET RECHERCHE GLOBALE
+         =================================================== -->
+            <div id="tab-recherche" class="hidden">
+                <div class="es-card">
+
+                    <!-- En-tête section -->
+                    <div style="margin-bottom: 20px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                            <div>
+                                <h2 style="font-size:1.1rem; font-weight:700; color:var(--clr-text); margin:0 0 4px 0; display:flex; align-items:center; gap:8px;">
+                                    <i class="bi bi-person-lines-fill" style="color:var(--clr-primary);"></i> Recherche de participants
+                                </h2>
+                                <p style="font-size:0.8rem; color:var(--clr-text-muted); margin:0; line-height:1.4;">
+                                    Recherchez un participant dans <strong>tous les espaces confondus</strong>. Les données sont chargées au premier lancement, puis mises en cache.
+                                </p>
+                            </div>
+                            <button id="btnRefreshParticipantsCache" class="es-btn es-btn--ghost es-btn--sm" title="Vider le cache et recharger depuis Firestore">
+                                <i class="bi bi-arrow-clockwise"></i> <span class="brand-label">Rafraîchir</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Séparateur -->
+                    <div style="height:1px; background:var(--clr-surface-3); margin-bottom:20px;"></div>
+
+                    <!-- Barre de recherche -->
+                    <div style="display:flex; gap:10px; margin-bottom:16px;">
+                        <div style="position:relative; flex:1;">
+                            <i class="bi bi-search" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--clr-text-muted); pointer-events:none;"></i>
+                            <input
+                                type="text"
+                                id="globalSearchInput"
+                                class="es-input"
+                                placeholder="Prénom, nom, note, allergie, remarque…"
+                                autocomplete="off"
+                                style="padding-left:40px; width:100%;"
+                            >
+                        </div>
+                        <button id="btnGlobalSearch" class="es-btn es-btn--primary" style="flex-shrink:0;">
+                            <i class="bi bi-search"></i>
+                            <span class="es-btn__text brand-label">Rechercher</span>
+                            <span class="es-btn__spinner"></span>
+                        </button>
+                    </div>
+
+                    <!-- Filtres -->
+                    <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px; padding:10px 14px; background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm);">
+                        <span style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600;"><i class="bi bi-funnel"></i> Filtrer par :</span>
+                        <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--clr-text); cursor:pointer;">
+                            <input type="checkbox" id="searchFilterPrenom" checked style="accent-color:var(--clr-primary);"> Prénom
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--clr-text); cursor:pointer;">
+                            <input type="checkbox" id="searchFilterNom" checked style="accent-color:var(--clr-primary);"> Nom
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--clr-text); cursor:pointer;">
+                            <input type="checkbox" id="searchFilterNote" checked style="accent-color:var(--clr-primary);"> Remarques / Note
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--clr-text); cursor:pointer;">
+                            <input type="checkbox" id="searchFilterSpec" style="accent-color:var(--clr-primary);"> Spécificités
+                        </label>
+                    </div>
+
+                    <!-- État : chargement -->
+                    <div id="globalSearchLoader" class="es-loader hidden">
+                        <div class="es-spinner"></div>
+                        <span id="globalSearchLoaderText">Chargement des participants…</span>
+                    </div>
+
+                    <!-- Compteur résultats -->
+                    <div id="globalSearchCount" class="hidden" style="font-size:0.82rem; color:var(--clr-text-muted); margin-bottom:12px; display:flex; align-items:center; gap:8px;">
+                        <i class="bi bi-funnel"></i>
+                        <span id="globalSearchCountText"></span>
+                        <span id="globalSearchCacheInfo" style="margin-left:auto; font-style:italic; opacity:0.6;"></span>
+                    </div>
+
+                    <!-- Résultats -->
+                    <div id="globalSearchResults"></div>
+
+                    <!-- État vide -->
+                    <div id="globalSearchEmpty" class="es-empty hidden">
+                        <div class="es-empty__icon">🔍</div>
+                        <div class="es-empty__title">Aucun résultat</div>
+                        <p class="es-empty__text">Aucun participant ne correspond à votre recherche.</p>
+                    </div>
+
+                    <!-- Invite initiale -->
+                    <div id="globalSearchPrompt" style="text-align:center; padding:40px 20px; color:var(--clr-text-muted);">
+                        <div style="font-size:2.5rem; margin-bottom:12px; opacity:0.4;">🔍</div>
+                        <div style="font-weight:600; font-size:1rem; color:var(--clr-text);">Tapez un nom, prénom ou mot-clé</div>
+                        <p style="font-size:0.82rem; margin-top:8px;">puis appuyez sur Entrée ou cliquez sur Rechercher.</p>
+                    </div>
+
+                </div><!-- /.es-card -->
+            </div>
+
 
 
             <!-- ===================================================
