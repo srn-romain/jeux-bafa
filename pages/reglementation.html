@@ -238,6 +238,56 @@
       color: #475569;
       margin-bottom: 8px;
     }
+    /* Bouton édition inline sur les items de la liste visible */
+    .depliant-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 2px;
+    }
+    .depliant-list-item label {
+      flex: 1;
+    }
+    .depliant-list-item-actions {
+      display: flex;
+      gap: 2px;
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+    .depliant-list-item:hover .depliant-list-item-actions {
+      opacity: 1;
+    }
+    .depliant-list-item-btn {
+      background: none;
+      border: 1px solid transparent;
+      color: #94a3b8;
+      border-radius: 4px;
+      padding: 2px 5px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      transition: all 0.15s ease;
+    }
+    .depliant-list-item-btn:hover { background: #f1f5f9; border-color: #cbd5e1; color: #475569; }
+    .depliant-list-item-btn.edit:hover { color: #2563eb; border-color: #bfdbfe; background: #eff6ff; }
+    .depliant-list-item-btn.del:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+    /* Formulaire d'édition inline dans la liste */
+    .depliant-list-edit-form {
+      display: none;
+      background: #f0f7ff;
+      border: 1.5px solid #93c5fd;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 4px;
+      gap: 6px;
+      flex-direction: column;
+    }
+    .depliant-list-edit-form.open {
+      display: flex;
+    }
   </style>
 </head>
 <body>
@@ -341,8 +391,8 @@
           <span class="depliant-badge"><i class="bi bi-star-fill"></i> Spécial Admin</span>
         </div>
         <div class="depliant-header-actions">
-          <button type="button" id="adminManageDepliantBtn" class="depliant-toggle-btn" onclick="event.stopPropagation(); toggleAdminDepliantPanel();" title="Ajouter, modifier ou supprimer des items">
-            <i class="bi bi-pencil-square"></i> <span>Gérer la liste</span>
+          <button type="button" id="adminManageDepliantBtn" class="depliant-toggle-btn" onclick="event.stopPropagation(); toggleAdminDepliantPanel();" title="Ajouter un élément">
+            <i class="bi bi-plus-circle"></i> <span>Ajouter</span>
           </button>
           <button type="button" class="depliant-toggle-btn" onclick="event.stopPropagation(); toggleDepliant();">
             <span id="depliantToggleText">Replier</span>
@@ -352,15 +402,13 @@
       </div>
 
       <div id="depliantBody">
-        <!-- Panneau d'administration Admin pour la gestion en temps réel -->
-        <div id="adminDepliantPanel" style="display: none; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px; padding: 14px; margin-bottom: 14px;">
-          <h5 style="margin-top: 0; margin-bottom: 10px; color: #1e293b; display: flex; align-items: center; gap: 6px;">
-            <i class="bi bi-gear-fill" style="color: #f39c12;"></i> Gestion Admin des Items d'Itinérance
-          </h5>
-          
-          <!-- Formulaire d'ajout rapide -->
+        <!-- Panneau d'ajout rapide (admin) -->
+        <div id="adminDepliantPanel" style="display: none; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px 14px; margin-bottom: 14px;">
+          <div style="font-size:0.8rem; font-weight:700; color:#475569; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            <i class="bi bi-plus-circle-fill" style="color:#27ae60;"></i> Ajouter un élément à la liste
+          </div>
           <div class="depliant-form-row">
-            <input type="text" id="newDepliantItemText" placeholder="Nouvel élément (ex: Gourde isotherme...)" style="flex: 1; min-width: 180px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.88rem;">
+            <input type="text" id="newDepliantItemText" placeholder="Nouvel élément (ex: Gourde isotherme...)" style="flex: 1; min-width: 180px; padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.88rem;" onkeydown="if(event.key==='Enter') addDepliantItem();">
             <select id="newDepliantItemCategory" style="padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.88rem; background: #fff;">
               <option value="chaud">☀️ Pays chaud</option>
               <option value="froid">❄️ Pays froid</option>
@@ -369,27 +417,6 @@
             <button type="button" onclick="addDepliantItem()" style="background: #27ae60; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.88rem;">
               <i class="bi bi-plus-circle"></i> Ajouter
             </button>
-          </div>
-
-          <!-- Formulaire de modification -->
-          <div id="editDepliantForm" style="display: none; background: #f8fafc; border: 1px solid #94a3b8; border-radius: 4px; padding: 10px; margin-bottom: 12px;">
-            <strong style="font-size: 0.85rem; color: #334155;">Modifier l'élément sélectionné :</strong>
-            <div class="depliant-form-row" style="margin-top: 6px; margin-bottom: 0;">
-              <input type="hidden" id="editDepliantDocId">
-              <input type="text" id="editDepliantItemText" style="flex: 1; min-width: 160px; padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem;">
-              <select id="editDepliantItemCategory" style="padding: 5px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; background: #fff;">
-                <option value="chaud">☀️ Pays chaud</option>
-                <option value="froid">❄️ Pays froid</option>
-                <option value="deux">🔗 Les deux (Commun)</option>
-              </select>
-              <button type="button" onclick="saveEditDepliantItem()" style="background: #2980b9; color: white; border: none; padding: 5px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">Enregistrer</button>
-              <button type="button" onclick="cancelEditDepliantItem()" style="background: #95a5a6; color: white; border: none; padding: 5px 12px; border-radius: 4px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">Annuler</button>
-            </div>
-          </div>
-
-          <!-- Liste des items enregistrés -->
-          <div style="max-height: 280px; overflow-y: auto; border-top: 1px solid #e2e8f0; padding-top: 8px;">
-            <div id="adminDepliantItemsList"></div>
           </div>
         </div>
 
@@ -721,80 +748,115 @@
     const ulChaud = document.getElementById('depliantListChaud');
     const ulFroid = document.getElementById('depliantListFroid');
     const ulDeux = document.getElementById('depliantListDeux');
-    
+
     if (!ulChaud || !ulFroid || !ulDeux) return;
 
     ulChaud.innerHTML = '';
     ulFroid.innerHTML = '';
     ulDeux.innerHTML = '';
 
+    const isAdmin = !!currentAdminUid;
+
+    // Regrouper par catégorie pour connaître les index de tri
+    const byCategory = { chaud: [], froid: [], deux: [] };
     allDepliantItems.forEach(item => {
-      const li = document.createElement('li');
-      li.innerHTML = `<label><input type="checkbox"> ${escapeHtml(item.label)}</label>`;
-      
-      if (item.category === 'chaud') {
-        ulChaud.appendChild(li);
-      } else if (item.category === 'froid') {
-        ulFroid.appendChild(li);
-      } else {
-        ulDeux.appendChild(li);
-      }
+      if (byCategory[item.category]) byCategory[item.category].push(item);
+      else byCategory['deux'].push(item);
     });
-  }
 
-  function renderAdminDepliantItems() {
-    const container = document.getElementById('adminDepliantItemsList');
-    if (!container) return;
+    const appendItems = (ul, items) => {
+      items.forEach((item, idx) => {
+        const isFirst = idx === 0;
+        const isLast = idx === items.length - 1;
+        const safeId = escapeJs(item.id);
+        const safeLabel = escapeHtml(item.label);
 
-    if (allDepliantItems.length === 0) {
-      container.innerHTML = '<div style="font-size:0.85rem; color:#7f8c8d; font-style:italic;">Aucun élément enregistré.</div>';
-      return;
-    }
+        const li = document.createElement('li');
+        li.className = 'depliant-list-item';
+        li.id = 'li-' + safeId;
 
-    const categories = [
-      { key: 'chaud', label: '☀️ Pays chaud' },
-      { key: 'froid', label: '❄️ Pays froid' },
-      { key: 'deux', label: '🔗 Les deux (Commun)' }
-    ];
-
-    let html = '';
-
-    categories.forEach(cat => {
-      const categoryItems = allDepliantItems.filter(item => item.category === cat.key);
-      if (categoryItems.length === 0) return;
-
-      html += `<div style="font-weight:700; font-size:0.78rem; color:#475569; margin-top:10px; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.3px;">${cat.label}</div>`;
-
-      categoryItems.forEach((item, catIndex) => {
-        const isFirst = catIndex === 0;
-        const isLast = catIndex === categoryItems.length - 1;
-
-        html += `
-          <div class="depliant-item-row">
-            <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
-              <span style="color: #1e293b; font-weight: 500;">${escapeHtml(item.label)}</span>
+        if (isAdmin) {
+          li.innerHTML = `
+            <!-- Mode lecture -->
+            <div id="liview-${safeId}" style="display:flex; align-items:center; gap:6px; width:100%;">
+              <label style="flex:1; cursor:pointer;"><input type="checkbox"> ${safeLabel}</label>
+              <div class="depliant-list-item-actions">
+                <button type="button" class="depliant-list-item-btn" onclick="moveCategoryItemUp('${safeId}')" ${isFirst ? 'disabled style="opacity:0.2;cursor:not-allowed;"' : ''} title="Monter"><i class="bi bi-arrow-up-short"></i></button>
+                <button type="button" class="depliant-list-item-btn" onclick="moveCategoryItemDown('${safeId}')" ${isLast ? 'disabled style="opacity:0.2;cursor:not-allowed;"' : ''} title="Descendre"><i class="bi bi-arrow-down-short"></i></button>
+                <button type="button" class="depliant-list-item-btn edit" onclick="openListItemEdit('${safeId}')" title="Modifier"><i class="bi bi-pencil"></i></button>
+                <button type="button" class="depliant-list-item-btn del" onclick="deleteDepliantItem('${safeId}')" title="Supprimer"><i class="bi bi-trash"></i></button>
+              </div>
             </div>
-            <div class="depliant-item-actions">
-              <button type="button" class="depliant-action-btn" onclick="moveCategoryItemUp('${item.id}')" ${isFirst ? 'disabled style="opacity:0.25; cursor:not-allowed;"' : ''} title="Monter d'un cran">
-                <i class="bi bi-arrow-up-short"></i>
-              </button>
-              <button type="button" class="depliant-action-btn" onclick="moveCategoryItemDown('${item.id}')" ${isLast ? 'disabled style="opacity:0.25; cursor:not-allowed;"' : ''} title="Descendre d'un cran">
-                <i class="bi bi-arrow-down-short"></i>
-              </button>
-              <button type="button" class="depliant-action-btn depliant-action-btn--edit" onclick="startEditDepliantItem('${item.id}', '${escapeJs(item.label)}', '${item.category}')" title="Modifier">
-                <i class="bi bi-pencil"></i>
-              </button>
-              <button type="button" class="depliant-action-btn depliant-action-btn--delete" onclick="deleteDepliantItem('${item.id}')" title="Supprimer">
-                <i class="bi bi-trash"></i>
-              </button>
+            <!-- Mode édition inline -->
+            <div id="liedit-${safeId}" class="depliant-list-edit-form">
+              <input type="text" id="lieditText-${safeId}" value="${safeLabel}"
+                style="width:100%; padding:5px 8px; border:1px solid #93c5fd; border-radius:4px; font-size:0.87rem; box-sizing:border-box;"
+                onkeydown="if(event.key==='Enter') saveListItemEdit('${safeId}'); if(event.key==='Escape') closeListItemEdit('${safeId}');">
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                <span style="font-size:0.75rem; color:#64748b; font-weight:600;">Catégorie :</span>
+                <select id="lieditCat-${safeId}" style="padding:4px 8px; border:1px solid #93c5fd; border-radius:4px; font-size:0.82rem; background:#fff;">
+                  <option value="chaud" ${item.category==='chaud'?'selected':''}>☀️ Pays chaud</option>
+                  <option value="froid" ${item.category==='froid'?'selected':''}>❄️ Pays froid</option>
+                  <option value="deux" ${item.category==='deux'?'selected':''}>🔗 Les deux (Commun)</option>
+                </select>
+                <button type="button" onclick="saveListItemEdit('${safeId}')" style="background:#2563eb; color:white; border:none; padding:4px 10px; border-radius:4px; font-weight:600; cursor:pointer; font-size:0.82rem; margin-left:auto;"><i class="bi bi-check-lg"></i> OK</button>
+                <button type="button" onclick="closeListItemEdit('${safeId}')" style="background:#94a3b8; color:white; border:none; padding:4px 8px; border-radius:4px; font-weight:600; cursor:pointer; font-size:0.82rem;"><i class="bi bi-x-lg"></i></button>
+              </div>
             </div>
-          </div>
-        `;
+          `;
+        } else {
+          li.innerHTML = `<label><input type="checkbox"> ${safeLabel}</label>`;
+        }
+
+        ul.appendChild(li);
       });
-    });
+    };
 
-    container.innerHTML = html;
+    appendItems(ulChaud, byCategory.chaud);
+    appendItems(ulFroid, byCategory.froid);
+    appendItems(ulDeux, byCategory.deux);
   }
+
+  function openListItemEdit(itemId) {
+    // Fermer tout autre formulaire ouvert
+    document.querySelectorAll('.depliant-list-edit-form.open').forEach(el => {
+      if (el.id !== 'liedit-' + itemId) el.classList.remove('open');
+    });
+    document.querySelectorAll('[id^="liview-"]').forEach(el => el.style.display = 'flex');
+    
+    const view = document.getElementById('liview-' + itemId);
+    const edit = document.getElementById('liedit-' + itemId);
+    if (!view || !edit) return;
+    view.style.display = 'none';
+    edit.classList.add('open');
+    const input = document.getElementById('lieditText-' + itemId);
+    if (input) { input.focus(); input.select(); }
+  }
+
+  function closeListItemEdit(itemId) {
+    const view = document.getElementById('liview-' + itemId);
+    const edit = document.getElementById('liedit-' + itemId);
+    if (!view || !edit) return;
+    edit.classList.remove('open');
+    view.style.display = 'flex';
+  }
+
+  async function saveListItemEdit(itemId) {
+    const textInput = document.getElementById('lieditText-' + itemId);
+    const catSelect = document.getElementById('lieditCat-' + itemId);
+    if (!textInput || !catSelect) return;
+    const label = textInput.value.trim();
+    const category = catSelect.value;
+    if (!label) { textInput.focus(); return; }
+    const targetItem = allDepliantItems.find(item => item.id === itemId);
+    if (targetItem) {
+      targetItem.label = label;
+      targetItem.category = category;
+    }
+    await saveDepliantItemsToFirestore();
+  }
+
+  function renderAdminDepliantItems() { /* no-op: édition directe sur la liste */ }
 
   async function moveCategoryItemUp(itemId) {
     const itemIndex = allDepliantItems.findIndex(i => i.id === itemId);
@@ -878,45 +940,7 @@
     await saveDepliantItemsToFirestore();
   }
 
-  function startEditDepliantItem(itemId, label, category) {
-    const editForm = document.getElementById('editDepliantForm');
-    const idInput = document.getElementById('editDepliantDocId');
-    const textInput = document.getElementById('editDepliantItemText');
-    const catSelect = document.getElementById('editDepliantItemCategory');
-    
-    if (!editForm || !idInput || !textInput || !catSelect) return;
 
-    idInput.value = itemId;
-    textInput.value = label;
-    catSelect.value = category;
-    editForm.style.display = 'block';
-    textInput.focus();
-  }
-
-  function cancelEditDepliantItem() {
-    const editForm = document.getElementById('editDepliantForm');
-    if (editForm) editForm.style.display = 'none';
-  }
-
-  async function saveEditDepliantItem() {
-    const itemId = document.getElementById('editDepliantDocId').value;
-    const label = document.getElementById('editDepliantItemText').value.trim();
-    const category = document.getElementById('editDepliantItemCategory').value;
-
-    if (!itemId || !label) {
-      alert("Veuillez remplir le texte de l'élément.");
-      return;
-    }
-
-    const targetItem = allDepliantItems.find(item => item.id === itemId);
-    if (targetItem) {
-      targetItem.label = label;
-      targetItem.category = category;
-    }
-
-    cancelEditDepliantItem();
-    await saveDepliantItemsToFirestore();
-  }
 
   function escapeHtml(str) {
     return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
