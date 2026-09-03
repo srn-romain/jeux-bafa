@@ -202,7 +202,13 @@ async function signInWithGoogle() {
         }
     } catch (err) {
         if (err.code !== 'auth/popup-closed-by-user') {
-            showError(loginError, "Erreur Google : " + err.message);
+            let msg = "Erreur de connexion.";
+            if (err.code === 'auth/user-not-found') msg = "Aucun compte avec cet email.";
+            if (err.code === 'auth/wrong-password') msg = "Mot de passe incorrect.";
+            if (err.code === 'auth/invalid-email') msg = "Email invalide.";
+            if (err.code === 'auth/too-many-requests') msg = "Trop de tentatives. Réessaie plus tard.";
+            if (err.code === 'auth/user-disabled') msg = "Ce compte a été désactivé par l'administrateur.";
+            showError(loginError, msg);
         }
     }
 }

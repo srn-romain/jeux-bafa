@@ -568,7 +568,15 @@ async function signInWithGoogle() {
         window.isSigningUp = false;
         if (err.code !== 'auth/popup-closed-by-user') {
             console.error('Google sign-in error:', err);
-            showToast('Erreur Google : ' + err.message, 'error');
+            const userMsg = authErrorMessage(err.code);
+            showToast(userMsg, 'error');
+
+            const loginErr = document.getElementById('loginError');
+            const loginErrMsg = document.getElementById('loginErrorMsg');
+            if (loginErr && loginErrMsg) {
+                loginErrMsg.textContent = userMsg;
+                loginErr.classList.remove('hidden');
+            }
         }
     }
 }
@@ -583,6 +591,8 @@ function authErrorMessage(code) {
         'auth/weak-password': 'Mot de passe trop faible (6 caractères minimum).',
         'auth/invalid-credential': 'Identifiants incorrects.',
         'auth/user-disabled': 'Ce compte a été désactivé par l\'administrateur.',
+        'auth/popup-blocked': 'La fenêtre de connexion Google a été bloquée par votre navigateur.',
+        'auth/account-exists-with-different-credential': 'Un compte existe déjà avec un autre mode de connexion pour cet email.',
     };
     return map[code] || 'Identifiant ou mot de passe incorrect.';
 }
