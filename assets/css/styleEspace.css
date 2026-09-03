@@ -4383,5 +4383,18 @@ body.modal-open .es-topbar {
   font-weight: 700;
 }
 
+/* Details / Cartes repliables */
+.es-details-card summary::-webkit-details-marker {
+  display: none;
+}
+.es-details-card summary i.bi-chevron-down {
+  transition: transform 0.25s ease;
+  display: inline-block;
+}
+.es-details-card[open] summary i.bi-chevron-down {
+  transform: rotate(180deg);
+}
+
+
 
 

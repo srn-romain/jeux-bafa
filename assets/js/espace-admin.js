@@ -918,10 +918,87 @@ function renderGlobalSearchResults(results, query) {
 }
 
 /**
+ * Formate un nombre d'octets en unité lisible (Ko, Mo, Go).
+ */
+function formatBytes(bytes, decimals = 1) {
+    if (!bytes || bytes <= 0) return '0 Ko';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['Octets', 'Ko', 'Mo', 'Go'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+/**
+ * Calcule et affiche l'espace de stockage utilisé par l'application et les données hors-ligne.
+ */
+async function updateStorageUsageDisplay() {
+    const badgeEl = document.getElementById('storageUsageBadge');
+    const offlineCountEl = document.getElementById('storageOfflineCount');
+    if (!badgeEl && !offlineCountEl) return;
+
+    let totalBytes = 0;
+    let lsBytes = 0;
+
+    // 1. Calcul de la taille du localStorage
+    try {
+        let totalStr = '';
+        for (let key in localStorage) {
+            if (localStorage.hasOwnProperty(key)) {
+                totalStr += key + (localStorage[key] || '');
+            }
+        }
+        lsBytes = new Blob([totalStr]).size;
+    } catch (e) {
+        console.warn("Erreur calcul localStorage:", e);
+    }
+
+    // 2. Storage estimate API (PWA CacheStorage + IndexedDB + etc.)
+    if (navigator.storage && navigator.storage.estimate) {
+        try {
+            const estimate = await navigator.storage.estimate();
+            totalBytes = estimate.usage || 0;
+        } catch (e) {
+            console.warn("Erreur navigator.storage.estimate:", e);
+        }
+    }
+
+    if (totalBytes === 0 || totalBytes < lsBytes) {
+        totalBytes = lsBytes;
+    }
+
+    // 3. Compter les espaces distincts enregistrés pour le mode hors ligne
+    let distinctColos = new Set();
+    try {
+        for (let key in localStorage) {
+            if (key.startsWith('offline_participants_')) {
+                distinctColos.add(key.replace('offline_participants_', ''));
+            } else if (key.startsWith('offline_colo_')) {
+                distinctColos.add(key.replace('offline_colo_', ''));
+            }
+        }
+    } catch (e) {}
+    const nbEspacesOffline = distinctColos.size;
+
+    if (badgeEl) {
+        badgeEl.textContent = `~${formatBytes(totalBytes)} utilisés`;
+    }
+    if (offlineCountEl) {
+        if (nbEspacesOffline > 0) {
+            offlineCountEl.innerHTML = `<i class="bi bi-cloud-check-fill" style="color:var(--clr-primary);"></i> <strong>${nbEspacesOffline} espace${nbEspacesOffline > 1 ? 's' : ''}</strong> prêt${nbEspacesOffline > 1 ? 's' : ''} pour la consultation hors-ligne.`;
+        } else {
+            offlineCountEl.innerHTML = `<i class="bi bi-cloud-slash" style="color:var(--clr-text-muted);"></i> Aucun espace enregistré pour le mode hors-ligne actuellement.`;
+        }
+    }
+}
+
+/**
  * Point d'entrée de l'onglet Recherche.
  * Attache les événements une seule fois.
  */
 function initGlobalSearch() {
+    updateStorageUsageDisplay();
+
     if (_globalSearchEventsAttached) return;
     _globalSearchEventsAttached = true;
 
@@ -985,7 +1062,75 @@ function initGlobalSearch() {
         if (emptyEl) emptyEl.classList.add('hidden');
         if (promptEl) promptEl.classList.remove('hidden');
         document.getElementById('globalSearchInput') && (document.getElementById('globalSearchInput').value = '');
-        showToast('Cache effacé. La prochaine recherche rechargera depuis Firestore.', 'default');
+        showToast('Cache de recherche mémoire réinitialisé. La prochaine recherche rechargera depuis Firestore.', 'default');
+    });
+
+    // Gestion de la modal et suppression du cache hors-ligne
+    const btnClearOffline = document.getElementById('btnClearOfflineCache');
+    const modalClearOffline = document.getElementById('overlayConfirmClearOfflineCache');
+    const btnCloseClearOffline = document.getElementById('btnCloseConfirmClearOfflineCache');
+    const btnCancelClearOffline = document.getElementById('btnCancelClearOfflineCache');
+    const btnConfirmClearOffline = document.getElementById('btnConfirmClearOfflineCache');
+
+    btnClearOffline?.addEventListener('click', () => {
+        modalClearOffline?.classList.remove('hidden');
+    });
+
+    const closeClearModal = () => {
+        modalClearOffline?.classList.add('hidden');
+    };
+
+    btnCloseClearOffline?.addEventListener('click', closeClearModal);
+    btnCancelClearOffline?.addEventListener('click', closeClearModal);
+    modalClearOffline?.addEventListener('click', (e) => {
+        if (e.target === modalClearOffline) closeClearModal();
+    });
+
+    btnConfirmClearOffline?.addEventListener('click', async () => {
+        if (btnConfirmClearOffline) {
+            btnConfirmClearOffline.querySelector('.es-btn__text')?.classList.add('hidden');
+            btnConfirmClearOffline.querySelector('.es-btn__spinner')?.classList.remove('hidden');
+            btnConfirmClearOffline.disabled = true;
+        }
+
+        try {
+            // 1. Nettoyer les clés de données offline du localStorage
+            const keysToRemove = [];
+            for (let key in localStorage) {
+                if (key.startsWith('offline_')) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+
+            // 2. Nettoyer les caches Service Worker (PWA)
+            if ('caches' in window) {
+                try {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                } catch (cacheErr) {
+                    console.warn("Erreur suppression caches:", cacheErr);
+                }
+            }
+
+            // 3. Réinitialiser le cache mémoire de recherche
+            _globalParticipantsCache = null;
+            _globalCacheTimestamp = null;
+
+            // 4. Actualiser l'affichage
+            await updateStorageUsageDisplay();
+            showToast('Cache hors-ligne effacé. Les espaces ne seront plus accessibles hors connexion.', 'success');
+            closeClearModal();
+        } catch (err) {
+            console.error("Erreur vidage cache hors-ligne:", err);
+            showToast("Erreur lors de la suppression du cache.", 'error');
+        } finally {
+            if (btnConfirmClearOffline) {
+                btnConfirmClearOffline.querySelector('.es-btn__text')?.classList.remove('hidden');
+                btnConfirmClearOffline.querySelector('.es-btn__spinner')?.classList.add('hidden');
+                btnConfirmClearOffline.disabled = false;
+            }
+        }
     });
 }
 

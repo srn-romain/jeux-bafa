@@ -153,20 +153,48 @@
 
                     <!-- En-tête section -->
                     <div style="margin-bottom: 20px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-                            <div>
-                                <h2 style="font-size:1.1rem; font-weight:700; color:var(--clr-text); margin:0 0 4px 0; display:flex; align-items:center; gap:8px;">
-                                    <i class="bi bi-person-lines-fill" style="color:var(--clr-primary);"></i> Recherche de participants
-                                </h2>
-                                <p style="font-size:0.8rem; color:var(--clr-text-muted); margin:0; line-height:1.4;">
-                                    Recherchez un participant dans <strong>tous les espaces confondus</strong>. Les données sont chargées au premier lancement, puis mises en cache.
-                                </p>
-                            </div>
-                            <button id="btnRefreshParticipantsCache" class="es-btn es-btn--ghost es-btn--sm" title="Vider le cache et recharger depuis Firestore">
-                                <i class="bi bi-arrow-clockwise"></i> <span class="brand-label">Rafraîchir</span>
-                            </button>
-                        </div>
+                        <h2 style="font-size:1.1rem; font-weight:700; color:var(--clr-text); margin:0 0 4px 0; display:flex; align-items:center; gap:8px;">
+                            <i class="bi bi-person-lines-fill" style="color:var(--clr-primary);"></i> Recherche de participants
+                        </h2>
+                        <p style="font-size:0.8rem; color:var(--clr-text-muted); margin:0; line-height:1.4;">
+                            Recherchez un participant dans <strong>tous les espaces confondus</strong>. Les données sont chargées au premier lancement, puis mises en cache.
+                        </p>
                     </div>
+
+                    <!-- Encart d'information Stockage & Cache hors-ligne (Repliable) -->
+                    <details class="es-details-card" style="background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); margin-bottom: 20px; overflow: hidden;" open>
+                        <summary style="padding: 12px 18px; cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; user-select: none;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(39, 174, 96, 0.12); color: var(--clr-success, #27ae60); display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0;">
+                                    <i class="bi bi-hdd-network"></i>
+                                </div>
+                                <span style="font-weight: 700; font-size: 0.9rem; color: var(--clr-text);">Espace de stockage & Cache du site</span>
+                                <span id="storageUsageBadge" class="es-badge" style="background: rgba(39,174,96,0.15); color: var(--clr-success, #27ae60); font-weight: 700; font-size: 0.75rem;">Calcul en cours…</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px; color: var(--clr-text-muted); font-size: 0.8rem;">
+                                <i class="bi bi-chevron-down" style="font-size: 0.75rem;"></i>
+                            </div>
+                        </summary>
+                        <div style="padding: 0 18px 16px 18px; border-top: 1px solid var(--clr-surface-3); margin-top: 4px; padding-top: 14px;">
+                            <div>
+                                <div id="storageOfflineCount" style="font-size: 0.82rem; color: var(--clr-text-muted);">
+                                    <i class="bi bi-cloud-check-fill" style="color: var(--clr-primary);"></i> Analyse des espaces hors-ligne…
+                                </div>
+                                <div style="font-size: 0.76rem; color: var(--clr-text-muted); margin-top: 8px; line-height: 1.45; background: rgba(0,0,0,0.02); padding: 8px 12px; border-radius: 6px; border: 1px solid var(--clr-surface-3);">
+                                    <i class="bi bi-info-circle" style="color: var(--clr-text-muted);"></i> <strong>Mode hors ligne :</strong> Les espaces synchronisés affichent un nuage (<i class="bi bi-cloud-check-fill" style="color: var(--clr-primary);"></i>) sur le tableau de bord pour être consultés sans réseau. Si vous videz le cache hors-ligne, ces données locales seront effacées et les espaces ne seront plus accessibles hors connexion.
+                                </div>
+                            </div>
+                            <!-- Boutons d'action centrés et responsives -->
+                            <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--clr-surface-3);">
+                                <button type="button" id="btnRefreshParticipantsCache" class="es-btn es-btn--ghost es-btn--sm" style="justify-content: center; gap: 6px; padding: 6px 14px;" title="Recharge les données des participants depuis Firestore pour la recherche sans toucher aux données hors-ligne">
+                                    <i class="bi bi-arrow-clockwise"></i> <span>Rafraîchir</span>
+                                </button>
+                                <button type="button" id="btnClearOfflineCache" class="es-btn es-btn--ghost es-btn--sm" style="color: var(--clr-danger); border-color: rgba(231,76,60,0.25); justify-content: center; gap: 6px; padding: 6px 14px;" title="Vider les données enregistrées pour le mode hors ligne">
+                                    <i class="bi bi-trash3"></i> <span>Supprimer le cache</span>
+                                </button>
+                            </div>
+                        </div>
+                    </details>
 
                     <!-- Séparateur -->
                     <div style="height:1px; background:var(--clr-surface-3); margin-bottom:20px;"></div>
@@ -1022,6 +1050,38 @@
                 <button class="es-btn es-btn--ghost" id="btnCancelDeleteDemande">Annuler</button>
                 <button class="es-btn es-btn--danger" id="btnConfirmDeleteDemande">
                     <span class="es-btn__text">Supprimer</span>
+                    <span class="es-btn__spinner"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal : Confirmer la suppression du cache hors-ligne -->
+    <div class="es-overlay hidden" id="overlayConfirmClearOfflineCache" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:440px;">
+            <div class="es-modal__header">
+                <h2 class="es-modal__title">Vider le cache hors-ligne ?</h2>
+                <button class="es-modal__close" id="btnCloseConfirmClearOfflineCache"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body">
+                <div class="es-alert es-alert--error" style="margin-bottom:14px;">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <div>
+                        <strong>Attention : perte du mode hors-ligne</strong>
+                        <p style="font-size:0.8rem; margin-top:4px; line-height:1.4;">
+                            Cette action supprimera toutes les données d'espaces et de participants enregistrées sur votre appareil.
+                        </p>
+                    </div>
+                </div>
+                <p style="font-size:0.84rem; color:var(--clr-text-muted); line-height:1.5;">
+                    Les espaces ne pourront plus être consultés sans connexion Internet (les petits nuages <i class="bi bi-cloud-check-fill" style="color:var(--clr-primary);"></i> sur le tableau de bord disparaîtront jusqu'à leur prochaine consultation en ligne).
+                </p>
+            </div>
+            <div class="es-modal__footer">
+                <button class="es-btn es-btn--ghost" id="btnCancelClearOfflineCache">Annuler</button>
+                <button class="es-btn es-btn--danger" id="btnConfirmClearOfflineCache">
+                    <i class="bi bi-trash3"></i>
+                    <span class="es-btn__text">Vider le cache</span>
                     <span class="es-btn__spinner"></span>
                 </button>
             </div>
