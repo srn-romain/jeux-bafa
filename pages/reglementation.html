@@ -253,11 +253,6 @@
       display: flex;
       gap: 2px;
       flex-shrink: 0;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-    }
-    .depliant-list-item:hover .depliant-list-item-actions {
-      opacity: 1;
     }
     .depliant-list-item-btn {
       background: none;
@@ -287,6 +282,33 @@
     }
     .depliant-list-edit-form.open {
       display: flex;
+    }
+    /* Sur grand écran : le formulaire d'édition prend toute la largeur de la colonne */
+    @media (min-width: 641px) {
+      .depliant-list-item {
+        position: relative;
+      }
+      .depliant-list-edit-form.open {
+        position: absolute;
+        left: -14px;
+        right: -14px;
+        top: 100%;
+        z-index: 20;
+        padding: 12px 14px;
+        border-radius: 0 0 8px 8px;
+        border-top: none;
+        box-shadow: 0 6px 18px rgba(59, 130, 246, 0.15);
+        margin: 0;
+      }
+      /* Ligne active : légère mise en valeur */
+      .depliant-list-item:has(.depliant-list-edit-form.open) > [id^="liview-"] {
+        background: #eff6ff;
+        border-radius: 6px 6px 0 0;
+        padding: 4px 6px;
+        margin: -4px -6px 0;
+        border: 1.5px solid #93c5fd;
+        border-bottom: none;
+      }
     }
   </style>
 </head>
