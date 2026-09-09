@@ -70,7 +70,8 @@ var GAMES_INDEX = (function () {
                 { n: 'Le Chevreuil', d: 'Jeu d’observation et de réflexe rapide' },
                 { n: "Pour un M&M's rouge", d: 'Réaliser un gage en échange d’un bonbon M&M’s rouge' },
                 { n: 'Nouveau dans une colo', d: 'Envoyer le nouvel anim chercher de la peinture écossaise' },
-                { n: 'Devine le gateau', d: 'Décrire un autre anim sous forme de recette de pâtisserie' }
+                { n: 'Devine le gateau', d: 'Décrire un autre anim sous forme de recette de pâtisserie' },
+                { n: 'Pépite & Caillou', d: 'Rituel de bilan d’équipe : partager son moment positif (pépite) et les points à améliorer (caillou)' }
             ]
         },
         {
