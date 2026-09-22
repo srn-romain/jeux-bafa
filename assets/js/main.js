@@ -386,7 +386,7 @@ function persistCheckboxes() {
 /*--------------------------------------------------------------
 # Système de Votes (Pouces Verts / Rouges)
 --------------------------------------------------------------*/
-document.addEventListener("DOMContentLoaded", function () {
+function runInitVotes() {
     const targetPages = [
         'activites.html', 
         'animateur.html', 
@@ -413,7 +413,21 @@ document.addEventListener("DOMContentLoaded", function () {
     if (isTargetPage || isIndexPage) {
         loadFirebaseAndInit(isTargetPage, isIndexPage);
     }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener("DOMContentLoaded", runInitVotes);
+} else {
+    runInitVotes();
+}
+
+window.addEventListener('pageshow', function (event) {
+    if (event.persisted) {
+        runInitVotes();
+    }
 });
+
+let firebaseLoadingPromise = null;
 
 function loadFirebaseAndInit(isTargetPage, isIndexPage) {
     if (window.firebase && window.db) {
@@ -422,7 +436,17 @@ function loadFirebaseAndInit(isTargetPage, isIndexPage) {
             loadPublicBroadcastMessage();
             if (typeof initGameSearch === 'function') initGameSearch();
         }
-        return;
+        return Promise.resolve();
+    }
+
+    if (firebaseLoadingPromise) {
+        return firebaseLoadingPromise.then(() => {
+            if (isTargetPage) initVotesSystem();
+            if (isIndexPage) {
+                loadPublicBroadcastMessage();
+                if (typeof initGameSearch === 'function') initGameSearch();
+            }
+        });
     }
 
     // Déterminer le chemin relatif de firebase-config.js
@@ -437,32 +461,50 @@ function loadFirebaseAndInit(isTargetPage, isIndexPage) {
         configPath
     ];
 
-    let loadedCount = 0;
-    function loadNext() {
-        if (loadedCount >= scripts.length) {
-            if (window.firebase) {
-                if (!window.db) window.db = firebase.firestore();
-                if (!window.auth) window.auth = firebase.auth();
-                if (isTargetPage) initVotesSystem();
-                if (isIndexPage) {
-                    loadPublicBroadcastMessage();
-                    if (typeof initGameSearch === 'function') initGameSearch();
+    function loadScript(src) {
+        return new Promise((resolve, reject) => {
+            const existingScript = document.querySelector(`script[src="${src}"]`);
+            if (existingScript) {
+                if (existingScript.getAttribute('data-loaded') === 'true' || window.firebase) {
+                    return resolve();
                 }
+                existingScript.addEventListener('load', () => resolve());
+                existingScript.addEventListener('error', (err) => reject(err));
+                return;
             }
-            return;
-        }
-        const script = document.createElement("script");
-        script.src = scripts[loadedCount];
-        script.onload = () => {
-            loadedCount++;
-            loadNext();
-        };
-        script.onerror = () => {
-            console.error("Erreur de chargement du script Firebase : " + scripts[loadedCount]);
-        };
-        document.head.appendChild(script);
+
+            const script = document.createElement("script");
+            script.src = src;
+            script.onload = () => {
+                script.setAttribute('data-loaded', 'true');
+                resolve();
+            };
+            script.onerror = (err) => {
+                console.error("Erreur de chargement du script : " + src, err);
+                reject(err);
+            };
+            document.head.appendChild(script);
+        });
     }
-    loadNext();
+
+    firebaseLoadingPromise = scripts.reduce((promise, src) => {
+        return promise.then(() => loadScript(src));
+    }, Promise.resolve()).then(() => {
+        if (window.firebase) {
+            if (!window.db && firebase.firestore) window.db = firebase.firestore();
+            if (!window.auth && firebase.auth) window.auth = firebase.auth();
+            if (isTargetPage) initVotesSystem();
+            if (isIndexPage) {
+                loadPublicBroadcastMessage();
+                if (typeof initGameSearch === 'function') initGameSearch();
+            }
+        }
+    }).catch(err => {
+        console.error("Erreur lors de l'initialisation de Firebase:", err);
+        firebaseLoadingPromise = null;
+    });
+
+    return firebaseLoadingPromise;
 }
 
 function formatBroadcastMessage(rawMsg) {
@@ -480,8 +522,9 @@ function formatBroadcastMessage(rawMsg) {
 }
 
 function loadPublicBroadcastMessage() {
-    if (!window.db) return;
-    db.collection('globalSettings').doc('dashboard').get().then(doc => {
+    const firestoreDb = window.db || (window.firebase && firebase.firestore ? firebase.firestore() : null);
+    if (!firestoreDb) return;
+    firestoreDb.collection('globalSettings').doc('dashboard').get().then(doc => {
         if (doc.exists) {
             const data = doc.data();
             const msg = data.publicBroadcastMessage || '';
@@ -514,9 +557,8 @@ function initVotesSystem() {
 
     const itemsToVote = [];
 
-    listItems.forEach((li, index) => {
+    listItems.forEach((li) => {
         if (li.closest('.regles-vie') || li.closest('.modalspe') || li.closest('.no-vote')) return;
-        if (li.querySelector('.vote-container')) return;
 
         const text = (li.innerText || li.textContent || '').trim();
         if (!text) return;
@@ -537,63 +579,67 @@ function initVotesSystem() {
             .substring(0, 80);
         const oldVoteId = `${pageKey}_${oldCleanText}`;
 
+        let voteContainer = li.querySelector('.vote-container');
+        if (!voteContainer) {
+            voteContainer = document.createElement('span');
+            voteContainer.className = 'vote-container';
+            voteContainer.setAttribute('data-vote-id', voteId);
+
+            const userVoteKey = `vote_${voteId}`;
+            const legacyVoteKey = `vote_${oldVoteId}`;
+            const localVote = localStorage.getItem(userVoteKey) || (oldVoteId ? localStorage.getItem(legacyVoteKey) : null);
+
+            const upIconClass = localVote === 'up' ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up';
+            const downIconClass = localVote === 'down' ? 'bi-hand-thumbs-down-fill' : 'bi-hand-thumbs-down';
+            const upActive = localVote === 'up' ? 'active' : '';
+            const downActive = localVote === 'down' ? 'active' : '';
+
+            voteContainer.innerHTML = `
+                <button class="vote-btn vote-up ${upActive}" title="J'aime">
+                    <i class="bi ${upIconClass}"></i>
+                    <span class="vote-count-up">0</span>
+                </button>
+                <button class="vote-btn vote-down ${downActive}" title="Je n'aime pas">
+                    <i class="bi ${downIconClass}"></i>
+                    <span class="vote-count-down" style="display: none;">0</span>
+                </button>
+            `;
+
+            li.prepend(voteContainer);
+
+            const btnUp = voteContainer.querySelector('.vote-up');
+            const btnDown = voteContainer.querySelector('.vote-down');
+            const countUpSpan = voteContainer.querySelector('.vote-count-up');
+            const countDownSpan = voteContainer.querySelector('.vote-count-down');
+
+            btnUp.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleVoteClick(voteId, 'up', btnUp, btnDown, countUpSpan, countDownSpan);
+            });
+
+            btnDown.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleVoteClick(voteId, 'down', btnUp, btnDown, countUpSpan, countDownSpan);
+            });
+        }
+
         itemsToVote.push({
             li: li,
             voteId: voteId,
-            oldVoteId: oldVoteId
+            oldVoteId: oldVoteId,
+            container: voteContainer
         });
     });
 
     if (itemsToVote.length === 0) return;
 
-    itemsToVote.forEach(item => {
-        const voteContainer = document.createElement('span');
-        voteContainer.className = 'vote-container';
-        voteContainer.setAttribute('data-vote-id', item.voteId);
-        item.container = voteContainer; // Référence directe pour éviter querySelector
-
-        const userVoteKey = `vote_${item.voteId}`;
-        const legacyVoteKey = `vote_${item.oldVoteId}`;
-        const localVote = localStorage.getItem(userVoteKey) || (item.oldVoteId ? localStorage.getItem(legacyVoteKey) : null);
-
-        const upIconClass = localVote === 'up' ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up';
-        const downIconClass = localVote === 'down' ? 'bi-hand-thumbs-down-fill' : 'bi-hand-thumbs-down';
-        const upActive = localVote === 'up' ? 'active' : '';
-        const downActive = localVote === 'down' ? 'active' : '';
-
-        voteContainer.innerHTML = `
-            <button class="vote-btn vote-up ${upActive}" title="J'aime">
-                <i class="bi ${upIconClass}"></i>
-                <span class="vote-count-up">0</span>
-            </button>
-            <button class="vote-btn vote-down ${downActive}" title="Je n'aime pas">
-                <i class="bi ${downIconClass}"></i>
-                <span class="vote-count-down" style="display: none;">0</span>
-            </button>
-        `;
-
-        item.li.prepend(voteContainer);
-
-        const btnUp = voteContainer.querySelector('.vote-up');
-        const btnDown = voteContainer.querySelector('.vote-down');
-        const countUpSpan = voteContainer.querySelector('.vote-count-up');
-        const countDownSpan = voteContainer.querySelector('.vote-count-down');
-
-        btnUp.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleVoteClick(item.voteId, 'up', btnUp, btnDown, countUpSpan, countDownSpan);
-        });
-
-        btnDown.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleVoteClick(item.voteId, 'down', btnUp, btnDown, countUpSpan, countDownSpan);
-        });
-    });
+    const firestoreDb = window.db || (window.firebase && firebase.firestore ? firebase.firestore() : null);
+    if (!firestoreDb) return;
 
     // Charger les votes positifs
-    db.collection('positive_votes').get().then(snapshot => {
+    firestoreDb.collection('positive_votes').get().then(snapshot => {
         const votesMap = {};
         snapshot.forEach(doc => {
             votesMap[doc.id] = Math.max(0, doc.data().count || 0);
@@ -612,46 +658,49 @@ function initVotesSystem() {
     });
 
     // Charger les votes négatifs (visible uniquement par l'admin connecté) et récupérer les données utilisateur
-    auth.onAuthStateChanged(user => {
-        if (user) {
-            db.collection('users').doc(user.uid).get().then(doc => {
-                if (doc.exists) {
-                    currentUserData = doc.data();
-                    currentUserData.uid = user.uid;
+    const firestoreAuth = window.auth || (window.firebase && firebase.auth ? firebase.auth() : null);
+    if (firestoreAuth) {
+        firestoreAuth.onAuthStateChanged(user => {
+            if (user) {
+                firestoreDb.collection('users').doc(user.uid).get().then(doc => {
+                    if (doc.exists) {
+                        currentUserData = doc.data();
+                        currentUserData.uid = user.uid;
 
-                    if (currentUserData.role === 'admin') {
-                        db.collection('negative_votes').get().then(snapshot => {
-                            const negVotesMap = {};
-                            snapshot.forEach(doc => {
-                                negVotesMap[doc.id] = Math.max(0, doc.data().count || 0);
-                            });
+                        if (currentUserData.role === 'admin') {
+                            firestoreDb.collection('negative_votes').get().then(snapshot => {
+                                const negVotesMap = {};
+                                snapshot.forEach(doc => {
+                                    negVotesMap[doc.id] = Math.max(0, doc.data().count || 0);
+                                });
 
-                            itemsToVote.forEach(item => {
-                                const count = Math.max(0, negVotesMap[item.voteId] || (item.oldVoteId && item.oldVoteId !== item.voteId ? negVotesMap[item.oldVoteId] : 0) || 0);
-                                const container = item.container || item.li.querySelector(`.vote-container`);
-                                if (container) {
-                                    const countDownSpan = container.querySelector('.vote-count-down');
-                                    if (countDownSpan) {
-                                        countDownSpan.innerText = count;
-                                        countDownSpan.style.display = 'inline';
+                                itemsToVote.forEach(item => {
+                                    const count = Math.max(0, negVotesMap[item.voteId] || (item.oldVoteId && item.oldVoteId !== item.voteId ? negVotesMap[item.oldVoteId] : 0) || 0);
+                                    const container = item.container || item.li.querySelector(`.vote-container`);
+                                    if (container) {
+                                        const countDownSpan = container.querySelector('.vote-count-down');
+                                        if (countDownSpan) {
+                                            countDownSpan.innerText = count;
+                                            countDownSpan.style.display = 'inline';
+                                        }
                                     }
-                                }
+                                });
+                            }).catch(err => {
+                                console.error("Erreur de chargement des votes négatifs (admin):", err);
                             });
-                        }).catch(err => {
-                            console.error("Erreur de chargement des votes négatifs (admin):", err);
-                        });
 
-                        // Initialiser les tooltips pour l'admin
-                        setupAdminTooltips(itemsToVote);
+                            // Initialiser les tooltips pour l'admin
+                            setupAdminTooltips(itemsToVote);
+                        }
                     }
-                }
-            }).catch(err => {
-                console.error("Erreur de lecture du rôle utilisateur:", err);
-            });
-        } else {
-            currentUserData = null;
-        }
-    });
+                }).catch(err => {
+                    console.error("Erreur de lecture du rôle utilisateur:", err);
+                });
+            } else {
+                currentUserData = null;
+            }
+        });
+    }
 
     // Affiche la modale de bienvenue/incitation au vote pour les nouveaux visiteurs
     if (!localStorage.getItem('vote_welcome_modal_shown')) {
@@ -719,11 +768,14 @@ function getVoterMetadata() {
         }
         metadata.userName = name || currentUserData.email || 'Anonyme';
         metadata.userRole = currentUserData.role || 'anim';
-    } else if (auth.currentUser) {
-        const user = auth.currentUser;
-        metadata.uid = user.uid;
-        metadata.userName = user.displayName || user.email || 'Anonyme';
-        metadata.userRole = 'anim';
+    } else {
+        const firestoreAuth = window.auth || (window.firebase && firebase.auth ? firebase.auth() : null);
+        if (firestoreAuth && firestoreAuth.currentUser) {
+            const user = firestoreAuth.currentUser;
+            metadata.uid = user.uid;
+            metadata.userName = user.displayName || user.email || 'Anonyme';
+            metadata.userRole = 'anim';
+        }
     }
 
     return metadata;
@@ -749,14 +801,16 @@ function showTooltipForBtn(btn, voteId, direction, oldVoteId) {
     tooltip.classList.add('active');
 
     const colName = direction === 'up' ? 'positive_votes' : 'negative_votes';
+    const firestoreDb = window.db || (window.firebase && firebase.firestore ? firebase.firestore() : null);
+    if (!firestoreDb) return;
     
-    db.collection(colName).doc(voteId).get().then(async doc => {
+    firestoreDb.collection(colName).doc(voteId).get().then(async doc => {
         if (activeBtn !== btn) return;
         
         let targetDoc = doc;
         if ((!targetDoc.exists || !targetDoc.data() || Object.keys(targetDoc.data()).length === 0) && oldVoteId && oldVoteId !== voteId) {
             try {
-                const oldDoc = await db.collection(colName).doc(oldVoteId).get();
+                const oldDoc = await firestoreDb.collection(colName).doc(oldVoteId).get();
                 if (oldDoc.exists) targetDoc = oldDoc;
             } catch (e) {}
         }
@@ -932,9 +986,11 @@ function handleVoteClick(voteId, direction, btnUp, btnDown, countUpSpan, countDo
 
 function updateVoteFirestore(voteId, direction, val, visitorId, metadata) {
     const colName = direction === 'up' ? 'positive_votes' : 'negative_votes';
-    const docRef = db.collection(colName).doc(voteId);
+    const firestoreDb = window.db || (window.firebase && firebase.firestore ? firebase.firestore() : null);
+    if (!firestoreDb) return;
+    const docRef = firestoreDb.collection(colName).doc(voteId);
 
-    db.runTransaction(async (transaction) => {
+    firestoreDb.runTransaction(async (transaction) => {
         const docSnap = await transaction.get(docRef);
         const currentCount = docSnap.exists ? (docSnap.data().count || 0) : 0;
         const newCount = Math.max(0, currentCount + val);

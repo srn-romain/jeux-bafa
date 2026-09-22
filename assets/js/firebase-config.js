@@ -15,14 +15,20 @@ const firebaseConfig = {
 };
 
 // Initialisation Firebase
-firebase.initializeApp(firebaseConfig);
+if (!firebase.apps || !firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
 
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+var auth = firebase.auth();
+var db = firebase.firestore();
+var storage = firebase.storage();
+
+window.auth = auth;
+window.db = db;
+window.storage = storage;
 
 // Activer la persistance hors ligne pour Firestore
-if (db.enablePersistence) {
+if (db && db.enablePersistence) {
     db.enablePersistence({ synchronizeTabs: true }).catch((err) => {
         if (err.code === 'failed-precondition') {
             console.warn('Persistance Firestore : plusieurs onglets ouverts.');
@@ -35,6 +41,7 @@ if (db.enablePersistence) {
 }
 
 // Provider Google
-const googleProvider = new firebase.auth.GoogleAuthProvider();
+var googleProvider = new firebase.auth.GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
+window.googleProvider = googleProvider;
 
