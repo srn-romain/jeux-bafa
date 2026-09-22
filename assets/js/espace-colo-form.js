@@ -56,8 +56,8 @@ const ColoFormManager = {
                             <i class="bi bi-file-earmark-pdf es-input-icon" style="color:var(--clr-danger);"></i>
                             <input class="es-input es-input--icon" type="text" id="coloPPId" placeholder="Ex: 1A2B3C4D5E6F7G8H9I0J">
                         </div>
-                        <p style="font-size:0.77rem;color:var(--clr-text-light);margin-top:4px;">
-                            Obtenez l'ID via : <strong>Clic droit > Partager > Copier le lien</strong> (récupérez la partie entre /d/ et /view).
+                        <p style="font-size:0.77rem;color:var(--clr-text-light);margin-top:4px;line-height:1.45;">
+                            Obtenez l'ID via : <strong>Clic droit &gt; Partager &gt; Copier le lien</strong> <span style="opacity:0.75;font-style:italic;">ou</span> <strong>Clic droit &gt; Ouvrir avec &gt; Ouvrir dans un nouvel onglet</strong> (récupérez la partie entre /d/ et /view).
                         </p>
                     </div>
 
