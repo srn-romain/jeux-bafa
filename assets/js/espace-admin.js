@@ -2154,7 +2154,7 @@ function setupAdminTooltipEl() {
     }
 }
 
-function showTooltipForBtn(btn, voteId, direction) {
+function showTooltipForBtn(btn, voteId, direction, oldVoteId) {
     if (activeBtn === btn) return;
     activeBtn = btn;
     
@@ -2170,12 +2170,20 @@ function showTooltipForBtn(btn, voteId, direction) {
 
     const colName = direction === 'up' ? 'positive_votes' : 'negative_votes';
     
-    db.collection(colName).doc(voteId).get().then(doc => {
+    db.collection(colName).doc(voteId).get().then(async doc => {
         if (activeBtn !== btn) return;
         
+        let targetDoc = doc;
+        if ((!targetDoc.exists || !targetDoc.data() || Object.keys(targetDoc.data()).length === 0) && oldVoteId && oldVoteId !== voteId) {
+            try {
+                const oldDoc = await db.collection(colName).doc(oldVoteId).get();
+                if (oldDoc.exists) targetDoc = oldDoc;
+            } catch (e) {}
+        }
+        
         let voters = {};
-        if (doc.exists) {
-            const data = doc.data() || {};
+        if (targetDoc.exists) {
+            const data = targetDoc.data() || {};
             
             // 1. Essayer de récupérer le map imbriqué "voters"
             if (data.voters && typeof data.voters === 'object') {
@@ -2193,7 +2201,7 @@ function showTooltipForBtn(btn, voteId, direction) {
         
         const sortedVoters = Object.values(voters).sort((a, b) => (b.rawTimestamp || 0) - (a.rawTimestamp || 0));
         
-        if (doc.exists && sortedVoters.length > 0) {
+        if (targetDoc.exists && sortedVoters.length > 0) {
             let html = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4>`;
             html += `<ul>`;
             sortedVoters.forEach(v => {
@@ -2248,24 +2256,40 @@ async function loadLikedGames() {
     try {
         const targetPages = [
             'activites.html', 
-            'veillees.html', 
-            'semaine.html', 
-            'presentation.html', 
-            'conversation.html', 
             'animateur.html', 
+            'calme.html', 
+            'conversation.html', 
+            'direction.html', 
+            'formation.html', 
+            'gage.html', 
             'manuels.html', 
-            'calme.html'
+            'musique.html', 
+            'nourriture.html', 
+            'presentation.html', 
+            'quotidien.html', 
+            'reglementation.html', 
+            'regles.html', 
+            'semaine.html', 
+            'veillees.html'
         ];
         
         const pageLabels = {
             'presentation.html': 'Jeux Présentation',
             'semaine.html': 'Jeux Fil Rouge',
-            'conversation.html': 'Débats & Echanges',
-            'animateur.html': 'Animateur',
+            'conversation.html': 'Conversations & Débats',
+            'animateur.html': 'Jeux Animateurs',
+            'quotidien.html': 'Vie Quotidienne',
             'activites.html': 'Activités',
             'veillees.html': 'Veillées',
             'manuels.html': 'Activités Manuelles',
-            'calme.html': 'Temps Calme'
+            'calme.html': 'Retour au Calme',
+            'gage.html': 'Idées de Gages',
+            'regles.html': 'Règles de Vie',
+            'musique.html': 'Musiques de Colo',
+            'nourriture.html': 'Nourriture en Camp',
+            'direction.html': 'Mémo Direction',
+            'reglementation.html': 'Mémo Réglementation',
+            'formation.html': 'Mémo Formation'
         };
 
         const parsedGamesMap = {};
@@ -2283,22 +2307,31 @@ async function loadLikedGames() {
                 listItems.forEach((li) => {
                     if (li.closest('.regles-vie') || li.closest('.modalspe') || li.closest('.no-vote')) return;
 
-                    const text = li.innerText.trim();
+                    const text = (li.innerText || li.textContent || '').trim();
                     if (!text) return;
 
                     const cleanText = text
-                        .replace(/[\s\r\n\t/]+/g, '_')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .replace(/[^a-zA-Z0-9]/g, '_')
+                        .replace(/_+/g, '_')
                         .toLowerCase()
                         .substring(0, 80);
                     
                     const voteId = `${pageKey}_${cleanText}`;
+
+                    const oldCleanText = text
+                        .replace(/[\s\r\n\t/]+/g, '_')
+                        .toLowerCase()
+                        .substring(0, 80);
+                    const oldVoteId = `${pageKey}_${oldCleanText}`;
                     
                     const bElement = li.querySelector('b');
                     let displayName = '';
                     if (bElement) {
-                        displayName = bElement.innerText.trim();
+                        displayName = (bElement.innerText || bElement.textContent || '').trim();
                     } else {
-                        const textContent = li.innerText.trim();
+                        const textContent = text;
                         if (textContent.includes(':')) {
                             displayName = textContent.split(':')[0].trim();
                         } else {
@@ -2308,10 +2341,14 @@ async function loadLikedGames() {
                     
                     // Nettoyage de la ponctuation de fin (comme ':' ou '-')
                     displayName = displayName.replace(/[:\-]+$/, '').trim();
+                    if (displayName.length > 75) {
+                        displayName = displayName.substring(0, 72) + '...';
+                    }
                     
                     parsedGamesMap[voteId] = {
                         name: displayName,
-                        pageKey: pageKey
+                        pageKey: pageKey,
+                        oldVoteId: oldVoteId
                     };
                 });
             } catch (err) {
@@ -2326,19 +2363,21 @@ async function loadLikedGames() {
         ]);
 
         const posVotesMap = {};
+        const posDocMap = {};
         const negVotesMap = {};
+        const negDocMap = {};
         const fixBatch = db.batch();
-        let hasNegativeToFix = false;
+        let hasFix = false;
 
         posSnap.forEach((doc) => {
             const raw = doc.data().count;
             const count = (typeof raw === 'number' && !isNaN(raw)) ? raw : 0;
             if (count < 0) {
-                // Corriger le document en base
                 fixBatch.update(doc.ref, { count: 0 });
-                hasNegativeToFix = true;
+                hasFix = true;
             }
             posVotesMap[doc.id] = Math.max(0, count);
+            posDocMap[doc.id] = doc;
         });
 
         negSnap.forEach((doc) => {
@@ -2346,24 +2385,54 @@ async function loadLikedGames() {
             const count = (typeof raw === 'number' && !isNaN(raw)) ? raw : 0;
             if (count < 0) {
                 fixBatch.update(doc.ref, { count: 0 });
-                hasNegativeToFix = true;
+                hasFix = true;
             }
             negVotesMap[doc.id] = Math.max(0, count);
+            negDocMap[doc.id] = doc;
         });
 
-        if (hasNegativeToFix) {
+        // Migration/consolidation douce des anciens IDs vers les nouveaux IDs normalisés
+        for (const voteId in parsedGamesMap) {
+            const oldVoteId = parsedGamesMap[voteId].oldVoteId;
+            if (oldVoteId && oldVoteId !== voteId) {
+                // Positifs
+                if (posDocMap[oldVoteId] && !posDocMap[voteId]) {
+                    const oldData = posDocMap[oldVoteId].data();
+                    const newDocRef = db.collection('positive_votes').doc(voteId);
+                    const oldDocRef = posDocMap[oldVoteId].ref;
+                    fixBatch.set(newDocRef, oldData, { merge: true });
+                    fixBatch.delete(oldDocRef);
+                    posVotesMap[voteId] = Math.max(0, oldData.count || 0);
+                    hasFix = true;
+                }
+                // Négatifs
+                if (negDocMap[oldVoteId] && !negDocMap[voteId]) {
+                    const oldData = negDocMap[oldVoteId].data();
+                    const newDocRef = db.collection('negative_votes').doc(voteId);
+                    const oldDocRef = negDocMap[oldVoteId].ref;
+                    fixBatch.set(newDocRef, oldData, { merge: true });
+                    fixBatch.delete(oldDocRef);
+                    negVotesMap[voteId] = Math.max(0, oldData.count || 0);
+                    hasFix = true;
+                }
+            }
+        }
+
+        if (hasFix) {
             await fixBatch.commit();
-            console.log('[Admin] Valeurs négatives détectées et corrigées en base (remises à 0).');
+            console.log('[Admin] Base de données votes synchronisée et normalisée.');
         }
 
         // 3. Fusionner les données
         allParsedGames = [];
         for (const voteId in parsedGamesMap) {
             const parsed = parsedGamesMap[voteId];
-            const likes = posVotesMap[voteId] ?? 0;
-            const dislikes = negVotesMap[voteId] ?? 0;
+            const oldVoteId = parsed.oldVoteId;
+            const likes = posVotesMap[voteId] ?? (oldVoteId ? (posVotesMap[oldVoteId] ?? 0) : 0);
+            const dislikes = negVotesMap[voteId] ?? (oldVoteId ? (negVotesMap[oldVoteId] ?? 0) : 0);
             allParsedGames.push({
                 voteId: voteId,
+                oldVoteId: oldVoteId,
                 name: parsed.name,
                 pageKey: parsed.pageKey,
                 pageLabel: pageLabels[parsed.pageKey] || parsed.pageKey,
@@ -2428,7 +2497,7 @@ function renderLikedGamesTable(showMore = false) {
         top10 = allParsedGames.slice(0, 10);
         theRest = allParsedGames.slice(10);
         theRest.sort((a, b) => {
-            if (a.dislikes !== b.dislikes) return a.dislikes - b.dislikes;
+            if (a.dislikes !== b.dislikes) return b.dislikes - a.dislikes;
             return a.name.localeCompare(b.name);
         });
     }
@@ -2513,7 +2582,7 @@ function renderLikedGamesTable(showMore = false) {
         if (badge) {
             badge.addEventListener('mouseenter', () => {
                 setupAdminTooltipEl();
-                showTooltipForBtn(badge, game.voteId, isReversed ? 'down' : 'up');
+                showTooltipForBtn(badge, game.voteId, isReversed ? 'down' : 'up', game.oldVoteId);
             });
             badge.addEventListener('mouseleave', () => {
                 hideTooltip();

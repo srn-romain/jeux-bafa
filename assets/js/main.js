@@ -389,18 +389,26 @@ function persistCheckboxes() {
 document.addEventListener("DOMContentLoaded", function () {
     const targetPages = [
         'activites.html', 
-        'veillees.html', 
-        'semaine.html', 
-        'presentation.html', 
-        'conversation.html', 
         'animateur.html', 
+        'calme.html', 
+        'conversation.html', 
+        'direction.html', 
+        'formation.html', 
+        'gage.html', 
         'manuels.html', 
-        'calme.html'
+        'musique.html', 
+        'nourriture.html', 
+        'presentation.html', 
+        'quotidien.html', 
+        'reglementation.html', 
+        'regles.html', 
+        'semaine.html', 
+        'veillees.html'
     ];
     
     const currentPath = window.location.pathname.split('/').pop() || 'index.html';
-    const isTargetPage = targetPages.some(page => currentPath.includes(page));
-    const isIndexPage = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || !window.location.pathname.includes('/pages/');
+    const isTargetPage = targetPages.some(page => currentPath.includes(page)) || (window.location.pathname.includes('/pages/') && !window.location.pathname.includes('/pages/espace/'));
+    const isIndexPage = currentPath === 'index.html' || currentPath === '' || (!window.location.pathname.includes('/pages/') && !window.location.pathname.includes('/espace/'));
     
     if (isTargetPage || isIndexPage) {
         loadFirebaseAndInit(isTargetPage, isIndexPage);
@@ -508,8 +516,9 @@ function initVotesSystem() {
 
     listItems.forEach((li, index) => {
         if (li.closest('.regles-vie') || li.closest('.modalspe') || li.closest('.no-vote')) return;
+        if (li.querySelector('.vote-container')) return;
 
-        const text = li.innerText.trim();
+        const text = (li.innerText || li.textContent || '').trim();
         if (!text) return;
 
         const cleanText = text
@@ -522,9 +531,16 @@ function initVotesSystem() {
         
         const voteId = `${pageKey}_${cleanText}`;
 
+        const oldCleanText = text
+            .replace(/[\s\r\n\t/]+/g, '_')
+            .toLowerCase()
+            .substring(0, 80);
+        const oldVoteId = `${pageKey}_${oldCleanText}`;
+
         itemsToVote.push({
             li: li,
-            voteId: voteId
+            voteId: voteId,
+            oldVoteId: oldVoteId
         });
     });
 
@@ -537,7 +553,8 @@ function initVotesSystem() {
         item.container = voteContainer; // Référence directe pour éviter querySelector
 
         const userVoteKey = `vote_${item.voteId}`;
-        const localVote = localStorage.getItem(userVoteKey);
+        const legacyVoteKey = `vote_${item.oldVoteId}`;
+        const localVote = localStorage.getItem(userVoteKey) || (item.oldVoteId ? localStorage.getItem(legacyVoteKey) : null);
 
         const upIconClass = localVote === 'up' ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up';
         const downIconClass = localVote === 'down' ? 'bi-hand-thumbs-down-fill' : 'bi-hand-thumbs-down';
@@ -583,7 +600,7 @@ function initVotesSystem() {
         });
 
         itemsToVote.forEach(item => {
-            const count = Math.max(0, votesMap[item.voteId] || 0);
+            const count = Math.max(0, votesMap[item.voteId] || (item.oldVoteId && item.oldVoteId !== item.voteId ? votesMap[item.oldVoteId] : 0) || 0);
             const container = item.container || item.li.querySelector(`.vote-container`);
             if (container) {
                 const countUpSpan = container.querySelector('.vote-count-up');
@@ -610,7 +627,7 @@ function initVotesSystem() {
                             });
 
                             itemsToVote.forEach(item => {
-                                const count = Math.max(0, negVotesMap[item.voteId] || 0);
+                                const count = Math.max(0, negVotesMap[item.voteId] || (item.oldVoteId && item.oldVoteId !== item.voteId ? negVotesMap[item.oldVoteId] : 0) || 0);
                                 const container = item.container || item.li.querySelector(`.vote-container`);
                                 if (container) {
                                     const countDownSpan = container.querySelector('.vote-count-down');
@@ -717,7 +734,7 @@ let touchStartTimer = null;
 let touchX = 0;
 let touchY = 0;
 
-function showTooltipForBtn(btn, voteId, direction) {
+function showTooltipForBtn(btn, voteId, direction, oldVoteId) {
     if (activeBtn === btn) return;
     activeBtn = btn;
     
@@ -733,12 +750,20 @@ function showTooltipForBtn(btn, voteId, direction) {
 
     const colName = direction === 'up' ? 'positive_votes' : 'negative_votes';
     
-    db.collection(colName).doc(voteId).get().then(doc => {
+    db.collection(colName).doc(voteId).get().then(async doc => {
         if (activeBtn !== btn) return;
         
+        let targetDoc = doc;
+        if ((!targetDoc.exists || !targetDoc.data() || Object.keys(targetDoc.data()).length === 0) && oldVoteId && oldVoteId !== voteId) {
+            try {
+                const oldDoc = await db.collection(colName).doc(oldVoteId).get();
+                if (oldDoc.exists) targetDoc = oldDoc;
+            } catch (e) {}
+        }
+        
         let voters = {};
-        if (doc.exists) {
-            const data = doc.data() || {};
+        if (targetDoc.exists) {
+            const data = targetDoc.data() || {};
             
             // 1. Essayer de récupérer le map imbriqué "voters"
             if (data.voters && typeof data.voters === 'object') {
@@ -756,7 +781,7 @@ function showTooltipForBtn(btn, voteId, direction) {
         
         const sortedVoters = Object.values(voters).sort((a, b) => (b.rawTimestamp || 0) - (a.rawTimestamp || 0));
         
-        if (doc.exists && sortedVoters.length > 0) {
+        if (targetDoc.exists && sortedVoters.length > 0) {
             let html = `<h4>Détails des votes (${direction === 'up' ? "J'aime" : "Je n'aime pas"})</h4>`;
             html += `<ul>`;
             sortedVoters.forEach(v => {
@@ -815,7 +840,7 @@ function setupAdminTooltips(itemsToVote) {
             if (!btn) return;
 
             btn.addEventListener('mouseenter', () => {
-                showTooltipForBtn(btn, item.voteId, dir);
+                showTooltipForBtn(btn, item.voteId, dir, item.oldVoteId);
             });
 
             btn.addEventListener('mouseleave', () => {
