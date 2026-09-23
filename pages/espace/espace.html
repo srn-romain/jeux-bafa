@@ -96,18 +96,8 @@
         <span>Chargement de l'espace…</span>
       </div>
 
-      <!-- Accès refusé / en attente -->
-      <div id="accessDenied" class="hidden"
-        style="display:flex;align-items:center;justify-content:center;min-height:50vh;">
-        <div class="es-access-notice" style="text-align:center;">
-          <div class="es-access-notice__icon" id="deniedIcon">🔒</div>
-          <h2 class="es-access-notice__title" id="deniedTitle">Accès non autorisé</h2>
-          <p class="es-access-notice__text" id="deniedText">Tu n'as pas encore accès à cet espace.</p>
-          <a href="index.html" class="es-btn es-btn--primary" style="margin-top:18px;display:inline-flex;">
-            <i class="bi bi-arrow-left"></i> Retour aux colos
-          </a>
-        </div>
-      </div>
+      <!-- Page introuvable ou accès non autorisé (généré dynamiquement par espace-auth.js) -->
+      <div id="accessDenied" class="hidden"></div>
 
       <!-- Contenu réel (visible uniquement si accès validé) -->
       <div id="coloContent" class="hidden">

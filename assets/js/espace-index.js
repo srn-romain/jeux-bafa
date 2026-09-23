@@ -666,11 +666,11 @@ async function loadColos(user, role) {
         empty.classList.remove('hidden');
         if (isOfflineMode) {
             empty.innerHTML = `
-                <div style="padding:40px 20px; text-align:center;">
-                    <i class="bi bi-wifi-off" style="font-size:2.5rem; opacity:0.4; margin-bottom:12px; display:block;"></i>
-                    <h3 style="margin-bottom:6px;">Aucun séjour disponible hors ligne</h3>
-                    <p style="color:var(--clr-text-muted);">Connectez-vous une première fois à Internet pour synchroniser vos séjours.</p>
+                <div class="es-empty__icon" style="color:var(--clr-primary); opacity:1;">
+                    <i class="bi bi-wifi-off"></i>
                 </div>
+                <div class="es-empty__title" style="color:var(--clr-text); font-size:1.2rem; font-weight:700;">Aucun séjour disponible hors ligne</div>
+                <p class="es-empty__text" style="color:var(--clr-text); opacity:0.85; font-size:0.95rem; margin-top:8px; line-height:1.5;">Connectez-vous une première fois à Internet pour synchroniser vos séjours.</p>
             `;
         }
         return;

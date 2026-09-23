@@ -74,18 +74,8 @@
         <span>Vérification des droits…</span>
     </div>
 
-    <!-- Accès refusé -->
-    <div class="hidden" id="accessDenied"
-        style="flex:1;display:flex;align-items:center;justify-content:center;padding:40px;">
-        <div class="es-access-notice">
-            <div class="es-access-notice__icon">🚫</div>
-            <h2 class="es-access-notice__title">Accès réservé</h2>
-            <p class="es-access-notice__text">Cette page est réservée aux administrateurs.</p>
-            <a href="index.html" class="es-btn es-btn--primary mt-3">
-                <i class="bi bi-arrow-left"></i> Retour
-            </a>
-        </div>
-    </div>
+    <!-- Page introuvable ou accès non autorisé (généré dynamiquement par espace-auth.js) -->
+    <div id="accessDenied" class="hidden"></div>
 
     <!-- Contenu admin -->
     <main id="adminContent" class="es-page hidden">

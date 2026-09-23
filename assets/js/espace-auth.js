@@ -110,6 +110,32 @@ document.addEventListener('click', (e) => {
     }
 });
 
+// Affichage standardisé et centré d'accès refusé / page introuvable
+function showGlobalAccessDenied(targetId = 'accessDenied') {
+    // Masquer les loaders et contenus des pages
+    ['pageLoader', 'adminLoader', 'coloContent', 'adminContent'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
+    });
+
+    const deniedContainer = document.getElementById(targetId);
+    if (!deniedContainer) return;
+
+    deniedContainer.className = 'es-access-wrapper';
+    deniedContainer.innerHTML = `
+        <div class="es-access-notice">
+            <div class="es-access-notice__icon">🔒</div>
+            <h2 class="es-access-notice__title">Page introuvable ou accès non autorisé</h2>
+            <p class="es-access-notice__text">Cette page n'existe pas ou vous n'êtes pas autorisé à la voir.</p>
+            <a href="index.html" class="es-btn es-btn--primary" style="display:inline-flex;">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+    `;
+    deniedContainer.classList.remove('hidden');
+}
+window.showGlobalAccessDenied = showGlobalAccessDenied;
+
 // ----------------------------------------------------------------
 // Auth Google Provider (déclaré dans firebase-config.js)
 // ----------------------------------------------------------------

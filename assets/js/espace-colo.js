@@ -365,15 +365,10 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ----------------------------------------------------------------
-// AFFICHER LE MESSAGE DE REFUS
+// AFFICHER LE MESSAGE DE REFUS (Centralisé dans espace-auth.js)
 // ----------------------------------------------------------------
-function showAccessDenied(icon, title, text, isPending = false, isRefused = false) {
-    document.getElementById('pageLoader').classList.add('hidden');
-    document.getElementById('coloContent').classList.add('hidden');
-    document.getElementById('accessDenied').classList.remove('hidden');
-    document.getElementById('deniedIcon').textContent = icon;
-    document.getElementById('deniedTitle').textContent = title;
-    document.getElementById('deniedText').textContent = text;
+function showAccessDenied() {
+    showGlobalAccessDenied('accessDenied');
 }
 
 // ----------------------------------------------------------------

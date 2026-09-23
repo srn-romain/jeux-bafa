@@ -42,8 +42,7 @@ auth.onAuthStateChanged(async (user) => {
     db.collection('users').doc(user.uid).update({ lastLogin: firebase.firestore.FieldValue.serverTimestamp() });
 
     if (role !== 'admin') {
-        document.getElementById('adminLoader')?.classList.add('hidden');
-        document.getElementById('accessDenied')?.classList.remove('hidden');
+        showGlobalAccessDenied('accessDenied');
         return;
     }
 
