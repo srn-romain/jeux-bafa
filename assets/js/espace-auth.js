@@ -499,20 +499,26 @@ document.getElementById('btnLogout')?.addEventListener('click', async () => {
 async function signInWithGoogle() {
     window.isSigningUp = true; // Empêcher onAuthStateChanged d'interférer
     try {
-        // 1. Vérifier si l'inscription globale est autorisée
-        const globalDoc = await firebase.firestore().collection('globalSettings').doc('dashboard').get();
-        const isSignupExplicitlyClosed = globalDoc.exists && (globalDoc.data().allowSignup === false || globalDoc.data().allowSignup === 'false');
-        const allowSignup = !isSignupExplicitlyClosed;
-
-        // 2. Connexion / Auth Google via popup
+        // 1. Connexion / Auth Google via popup
         const result = await firebase.auth().signInWithPopup(googleProvider);
         const user = result.user;
 
-        // 3. Vérifier si le profil utilisateur existe dans Firestore
+        // 2. Vérifier si le profil utilisateur existe déjà dans Firestore
         const doc = await firebase.firestore().collection('users').doc(user.uid).get();
 
         if (!doc.exists) {
             // NOUVELLE INSCRIPTION !
+            // Vérifier si l'inscription globale est autorisée
+            let allowSignup = true;
+            try {
+                const globalDoc = await firebase.firestore().collection('globalSettings').doc('dashboard').get();
+                if (globalDoc.exists && (globalDoc.data().allowSignup === false || globalDoc.data().allowSignup === 'false')) {
+                    allowSignup = false;
+                }
+            } catch (errGlobal) {
+                console.warn("Erreur lecture settings signup Google:", errGlobal);
+            }
+
             if (!allowSignup) {
                 // Inscription fermée : ne PAS créer le document Firestore
                 // Supprimer le compte Auth temporaire généré par Google

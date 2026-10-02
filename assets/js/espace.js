@@ -149,6 +149,23 @@ signupForm.addEventListener('submit', async (e) => {
             emailSignupInput.value.trim(),
             passwordSignupInput.value
         );
+
+        let allowSignup = true;
+        try {
+            const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+            if (globalDoc.exists && (globalDoc.data().allowSignup === false || globalDoc.data().allowSignup === 'false')) {
+                allowSignup = false;
+            }
+        } catch (e) {}
+
+        if (!allowSignup) {
+            try { await cred.user.delete(); } catch(e) {}
+            await auth.signOut();
+            setLoading(btn, false);
+            showError(signupError, "La création de compte est actuellement fermée.");
+            return;
+        }
+
         // Le rôle par défaut est "anim" — un admin peut ensuite le changer
         await db.collection('users').doc(cred.user.uid).set({
             email: cred.user.email,

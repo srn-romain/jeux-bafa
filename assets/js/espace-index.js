@@ -126,32 +126,53 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
     window.isSigningUp = true; // Empêcher onAuthStateChanged de couper le processus
 
     try {
-        // Sécurité supplémentaire : vérifier l'autorisation D'ABORD
-        let isSignupClosed = false;
+        // 1. Pré-vérification si Firestore autorise la lecture
+        try {
+            const preDoc = await db.collection('globalSettings').doc('dashboard').get();
+            if (preDoc.exists && (preDoc.data().allowSignup === false || preDoc.data().allowSignup === 'false')) {
+                window.isSigningUp = false;
+                btnLoading(btn, false);
+                msgEl.textContent = "La création de compte est actuellement fermée par le directeur.";
+                errorEl.classList.remove('hidden');
+                return;
+            }
+        } catch (settingsErr) {
+            console.warn("Pré-vérification signup:", settingsErr);
+        }
+
+        // 2. Création du compte Firebase Auth
+        const cred = await auth.createUserWithEmailAndPassword(
+            document.getElementById('emailSignup').value.trim(),
+            document.getElementById('passwordSignup').value
+        );
+
+        // 3. VÉRIFICATION STRICTE POST-AUTH : Maintenant que l'utilisateur est authentifié, il peut lire globalSettings
+        let allowSignup = true;
         try {
             const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
             if (globalDoc.exists && (globalDoc.data().allowSignup === false || globalDoc.data().allowSignup === 'false')) {
-                isSignupClosed = true;
+                allowSignup = false;
             }
-        } catch (settingsErr) {
-            console.warn("Erreur lecture settings signup:", settingsErr);
-            // Si la lecture de globalSettings est bloquée ou échoue, on continue ou on bloque selon la config
+        } catch (postCheckErr) {
+            console.warn("Erreur vérification allowSignup post-auth:", postCheckErr);
         }
 
-        if (isSignupClosed) {
+        if (!allowSignup) {
+            // Inscription fermée : supprimer immédiatement l'utilisateur dans Firebase Auth et déconnecter
+            try {
+                await cred.user.delete();
+            } catch (delErr) {
+                console.warn("Impossible de supprimer le compte auth:", delErr);
+            }
+            await auth.signOut();
             window.isSigningUp = false;
             btnLoading(btn, false);
             msgEl.textContent = "La création de compte est actuellement fermée par le directeur.";
             errorEl.classList.remove('hidden');
             return;
         }
-
-        const cred = await auth.createUserWithEmailAndPassword(
-            document.getElementById('emailSignup').value.trim(),
-            document.getElementById('passwordSignup').value
-        );
         
-        // Créer le document utilisateur dans Firestore
+        // 4. Inscription autorisée : créer le document utilisateur dans Firestore
         await db.collection('users').doc(cred.user.uid).set({
             email: cred.user.email,
             firstName: firstName,
