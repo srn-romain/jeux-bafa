@@ -161,6 +161,102 @@ document.addEventListener('click', (event) => {
 });
 
 /*--------------------------------------------------------------
+# Gestion automatique des Ancres (#hash) & Modales
+# Ouvre automatiquement les modales ou défile vers l'élément ciblé
+--------------------------------------------------------------*/
+function injectListSlugs() {
+    var listItems = document.querySelectorAll('.categories li');
+    listItems.forEach(function (li) {
+        var firstB = li.querySelector(':scope > b, :scope > strong');
+        if (!firstB) return;
+        var rawName = firstB.textContent.trim().replace(/:$/, '');
+        if (!rawName) return;
+        var slug = rawName
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^\w\s-]/g, ' ')
+            .trim()
+            .replace(/[\s_]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        if (slug && !li.id) {
+            li.id = slug;
+        }
+    });
+}
+
+function handleHashModalAndScroll() {
+    if (!window.location.hash) return;
+    var hash = decodeURIComponent(window.location.hash.substring(1)).trim();
+    if (!hash) return;
+
+    injectListSlugs();
+
+    var targetEl = document.getElementById(hash);
+    if (!targetEl) return;
+
+    // 1. Si l'élément ciblé est une modale
+    if (targetEl.classList.contains('modalspe')) {
+        targetEl.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        var content = targetEl.querySelector('.modal__contentspe') || targetEl;
+        content.scrollTop = 0;
+        content.style.transition = 'box-shadow 0.3s ease, transform 0.3s ease';
+        content.style.boxShadow = '0 0 0 4px rgba(39, 174, 96, 0.4), 0 10px 40px rgba(0,0,0,0.3)';
+        setTimeout(function() {
+            content.style.boxShadow = '';
+        }, 2200);
+        return;
+    }
+
+    // 2. Si l'élément ciblé est à l'intérieur d'une modale
+    var parentModal = targetEl.closest('.modalspe');
+    if (parentModal) {
+        parentModal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+        setTimeout(function() {
+            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetEl.style.transition = 'background 0.3s ease, border-radius 0.3s ease, padding 0.3s ease';
+            targetEl.style.borderRadius = '8px';
+            targetEl.style.background = 'rgba(39, 174, 96, 0.2)';
+            setTimeout(function() {
+                targetEl.style.background = '';
+            }, 2500);
+        }, 250);
+        return;
+    }
+
+    // 3. Élément classique sur la page
+    setTimeout(function() {
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        targetEl.style.transition = 'background 0.3s ease, border-radius 0.3s ease, padding 0.3s ease';
+        targetEl.style.borderRadius = '10px';
+        targetEl.style.padding = '6px 12px';
+        targetEl.style.background = 'rgba(39, 174, 96, 0.18)';
+        setTimeout(function () {
+            targetEl.style.background = '';
+            targetEl.style.borderRadius = '';
+            targetEl.style.padding = '';
+        }, 2500);
+    }, 250);
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        injectListSlugs();
+        handleHashModalAndScroll();
+    });
+} else {
+    injectListSlugs();
+    handleHashModalAndScroll();
+}
+
+window.addEventListener('hashchange', function() {
+    handleHashModalAndScroll();
+});
+
+/*--------------------------------------------------------------
 # Copier le texte
 --------------------------------------------------------------*/
 

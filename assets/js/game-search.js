@@ -407,14 +407,59 @@ var GAMES_INDEX = (function () {
         {
             page: 'pages/conversation.html', cat: 'Conversations & débats', emoji: '🗣️',
             items: [
-                { n: 'In the dark', d: "Jeu de rôle et de débat devant un bunker d'urgence après une catastrophe" },
-                { n: "L'Infiltré du Débat", d: 'Jeu de débat à identités cachées avec saboteur à démasquer' },
-                { n: 'Le Speed-Debating Éclair', d: 'Duels 1v1 chrono de 2 min avec rotation au gong' },
-                { n: 'Les 6 Chapeaux de De Bono', d: 'Débat d’angles de vue selon des couleurs de chapeau' },
-                { n: 'Le Procès des Idées & Objets', d: 'Plaidoiries et réquisitoires devant un tribunal d’éloquence' },
-                { n: 'La Négociation des Ambassadeurs', d: 'Diplomatie secrète et dilemme du prisonnier entre factions' },
-                { n: 'Les 36 questions d’Arthur Aron', d: '36 questions pour créer du lien et de l’amitié' },
-                { n: 'Débats de société', d: 'Questions engagées sur le sport, les réseaux, la guerre et l’école' }
+                { n: 'In the dark (Le Bunker)', slug: 'modalInTheDark', d: "Grand jeu de rôle et de débat devant un bunker d'urgence après une catastrophe", kw: 'in the dark bunker catastrophe survie 25 profils debat role' },
+                { n: "L'Infiltré du Débat", slug: 'modalInfiltratedebat', d: 'Jeu de débat à identités cachées avec saboteur à démasquer', kw: 'infiltre debat saboteur role cartes identite cachee' },
+                { n: 'Le Speed-Debating Éclair', slug: 'modalSpeedDebating', d: 'Duels 1v1 chrono de 2 min avec rotation au gong', kw: 'speed debating duel eloquence 2 minutes rotation sujets' },
+                { n: 'Les 6 Chapeaux de De Bono', slug: 'modalChapeauxDeBono', d: 'Débat d’angles de vue selon des couleurs de chapeau', kw: 'chapeaux de bono reflexion collective angles de vue pensee' },
+                { n: 'Le Procès des Idées & Objets', slug: 'modalProcesIdees', d: 'Plaidoiries et réquisitoires devant un tribunal d’éloquence', kw: 'proces idees objets tribunal joute oratoire theatre plaidoirie' },
+                { n: 'La Négociation des Ambassadeurs', slug: 'modalNegociationAmbassadeurs', d: 'Diplomatie secrète et dilemme du prisonnier entre factions', kw: 'negociation ambassadeurs diplomatie alliances trahison factions' },
+                { n: 'Les 36 questions d’Arthur Aron', slug: 'modal36Questions', d: '36 questions pour créer du lien et de l’amitié sincère', kw: '36 questions arthur aron psychologie amitie affinites echanges' },
+                { n: 'Débats de société', slug: 'debats-de-societe', d: 'Questions engagées sur le sport, les réseaux, la santé et l’école', kw: 'debats societe sport intelligence artificielle harcelement sedentarite puff argent bonheur' }
+            ]
+        },
+        {
+            page: 'pages/formation.html', cat: 'Mémo formation', emoji: '🎓',
+            items: [
+                { n: 'Handicap & Inclusion', slug: 'modal-handi', d: 'Moteur, sensoriel, mental, troubles dys, PAI et sensibilisation (Anatole)', kw: 'handicap moteur sensoriel mental psychique dys dyslexie dyspraxie inclusion pai anatole casserole adaptation accessibilite fauteuil' },
+                { n: 'Connaissance des Publics', slug: 'modal-public', d: 'Besoins, rythmes et caractéristiques de 3 à 17 ans (maternelles, enfants, ados)', kw: 'public enfants ados maternelles 3-5 ans 6-8 ans 9-11 ans 12-14 ans 15-17 ans sommeil ecrans developpement rythmes debats 4 coins expressions' },
+                { n: 'Réglementation & Sigles ACM', slug: 'modal-sigle', d: 'DRAJES, SDJES, taux d’encadrement, composition d’équipe et baignade', kw: 'reglementation sigles drajes sdjes ddcs acm pe pp pa taux encadrement 1 pour 8 1 pour 12 baignade assistant sanitaire as diplomes' },
+                { n: 'Responsabilité Civile & Pénale', slug: 'modal-resp', d: 'Obligation de moyens, fautes par commission/omission, sanctions et délits', kw: 'responsabilite civile penale faute dommage prejudice moyens resultat sanctions delits mise en danger justice' },
+                { n: 'Vie Quotidienne en ACM', slug: 'modal-quot', d: 'Téléphones, TDAS (Tabac, Puff, Alcool, Sexe), linge, argent de poche et hygiène', kw: 'vie quotidienne telephone tdas tabac puff vapoteuse alcool drogues sexe linge enuresie argent de poche lever coucher repas douches' },
+                { n: 'VHSS : Violences & Harcèlements', slug: 'modal-vhss', d: 'Prévention des violences sexistes et sexuelles, consentement (thé), injures et le loup', kw: 'vhss vss violences sexistes sexuelles harcelement consentement the le loup injures maltraitance prevenir detecter signaler zero tolerance' },
+                { n: 'Le Relationnel en ACM', slug: 'modal-relationnel', d: 'Communication, écoute active, santé mentale, résolution de conflits et équipe', kw: 'relationnel communication ecoute active juste distance autorite bienveillante equipe familles direction conflits arc en ciel sante mentale' },
+                { n: 'Laïcité en ACM', slug: 'modal-laicite', d: 'Liberté de conscience, neutralité de l’animateur, repas de substitution et tenues', kw: 'laicite neutralite liberte conscience separation egalite repas substitution porc halal casher religion croyances tolerance' },
+                { n: 'Liberté, Autorité & Sanction', slug: 'modal-autorite', d: 'Autorité bienveillante, cadre sécurisant, sanctions éducatives et réparations', kw: 'autorite bienveillante liberte sanction punition regles cadre limites fermete reparation crises' },
+                { n: 'Les Contrats en ACM', slug: 'modal-contrat', d: 'CEE (Contrat d’Engagement Éducatif), CDD, bénévolat, repos compensateur et congés', kw: 'contrats cee cdd vacataire benevolat repos compensateur 11h salaire remuneration conges payes iccp droit travail' },
+                { n: 'Gestion du Blog & Communication', slug: 'modal-blog', d: 'Droit à l’image, rédaction d’articles pour les familles, photos et mascotte', kw: 'blog communication familles parents droit a l image photos mascotte articles redaction' },
+                { n: 'Transports & Réglementation Bus', slug: 'modal-transport', d: 'Sécurité en car, vérification du chauffeur, ceintures, listes et soutes à bagages', kw: 'transports bus car plan securite chauffeur ceintures comptage passagers valises soute' },
+                { n: 'Réunions du Soir & Débriefing', slug: 'modal-reunion', d: 'Bilan de journée, répartition des rôles, planning du lendemain et dynamique d’équipe', kw: 'reunions du soir debrief bilan equipe planning lendemain roles fatigue desaccords' },
+                { n: 'Recherche de Stage & Organismes BAFA', slug: 'modal-organismes', d: 'Organismes de formation (UFCV, CEMEA, UCPA, IFAC...), rédaction CV et lettre de motivation', kw: 'stage pratique organismes ufcv cemea ucpa ifac afocal recherche stage cv animateur lettre motivation entretien' },
+                { n: 'Projets (PE, PP, PA) & Acteurs ACM', slug: 'modal-acteurs', d: 'Projet éducatif, projet pédagogique, projet d’animation et rôles des intervenants', kw: 'projets educatif pe pedagogique pp animation pa ppa acteurs acm directeur animateur cuisinier personnel technique' },
+                { n: 'Cursus BAFA & Rôle de l’Animateur', slug: 'modal-bafa', d: 'Les 3 étapes du BAFA (Base, Stage pratique, Approfondissement) et délais (18 et 30 mois)', kw: 'cursus bafa formation generale stage pratique appro approfondissement qualification delais 18 mois 30 mois role animateur' },
+                { n: 'Analyse du Stage Pratique (Appro)', slug: 'modal-stage', d: 'Méthodologie du bilan de stage en approfondissement : réussites et difficultés', kw: 'analyse stage pratique appro retour d experience bilan difficultes reussites solutions projection' },
+                { n: 'Méthode PSAD & Courbe d’Animation', slug: 'modal-psad', d: 'Préparation, Sensibilisation, Activité, Déroulement, Fin, Rangement, Analyse et courbe d’intensité', kw: 'psad preparation sensibilisation activite deroulement fin rangement analyse courbe animation intensite veillée' },
+                { n: 'Entretiens & Évaluation BAFA', slug: 'modal-entre', d: 'Critères d’évaluation formative, bilan individuel formateur/stagiaire et validation', kw: 'entretiens individuels evaluation formative grille evaluation criteres validation bafa bilan' },
+                { n: 'Bilan Collectif & Appréciations', slug: 'modal-bilan', d: 'Règles d’or pour rédiger des appréciations de stage objectives et constructives', kw: 'bilan session appreciation redaction guide modeles grille synthese progression' },
+                { n: 'Quiz & Kahoot de Révision BAFA', slug: 'modal-quiz', d: 'Quiz interactif pour tester et consolider les connaissances théoriques du BAFA', kw: 'quiz kahoot revision bafa test connaissances questions reglementation securite' },
+                { n: 'Vocabulaire & Lexique Scout', slug: 'modal4', d: 'Branches et lexique par mouvement scout (SGDF, EEDF, EEUF, SMF, scouts d Europe...)', kw: 'scout scoutisme farfadets louveteaux jeannettes guides pionniers compagnons sgdf froissartage bona foulard' },
+                { n: 'Débats 4 coins (Situations sensibles)', slug: 'modal3', d: 'Mises en situation et dilemmes éducatifs pour ados en camp itinérant', kw: 'debats 4 coins qcm situations sensibles camp itinerant 15 17 ans sexualite alcool medicament' }
+            ]
+        },
+        {
+            page: 'pages/direction.html', cat: 'Mémo direction', emoji: '💼',
+            items: [
+                { n: 'Avant le séjour (Direction)', slug: 'avant-le-sejour', d: 'Checklist préparation, déclarations, partenaires et projet pédagogique', kw: 'direction avant le sejour preparation recrutement budget projet pedagogique administratif partenariats' },
+                { n: 'Pendant le séjour (Direction)', slug: 'pendant-le-sejour', d: 'Routines quotidiennes, sécurité, suivi sanitaire et gestion d’équipe', kw: 'direction pendant le sejour arrivee affichage registre securite sanitaire comptabilite' },
+                { n: 'Après le séjour (Direction)', slug: 'apres-le-sejour', d: 'Bilans individuels, carnets de voyage et clôture administrative', kw: 'direction apres le sejour bilan cloture questionnaire satisfaction' }
+            ]
+        },
+        {
+            page: 'pages/reglementation.html', cat: 'Mémo réglementation', emoji: '⚖️',
+            items: [
+                { n: 'Animateur BAFA (Réglementation)', slug: 'anim-bafa', d: 'Ratios d’encadrement, responsabilités et trousseau valise', kw: 'reglementation animateur bafa taux encadrement valise trousseau responsabilites' },
+                { n: 'Surveillant de Baignade (SB)', slug: 'anim-sb', d: 'Réglementation baignade mer, lac, piscine et matériel de secours', kw: 'surveillant baignade sb baignade bnssa securite eau trousse secours reglementation' },
+                { n: 'Assistant Sanitaire (AS)', slug: 'anim-as', d: 'Gestion infirmerie, registre de soins, ordonnances et PAI', kw: 'assistant sanitaire as infirmerie armoire pharmacie fiche sanitaire registre soins medicaments pai' },
+                { n: 'Ratio & Taux d’encadrement', slug: 'recap-encadrement', d: 'Tableau des taux en accueil de loisirs et séjours de vacances', kw: 'ratio taux encadrement moins de 6 ans plus de 6 ans periscolaire extrascolaire sejour' }
             ]
         }
     ];
@@ -426,10 +471,10 @@ var GAMES_INDEX = (function () {
                 name: itemObj.n,
                 desc: itemObj.d || '',
                 page: p.page,
-                slug: slugify(itemObj.n),
+                slug: itemObj.slug || slugify(itemObj.n),
                 cat: p.cat,
                 emoji: p.emoji,
-                keywords: (itemObj.n + ' ' + (itemObj.d || '') + ' ' + p.cat)
+                keywords: (itemObj.n + ' ' + (itemObj.d || '') + ' ' + (itemObj.kw || '') + ' ' + p.cat)
                     .toLowerCase()
                     .normalize('NFD')
                     .replace(/[\u0300-\u036f]/g, '')
@@ -502,6 +547,7 @@ function setupGameSearchUI() {
     // Liste des catégories pour les chips de filtre
     var categoriesList = [
         { name: 'Tout', emoji: '🔍' },
+        { name: 'Formation', emoji: '🎓' },
         { name: 'Conversations & débats', emoji: '🗣️' },
         { name: 'Activités', emoji: '⚽' },
         { name: 'Veillées', emoji: '🌙' },
@@ -513,7 +559,9 @@ function setupGameSearchUI() {
         { name: 'Retour au calme', emoji: '🧘' },
         { name: 'Idées de gages', emoji: '🚫' },
         { name: 'Règles de vie', emoji: '📜' },
-        { name: 'Nourriture en camp', emoji: '🍽️' }
+        { name: 'Nourriture en camp', emoji: '🍽️' },
+        { name: 'Direction', emoji: '💼' },
+        { name: 'Réglementation', emoji: '⚖️' }
     ];
 
     function escapeHtml(str) {
