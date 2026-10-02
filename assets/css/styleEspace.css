@@ -887,6 +887,12 @@ input:checked + .slider:before {
   text-transform: uppercase;
 }
 
+.es-field {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* label blanc pour fond sombre (login) */
 .es-field__label--light {
   color: rgba(255, 255, 255, 0.65);
@@ -894,6 +900,9 @@ input:checked + .slider:before {
 
 .es-input-wrap {
   position: relative;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .es-input-wrap .es-input-icon {
@@ -904,27 +913,71 @@ input:checked + .slider:before {
   font-size: 15px;
   pointer-events: none;
   color: var(--clr-text-light);
+  z-index: 1;
+}
+
+.es-login-card .es-input-icon,
+.es-input-wrap:has(.es-input--dark) .es-input-icon {
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .es-input {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 11px 13px;
   background: var(--clr-surface);
   border: 1.5px solid var(--clr-surface-3);
   border-radius: var(--radius-md);
   font-size: 0.93rem;
+  font-family: inherit;
   color: var(--clr-text);
   transition: border-color var(--transition), box-shadow var(--transition);
   outline: none;
 }
 
-.es-input:focus {
-  border-color: var(--clr-primary);
-  box-shadow: 0 0 0 3px rgba(166, 216, 102, 0.18);
+/* Fix spécifique aux inputs de type date sur mobile / Safari iOS / WebKit */
+input[type="date"].es-input {
+  max-width: 100%;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: block;
+  font-family: inherit;
+  font-size: 0.93rem;
+  line-height: 1.4;
+  -webkit-appearance: none;
+}
+
+input[type="date"].es-input::-webkit-date-and-time-value {
+  text-align: left;
+  min-height: 1.25em;
+  margin: 0;
+  padding: 0;
+}
+
+input[type="date"].es-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.75;
+  padding: 2px;
+}
+
+input[type="date"].es-input--dark {
+  color-scheme: dark;
+}
+
+/* Rendre le sélecteur de calendrier toujours blanc sur fond sombre */
+input[type="date"].es-input--dark::-webkit-calendar-picker-indicator {
+  filter: brightness(0) invert(1);
+  opacity: 0.75;
+  cursor: pointer;
 }
 
 .es-textarea {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 11px 13px;
   background: var(--clr-surface);
   border: 1.5px solid var(--clr-surface-3);

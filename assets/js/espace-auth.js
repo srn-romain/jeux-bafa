@@ -619,6 +619,7 @@ function authErrorMessage(code) {
         'auth/user-disabled': 'Ce compte a été désactivé par l\'administrateur.',
         'auth/popup-blocked': 'La fenêtre de connexion Google a été bloquée par votre navigateur.',
         'auth/account-exists-with-different-credential': 'Un compte existe déjà avec un autre mode de connexion pour cet email.',
+        'permission-denied': 'La création de compte est actuellement fermée par le directeur.',
     };
     return map[code] || 'Identifiant ou mot de passe incorrect.';
 }

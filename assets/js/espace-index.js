@@ -127,8 +127,18 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
 
     try {
         // Sécurité supplémentaire : vérifier l'autorisation D'ABORD
-        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
-        if (globalDoc.exists && (globalDoc.data().allowSignup === false || globalDoc.data().allowSignup === 'false')) {
+        let isSignupClosed = false;
+        try {
+            const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+            if (globalDoc.exists && (globalDoc.data().allowSignup === false || globalDoc.data().allowSignup === 'false')) {
+                isSignupClosed = true;
+            }
+        } catch (settingsErr) {
+            console.warn("Erreur lecture settings signup:", settingsErr);
+            // Si la lecture de globalSettings est bloquée ou échoue, on continue ou on bloque selon la config
+        }
+
+        if (isSignupClosed) {
             window.isSigningUp = false;
             btnLoading(btn, false);
             msgEl.textContent = "La création de compte est actuellement fermée par le directeur.";
@@ -157,7 +167,11 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
     } catch (err) {
         window.isSigningUp = false;
         btnLoading(btn, false);
-        msgEl.textContent = authErrorMessage(err.code);
+        if (err.code === 'permission-denied') {
+            msgEl.textContent = "La création de compte est actuellement fermée par le directeur.";
+        } else {
+            msgEl.textContent = authErrorMessage(err.code);
+        }
         errorEl.classList.remove('hidden');
     }
 });
