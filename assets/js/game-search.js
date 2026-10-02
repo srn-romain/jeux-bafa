@@ -71,7 +71,8 @@ var GAMES_INDEX = (function () {
                 { n: "Pour un M&M's rouge", d: 'Réaliser un gage en échange d’un bonbon M&M’s rouge' },
                 { n: 'Nouveau dans une colo', d: 'Envoyer le nouvel anim chercher de la peinture écossaise' },
                 { n: 'Devine le gateau', d: 'Décrire un autre anim sous forme de recette de pâtisserie' },
-                { n: 'Pépite & Caillou', d: 'Rituel de bilan d’équipe : partager son moment positif (pépite) et les points à améliorer (caillou)' }
+                { n: 'Pépite & Caillou', d: 'Rituel de bilan d’équipe : partager son moment positif (pépite) et les points à améliorer (caillou)' },
+                { n: 'Expressions de jeunes', d: 'Défi animateurs : placer le plus d’expressions actuelles (hess, guez, prime...)' }
             ]
         },
         {
