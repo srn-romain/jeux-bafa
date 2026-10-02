@@ -21,7 +21,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../../assets/css/styleEspace.css?v=3.1">
+    <link rel="stylesheet" href="../../assets/css/styleEspace.css?v=3.2">
 </head>
 
 <body class="espace-body">
@@ -265,43 +265,48 @@
                 <!-- Panneau de Contrôle Administrateur -->
                 <div id="adminControlsPanel" class="es-admin-panel hidden">
                     <div class="es-admin-panel__inner">
-                        <!-- Switch Rôle Admin / Anim -->
-                        <div id="adminRoleSwitchBar" class="es-stats-toggle" style="background: rgba(166, 216, 102, 0.12); border-color: rgba(166, 216, 102, 0.25);">
-                            <span class="es-stats-toggle__label" style="color: #a6d866; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                                <i class="bi bi-eye"></i> Vue Animateur
-                            </span>
-                            <label class="es-switch">
-                                <input type="checkbox" id="checkRoleToggle">
-                                <span class="es-slider"></span>
-                            </label>
-                        </div>
-                        
-                        <!-- Actions Admin (Stats toggle, Organismes, Tags, Nouvelle colo) -->
-                        <div id="adminColoActions" class="hidden">
+                        <div id="adminColoActions">
                             <div class="es-admin-panel__toggles-list">
-                                <div class="es-stats-toggle" id="adminStatsToggle">
-                                    <span class="es-stats-toggle__label">Statistiques</span>
+                                <!-- Switch Rôle Admin / Anim -->
+                                <div id="adminRoleSwitchBar" class="es-stats-toggle" style="background: rgba(166, 216, 102, 0.12); border-color: rgba(166, 216, 102, 0.25);">
+                                    <span class="es-stats-toggle__label" style="color: #a6d866; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                        <i class="bi bi-eye"></i> Vue Anim
+                                    </span>
                                     <label class="es-switch">
-                                        <input type="checkbox" id="checkShowStats" checked>
+                                        <input type="checkbox" id="checkRoleToggle">
                                         <span class="es-slider"></span>
                                     </label>
                                 </div>
-                                <div class="es-stats-toggle" id="adminOrgToggle">
-                                    <span class="es-stats-toggle__label">Organismes</span>
-                                    <label class="es-switch">
-                                        <input type="checkbox" id="checkShowOrg" checked>
-                                        <span class="es-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="es-stats-toggle" id="adminTagToggle">
+
+                                <!-- Toggle Tags (En face de Vue Animateur) -->
+                                <div class="es-stats-toggle admin-only-toggle" id="adminTagToggle">
                                     <span class="es-stats-toggle__label">Tags</span>
                                     <label class="es-switch">
                                         <input type="checkbox" id="checkShowTags" checked>
                                         <span class="es-slider"></span>
                                     </label>
                                 </div>
+                                
+                                <!-- Toggle Statistiques -->
+                                <div class="es-stats-toggle admin-only-toggle" id="adminStatsToggle">
+                                    <span class="es-stats-toggle__label">Statistiques</span>
+                                    <label class="es-switch">
+                                        <input type="checkbox" id="checkShowStats" checked>
+                                        <span class="es-slider"></span>
+                                    </label>
+                                </div>
+                                
+                                <!-- Toggle Organismes -->
+                                <div class="es-stats-toggle admin-only-toggle" id="adminOrgToggle">
+                                    <span class="es-stats-toggle__label">Organismes</span>
+                                    <label class="es-switch">
+                                        <input type="checkbox" id="checkShowOrg" checked>
+                                        <span class="es-slider"></span>
+                                    </label>
+                                </div>
                             </div>
-                            <button class="es-btn es-btn--primary es-btn--sm" id="btnNewColoIndex">
+                            
+                            <button class="es-btn es-btn--primary es-btn--sm admin-only-toggle" id="btnNewColoIndex">
                                 <i class="bi bi-plus-lg"></i> <span class="brand-label">Ajouter un espace</span>
                             </button>
                         </div>
@@ -484,9 +489,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="../../assets/js/firebase-config.js"></script>
-    <script src="../../assets/js/espace-auth.js?v=3.0"></script>
-    <script src="../../assets/js/espace-colo-form.js?v=3.0"></script>
-    <script src="../../assets/js/espace-index.js?v=3.0"></script>
+    <script src="../../assets/js/espace-auth.js?v=3.2"></script>
+    <script src="../../assets/js/espace-colo-form.js?v=3.2"></script>
+    <script src="../../assets/js/espace-index.js?v=3.2"></script>
 </body>
 
 </html>

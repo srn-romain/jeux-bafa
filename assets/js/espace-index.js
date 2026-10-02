@@ -411,13 +411,13 @@ function applyRoleSimulation(activeRole) {
     updateTopbarUser(currentUser, activeRole, actualUserData);
 
     // 2. Afficher/Masquer les options et actions Admin
-    const adminColoActions = document.getElementById('adminColoActions');
+    const adminOnlyElements = document.querySelectorAll('#adminControlsPanel .admin-only-toggle');
     const adminPanel = document.getElementById('adminControlsPanel');
     if (activeRole === 'admin') {
-        adminColoActions?.classList.remove('hidden');
+        adminOnlyElements.forEach(el => el.classList.remove('hidden'));
         adminPanel?.classList.remove('es-admin-panel--simulated');
     } else {
-        adminColoActions?.classList.add('hidden');
+        adminOnlyElements.forEach(el => el.classList.add('hidden'));
         adminPanel?.classList.add('es-admin-panel--simulated');
     }
 

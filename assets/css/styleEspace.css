@@ -4298,9 +4298,7 @@ body.modal-open .es-topbar {
   }
 
   #adminTagToggle {
-    grid-column: span 2;
-    justify-self: center;
-    width: auto;
+    width: 100%;
     box-sizing: border-box;
   }
 
@@ -4318,6 +4316,15 @@ body.modal-open .es-topbar {
   border: none !important;
   padding: 0 !important;
   margin-bottom: 16px !important;
+}
+
+.es-admin-panel--simulated .es-admin-panel__toggles-list {
+  display: flex;
+  justify-content: center;
+}
+
+.es-admin-panel--simulated #adminRoleSwitchBar {
+  max-width: 340px;
 }
 
 /* Tooltip Admin pour les Votes (depuis le site principal) */
