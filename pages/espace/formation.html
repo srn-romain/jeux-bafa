@@ -128,55 +128,269 @@
                     </div>
                 </div>
 
-                <!-- Barre Formateur Admin (si connecté en admin) -->
-                <div id="formationAdminControls" class="es-formation-admin-banner hidden">
-                    <div>
-                        <div class="banner-title" style="font-weight: 700; font-size: 0.95rem; color: #ffffff; display:flex; align-items:center; gap:8px;">
-                            <i class="bi bi-shield-check"></i> Espace Formateur / Administration
+                <!-- Onglets Navigation Stagiaire (Modules vs Mon Bilan) -->
+                <div class="es-nav-tabs" role="tablist" style="max-width: 440px; margin-bottom: 24px;">
+                    <button class="es-nav-tab active" id="tabFormationModules" role="tab" aria-selected="true">
+                        <i class="bi bi-grid-fill"></i> Modules &amp; Quiz
+                    </button>
+                    <button class="es-nav-tab" id="tabFormationBilan" role="tab" aria-selected="false">
+                        <i class="bi bi-mortarboard-fill"></i> Mon Bilan
+                        <span class="es-badge es-badge--sm hidden" id="badgeBilanCompleted" style="margin-left:6px; font-size:0.72rem; padding:2px 7px;">0</span>
+                    </button>
+                </div>
+
+                <!-- VUE 1 : GRILLE DES MODULES -->
+                <div id="viewFormationModules">
+                    <!-- Barre Formateur Admin (si connecté en admin) -->
+                    <div id="formationAdminControls" class="es-formation-admin-banner hidden">
+                        <div>
+                            <div class="banner-title" style="font-weight: 700; font-size: 0.95rem; color: #ffffff; display:flex; align-items:center; gap:8px;">
+                                <i class="bi bi-shield-check"></i> Espace Formateur / Administration
+                            </div>
+                            <div class="banner-desc" style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.8); margin-top: 2px;">
+                                Gérez les modules, configurez les quiz et consultez les résultats des stagiaires.
+                            </div>
                         </div>
-                        <div class="banner-desc" style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.8); margin-top: 2px;">
-                            Gérez les modules, configurez les quiz et consultez les résultats des stagiaires.
+                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <div class="es-admin-panel__toggles-list" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                <!-- Switch Rôle Admin / Vue Stagiaire -->
+                                <div id="formationRoleSwitchBar" class="es-stats-toggle" style="background: rgba(166, 216, 102, 0.12); border-color: rgba(166, 216, 102, 0.25);">
+                                    <span class="es-stats-toggle__label" style="color: #a6d866; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                        <i class="bi bi-eye"></i> Vue Stagiaire
+                                    </span>
+                                    <label class="es-switch">
+                                        <input type="checkbox" id="checkFormationRoleToggle">
+                                        <span class="es-slider"></span>
+                                    </label>
+                                </div>
+
+                                <!-- Toggle Tags (Contrôle tous les tags : questions, réponses, masqué) -->
+                                <div class="es-stats-toggle" id="formationTagToggle">
+                                    <span class="es-stats-toggle__label">Tags</span>
+                                    <label class="es-switch">
+                                        <input type="checkbox" id="checkShowFormationTags" checked>
+                                        <span class="es-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnAdminNewModule" style="font-weight:600;">
+                                    <i class="bi bi-plus-lg"></i> Nouveau module
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <div class="es-admin-panel__toggles-list" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                            <!-- Switch Rôle Admin / Vue Stagiaire -->
-                            <div id="formationRoleSwitchBar" class="es-stats-toggle" style="background: rgba(166, 216, 102, 0.12); border-color: rgba(166, 216, 102, 0.25);">
-                                <span class="es-stats-toggle__label" style="color: #a6d866; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                                    <i class="bi bi-eye"></i> Vue Stagiaire
-                                </span>
-                                <label class="es-switch">
-                                    <input type="checkbox" id="checkFormationRoleToggle">
-                                    <span class="es-slider"></span>
-                                </label>
+
+                    <!-- Loader Formation -->
+                    <div class="es-loader" id="formationLoader">
+                        <div class="es-spinner"></div>
+                        <span>Chargement des modules de formation…</span>
+                    </div>
+
+                    <!-- Grille des Modules Stagiaires -->
+                    <div class="es-formation-grid hidden" id="formationModulesGrid"></div>
+                </div>
+
+                <!-- VUE 2 : BILAN DE FORMATION -->
+                <div id="viewFormationBilan" class="hidden">
+
+                    <!-- ============================================
+                         A) BILAN STAGIAIRE (VUE CANDIDAT)
+                         ============================================ -->
+                    <div id="bilanStagiaireContainer">
+                        <!-- KPI Cards (Progression, Score Global, Tentatives) -->
+                        <div class="es-bilan-kpis" id="bilanKpiContainer">
+                            <!-- KPI 1 : Progression -->
+                            <div class="es-bilan-kpi-card">
+                                <div class="es-bilan-kpi-icon es-bilan-kpi-icon--progress">
+                                    <i class="bi bi-pie-chart-fill"></i>
+                                </div>
+                                <div class="es-bilan-kpi-content">
+                                    <div class="es-bilan-kpi-label">Progression BAFA</div>
+                                    <div class="es-bilan-kpi-val" id="bilanKpiProgressVal">0 / 0</div>
+                                    <div class="es-bilan-kpi-sub" id="bilanKpiProgressSub">0% des modules validés</div>
+                                </div>
                             </div>
 
-                            <!-- Toggle Tags (Contrôle tous les tags : questions, réponses, masqué) -->
-                            <div class="es-stats-toggle" id="formationTagToggle">
-                                <span class="es-stats-toggle__label">Tags</span>
-                                <label class="es-switch">
-                                    <input type="checkbox" id="checkShowFormationTags" checked>
-                                    <span class="es-slider"></span>
-                                </label>
+                            <!-- KPI 2 : Score Global -->
+                            <div class="es-bilan-kpi-card">
+                                <div class="es-bilan-kpi-icon es-bilan-kpi-icon--score">
+                                    <i class="bi bi-award-fill"></i>
+                                </div>
+                                <div class="es-bilan-kpi-content">
+                                    <div class="es-bilan-kpi-label">Score Moyen Global</div>
+                                    <div class="es-bilan-kpi-val" id="bilanKpiScoreVal">--%</div>
+                                    <div class="es-bilan-kpi-sub" id="bilanKpiScoreSub">Calculé sur les quiz corrigés</div>
+                                </div>
+                            </div>
+
+                            <!-- KPI 3 : Total Tentatives -->
+                            <div class="es-bilan-kpi-card">
+                                <div class="es-bilan-kpi-icon es-bilan-kpi-icon--attempts">
+                                    <i class="bi bi-lightning-charge-fill"></i>
+                                </div>
+                                <div class="es-bilan-kpi-content">
+                                    <div class="es-bilan-kpi-label">Épreuves Passées</div>
+                                    <div class="es-bilan-kpi-val" id="bilanKpiAttemptsVal">0</div>
+                                    <div class="es-bilan-kpi-sub" id="bilanKpiAttemptsSub">Dernière activité : --</div>
+                                </div>
                             </div>
                         </div>
 
-                        <div style="display:flex; gap:6px; align-items:center;">
-                            <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnAdminNewModule" style="font-weight:600;">
-                                <i class="bi bi-plus-lg"></i> Nouveau module
+                        <!-- Filtres du Bilan (Tous, Complétés, À réaliser) -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                            <div class="es-bilan-filters" id="bilanFilterButtons">
+                                <button type="button" class="es-bilan-filter-btn active" data-filter="all">Tous les modules (<span id="bilanFilterCountAll">0</span>)</button>
+                                <button type="button" class="es-bilan-filter-btn" data-filter="completed">Complétés (<span id="bilanFilterCountCompleted">0</span>)</button>
+                                <button type="button" class="es-bilan-filter-btn" data-filter="pending">À réaliser (<span id="bilanFilterCountPending">0</span>)</button>
+                            </div>
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnRefreshBilan" title="Actualiser mon bilan">
+                                <i class="bi bi-arrow-clockwise"></i> Actualiser
                             </button>
                         </div>
+
+                        <!-- Loader Bilan -->
+                        <div class="es-loader hidden" id="bilanLoader">
+                            <div class="es-spinner"></div>
+                            <span>Chargement du bilan détaillé…</span>
+                        </div>
+
+                        <!-- Liste des modules dans le Bilan Stagiaire -->
+                        <div class="es-bilan-modules-list" id="bilanModulesList"></div>
                     </div>
-                </div>
 
-                <!-- Loader Formation -->
-                <div class="es-loader" id="formationLoader">
-                    <div class="es-spinner"></div>
-                    <span>Chargement des modules de formation…</span>
-                </div>
+                    <!-- ============================================
+                         B) BILAN FORMATEUR / ADMIN (TOUS CANDIDATS & STATS)
+                         ============================================ -->
+                    <div id="bilanAdminContainer" class="hidden">
+                        <!-- Sous-onglets Admin Bilan -->
+                        <div class="es-admin-bilan-subtabs">
+                            <button type="button" class="es-admin-bilan-subtab active" id="btnAdminSubtabCandidates">
+                                <i class="bi bi-people-fill"></i> Bilan par Candidat
+                            </button>
+                            <button type="button" class="es-admin-bilan-subtab" id="btnAdminSubtabAnalytics">
+                                <i class="bi bi-bar-chart-line-fill"></i> Analyse par Question &amp; Module
+                            </button>
+                        </div>
 
-                <!-- Grille des Modules Stagiaires -->
-                <div class="es-formation-grid hidden" id="formationModulesGrid"></div>
+                        <!-- 1. SOUS-ONGLET CANDIDATS -->
+                        <div id="adminBilanCandidatesView">
+                            <!-- KPIs Globaux Promotion -->
+                            <div class="es-bilan-kpis">
+                                <div class="es-bilan-kpi-card">
+                                    <div class="es-bilan-kpi-icon es-bilan-kpi-icon--progress">
+                                        <i class="bi bi-people-fill"></i>
+                                    </div>
+                                    <div class="es-bilan-kpi-content">
+                                        <div class="es-bilan-kpi-label">Candidats Inscrits</div>
+                                        <div class="es-bilan-kpi-val" id="adminKpiTotalCandidates">0</div>
+                                        <div class="es-bilan-kpi-sub" id="adminKpiActiveCandidates">0 candidat(s) ayant composé</div>
+                                    </div>
+                                </div>
+
+                                <div class="es-bilan-kpi-card">
+                                    <div class="es-bilan-kpi-icon es-bilan-kpi-icon--score">
+                                        <i class="bi bi-mortarboard-fill"></i>
+                                    </div>
+                                    <div class="es-bilan-kpi-content">
+                                        <div class="es-bilan-kpi-label">Moyenne Promo (Quiz Notés)</div>
+                                        <div class="es-bilan-kpi-val" id="adminKpiAvgScore">--%</div>
+                                        <div class="es-bilan-kpi-sub" id="adminKpiAvgScoreSub">Moyenne générale de la promo</div>
+                                    </div>
+                                </div>
+
+                                <div class="es-bilan-kpi-card">
+                                    <div class="es-bilan-kpi-icon es-bilan-kpi-icon--attempts">
+                                        <i class="bi bi-journal-check"></i>
+                                    </div>
+                                    <div class="es-bilan-kpi-content">
+                                        <div class="es-bilan-kpi-label">Copies Transmises</div>
+                                        <div class="es-bilan-kpi-val" id="adminKpiTotalSubmissions">0</div>
+                                        <div class="es-bilan-kpi-sub" id="adminKpiAvgCompletion">0% de complétion moyenne</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Barre de recherche & filtres candidats -->
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                                <div style="display:flex; align-items:center; gap:10px; flex:1; max-width:440px;">
+                                    <div style="width:100%; position:relative;">
+                                        <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--clr-text-muted);"></i>
+                                        <input type="text" id="adminCandidateSearch" class="es-input" placeholder="Rechercher un candidat (nom, email)..." style="padding-left:36px;">
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                    <button type="button" class="es-bilan-filter-btn active" data-admin-candidate-filter="all">Tous (<span id="adminCandidateCountAll">0</span>)</button>
+                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="active">Actifs (<span id="adminCandidateCountActive">0</span>)</button>
+                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="inactive">Non commencés (<span id="adminCandidateCountInactive">0</span>)</button>
+                                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnAdminRefreshCandidates" title="Actualiser la liste">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tableau des Candidats -->
+                            <div class="es-admin-table-container">
+                                <table class="es-admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Candidat / Stagiaire</th>
+                                            <th>Progression</th>
+                                            <th>Score Moyen</th>
+                                            <th>Épreuves</th>
+                                            <th>Dernière Activité</th>
+                                            <th style="text-align:right;">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminCandidatesTableBody">
+                                        <!-- Injecté par JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 2. SOUS-ONGLET ANALYTIQUES PAR MODULE & QUESTION -->
+                        <div id="adminBilanAnalyticsView" class="hidden">
+                            <!-- Sélecteur de Module & KPIs du module -->
+                            <div style="background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:20px; margin-bottom:24px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px;">
+                                    <div style="flex:1; min-width:260px;">
+                                        <label for="adminAnalyticsModuleSelect" style="font-size:0.8rem; font-weight:700; text-transform:uppercase; color:var(--clr-primary); display:block; margin-bottom:6px;">
+                                            <i class="bi bi-collection-play"></i> Sélectionner le module à analyser :
+                                        </label>
+                                        <select id="adminAnalyticsModuleSelect" class="es-input" style="font-weight:700; font-size:0.95rem; cursor:pointer;">
+                                            <!-- Injecté par JS -->
+                                        </select>
+                                    </div>
+                                    <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+                                        <div style="text-align:center; padding:0 12px; border-left:1px solid var(--clr-surface-3);">
+                                            <div style="font-size:0.75rem; color:var(--clr-text-muted); font-weight:600;">Participation</div>
+                                            <div style="font-size:1.25rem; font-weight:800; color:var(--clr-text);" id="analyticsModuleParticipation">0 / 0</div>
+                                        </div>
+                                        <div style="text-align:center; padding:0 12px; border-left:1px solid var(--clr-surface-3);">
+                                            <div style="font-size:0.75rem; color:var(--clr-text-muted); font-weight:600;">Score Moyen</div>
+                                            <div style="font-size:1.25rem; font-weight:800; color:var(--clr-primary);" id="analyticsModuleAvgScore">--%</div>
+                                        </div>
+                                        <div style="text-align:center; padding:0 12px; border-left:1px solid var(--clr-surface-3);">
+                                            <div style="font-size:0.75rem; color:var(--clr-text-muted); font-weight:600;">Total Copies</div>
+                                            <div style="font-size:1.25rem; font-weight:800; color:var(--clr-text);" id="analyticsModuleTotalAttempts">0</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Liste des questions avec statistiques de réussite -->
+                            <div style="font-size:1rem; font-weight:800; color:var(--clr-text); margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                                <i class="bi bi-bar-chart-fill" style="color:var(--clr-primary);"></i> Taux de réussite &amp; statistiques par question
+                            </div>
+                            <div id="adminAnalyticsQuestionsContainer" style="display:flex; flex-direction:column; gap:16px;">
+                                <!-- Injecté par JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
 
             </div>
         </main>
@@ -352,11 +566,11 @@
                                 <label class="es-field__label">⏱️ Timer</label>
                                 <div style="display:flex; align-items:center; gap:6px;">
                                     <div style="display:flex; align-items:center; gap:4px; flex:1;">
-                                        <input class="es-input" type="number" id="editQuizTimerMinutes" min="0" max="300" value="0" placeholder="0" style="text-align:center; padding:6px 8px;">
+                                        <input class="es-input" type="number" id="editQuizTimerMinutes" min="0" max="300" value="0" placeholder="0" style="text-align:center;">
                                         <span style="font-size:0.78rem; font-weight:700; color:var(--clr-text-muted);">min</span>
                                     </div>
                                     <div style="display:flex; align-items:center; gap:4px; flex:1;">
-                                        <input class="es-input" type="number" id="editQuizTimerSeconds" min="0" max="59" value="0" placeholder="0" style="text-align:center; padding:6px 8px;">
+                                        <input class="es-input" type="number" id="editQuizTimerSeconds" min="0" max="59" value="0" placeholder="0" style="text-align:center;">
                                         <span style="font-size:0.78rem; font-weight:700; color:var(--clr-text-muted);">sec</span>
                                     </div>
                                 </div>
@@ -445,6 +659,57 @@
                         <span class="es-btn__spinner"></span>
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+     MODAL : Fiche Bilan & Copies d'un Candidat (Admin / Formateur)
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlayAdminCandidateBilan" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:860px; max-height:92vh; display:flex; flex-direction:column;">
+            <div class="es-modal__header" style="border-bottom:1.5px solid var(--clr-surface-3);">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div class="es-candidate-avatar" id="adminCandidateModalAvatar" style="width:44px; height:44px; font-size:20px;">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <div>
+                        <div class="es-badge es-badge--stagiaire" style="font-size:0.72rem;">🎓 Fiche Candidat</div>
+                        <h2 class="es-modal__title" id="adminCandidateModalName" style="font-size:1.15rem; margin-top:2px;">Nom du candidat</h2>
+                        <div style="font-size:0.78rem; color:var(--clr-text-muted);" id="adminCandidateModalEmail">email@example.com</div>
+                    </div>
+                </div>
+                <button class="es-modal__close" id="btnCloseAdminCandidateModal"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body" style="overflow-y:auto; padding:20px 24px; flex:1;">
+                <!-- KPIs rapides du candidat -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:20px;">
+                    <div style="background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); padding:12px 14px;">
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); font-weight:700; text-transform:uppercase;">Progression</div>
+                        <div style="font-size:1.3rem; font-weight:800; color:var(--clr-text);" id="adminCandidateModalProgression">0 / 0</div>
+                    </div>
+                    <div style="background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); padding:12px 14px;">
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); font-weight:700; text-transform:uppercase;">Score Moyen</div>
+                        <div style="font-size:1.3rem; font-weight:800; color:var(--clr-primary);" id="adminCandidateModalAvgScore">--%</div>
+                    </div>
+                    <div style="background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); padding:12px 14px;">
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); font-weight:700; text-transform:uppercase;">Épreuves Passées</div>
+                        <div style="font-size:1.3rem; font-weight:800; color:var(--clr-text);" id="adminCandidateModalAttempts">0</div>
+                    </div>
+                </div>
+
+                <div class="es-loader hidden" id="adminCandidateModalLoader">
+                    <div class="es-spinner"></div>
+                    <span>Chargement des modules et copies…</span>
+                </div>
+
+                <!-- Liste des modules du candidat -->
+                <div id="adminCandidateModalModulesList" style="display:flex; flex-direction:column; gap:14px;">
+                    <!-- Injecté par JS -->
+                </div>
+            </div>
+            <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3);">
+                <button class="es-btn es-btn--ghost" id="btnCloseAdminCandidateModal2">Fermer</button>
             </div>
         </div>
     </div>

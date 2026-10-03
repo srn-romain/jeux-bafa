@@ -6102,6 +6102,434 @@ body.modal-open .es-topbar {
   opacity: 0.85;
 }
 
+/* ================================================================
+   VUE BILAN STAGIAIRES / CANDIDATS
+   ================================================================ */
+.es-bilan-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.es-bilan-kpi-card {
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.es-bilan-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.es-bilan-kpi-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.es-bilan-kpi-icon--progress {
+  background: rgba(46, 204, 113, 0.14);
+  color: var(--clr-success);
+}
+
+.es-bilan-kpi-icon--score {
+  background: rgba(52, 152, 219, 0.14);
+  color: var(--clr-accent);
+}
+
+.es-bilan-kpi-icon--attempts {
+  background: rgba(243, 156, 18, 0.14);
+  color: var(--clr-warning);
+}
+
+.es-bilan-kpi-content {
+  flex: 1;
+}
+
+.es-bilan-kpi-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--clr-text-muted);
+  margin-bottom: 4px;
+}
+
+.es-bilan-kpi-val {
+  font-size: 1.65rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  line-height: 1.15;
+}
+
+.es-bilan-kpi-sub {
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  margin-top: 4px;
+}
+
+.es-bilan-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.es-bilan-filter-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--clr-surface-3);
+  background: var(--clr-surface);
+  color: var(--clr-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.es-bilan-filter-btn:hover {
+  border-color: var(--clr-primary);
+  color: var(--clr-primary);
+}
+
+.es-bilan-filter-btn.active {
+  background: var(--clr-primary);
+  border-color: var(--clr-primary);
+  color: #ffffff;
+}
+
+.es-bilan-modules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.es-bilan-card {
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.es-bilan-card:hover {
+  border-color: var(--clr-primary-light);
+}
+
+.es-bilan-card--completed {
+  border-left: 5px solid var(--clr-success);
+}
+
+.es-bilan-card--pending {
+  border-left: 5px solid var(--clr-surface-3);
+}
+
+.es-bilan-card__header {
+  padding: 18px 22px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.es-bilan-card__info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 260px;
+}
+
+.es-bilan-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--clr-surface-2);
+  border: 1.5px solid var(--clr-surface-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--clr-primary);
+  flex-shrink: 0;
+}
+
+.es-bilan-card__meta {
+  flex: 1;
+}
+
+.es-bilan-card__num {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--clr-primary);
+  margin-bottom: 2px;
+}
+
+.es-bilan-card__title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--clr-text);
+  margin: 0;
+}
+
+.es-bilan-card__subtitle {
+  font-size: 0.8rem;
+  color: var(--clr-text-muted);
+  margin-top: 2px;
+}
+
+.es-bilan-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.es-bilan-card__accordion {
+  padding: 0 22px 20px;
+  border-top: 1px dashed var(--clr-surface-3);
+  margin-top: 6px;
+  background: var(--clr-surface-2);
+}
+
+.es-bilan-q-item {
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.es-bilan-badge-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  background: rgba(46, 204, 113, 0.12);
+  color: #1e824c;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.es-bilan-badge-transmitted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  background: rgba(52, 152, 219, 0.12);
+  color: #2980b9;
+  border: 1px solid rgba(52, 152, 219, 0.3);
+}
+
+/* ================================================================
+   VUE BILAN ADMIN / FORMATEUR (CANDIDATS & ANALYTIQUES)
+   ================================================================ */
+.es-admin-bilan-subtabs {
+  display: flex;
+  gap: 8px;
+  background: var(--clr-surface-2);
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  margin-bottom: 24px;
+  max-width: 520px;
+}
+
+.es-admin-bilan-subtab {
+  flex: 1;
+  padding: 9px 16px;
+  border: none;
+  background: transparent;
+  color: var(--clr-text-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.es-admin-bilan-subtab.active {
+  background: var(--clr-surface);
+  color: var(--clr-primary-dark);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.es-admin-table-container {
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.es-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.es-admin-table th {
+  background: var(--clr-surface-2);
+  padding: 14px 18px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--clr-text-muted);
+  letter-spacing: 0.5px;
+  border-bottom: 1.5px solid var(--clr-surface-3);
+}
+
+.es-admin-table td {
+  padding: 16px 18px;
+  font-size: 0.88rem;
+  color: var(--clr-text);
+  border-bottom: 1px solid var(--clr-surface-3);
+  vertical-align: middle;
+}
+
+.es-admin-table tr:last-child td {
+  border-bottom: none;
+}
+
+.es-admin-table tr:hover td {
+  background: rgba(46, 204, 113, 0.02);
+}
+
+.es-candidate-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.es-candidate-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--clr-surface-3);
+  color: var(--clr-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.es-candidate-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.es-progress-bar-wrap {
+  width: 100%;
+  max-width: 160px;
+  height: 8px;
+  background: var(--clr-surface-3);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.es-progress-bar-inner {
+  height: 100%;
+  background: var(--clr-primary);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Question Analytics Card */
+.es-analytics-q-card {
+  background: var(--clr-surface);
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+}
+
+.es-analytics-q-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.es-analytics-gauge {
+  min-width: 140px;
+  text-align: right;
+}
+
+.es-analytics-gauge__pct {
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.es-analytics-gauge__sub {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+  margin-top: 2px;
+}
+
+.es-distribution-bar-track {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--clr-surface-3);
+  overflow: hidden;
+  display: flex;
+  margin-top: 6px;
+}
+
+.es-distribution-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.es-distribution-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.es-distribution-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  padding: 6px 10px;
+  background: var(--clr-surface-2);
+  border-radius: 6px;
+}
+
 
 
 

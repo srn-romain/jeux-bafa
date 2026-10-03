@@ -576,6 +576,9 @@ async function loadFormationModules() {
             });
         });
 
+        // Mettre à jour le bilan des stagiaires
+        renderStagiaireBilan();
+
     } catch (err) {
         if (loader) loader.classList.add('hidden');
         console.error("loadFormationModules error:", err);
@@ -2217,6 +2220,1079 @@ async function openFormationResultsModal(moduleId) {
 document.getElementById('btnCloseResultsModal')?.addEventListener('click', () => closeModal('overlayFormationResults'));
 document.getElementById('btnCloseResultsModal2')?.addEventListener('click', () => closeModal('overlayFormationResults'));
 
+// ================================================================
+// GESTION DU BILAN STAGIAIRE / CANDIDAT
+// ================================================================
+let currentFormationTab = 'modules'; // 'modules' | 'bilan'
+let currentBilanFilter = 'all'; // 'all' | 'completed' | 'pending'
+
+function initBilanTabs() {
+    const tabModules = document.getElementById('tabFormationModules');
+    const tabBilan = document.getElementById('tabFormationBilan');
+    const btnRefresh = document.getElementById('btnRefreshBilan');
+    const filterBtns = document.querySelectorAll('#bilanFilterButtons .es-bilan-filter-btn');
+
+    tabModules?.addEventListener('click', () => switchFormationTab('modules'));
+    tabBilan?.addEventListener('click', () => switchFormationTab('bilan'));
+
+    btnRefresh?.addEventListener('click', async () => {
+        showToast("Actualisation du bilan...", "info", 1500);
+        await loadFormationModules();
+        renderStagiaireBilan();
+    });
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentBilanFilter = btn.getAttribute('data-filter') || 'all';
+            renderStagiaireBilan();
+        });
+    });
+
+    // Support de hash URL e.g. #bilan ou paramètre ?tab=bilan
+    if (window.location.hash === '#bilan' || new URLSearchParams(window.location.search).get('tab') === 'bilan') {
+        switchFormationTab('bilan');
+    }
+}
+
+function switchFormationTab(tabName) {
+    currentFormationTab = tabName;
+    const tabModules = document.getElementById('tabFormationModules');
+    const tabBilan = document.getElementById('tabFormationBilan');
+    const viewModules = document.getElementById('viewFormationModules');
+    const viewBilan = document.getElementById('viewFormationBilan');
+
+    if (tabName === 'bilan') {
+        tabModules?.classList.remove('active');
+        tabModules?.setAttribute('aria-selected', 'false');
+        tabBilan?.classList.add('active');
+        tabBilan?.setAttribute('aria-selected', 'true');
+        viewModules?.classList.add('hidden');
+        viewBilan?.classList.remove('hidden');
+        renderStagiaireBilan();
+    } else {
+        tabBilan?.classList.remove('active');
+        tabBilan?.setAttribute('aria-selected', 'false');
+        tabModules?.classList.add('active');
+        tabModules?.setAttribute('aria-selected', 'true');
+        viewBilan?.classList.add('hidden');
+        viewModules?.classList.remove('hidden');
+    }
+}
+
+// Variables globales pour le Bilan Admin
+let adminAllCandidatesList = [];
+let adminAllSubmissionsByModule = {}; // { moduleId: [subs] }
+let adminAllSubmissionsByUser = {}; // { userId: { [moduleId]: sub, allSubs: [] } }
+let adminCandidateFilter = 'all'; // 'all' | 'active' | 'inactive'
+let adminBilanSubtab = 'candidates'; // 'candidates' | 'analytics'
+let adminAnalyticsModuleId = null;
+
+function renderStagiaireBilan() {
+    const effectiveRole = (actualRole === 'admin' && isSimulatedStagiaireRole) ? 'stagiaire' : actualRole;
+    const stagiaireContainer = document.getElementById('bilanStagiaireContainer');
+    const adminContainer = document.getElementById('bilanAdminContainer');
+
+    if (effectiveRole === 'admin') {
+        if (stagiaireContainer) stagiaireContainer.classList.add('hidden');
+        if (adminContainer) adminContainer.classList.remove('hidden');
+        renderAdminBilan();
+        return;
+    }
+
+    if (stagiaireContainer) stagiaireContainer.classList.remove('hidden');
+    if (adminContainer) adminContainer.classList.add('hidden');
+
+    const listContainer = document.getElementById('bilanModulesList');
+    if (!listContainer) return;
+
+    const modules = (currentFormationModulesList || []).filter(m => m.visible !== false);
+    const totalModules = modules.length;
+
+    let completedCount = 0;
+    let totalAttemptsCount = 0;
+    let latestSubmission = null;
+    let scoredSubmissions = [];
+
+    modules.forEach(m => {
+        const sub = stagiaireSubmissionsMap[m.id];
+        if (sub) {
+            completedCount++;
+            totalAttemptsCount += (sub.attemptsCount || 1);
+
+            // Vérifier si le score est autorisé à être vu par l'admin
+            const qConfig = m.quizConfig || {};
+            const showResultsAtEnd = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+            if (showResultsAtEnd && sub.score && sub.score.percent !== undefined) {
+                scoredSubmissions.push({
+                    moduleId: m.id,
+                    score: sub.score
+                });
+            }
+
+            if (!latestSubmission) {
+                latestSubmission = sub;
+            } else {
+                const curT = sub.submittedAt?.toMillis ? sub.submittedAt.toMillis() : (sub.submittedAt?.seconds ? sub.submittedAt.seconds * 1000 : (sub.submittedAt ? new Date(sub.submittedAt).getTime() : 0));
+                const prevT = latestSubmission.submittedAt?.toMillis ? latestSubmission.submittedAt.toMillis() : (latestSubmission.submittedAt?.seconds ? latestSubmission.submittedAt.seconds * 1000 : (latestSubmission.submittedAt ? new Date(latestSubmission.submittedAt).getTime() : 0));
+                if (curT > prevT) latestSubmission = sub;
+            }
+        }
+    });
+
+    const pendingCount = Math.max(0, totalModules - completedCount);
+
+    // 1. KPI Progression
+    const kpiProgVal = document.getElementById('bilanKpiProgressVal');
+    const kpiProgSub = document.getElementById('bilanKpiProgressSub');
+    if (kpiProgVal) kpiProgVal.textContent = `${completedCount} / ${totalModules}`;
+    if (kpiProgSub) {
+        const progPct = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
+        kpiProgSub.textContent = `${progPct}% des modules validés`;
+    }
+
+    // 2. KPI Score Global
+    const kpiScoreVal = document.getElementById('bilanKpiScoreVal');
+    const kpiScoreSub = document.getElementById('bilanKpiScoreSub');
+    if (kpiScoreVal && kpiScoreSub) {
+        if (scoredSubmissions.length > 0) {
+            const avgPct = Math.round(scoredSubmissions.reduce((sum, item) => sum + item.score.percent, 0) / scoredSubmissions.length);
+            kpiScoreVal.textContent = `${avgPct}%`;
+            kpiScoreSub.textContent = `Moyenne sur ${scoredSubmissions.length} quiz noté${scoredSubmissions.length > 1 ? 's' : ''}`;
+        } else if (completedCount > 0) {
+            // Tous les modules complétés ont les résultats masqués par le formateur
+            kpiScoreVal.innerHTML = `<span style="font-size:1.3rem; color:var(--clr-primary); font-weight:800;"><i class="bi bi-shield-check"></i> Transmis</span>`;
+            kpiScoreSub.textContent = `En attente formateur (résultats non diffusés en direct)`;
+        } else {
+            kpiScoreVal.textContent = `--%`;
+            kpiScoreSub.textContent = `Aucun quiz validé pour le moment`;
+        }
+    }
+
+    // 3. KPI Tentatives
+    const kpiAttemptsVal = document.getElementById('bilanKpiAttemptsVal');
+    const kpiAttemptsSub = document.getElementById('bilanKpiAttemptsSub');
+    if (kpiAttemptsVal) kpiAttemptsVal.textContent = `${totalAttemptsCount}`;
+    if (kpiAttemptsSub) {
+        kpiAttemptsSub.textContent = latestSubmission ? `Dernière épreuve : ${formatFullDate(latestSubmission.submittedAt)}` : `Dernière épreuve : Aucune`;
+    }
+
+    // Badges & Filtres
+    const fAll = document.getElementById('bilanFilterCountAll');
+    const fComp = document.getElementById('bilanFilterCountCompleted');
+    const fPend = document.getElementById('bilanFilterCountPending');
+    const badgeTab = document.getElementById('badgeBilanCompleted');
+    if (fAll) fAll.textContent = totalModules;
+    if (fComp) fComp.textContent = completedCount;
+    if (fPend) fPend.textContent = pendingCount;
+    if (badgeTab) {
+        badgeTab.textContent = completedCount;
+        badgeTab.classList.toggle('hidden', completedCount === 0);
+    }
+
+    // Filtrer les modules à afficher
+    const filteredModules = modules.filter(m => {
+        const hasSub = !!stagiaireSubmissionsMap[m.id];
+        if (currentBilanFilter === 'completed') return hasSub;
+        if (currentBilanFilter === 'pending') return !hasSub;
+        return true;
+    });
+
+    if (filteredModules.length === 0) {
+        listContainer.innerHTML = `
+            <div class="es-empty" style="padding: 36px 20px;">
+                <div class="es-empty__icon">📑</div>
+                <div class="es-empty__title">Aucun module dans cette catégorie</div>
+                <p class="es-empty__text">${currentBilanFilter === 'completed' ? "Vous n'avez pas encore validé de quiz pour le moment." : "Tous les modules de cette catégorie ont été complétés !"}</p>
+            </div>
+        `;
+        return;
+    }
+
+    listContainer.innerHTML = filteredModules.map(m => {
+        const sub = stagiaireSubmissionsMap[m.id];
+        const isCompleted = !!sub;
+        const qConfig = m.quizConfig || {};
+        const showResultsAtEnd = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+        const cardClass = isCompleted ? 'es-bilan-card es-bilan-card--completed' : 'es-bilan-card es-bilan-card--pending';
+
+        let statusBadgeHtml = '';
+        let actionBtnHtml = '';
+
+        if (isCompleted) {
+            if (showResultsAtEnd) {
+                const percent = sub.score?.percent ?? 100;
+                statusBadgeHtml = `
+                    <span class="es-bilan-badge-score">
+                        <i class="bi bi-award-fill"></i> Score : ${percent}% (${sub.score?.correct || 0}/${sub.score?.total || 0} QCM)
+                    </span>
+                `;
+                actionBtnHtml = `
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-toggle-bilan-accordion" data-module-id="${m.id}">
+                        <i class="bi bi-card-checklist"></i> <span class="accordion-text">Consulter mes réponses &amp; corrigé</span> <i class="bi bi-chevron-down accordion-arrow" style="font-size:11px; margin-left:4px; transition:transform 0.2s ease;"></i>
+                    </button>
+                `;
+            } else {
+                statusBadgeHtml = `
+                    <span class="es-bilan-badge-transmitted">
+                        <i class="bi bi-shield-check"></i> Réponses transmises au formateur
+                    </span>
+                `;
+                actionBtnHtml = `
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-toggle-bilan-accordion" data-module-id="${m.id}">
+                        <i class="bi bi-eye"></i> <span class="accordion-text">Consulter ma copie transmise</span> <i class="bi bi-chevron-down accordion-arrow" style="font-size:11px; margin-left:4px; transition:transform 0.2s ease;"></i>
+                    </button>
+                `;
+            }
+
+            if (m.enabled) {
+                actionBtnHtml += `
+                    <a href="quiz.html?module=${encodeURIComponent(m.id)}" class="es-btn es-btn--ghost es-btn--sm" title="Repasser ce quiz">
+                        <i class="bi bi-arrow-repeat"></i> Repasser
+                    </a>
+                `;
+            }
+        } else {
+            statusBadgeHtml = `
+                <span class="es-badge es-badge--pending" style="font-size:0.78rem;">
+                    <i class="bi bi-hourglass"></i> Non commencé
+                </span>
+            `;
+            if (m.enabled) {
+                actionBtnHtml = `
+                    <a href="quiz.html?module=${encodeURIComponent(m.id)}" class="es-btn es-btn--primary es-btn--sm">
+                        <i class="bi bi-play-fill"></i> Faire le quiz
+                    </a>
+                `;
+            } else {
+                actionBtnHtml = `
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" disabled style="opacity:0.5; cursor:not-allowed;">
+                        <i class="bi bi-lock"></i> Verrouillé
+                    </button>
+                `;
+            }
+        }
+
+        const dateMeta = isCompleted ? `
+            <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:4px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <span><i class="bi bi-calendar3"></i> ${formatFullDate(sub.submittedAt)}</span>
+                <span>•</span>
+                <span>Tentative #${sub.attemptNumber || 1}</span>
+                ${sub.timeExpired ? '<span class="es-badge es-badge--danger" style="font-size:0.7rem; padding:1px 6px;">⏰ Temps écoulé</span>' : ''}
+            </div>
+        ` : '';
+
+        return `
+        <div class="${cardClass}" id="bilanCard_${m.id}">
+            <div class="es-bilan-card__header">
+                <div class="es-bilan-card__info">
+                    <div class="es-bilan-card__icon">
+                        <i class="bi ${m.icon || 'bi-journal-bookmark'}"></i>
+                    </div>
+                    <div class="es-bilan-card__meta">
+                        <div class="es-bilan-card__num">Module ${m.num < 10 ? '0' + m.num : m.num}</div>
+                        <h3 class="es-bilan-card__title">${escapeHtml(m.title)}</h3>
+                        ${m.subtitle ? `<div class="es-bilan-card__subtitle">${escapeHtml(m.subtitle)}</div>` : ''}
+                        ${dateMeta}
+                    </div>
+                </div>
+                <div class="es-bilan-card__actions">
+                    ${statusBadgeHtml}
+                    ${actionBtnHtml}
+                </div>
+            </div>
+            <!-- Accordéon détaillé de questions & réponses -->
+            <div class="es-bilan-card__accordion hidden" id="bilanAccordion_${m.id}">
+                <div class="es-loader" style="padding: 24px 0;">
+                    <div class="es-spinner"></div>
+                    <span>Chargement des questions &amp; réponses…</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+
+    // Listeners pour les accordéons
+    listContainer.querySelectorAll('.btn-toggle-bilan-accordion').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const moduleId = btn.getAttribute('data-module-id');
+            await toggleBilanModuleAccordion(moduleId, btn);
+        });
+    });
+}
+
+// ================================================================
+// BILAN FORMATEUR / ADMIN : CANDIDATS & ANALYTIQUES
+// ================================================================
+let adminBilanInitialized = false;
+
+async function renderAdminBilan() {
+    if (!adminBilanInitialized) {
+        initAdminBilanControls();
+        adminBilanInitialized = true;
+    }
+
+    await loadAdminBilanData();
+    renderAdminCandidatesTable();
+    setupAdminAnalyticsDropdown();
+}
+
+function initAdminBilanControls() {
+    const btnCandidates = document.getElementById('btnAdminSubtabCandidates');
+    const btnAnalytics = document.getElementById('btnAdminSubtabAnalytics');
+    const viewCandidates = document.getElementById('adminBilanCandidatesView');
+    const viewAnalytics = document.getElementById('adminBilanAnalyticsView');
+    const searchInput = document.getElementById('adminCandidateSearch');
+    const filterBtns = document.querySelectorAll('[data-admin-candidate-filter]');
+    const btnRefresh = document.getElementById('btnAdminRefreshCandidates');
+    const moduleSelect = document.getElementById('adminAnalyticsModuleSelect');
+
+    btnCandidates?.addEventListener('click', () => {
+        adminBilanSubtab = 'candidates';
+        btnCandidates.classList.add('active');
+        btnAnalytics?.classList.remove('active');
+        viewCandidates?.classList.remove('hidden');
+        viewAnalytics?.classList.add('hidden');
+    });
+
+    btnAnalytics?.addEventListener('click', () => {
+        adminBilanSubtab = 'analytics';
+        btnAnalytics.classList.add('active');
+        btnCandidates?.classList.remove('active');
+        viewAnalytics?.classList.remove('hidden');
+        viewCandidates?.classList.add('hidden');
+        if (adminAnalyticsModuleId) {
+            renderAdminModuleAnalytics(adminAnalyticsModuleId);
+        }
+    });
+
+    searchInput?.addEventListener('input', () => {
+        renderAdminCandidatesTable();
+    });
+
+    filterBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            adminCandidateFilter = btn.getAttribute('data-admin-candidate-filter') || 'all';
+            renderAdminCandidatesTable();
+        });
+    });
+
+    btnRefresh?.addEventListener('click', async () => {
+        showToast("Actualisation des données candidats...", "info", 1500);
+        await loadAdminBilanData();
+        renderAdminCandidatesTable();
+        if (adminAnalyticsModuleId) {
+            renderAdminModuleAnalytics(adminAnalyticsModuleId);
+        }
+    });
+
+    moduleSelect?.addEventListener('change', (e) => {
+        adminAnalyticsModuleId = e.target.value;
+        renderAdminModuleAnalytics(adminAnalyticsModuleId);
+    });
+
+    // Modale inspection candidat
+    document.getElementById('btnCloseAdminCandidateModal')?.addEventListener('click', () => closeModal('overlayAdminCandidateBilan'));
+    document.getElementById('btnCloseAdminCandidateModal2')?.addEventListener('click', () => closeModal('overlayAdminCandidateBilan'));
+}
+
+async function loadAdminBilanData() {
+    try {
+        // 1. Récupérer tous les candidats / utilisateurs
+        const usersSnap = await db.collection('users').get();
+        if (!usersSnap.empty) {
+            adminAllCandidatesList = usersSnap.docs
+                .map(d => ({ uid: d.id, ...d.data() }))
+                .filter(u => u.role === 'stagiaire' || !u.role);
+            
+            // Tri par nom ou date de création
+            adminAllCandidatesList.sort((a, b) => {
+                const nameA = (a.displayName || `${a.firstName || ''} ${a.lastName || ''}`).toLowerCase();
+                const nameB = (b.displayName || `${b.firstName || ''} ${b.lastName || ''}`).toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+        } else {
+            adminAllCandidatesList = [];
+        }
+
+        // 2. Récupérer toutes les soumissions de tous les modules
+        adminAllSubmissionsByModule = {};
+        adminAllSubmissionsByUser = {};
+        const modules = currentFormationModulesList || [];
+
+        await Promise.all(modules.map(async (m) => {
+            try {
+                const subSnap = await db.collection('formation').doc(m.id).collection('submissions').get();
+                const subs = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+                adminAllSubmissionsByModule[m.id] = subs;
+
+                subs.forEach(sub => {
+                    const uid = sub.userId;
+                    if (!uid) return;
+                    if (!adminAllSubmissionsByUser[uid]) {
+                        adminAllSubmissionsByUser[uid] = {
+                            modulesMap: {},
+                            allSubs: []
+                        };
+                    }
+                    adminAllSubmissionsByUser[uid].allSubs.push(sub);
+
+                    const existing = adminAllSubmissionsByUser[uid].modulesMap[m.id];
+                    if (!existing) {
+                        adminAllSubmissionsByUser[uid].modulesMap[m.id] = sub;
+                    } else {
+                        const curT = sub.submittedAt?.toMillis ? sub.submittedAt.toMillis() : (sub.submittedAt?.seconds ? sub.submittedAt.seconds * 1000 : 0);
+                        const prevT = existing.submittedAt?.toMillis ? existing.submittedAt.toMillis() : (existing.submittedAt?.seconds ? existing.submittedAt.seconds * 1000 : 0);
+                        if (curT > prevT) {
+                            adminAllSubmissionsByUser[uid].modulesMap[m.id] = sub;
+                        }
+                    }
+                });
+            } catch (err) {
+                console.warn(`Admin bilan submissions error for module ${m.id}:`, err);
+            }
+        }));
+
+        // 3. Calcul des KPIs Globaux Promotion
+        const totalCandidates = adminAllCandidatesList.length;
+        const totalModules = modules.length;
+        let activeCandidatesCount = 0;
+        let totalSubmissionsCount = 0;
+        let totalCompletionRatesSum = 0;
+        let allScoresPromo = [];
+
+        adminAllCandidatesList.forEach(cand => {
+            const userData = adminAllSubmissionsByUser[cand.uid];
+            const candModulesMap = userData?.modulesMap || {};
+            const completedCount = Object.keys(candModulesMap).length;
+            const subsList = userData?.allSubs || [];
+
+            if (completedCount > 0) {
+                activeCandidatesCount++;
+                totalSubmissionsCount += subsList.length;
+            }
+
+            const completionRate = totalModules > 0 ? (completedCount / totalModules) * 100 : 0;
+            totalCompletionRatesSum += completionRate;
+
+            Object.values(candModulesMap).forEach(sub => {
+                if (sub.score && typeof sub.score.percent === 'number') {
+                    allScoresPromo.push(sub.score.percent);
+                }
+            });
+        });
+
+        const avgCompletion = totalCandidates > 0 ? Math.round(totalCompletionRatesSum / totalCandidates) : 0;
+        const avgScorePromo = allScoresPromo.length > 0 ? Math.round(allScoresPromo.reduce((a, b) => a + b, 0) / allScoresPromo.length) : null;
+
+        // Mise à jour de l'affichage des KPIs
+        const kpiTotalCand = document.getElementById('adminKpiTotalCandidates');
+        const kpiActiveCand = document.getElementById('adminKpiActiveCandidates');
+        const kpiAvgScore = document.getElementById('adminKpiAvgScore');
+        const kpiAvgScoreSub = document.getElementById('adminKpiAvgScoreSub');
+        const kpiTotalSubs = document.getElementById('adminKpiTotalSubmissions');
+        const kpiAvgCompletion = document.getElementById('adminKpiAvgCompletion');
+
+        if (kpiTotalCand) kpiTotalCand.textContent = totalCandidates;
+        if (kpiActiveCand) kpiActiveCand.textContent = `${activeCandidatesCount} candidat${activeCandidatesCount > 1 ? 's' : ''} actif${activeCandidatesCount > 1 ? 's' : ''}`;
+        if (kpiAvgScore) kpiAvgScore.textContent = avgScorePromo !== null ? `${avgScorePromo}%` : '--%';
+        if (kpiAvgScoreSub) kpiAvgScoreSub.textContent = allScoresPromo.length > 0 ? `Sur ${allScoresPromo.length} copies notées` : 'Aucune note disponible';
+        if (kpiTotalSubs) kpiTotalSubs.textContent = totalSubmissionsCount;
+        if (kpiAvgCompletion) kpiAvgCompletion.textContent = `${avgCompletion}% de complétion moyenne`;
+
+        // Mise à jour des compteurs filtres
+        const cAll = document.getElementById('adminCandidateCountAll');
+        const cAct = document.getElementById('adminCandidateCountActive');
+        const cInact = document.getElementById('adminCandidateCountInactive');
+        if (cAll) cAll.textContent = totalCandidates;
+        if (cAct) cAct.textContent = activeCandidatesCount;
+        if (cInact) cInact.textContent = Math.max(0, totalCandidates - activeCandidatesCount);
+
+    } catch (err) {
+        console.error("loadAdminBilanData error:", err);
+    }
+}
+
+function renderAdminCandidatesTable() {
+    const tbody = document.getElementById('adminCandidatesTableBody');
+    if (!tbody) return;
+
+    const searchTerm = (document.getElementById('adminCandidateSearch')?.value || '').toLowerCase().trim();
+    const totalModules = (currentFormationModulesList || []).length;
+
+    const filteredCandidates = adminAllCandidatesList.filter(cand => {
+        const candData = adminAllSubmissionsByUser[cand.uid];
+        const completedCount = Object.keys(candData?.modulesMap || {}).length;
+        const isActive = completedCount > 0;
+
+        if (adminCandidateFilter === 'active' && !isActive) return false;
+        if (adminCandidateFilter === 'inactive' && isActive) return false;
+
+        if (searchTerm) {
+            const name = (cand.displayName || `${cand.firstName || ''} ${cand.lastName || ''}`).toLowerCase();
+            const email = (cand.email || '').toLowerCase();
+            if (!name.includes(searchTerm) && !email.includes(searchTerm)) {
+                return false;
+            }
+        }
+        return true;
+    });
+
+    if (filteredCandidates.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align:center; padding:36px 16px; color:var(--clr-text-muted);">
+                    <div style="font-size:1.8rem; margin-bottom:8px;">🔍</div>
+                    <div style="font-weight:700;">Aucun candidat ne correspond aux critères</div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = filteredCandidates.map(cand => {
+        const candData = adminAllSubmissionsByUser[cand.uid];
+        const candModulesMap = candData?.modulesMap || {};
+        const allSubs = candData?.allSubs || [];
+        const completedCount = Object.keys(candModulesMap).length;
+        const completionPct = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
+
+        // Calcul score moyen candidat
+        const candScores = [];
+        Object.values(candModulesMap).forEach(sub => {
+            if (sub.score && typeof sub.score.percent === 'number') {
+                candScores.push(sub.score.percent);
+            }
+        });
+        const avgScore = candScores.length > 0 ? Math.round(candScores.reduce((a, b) => a + b, 0) / candScores.length) : null;
+
+        let scoreBadge = '<span style="color:var(--clr-text-muted); font-size:0.85rem;">—</span>';
+        if (avgScore !== null) {
+            let scoreBg = 'rgba(46, 204, 113, 0.14)';
+            let scoreColor = '#27ae60';
+            if (avgScore < 50) {
+                scoreBg = 'rgba(231, 76, 60, 0.14)';
+                scoreColor = '#e74c3c';
+            } else if (avgScore < 75) {
+                scoreBg = 'rgba(243, 156, 18, 0.14)';
+                scoreColor = '#d35400';
+            }
+            scoreBadge = `<span style="display:inline-block; padding:3px 10px; border-radius:12px; font-weight:800; font-size:0.84rem; background:${scoreBg}; color:${scoreColor};">${avgScore}%</span>`;
+        } else if (completedCount > 0) {
+            scoreBadge = `<span class="es-badge es-badge--pending" style="font-size:0.75rem;"><i class="bi bi-shield-check"></i> Transmis</span>`;
+        }
+
+        // Dernière activité
+        let lastDateText = '<span style="color:var(--clr-text-muted);">Jamais</span>';
+        if (allSubs.length > 0) {
+            allSubs.sort((a, b) => {
+                const ta = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : (a.submittedAt?.seconds ? a.submittedAt.seconds * 1000 : 0);
+                const tb = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : (b.submittedAt?.seconds ? b.submittedAt.seconds * 1000 : 0);
+                return tb - ta;
+            });
+            lastDateText = `<span style="font-size:0.82rem; font-weight:600;"><i class="bi bi-clock-history"></i> ${formatFullDate(allSubs[0].submittedAt)}</span>`;
+        }
+
+        const displayName = cand.displayName || `${cand.firstName || ''} ${cand.lastName || ''}`.trim() || cand.email || 'Candidat';
+        const initial = displayName.charAt(0).toUpperCase() || 'C';
+        const avatarContent = cand.photoURL ? `<img src="${escapeHtml(cand.photoURL)}" alt="Avatar">` : initial;
+
+        return `
+        <tr>
+            <td>
+                <div class="es-candidate-user-cell">
+                    <div class="es-candidate-avatar">${avatarContent}</div>
+                    <div>
+                        <div style="font-weight:700; color:var(--clr-text);">${escapeHtml(displayName)}</div>
+                        <div style="font-size:0.78rem; color:var(--clr-text-muted);">${escapeHtml(cand.email || '')}</div>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div style="font-weight:700; font-size:0.88rem; color:var(--clr-text);">${completedCount} / ${totalModules} <span style="font-size:0.75rem; color:var(--clr-text-muted);">(${completionPct}%)</span></div>
+                <div class="es-progress-bar-wrap">
+                    <div class="es-progress-bar-inner" style="width:${completionPct}%; background:${completionPct >= 100 ? '#27ae60' : 'var(--clr-primary)'};"></div>
+                </div>
+            </td>
+            <td>${scoreBadge}</td>
+            <td>
+                <span class="es-badge es-badge--approved" style="font-size:0.78rem;">${allSubs.length} tentative${allSubs.length > 1 ? 's' : ''}</span>
+            </td>
+            <td>${lastDateText}</td>
+            <td style="text-align:right;">
+                <button type="button" class="es-btn es-btn--primary es-btn--sm btn-open-candidate-sheet" data-user-id="${cand.uid}" style="padding:6px 12px; font-size:0.8rem; font-weight:700;">
+                    <i class="bi bi-person-lines-fill"></i> Voir le bilan
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    // Listeners pour ouvrir la fiche bilan candidat
+    tbody.querySelectorAll('.btn-open-candidate-sheet').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const uid = btn.getAttribute('data-user-id');
+            openAdminCandidateBilanModal(uid);
+        });
+    });
+}
+
+function setupAdminAnalyticsDropdown() {
+    const select = document.getElementById('adminAnalyticsModuleSelect');
+    if (!select) return;
+
+    const modules = currentFormationModulesList || [];
+    select.innerHTML = modules.map(m => `
+        <option value="${m.id}" ${adminAnalyticsModuleId === m.id ? 'selected' : ''}>
+            Module ${m.num < 10 ? '0' + m.num : m.num} : ${escapeHtml(m.title)}
+        </option>
+    `).join('');
+
+    if (!adminAnalyticsModuleId && modules.length > 0) {
+        adminAnalyticsModuleId = modules[0].id;
+        select.value = adminAnalyticsModuleId;
+    }
+
+    if (adminAnalyticsModuleId) {
+        renderAdminModuleAnalytics(adminAnalyticsModuleId);
+    }
+}
+
+async function renderAdminModuleAnalytics(moduleId) {
+    const container = document.getElementById('adminAnalyticsQuestionsContainer');
+    if (!container || !moduleId) return;
+
+    const mod = (currentFormationModulesList || []).find(m => m.id === moduleId);
+    if (!mod) return;
+
+    container.innerHTML = `
+        <div class="es-loader" style="padding:32px 0;">
+            <div class="es-spinner"></div>
+            <span>Calcul des statistiques par question…</span>
+        </div>
+    `;
+
+    try {
+        const questions = await fetchModuleQuestions(moduleId);
+        const subs = adminAllSubmissionsByModule[moduleId] || [];
+        const totalCandidates = adminAllCandidatesList.length;
+
+        // Calculer les candidats uniques ayant soumis
+        const uniqueUserIds = new Set(subs.map(s => s.userId).filter(Boolean));
+        const participationPct = totalCandidates > 0 ? Math.round((uniqueUserIds.size / totalCandidates) * 100) : 0;
+
+        // Calculer le score moyen du module
+        const scoredSubs = subs.filter(s => s.score && typeof s.score.percent === 'number');
+        const avgScore = scoredSubs.length > 0 ? Math.round(scoredSubs.reduce((a, b) => a + b.score.percent, 0) / scoredSubs.length) : null;
+
+        // Mise à jour des compteurs en-tête module
+        const partEl = document.getElementById('analyticsModuleParticipation');
+        const avgEl = document.getElementById('analyticsModuleAvgScore');
+        const attEl = document.getElementById('analyticsModuleTotalAttempts');
+        if (partEl) partEl.textContent = `${uniqueUserIds.size} / ${totalCandidates} (${participationPct}%)`;
+        if (avgEl) avgEl.textContent = avgScore !== null ? `${avgScore}%` : '--%';
+        if (attEl) attEl.textContent = `${subs.length} copie${subs.length > 1 ? 's' : ''}`;
+
+        if (questions.length === 0) {
+            container.innerHTML = `
+                <div class="es-empty" style="padding:28px 20px;">
+                    <div class="es-empty__icon">❓</div>
+                    <div class="es-empty__title">Aucune question configurée</div>
+                    <p class="es-empty__text">Ce module ne contient pas encore de questions dans son quiz.</p>
+                </div>
+            `;
+            return;
+        }
+
+        if (subs.length === 0) {
+            container.innerHTML = `
+                <div class="es-empty" style="padding:28px 20px;">
+                    <div class="es-empty__icon">📝</div>
+                    <div class="es-empty__title">Aucune copie reçue pour ce module</div>
+                    <p class="es-empty__text">Les statistiques par question s'afficheront dès qu'un candidat aura validé ce quiz.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Analyser chaque question
+        container.innerHTML = questions.map((q, qIdx) => {
+            let correctCount = 0;
+            let answeredCount = 0;
+            const choiceDistribution = {}; // optionIdx -> count
+            let booleanTrueCount = 0;
+            let booleanFalseCount = 0;
+            const writtenAnswers = [];
+            const pinCoordinates = [];
+            const rangeValues = [];
+
+            subs.forEach(sub => {
+                const ans = sub.answers ? sub.answers[q.id] : null;
+                const candName = sub.userName || sub.userEmail || 'Stagiaire';
+                if (ans === null || ans === undefined || ans === '') return;
+                answeredCount++;
+
+                if (q.type === 'qcm') {
+                    const ansNum = parseInt(ans, 10);
+                    choiceDistribution[ansNum] = (choiceDistribution[ansNum] || 0) + 1;
+                    const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+                    if (ansNum === correctIdx) correctCount++;
+                } else if (q.type === 'boolean') {
+                    const userBool = (ans === true || ans === 'true');
+                    if (userBool) booleanTrueCount++;
+                    else booleanFalseCount++;
+                    const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+                    if (userBool === expectedBool) correctCount++;
+                } else if (q.type === 'pinpoint') {
+                    const userCoords = typeof ans === 'object' ? ans : (typeof ans === 'string' ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null);
+                    if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
+                        const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+                        const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+                        const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+                        const dist = Math.sqrt(Math.pow(userCoords.x - targetX, 2) + Math.pow(userCoords.y - targetY, 2));
+                        const isCorrect = dist <= radius;
+                        if (isCorrect) correctCount++;
+                        pinCoordinates.push({ ...userCoords, candName: candName, isCorrect: isCorrect });
+                    }
+                } else if (q.type === 'range') {
+                    const val = parseFloat(ans);
+                    rangeValues.push(val);
+                    if (q.correctValue !== undefined && q.correctValue !== '' && q.correctValue !== null) {
+                        const targetVal = parseFloat(q.correctValue);
+                        const tol = parseFloat(q.tolerance) || 0;
+                        if (Math.abs(val - targetVal) <= tol) correctCount++;
+                    }
+                } else if (q.type === 'puzzle') {
+                    const currentOrder = Array.isArray(ans) ? ans : [];
+                    const expected = q.items || [];
+                    const isExact = (currentOrder.length === expected.length && currentOrder.every((it, idx) => it === expected[idx]));
+                    if (isExact) correctCount++;
+                } else {
+                    // Rédaction
+                    writtenAnswers.push({ name: candName, text: ans });
+                    if (ans.trim().length >= 10) correctCount++;
+                }
+            });
+
+            const successPct = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+            let badgeColor = '#27ae60';
+            let badgeBg = 'rgba(46, 204, 113, 0.12)';
+            if (q.type === 'text') {
+                badgeColor = '#3498db';
+                badgeBg = 'rgba(52, 152, 219, 0.12)';
+            } else if (successPct < 45) {
+                badgeColor = '#e74c3c';
+                badgeBg = 'rgba(231, 76, 60, 0.12)';
+            } else if (successPct < 70) {
+                badgeColor = '#f39c12';
+                badgeBg = 'rgba(243, 156, 18, 0.12)';
+            }
+
+            let typeLabel = 'QCM';
+            if (q.type === 'pinpoint') typeLabel = '📍 Repère sur image';
+            else if (q.type === 'range') typeLabel = 'Curseur horizontal';
+            else if (q.type === 'boolean') typeLabel = 'Vrai / Faux';
+            else if (q.type === 'puzzle') typeLabel = 'Puzzle / Ordonnancement';
+            else if (q.type === 'text') typeLabel = 'Rédaction';
+
+            // Détail spécifique par type
+            let breakdownHtml = '';
+            if (q.type === 'qcm') {
+                const options = q.options || [];
+                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+                breakdownHtml = `
+                <div class="es-distribution-legend">
+                    ${options.map((opt, optIdx) => {
+                        const count = choiceDistribution[optIdx] || 0;
+                        const pct = answeredCount > 0 ? Math.round((count / answeredCount) * 100) : 0;
+                        const isCorrectOpt = optIdx === correctIdx;
+                        return `
+                        <div class="es-distribution-item" style="border-left:4px solid ${isCorrectOpt ? '#27ae60' : 'var(--clr-surface-3)'};">
+                            <div>
+                                ${isCorrectOpt ? '<strong style="color:#27ae60;">✅ Option ' + (optIdx + 1) + ' (Correcte) :</strong>' : '<span>Option ' + (optIdx + 1) + ' :</span>'}
+                                ${escapeHtml(opt)}
+                            </div>
+                            <div style="font-weight:700; white-space:nowrap; margin-left:12px;">
+                                ${count} vote${count > 1 ? 's' : ''} (${pct}%)
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+            } else if (q.type === 'boolean') {
+                const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+                const truePct = answeredCount > 0 ? Math.round((booleanTrueCount / answeredCount) * 100) : 0;
+                const falsePct = answeredCount > 0 ? Math.round((booleanFalseCount / answeredCount) * 100) : 0;
+                breakdownHtml = `
+                <div class="es-distribution-legend">
+                    <div class="es-distribution-item" style="border-left:4px solid ${expectedBool ? '#27ae60' : 'var(--clr-surface-3)'};">
+                        <div>${expectedBool ? '<strong style="color:#27ae60;">👍 VRAI (Attendu)</strong>' : '👍 VRAI'}</div>
+                        <div style="font-weight:700;">${booleanTrueCount} (${truePct}%)</div>
+                    </div>
+                    <div class="es-distribution-item" style="border-left:4px solid ${!expectedBool ? '#27ae60' : 'var(--clr-surface-3)'};">
+                        <div>${!expectedBool ? '<strong style="color:#27ae60;">👎 FAUX (Attendu)</strong>' : '👎 FAUX'}</div>
+                        <div style="font-weight:700;">${booleanFalseCount} (${falsePct}%)</div>
+                    </div>
+                </div>`;
+            } else if (q.type === 'pinpoint') {
+                const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+                const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+                const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+                breakdownHtml = `
+                <div style="margin-top:10px;">
+                    <div style="font-size:0.84rem; color:var(--clr-text-muted); margin-bottom:8px;">
+                        🎯 <strong>${correctCount} / ${answeredCount}</strong> stagiaires ont placé leur repère dans la zone attendue (±${radius}%).
+                    </div>
+                    ${q.pinImage ? `
+                    <div style="text-align:center; background:#181c19; padding:10px; border-radius:8px;">
+                        <div class="es-pinpoint-result-zone" style="max-width:520px; margin:0 auto;">
+                            <img src="${escapeHtml(q.pinImage)}" alt="Vue d'ensemble repères" class="es-pinpoint-result-img">
+                            <div class="es-pinpoint-target-zone es-pinpoint-target-zone--result" style="left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%;"></div>
+                            <div class="es-pinpoint-pin es-pinpoint-pin--admin" style="left:${targetX}%; top:${targetY}%;" title="Cible"><i class="bi bi-bullseye" style="font-size:22px; color:#2ecc71;"></i></div>
+                            ${pinCoordinates.map(p => `
+                                <div class="es-pinpoint-pin ${p.isCorrect ? 'es-pinpoint-pin--correct' : 'es-pinpoint-pin--incorrect'}" style="left:${p.x}%; top:${p.y}%; font-size:11px;" title="${escapeHtml(p.candName)}">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>` : ''}
+                </div>`;
+            } else if (q.type === 'range') {
+                const avgVal = rangeValues.length > 0 ? (rangeValues.reduce((a, b) => a + b, 0) / rangeValues.length).toFixed(1) : '—';
+                breakdownHtml = `
+                <div style="font-size:0.84rem; margin-top:8px; padding:10px; background:var(--clr-surface-2); border-radius:6px;">
+                    <div>Position moyenne choisie : <strong style="color:var(--clr-primary);">${avgVal} ${escapeHtml(q.unit || '')}</strong> (Cible attendue : <strong>${q.correctValue || '—'} ${escapeHtml(q.unit || '')}</strong>)</div>
+                    <div style="color:var(--clr-text-muted); margin-top:4px;">${correctCount} / ${answeredCount} réponses dans la tolérance (±${q.tolerance || 0})</div>
+                </div>`;
+            } else if (q.type === 'text') {
+                breakdownHtml = `
+                <div style="margin-top:10px;">
+                    <details style="background:var(--clr-surface-2); border-radius:6px; padding:10px 14px; cursor:pointer;">
+                        <summary style="font-weight:700; font-size:0.84rem; color:var(--clr-primary);">
+                            <i class="bi bi-chat-quote"></i> Voir les ${writtenAnswers.length} réponses rédigées des stagiaires
+                        </summary>
+                        <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
+                            ${writtenAnswers.map(w => `
+                                <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px; font-size:0.84rem;">
+                                    <strong style="color:var(--clr-primary);">${escapeHtml(w.name)} :</strong>
+                                    <div style="margin-top:4px; white-space:pre-wrap; color:var(--clr-text);">${escapeHtml(w.text)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </details>
+                </div>`;
+            }
+
+            const imageThumb = q.imageUrl ? `
+            <div style="margin:8px 0;">
+                <img src="${escapeHtml(q.imageUrl)}" alt="Illustration" style="max-height:80px; max-width:100%; border-radius:6px; border:1px solid var(--clr-surface-3);" onerror="this.parentElement.style.display='none'">
+            </div>` : '';
+
+            return `
+            <div class="es-analytics-q-card">
+                <div class="es-analytics-q-card__header">
+                    <div>
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">
+                            Question ${qIdx + 1} • ${typeLabel}
+                        </div>
+                        <h4 style="font-size:0.95rem; font-weight:800; color:var(--clr-text); margin:4px 0 0;">
+                            ${escapeHtml(q.text)}
+                        </h4>
+                    </div>
+                    <div class="es-analytics-gauge">
+                        <div class="es-analytics-gauge__pct" style="color:${badgeColor};">${q.type === 'text' ? `${answeredCount}` : `${successPct}%`}</div>
+                        <div class="es-analytics-gauge__sub">${q.type === 'text' ? 'rédaction(s)' : `${correctCount} / ${answeredCount} exacts`}</div>
+                    </div>
+                </div>
+
+                ${imageThumb}
+
+                <!-- Jauge de réussite -->
+                ${q.type !== 'text' ? `
+                <div class="es-distribution-bar-track">
+                    <div class="es-distribution-segment" style="width:${successPct}%; background:${badgeColor};"></div>
+                </div>` : ''}
+
+                ${breakdownHtml}
+            </div>`;
+        }).join('');
+
+    } catch (err) {
+        console.error("renderAdminModuleAnalytics error:", err);
+        container.innerHTML = `<div class="es-alert es-alert--error"><i class="bi bi-exclamation-triangle"></i> Erreur lors du calcul des analyses.</div>`;
+    }
+}
+
+async function openAdminCandidateBilanModal(userId) {
+    const cand = adminAllCandidatesList.find(u => u.uid === userId);
+    if (!cand) return;
+
+    const modalName = document.getElementById('adminCandidateModalName');
+    const modalEmail = document.getElementById('adminCandidateModalEmail');
+    const modalAvatar = document.getElementById('adminCandidateModalAvatar');
+    const modalProg = document.getElementById('adminCandidateModalProgression');
+    const modalScore = document.getElementById('adminCandidateModalAvgScore');
+    const modalAttempts = document.getElementById('adminCandidateModalAttempts');
+    const list = document.getElementById('adminCandidateModalModulesList');
+    const loader = document.getElementById('adminCandidateModalLoader');
+
+    const displayName = cand.displayName || `${cand.firstName || ''} ${cand.lastName || ''}`.trim() || cand.email || 'Candidat';
+    if (modalName) modalName.textContent = displayName;
+    if (modalEmail) modalEmail.textContent = cand.email || '';
+    if (modalAvatar) {
+        modalAvatar.innerHTML = cand.photoURL ? `<img src="${escapeHtml(cand.photoURL)}" alt="Avatar">` : (displayName.charAt(0).toUpperCase() || 'C');
+    }
+
+    const candData = adminAllSubmissionsByUser[userId];
+    const candModulesMap = candData?.modulesMap || {};
+    const allSubs = candData?.allSubs || [];
+    const totalModules = (currentFormationModulesList || []).length;
+    const completedCount = Object.keys(candModulesMap).length;
+    const completionPct = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
+
+    const candScores = [];
+    Object.values(candModulesMap).forEach(s => {
+        if (s.score && typeof s.score.percent === 'number') candScores.push(s.score.percent);
+    });
+    const avgScore = candScores.length > 0 ? Math.round(candScores.reduce((a, b) => a + b, 0) / candScores.length) : null;
+
+    if (modalProg) modalProg.textContent = `${completedCount} / ${totalModules} (${completionPct}%)`;
+    if (modalScore) modalScore.textContent = avgScore !== null ? `${avgScore}%` : (completedCount > 0 ? 'Transmis' : '--%');
+    if (modalAttempts) modalAttempts.textContent = `${allSubs.length} épreuve(s)`;
+
+    if (loader) loader.classList.remove('hidden');
+    if (list) { list.classList.add('hidden'); list.innerHTML = ''; }
+
+    openModal('overlayAdminCandidateBilan');
+
+    try {
+        const modules = currentFormationModulesList || [];
+        const moduleCardsHtml = await Promise.all(modules.map(async (m) => {
+            const sub = candModulesMap[m.id];
+            const hasSubmitted = !!sub;
+
+            let questionsHtml = '';
+            if (hasSubmitted) {
+                const questions = await fetchModuleQuestions(m.id);
+                const answers = sub.answers || {};
+
+                questionsHtml = questions.map((q, qIdx) => {
+                    const userAns = answers[q.id];
+                    let ansDisplay = '';
+
+                    if (q.type === 'qcm') {
+                        const ansNum = (userAns !== null && userAns !== undefined) ? parseInt(userAns, 10) : null;
+                        const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+                        const isCorrect = (ansNum === correctIdx);
+                        const optText = (ansNum !== null && q.options && q.options[ansNum]) ? q.options[ansNum] : 'Pas de réponse';
+                        ansDisplay = `
+                        <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                            <strong>Choix candidat :</strong> ${escapeHtml(optText)}
+                            <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact' : '❌ Faux'}</span>
+                            ${!isCorrect && q.options && q.options[correctIdx] ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Bonne réponse : <strong>${escapeHtml(q.options[correctIdx])}</strong>)</div>` : ''}
+                        </div>`;
+                    } else if (q.type === 'boolean') {
+                        const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+                        const userBool = (userAns === true || userAns === 'true');
+                        const isCorrect = (userAns !== null && userAns !== undefined && userBool === expectedBool);
+                        ansDisplay = `
+                        <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                            <strong>Choix candidat :</strong> ${userBool ? '👍 VRAI' : '👎 FAUX'}
+                            <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact' : '❌ Faux'}</span>
+                            ${!isCorrect ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Attendu : <strong>${expectedBool ? '👍 VRAI' : '👎 FAUX'}</strong>)</div>` : ''}
+                        </div>`;
+                    } else if (q.type === 'pinpoint') {
+                        const userCoords = userAns && typeof userAns === 'object' ? userAns : (userAns ? (typeof userAns === 'string' ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return null; } })() : null) : null);
+                        const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+                        const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+                        const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+                        let isCorrect = false;
+                        if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
+                            const dist = Math.sqrt(Math.pow(userCoords.x - targetX, 2) + Math.pow(userCoords.y - targetY, 2));
+                            isCorrect = dist <= radius;
+                        }
+                        ansDisplay = `
+                        <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                            <div><strong>Repère candidat :</strong> ${userCoords ? `X: ${userCoords.x.toFixed(1)}%, Y: ${userCoords.y.toFixed(1)}%` : '<span style="color:var(--clr-danger)">Pas de repère</span>'} <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Dans la cible' : '❌ Hors cible'}</span></div>
+                            ${q.pinImage ? `
+                            <div style="text-align:center; background:#181c19; padding:8px; border-radius:6px; margin-top:6px;">
+                                <div class="es-pinpoint-result-zone" style="max-width:440px; margin:0 auto;">
+                                    <img src="${escapeHtml(q.pinImage)}" alt="Repère" class="es-pinpoint-result-img">
+                                    <div class="es-pinpoint-target-zone es-pinpoint-target-zone--result" style="left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%;"></div>
+                                    <div class="es-pinpoint-pin es-pinpoint-pin--admin" style="left:${targetX}%; top:${targetY}%;"><i class="bi bi-bullseye" style="font-size:22px; color:#2ecc71;"></i></div>
+                                    ${userCoords ? `<div class="es-pinpoint-pin ${isCorrect ? 'es-pinpoint-pin--correct' : 'es-pinpoint-pin--incorrect'}" style="left:${userCoords.x}%; top:${userCoords.y}%;"><i class="bi bi-geo-alt-fill"></i></div>` : ''}
+                                </div>
+                            </div>` : ''}
+                        </div>`;
+                    } else if (q.type === 'range') {
+                        const val = (userAns !== null && userAns !== undefined) ? parseFloat(userAns) : null;
+                        ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Curseur :</strong> <span style="font-weight:700;">${val !== null ? `${val} ${escapeHtml(q.unit || '')}` : 'Non renseigné'}</span> (Cible : ${q.correctValue || '—'})</div>`;
+                    } else if (q.type === 'puzzle') {
+                        const order = Array.isArray(userAns) ? userAns : [];
+                        ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Ordre proposé :</strong> <ol style="margin:4px 0 0 16px; padding:0;">${order.map(it => `<li>${escapeHtml(it)}</li>`).join('')}</ol></div>`;
+                    } else {
+                        ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem; white-space:pre-wrap;">${escapeHtml(userAns || 'Pas de texte rédigé.')}</div>`;
+                    }
+
+                    return `
+                    <div style="margin-top:10px; padding-top:8px; border-top:1px dashed var(--clr-surface-3);">
+                        <div style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Q${qIdx + 1} • ${q.type}</div>
+                        <div style="font-size:0.88rem; font-weight:600; color:var(--clr-text);">${escapeHtml(q.text)}</div>
+                        ${ansDisplay}
+                    </div>`;
+                }).join('');
+            }
+
+            const scoreBadge = hasSubmitted ? (sub.score ? `<span class="es-bilan-badge-score">Score : ${sub.score.percent}% (${sub.score.correct}/${sub.score.total})</span>` : `<span class="es-bilan-badge-transmitted">Transmis</span>`) : `<span class="es-badge es-badge--pending">Non commencé</span>`;
+
+            return `
+            <div style="background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); overflow:hidden;">
+                <div style="padding:14px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div class="es-bilan-card__icon" style="width:36px; height:36px; font-size:16px;">
+                            <i class="bi ${m.icon || 'bi-journal-bookmark'}"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Module ${m.num < 10 ? '0' + m.num : m.num}</div>
+                            <div style="font-weight:700; font-size:0.95rem; color:var(--clr-text);">${escapeHtml(m.title)}</div>
+                            ${hasSubmitted ? `<div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:2px;">🕒 ${formatFullDate(sub.submittedAt)} • Tentative #${sub.attemptNumber || 1}</div>` : ''}
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        ${scoreBadge}
+                        ${hasSubmitted ? `
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-toggle-cand-modal-acc" data-mod="${m.id}" style="font-size:0.78rem;">
+                            <i class="bi bi-eye"></i> Voir les réponses
+                        </button>` : ''}
+                    </div>
+                </div>
+                ${hasSubmitted ? `
+                <div class="hidden" id="candModalAcc_${m.id}" style="padding:12px 18px 16px; background:var(--clr-surface-2); border-top:1px dashed var(--clr-surface-3);">
+                    ${questionsHtml}
+                </div>` : ''}
+            </div>`;
+        }));
+
+        if (loader) loader.classList.add('hidden');
+        if (list) {
+            list.innerHTML = moduleCardsHtml.join('');
+            list.classList.remove('hidden');
+
+            list.querySelectorAll('.btn-toggle-cand-modal-acc').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const modId = btn.getAttribute('data-mod');
+                    const acc = document.getElementById(`candModalAcc_${modId}`);
+                    acc?.classList.toggle('hidden');
+                });
+            });
+        }
+
+    } catch (err) {
+        if (loader) loader.classList.add('hidden');
+        console.error("openAdminCandidateBilanModal error:", err);
+    }
+}
+
 // ----------------------------------------------------------------
 // MENU UTILISATEUR & PARAMÈTRES
 // ----------------------------------------------------------------
@@ -2392,6 +3468,9 @@ auth.onAuthStateChanged(async (user) => {
         btnBrandDropdown?.classList.remove('es-topbar__brand--interactive');
         brandChevron?.classList.add('hidden');
     }
+
+    // Initialiser les onglets de navigation (Modules vs Mon Bilan)
+    initBilanTabs();
 
     // Initialiser les réglages globaux (tags, stats, etc.)
     initFormationGlobalSettingsListener();
