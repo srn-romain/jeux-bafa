@@ -16,7 +16,9 @@ let isQuizActive = false;
 // Variables pour le chronomètre / timer
 let quizTimerInterval = null;
 let quizRemainingSeconds = 0;
-let hasWarnedOneMinute = false;
+let quizTotalSeconds = 0;
+let hasWarnedTenPercent = false;
+let hasWarnedFivePercent = false;
 
 // ----------------------------------------------------------------
 // GESTION ANTI-ABANDON PENDANT L'ÉPREUVE
@@ -48,6 +50,30 @@ function formatTimerDisplay(totalSeconds) {
     const mins = Math.floor(totalSeconds / 60);
     const secs = totalSeconds % 60;
     return `${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`;
+}
+
+function getQuizTotalDurationSeconds(mod) {
+    if (!mod || !mod.quizConfig) return 0;
+    const qConfig = mod.quizConfig;
+    if (qConfig.timerTotalSeconds !== undefined && qConfig.timerTotalSeconds !== null) {
+        return parseInt(qConfig.timerTotalSeconds, 10) || 0;
+    }
+    const mins = parseInt(qConfig.timerMinutes, 10) || 0;
+    const secs = parseInt(qConfig.timerSeconds, 10) || 0;
+    return (mins * 60) + secs;
+}
+
+function formatDurationText(totalSeconds) {
+    if (!totalSeconds || totalSeconds <= 0) return 'Temps libre (sans chrono)';
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    if (mins > 0 && secs > 0) {
+        return `${mins} min ${secs} s`;
+    } else if (mins > 0) {
+        return `${mins} minute${mins > 1 ? 's' : ''}`;
+    } else {
+        return `${secs} seconde${secs > 1 ? 's' : ''}`;
+    }
 }
 
 function showToast(message, type = 'info', duration = 3500) {
@@ -165,7 +191,7 @@ function renderBriefingScreen() {
     const mod = currentModuleData;
     const qConfig = mod.quizConfig || {};
     const maxAttempts = parseInt(qConfig.maxAttempts, 10) || 0;
-    const timerMinutes = parseInt(qConfig.timerMinutes, 10) || 0;
+    const totalDurationSecs = getQuizTotalDurationSeconds(mod);
     const prevAttempts = userPreviousSubmissions.length;
     const isLocked = (maxAttempts > 0 && prevAttempts >= maxAttempts);
     const showResults = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
@@ -193,8 +219,8 @@ function renderBriefingScreen() {
     const timerPill = document.getElementById('pillQuizTimer');
     const timerPillText = document.getElementById('pillQuizTimerText');
     if (timerPill && timerPillText) {
-        if (timerMinutes > 0) {
-            timerPillText.textContent = `⏱️ ${timerMinutes} minute${timerMinutes > 1 ? 's' : ''} max`;
+        if (totalDurationSecs > 0) {
+            timerPillText.textContent = `⏱️ ${formatDurationText(totalDurationSecs)} max`;
             timerPill.className = 'es-quiz-pill es-quiz-pill--warning';
         } else {
             timerPillText.textContent = `⏱️ Temps libre (sans chrono)`;
@@ -225,8 +251,8 @@ function renderBriefingScreen() {
     const warningTextEl = document.getElementById('briefingWarningText');
     if (warningTextEl) {
         let warnContent = `Ce module ${maxAttempts > 0 ? `autorise un maximum de <strong>${maxAttempts} tentative(s)</strong>.` : `est disponible pour évaluation.`} <strong>Une fois le quiz démarré, vous vous engagez à répondre aux questions et à valider votre copie.</strong><br>`;
-        if (timerMinutes > 0) {
-            warnContent += `⏱️ <strong>Épreuve minutée (${timerMinutes} min) :</strong> Un compte à rebours s'enclenchera dès le lancement. Le chronomètre passera en <strong>alerte rouge clignotante à 1 minute de la fin</strong> et vos réponses seront automatiquement soumises si le temps expire.<br>`;
+        if (totalDurationSecs > 0) {
+            warnContent += `⏱️ <strong>Épreuve minutée (${formatDurationText(totalDurationSecs)}) :</strong> Le chronomètre deviendra <strong>rouge à 10% du temps</strong> puis <strong>clignotant / animé à 5% du temps restant</strong>. Vos réponses seront automatiquement transmises à l'échéance.<br>`;
         }
         warnContent += `Si vous quittez la page, fermez l'onglet ou rechargez votre navigateur en cours de route, cette tentative sera considérée comme <strong>consommée et abandonnée</strong>.`;
         warningTextEl.innerHTML = warnContent;
@@ -282,12 +308,13 @@ function startActiveQuiz() {
         clearInterval(quizTimerInterval);
         quizTimerInterval = null;
     }
-    hasWarnedOneMinute = false;
+    hasWarnedTenPercent = false;
+    hasWarnedFivePercent = false;
 
     const mod = currentModuleData;
     const prevAttempts = userPreviousSubmissions.length;
     const maxAttempts = parseInt(mod.quizConfig?.maxAttempts, 10) || 0;
-    const timerMinutes = parseInt(mod.quizConfig?.timerMinutes, 10) || 0;
+    quizTotalSeconds = getQuizTotalDurationSeconds(mod);
 
     document.getElementById('activeHeaderNum').textContent = `Module ${mod.num < 10 ? '0' + mod.num : mod.num}`;
     document.getElementById('activeHeaderTitle').textContent = mod.quizConfig?.quizTitle || mod.title;
@@ -298,11 +325,12 @@ function startActiveQuiz() {
     const timerBadge = document.getElementById('quizActiveTimerBadge');
     const timerText = document.getElementById('quizActiveTimerText');
 
-    if (timerMinutes > 0) {
-        quizRemainingSeconds = timerMinutes * 60;
+    if (quizTotalSeconds > 0) {
+        quizRemainingSeconds = quizTotalSeconds;
         if (timerBadge) {
             timerBadge.classList.remove('hidden');
             timerBadge.classList.remove('es-quiz-timer-badge--danger');
+            timerBadge.classList.remove('es-quiz-timer-badge--pulsing');
         }
         if (timerText) {
             timerText.textContent = formatTimerDisplay(quizRemainingSeconds);
@@ -316,19 +344,34 @@ function startActiveQuiz() {
                 timerText.textContent = formatTimerDisplay(quizRemainingSeconds);
             }
 
-            // Alerte rouge quand il reste 1 min ou moins (<= 60 secondes)
-            if (quizRemainingSeconds <= 60 && timerBadge) {
-                timerBadge.classList.add('es-quiz-timer-badge--danger');
-                if (!hasWarnedOneMinute && quizRemainingSeconds > 0) {
-                    hasWarnedOneMinute = true;
-                    showToast("⚠️ Attention : Il ne vous reste plus qu'1 minute !", "warning", 5000);
+            const ratio = quizTotalSeconds > 0 ? (quizRemainingSeconds / quizTotalSeconds) : 1;
+
+            // 1. Alerte ROUGE (statique) à 10% ou moins du temps restant
+            if (ratio <= 0.10 && quizRemainingSeconds > 0) {
+                if (timerBadge) timerBadge.classList.add('es-quiz-timer-badge--danger');
+                if (!hasWarnedTenPercent) {
+                    hasWarnedTenPercent = true;
+                    showToast("⚠️ Attention : Il ne reste plus que 10% du temps !", "warning", 4500);
                 }
             }
 
-            // Expiration du chronomètre
+            // 2. Alerte ROUGE + ANIMATION BOUGE / PULSE à 5% ou moins du temps restant
+            if (ratio <= 0.05 && quizRemainingSeconds > 0) {
+                if (timerBadge) {
+                    timerBadge.classList.add('es-quiz-timer-badge--danger');
+                    timerBadge.classList.add('es-quiz-timer-badge--pulsing');
+                }
+                if (!hasWarnedFivePercent) {
+                    hasWarnedFivePercent = true;
+                    showToast("🚨 Dernières secondes : Il ne reste plus que 5% du temps !", "warning", 5000);
+                }
+            }
+
+            // 3. Expiration du chronomètre
             if (quizRemainingSeconds <= 0) {
                 clearInterval(quizTimerInterval);
                 quizTimerInterval = null;
+                if (timerBadge) timerBadge.classList.remove('es-quiz-timer-badge--pulsing');
                 showToast("⏰ Temps écoulé ! Envoi automatique de votre copie...", "error", 4500);
                 submitQuizAnswers({ autoSubmitByTimer: true });
             }
@@ -387,6 +430,23 @@ function renderQuizQuestions() {
                     <input type="radio" name="question_${q.id}" value="false" class="quiz-track-input" required>
                     <span>👎 FAUX</span>
                 </label>
+            </div>`;
+        } else if (q.type === 'pinpoint') {
+            inputHtml = `
+            <div class="es-pinpoint-candidate-wrap" style="text-align:center; margin-top:8px;">
+                <input type="hidden" name="question_${q.id}" id="pinpoint_input_${q.id}" class="quiz-track-input" required>
+                <div class="es-pinpoint-candidate-zone" id="pinpoint_zone_${q.id}" data-q-id="${q.id}">
+                    <img src="${escapeHtml(q.pinImage || '')}" alt="Schéma à pointer" class="es-pinpoint-candidate-img" draggable="false">
+                    <div class="es-pinpoint-pin es-pinpoint-pin--candidate hidden" id="pinpoint_pin_${q.id}">
+                        <i class="bi bi-geo-alt-fill"></i>
+                    </div>
+                    <div class="es-pinpoint-instructions-overlay" id="pinpoint_overlay_${q.id}">
+                        <i class="bi bi-hand-index-thumb"></i> Cliquez sur l'image pour placer votre repère 📍
+                    </div>
+                </div>
+                <div id="pinpoint_feedback_${q.id}" style="font-size:0.78rem; font-weight:600; color:var(--clr-text-muted); margin-top:6px;">
+                    👆 Cliquez sur l'élément correspondant dans l'image pour positionner votre pin.
+                </div>
             </div>`;
         } else if (q.type === 'range') {
             const minVal = parseFloat(q.min) || 0;
@@ -451,7 +511,8 @@ function renderQuizQuestions() {
         }
 
         let typeBadgeLabel = 'QCM';
-        if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
+        if (q.type === 'pinpoint') typeBadgeLabel = '📍 Repère sur image';
+        else if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
         else if (q.type === 'boolean') typeBadgeLabel = 'Vrai / Faux';
         else if (q.type === 'puzzle') typeBadgeLabel = 'Puzzle / Ordonnancement';
         else if (q.type === 'text') typeBadgeLabel = 'Réponse rédigée';
@@ -490,6 +551,42 @@ function attachQuizInteractions(container) {
             if (parent) {
                 parent.querySelectorAll('.es-boolean-btn-label').forEach(lbl => lbl.classList.remove('selected'));
                 radio.closest('.es-boolean-btn-label').classList.add('selected');
+            }
+            updateProgress();
+        });
+    });
+
+    // Pinpoint candidate zone click
+    container.querySelectorAll('.es-pinpoint-candidate-zone').forEach(zone => {
+        zone.addEventListener('click', (e) => {
+            const qId = zone.getAttribute('data-q-id');
+            const rect = zone.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            const xPercent = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+            const yPercent = Math.max(0, Math.min(100, (clickY / rect.height) * 100));
+
+            const pinEl = document.getElementById(`pinpoint_pin_${qId}`);
+            const inputEl = document.getElementById(`pinpoint_input_${qId}`);
+            const overlayEl = document.getElementById(`pinpoint_overlay_${qId}`);
+            const feedbackEl = document.getElementById(`pinpoint_feedback_${qId}`);
+
+            if (pinEl) {
+                pinEl.style.left = `${xPercent}%`;
+                pinEl.style.top = `${yPercent}%`;
+                pinEl.classList.remove('hidden');
+            }
+            if (inputEl) {
+                inputEl.value = JSON.stringify({
+                    x: parseFloat(xPercent.toFixed(1)),
+                    y: parseFloat(yPercent.toFixed(1))
+                });
+            }
+            if (overlayEl) {
+                overlayEl.style.display = 'none';
+            }
+            if (feedbackEl) {
+                feedbackEl.innerHTML = `📍 <span style="color:var(--clr-primary);">Repère positionné (X: ${xPercent.toFixed(0)}%, Y: ${yPercent.toFixed(0)}%)</span> — Cliquez ailleurs pour modifier`;
             }
             updateProgress();
         });
@@ -574,6 +671,9 @@ function updateProgress() {
         if (q.type === 'qcm' || q.type === 'boolean') {
             const sel = form.querySelector(`input[name="question_${q.id}"]:checked`);
             if (sel) answeredCount++;
+        } else if (q.type === 'pinpoint') {
+            const pinInp = form.querySelector(`input[name="question_${q.id}"]`);
+            if (pinInp && pinInp.value) answeredCount++;
         } else if (q.type === 'range' || q.type === 'puzzle') {
             answeredCount++;
         } else {
@@ -654,6 +754,30 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 }
             } else {
                 answers[q.id] = (q.min !== undefined) ? parseFloat(q.min) : 0;
+                hasMissing = true;
+            }
+        } else if (q.type === 'pinpoint') {
+            qcmTotal++;
+            const pinInp = form ? form.querySelector(`input[name="question_${q.id}"]`) : null;
+            if (pinInp && pinInp.value) {
+                try {
+                    const parsed = typeof pinInp.value === 'object' ? pinInp.value : JSON.parse(pinInp.value);
+                    answers[q.id] = parsed;
+                    const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+                    const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+                    const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+                    const dx = parsed.x - targetX;
+                    const dy = parsed.y - targetY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist <= radius) {
+                        qcmCorrect++;
+                    }
+                } catch(e) {
+                    answers[q.id] = null;
+                    hasMissing = true;
+                }
+            } else {
+                answers[q.id] = null;
                 hasMissing = true;
             }
         } else if (q.type === 'puzzle') {
@@ -762,29 +886,73 @@ function renderResultsScreen(submission) {
     const score = submission?.score || { correct: 0, total: 0, percent: 100 };
     const answers = submission?.answers || {};
 
-    document.getElementById('resultScoreVal').textContent = `${score.percent}%`;
-    document.getElementById('resultScoreRatio').textContent = `${score.correct} / ${score.total} QCM corrects`;
-    const timeExpiredBadge = submission.timeExpired ? ' • ⏰ Temps écoulé' : '';
-    document.getElementById('resultAttemptBadge').textContent = `Tentative #${submission.attemptNumber || 1}${timeExpiredBadge}`;
-
+    const scoreCircle = document.getElementById('resultScoreCircle');
     const titleEl = document.getElementById('resultTitle');
     const subEl = document.getElementById('resultSubtitle');
-    if (submission.timeExpired) {
-        titleEl.textContent = "⏰ Épreuve clôturée (Temps écoulé)";
-        subEl.textContent = "Le chronomètre est arrivé à terme. Vos réponses enregistrées jusqu'à l'échéance ont été transmises avec succès à l'équipe pédagogique.";
-    } else if (score.percent >= 80) {
-        titleEl.textContent = "🎉 Excellent résultat !";
-        subEl.textContent = "Vous avez brillamment validé l'évaluation de ce module. Vos résultats ont été transmis aux formateurs.";
-    } else if (score.percent >= 50) {
-        titleEl.textContent = "👍 Épreuve complétée avec succès !";
-        subEl.textContent = "Vos réponses ont bien été enregistrées. Prenez le temps d'analyser le corrigé ci-dessous pour consolider vos acquis.";
-    } else {
-        titleEl.textContent = "📝 Épreuve transmise !";
-        subEl.textContent = "Vos réponses ont été envoyées à l'équipe pédagogique. Vous pourrez retravailler les points abordés avec votre formateur.";
-    }
-
+    const attemptBadge = document.getElementById('resultAttemptBadge');
+    const deferredInfo = document.getElementById('resultDeferredInfo');
     const correctionSection = document.getElementById('resultCorrectionSection');
     const questionsList = document.getElementById('resultQuestionsList');
+
+    const timeExpiredBadge = submission.timeExpired ? ' • ⏰ Temps écoulé' : '';
+    if (attemptBadge) {
+        attemptBadge.textContent = `Tentative #${submission.attemptNumber || 1}${timeExpiredBadge}`;
+    }
+
+    if (showResults) {
+        if (scoreCircle) {
+            scoreCircle.style.display = 'flex';
+            scoreCircle.innerHTML = `
+                <span class="val" id="resultScoreVal">${score.percent}%</span>
+                <span class="max" id="resultScoreRatio">${score.total > 0 ? `${score.correct} / ${score.total} QCM corrects` : 'Épreuve complétée'}</span>
+            `;
+        }
+
+        if (deferredInfo) deferredInfo.classList.add('hidden');
+
+        if (submission.timeExpired) {
+            titleEl.textContent = "⏰ Épreuve clôturée (Temps écoulé)";
+            subEl.textContent = "Le chronomètre est arrivé à terme. Vos réponses enregistrées jusqu'à l'échéance ont été transmises avec succès à l'équipe pédagogique.";
+        } else if (score.percent >= 80) {
+            titleEl.textContent = "🎉 Excellent résultat !";
+            subEl.textContent = "Vous avez brillamment validé l'évaluation de ce module. Vos résultats ont été transmis aux formateurs.";
+        } else if (score.percent >= 50) {
+            titleEl.textContent = "👍 Épreuve complétée avec succès !";
+            subEl.textContent = "Vos réponses ont bien été enregistrées. Prenez le temps d'analyser le corrigé ci-dessous pour consolider vos acquis.";
+        } else {
+            titleEl.textContent = "📝 Épreuve transmise !";
+            subEl.textContent = "Vos réponses ont été envoyées à l'équipe pédagogique. Vous pourrez retravailler les points abordés avec votre formateur.";
+        }
+
+        if (correctionSection) {
+            correctionSection.classList.remove('hidden');
+        }
+    } else {
+        // Mode sans diffusion directe des résultats/notes
+        if (scoreCircle) {
+            scoreCircle.style.display = 'flex';
+            scoreCircle.innerHTML = `
+                <i class="bi bi-send-check" style="font-size: 2.8rem; color: var(--clr-primary); line-height: 1;"></i>
+                <span class="max" style="margin-top: 4px; font-weight: 700; color: var(--clr-primary);">Transmis</span>
+            `;
+        }
+
+        if (submission.timeExpired) {
+            titleEl.textContent = "⏰ Épreuve clôturée (Temps écoulé)";
+            subEl.textContent = "Le chronomètre est arrivé à terme. Vos réponses enregistrées jusqu'à l'échéance ont été transmises avec succès à votre formateur.";
+        } else {
+            titleEl.textContent = "🎉 Vos réponses ont bien été transmises !";
+            subEl.textContent = "Merci d'avoir complété cette épreuve. Vos réponses sont enregistrées et ont été envoyées à l'équipe pédagogique pour évaluation.";
+        }
+
+        if (deferredInfo) {
+            deferredInfo.classList.remove('hidden');
+        }
+
+        if (correctionSection) {
+            correctionSection.classList.add('hidden');
+        }
+    }
 
     if (showResults) {
         correctionSection.classList.remove('hidden');
@@ -831,6 +999,47 @@ function renderResultsScreen(submission) {
                         <div style="font-size:0.82rem; color:var(--clr-text-muted); margin-top:6px;">
                             Réponse attendue : <strong style="color:#27ae60;">${expectedBool ? '👍 VRAI' : '👎 FAUX'}</strong>
                         </div>
+                    ` : ''}
+                </div>`;
+            } else if (q.type === 'pinpoint') {
+                const userCoords = userAns && typeof userAns === 'object' ? userAns : (userAns ? (typeof userAns === 'string' ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return null; } })() : null) : null);
+                const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+                const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+                const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+
+                let isCorrect = false;
+                if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
+                    const dx = userCoords.x - targetX;
+                    const dy = userCoords.y - targetY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    isCorrect = dist <= radius;
+                }
+
+                ansDisplay = `
+                <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                        <div>
+                            <strong>Votre repère :</strong> 
+                            ${userCoords ? `Position X: ${userCoords.x.toFixed(1)}%, Y: ${userCoords.y.toFixed(1)}%` : '<span style="color:var(--clr-danger)">Non renseigné</span>'}
+                        </div>
+                        <span style="font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                            ${isCorrect ? '✅ Cible exacte atteinte (+1 pt)' : '❌ Hors de la zone cible'}
+                        </span>
+                    </div>
+                    ${q.pinImage ? `
+                    <div style="text-align:center; background:#181c19; padding:8px; border-radius:6px; margin-top:6px;">
+                        <div class="es-pinpoint-result-zone" style="max-width:520px; margin:0 auto;">
+                            <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" class="es-pinpoint-result-img">
+                            <div class="es-pinpoint-target-zone es-pinpoint-target-zone--result" style="left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%;" title="Zone attendue (±${radius}%)"></div>
+                            <div class="es-pinpoint-pin es-pinpoint-pin--admin" style="left:${targetX}%; top:${targetY}%;" title="Cible"><i class="bi bi-bullseye" style="font-size:24px; color:#2ecc71;"></i></div>
+                            ${userCoords ? `
+                            <div class="es-pinpoint-pin ${isCorrect ? 'es-pinpoint-pin--correct' : 'es-pinpoint-pin--incorrect'}" style="left:${userCoords.x}%; top:${userCoords.y}%;" title="Votre repère"><i class="bi bi-geo-alt-fill"></i></div>
+                            ` : ''}
+                        </div>
+                        <div style="font-size:0.78rem; color:#ffffff; margin-top:6px; opacity:0.85;">
+                            🎯 Zone cible attendue (cercle vert) : X=${targetX.toFixed(1)}%, Y=${targetY.toFixed(1)}% (tolérance ±${radius}%) ${q.targetLabel ? `— <em>${escapeHtml(q.targetLabel)}</em>` : ''}
+                        </div>
+                    </div>
                     ` : ''}
                 </div>`;
             } else if (q.type === 'range') {

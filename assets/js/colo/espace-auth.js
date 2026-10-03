@@ -251,15 +251,34 @@ function updateTopbarUser(user, role, userData = null) {
             }).catch(err => console.error("Erreur fetch admin info:", err));
     }
 
-    // Gérer la visibilité du lien admin
+    // Gérer la visibilité des liens de navigation entre les 3 espaces (Colos, Formation, Admin)
     const linkAdmin = document.getElementById('linkAdmin');
     const btnAdminLink = document.getElementById('btnAdminLink');
+    const linkFormation = document.getElementById('linkFormation');
+    const btnFormationLink = document.getElementById('btnFormationLink');
+    const linkColos = document.getElementById('linkColos');
+    const btnColosLink = document.getElementById('btnColosLink');
+
     if (role === 'admin') {
         linkAdmin?.classList.remove('hidden');
         btnAdminLink?.classList.remove('hidden');
-    } else {
+        linkFormation?.classList.remove('hidden');
+        btnFormationLink?.classList.remove('hidden');
+        linkColos?.classList.remove('hidden');
+        btnColosLink?.classList.remove('hidden');
+    } else if (role === 'stagiaire') {
         linkAdmin?.classList.add('hidden');
         btnAdminLink?.classList.add('hidden');
+        linkFormation?.classList.remove('hidden');
+        btnFormationLink?.classList.remove('hidden');
+        linkColos?.classList.add('hidden');
+        btnColosLink?.classList.add('hidden');
+    } else {
+        // Animateur
+        linkAdmin?.classList.add('hidden');
+        btnAdminLink?.classList.add('hidden');
+        linkColos?.classList.remove('hidden');
+        btnColosLink?.classList.remove('hidden');
     }
 }
 

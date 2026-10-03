@@ -5140,6 +5140,47 @@ body.modal-open .es-topbar {
   color: rgba(255, 255, 255, 0.8);
 }
 
+/* Carte avec image de fond personnalisée */
+.es-formation-card--has-bg {
+  position: relative;
+  overflow: hidden;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.es-formation-card--has-bg:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45) !important;
+  border-color: var(--clr-primary, #a6d866) !important;
+}
+
+.es-formation-card--has-bg .es-formation-title {
+  color: #ffffff !important;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+}
+
+.es-formation-card--has-bg .es-formation-num {
+  color: #a6d866 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+  font-weight: 800;
+}
+
+.es-formation-card--has-bg .es-formation-desc {
+  color: rgba(255, 255, 255, 0.94) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+}
+
+.es-formation-card--has-bg .es-formation-icon-wrap {
+  background: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
 .es-formation-header {
   display: flex;
   align-items: flex-start;
@@ -5213,6 +5254,82 @@ body.modal-open .es-topbar {
   flex-wrap: wrap;
   color: #ffffff;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Carte Masquée / Invisible pour les stagiaires */
+.es-formation-card--invisible {
+  opacity: 0.65;
+  border-style: dashed !important;
+  border-color: rgba(255, 165, 0, 0.45) !important;
+}
+
+.es-formation-card--invisible:hover {
+  opacity: 0.92;
+  border-color: rgba(255, 165, 0, 0.8) !important;
+}
+
+/* Helpers de bascule Tags & Stats */
+.es-tags--hidden {
+  display: none !important;
+}
+
+.es-stats--hidden {
+  display: none !important;
+}
+
+/* Pastilles et tags colorés pour les cartes de modules */
+.es-formation-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  vertical-align: middle;
+  text-shadow: none;
+  white-space: nowrap;
+  line-height: 1.35;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.es-formation-tag--hidden-status {
+  background: rgba(255, 165, 0, 0.22);
+  color: #ffa500;
+  border: 1px solid rgba(255, 165, 0, 0.45);
+}
+
+.es-formation-tag--questions {
+  background: rgba(52, 152, 219, 0.22);
+  color: #70b6f6;
+  border: 1px solid rgba(52, 152, 219, 0.45);
+}
+
+.es-formation-tag--stats {
+  background: rgba(46, 204, 113, 0.22);
+  color: #4ade80;
+  border: 1px solid rgba(46, 204, 113, 0.45);
+}
+
+.es-formation-tag--status-approved {
+  background: rgba(39, 174, 96, 0.24);
+  color: #2ecc71;
+  border: 1px solid rgba(39, 174, 96, 0.45);
+}
+
+.es-formation-tag--status-available {
+  background: rgba(52, 152, 219, 0.22);
+  color: #5dade2;
+  border: 1px solid rgba(52, 152, 219, 0.45);
+}
+
+.es-formation-tag--status-locked {
+  background: rgba(149, 165, 166, 0.2);
+  color: #cbd5e1;
+  border: 1px solid rgba(149, 165, 166, 0.4);
 }
 
 /* --- Quiz Modal & UI --- */
@@ -5610,6 +5727,157 @@ body.modal-open .es-topbar {
 }
 
 /* ================================================================
+   TYPE DE QUESTION : PINPOINT (PIN / REPÈRE SUR IMAGE)
+   ================================================================ */
+.es-pinpoint-builder-box {
+  margin-top: 10px;
+  background: var(--clr-surface-2);
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--clr-surface-3);
+}
+
+.es-pinpoint-dropzone {
+  border: 2px dashed rgba(39, 174, 96, 0.4);
+  background: rgba(39, 174, 96, 0.04);
+  border-radius: var(--radius-md);
+  padding: 24px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.es-pinpoint-dropzone:hover {
+  background: rgba(39, 174, 96, 0.09);
+  border-color: var(--clr-primary);
+}
+
+.es-pinpoint-setter,
+.es-pinpoint-candidate-zone,
+.es-pinpoint-result-zone {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  max-width: 650px;
+  margin: 10px auto;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #181c19;
+  border: 2px solid var(--clr-surface-3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.es-pinpoint-img,
+.es-pinpoint-candidate-img,
+.es-pinpoint-result-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.es-pinpoint-pin {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-size: 30px;
+  line-height: 1;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.65));
+  transition: left 0.12s cubic-bezier(0.2, 0.9, 0.3, 1.2), top 0.12s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  z-index: 15;
+}
+
+.es-pinpoint-pin--admin {
+  color: #e74c3c;
+  animation: es-pin-bounce 0.4s ease;
+}
+
+.es-pinpoint-pin--candidate {
+  color: #3498db;
+  animation: es-pin-bounce 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.es-pinpoint-pin--correct {
+  color: #27ae60;
+}
+
+.es-pinpoint-pin--incorrect {
+  color: #e74c3c;
+}
+
+@keyframes es-pin-bounce {
+  0% { transform: translate(-50%, -130%) scale(1.3); opacity: 0.5; }
+  100% { transform: translate(-50%, -100%) scale(1); opacity: 1; }
+}
+
+.es-pinpoint-target-zone {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  border: 2.5px dashed #2ecc71;
+  background: rgba(46, 204, 113, 0.25);
+  box-shadow: 0 0 14px rgba(46, 204, 113, 0.45);
+  z-index: 10;
+  transition: width 0.15s ease, height 0.15s ease;
+}
+
+.es-pinpoint-target-zone--result {
+  border: 2px solid #27ae60;
+  background: rgba(39, 174, 96, 0.28);
+}
+
+.es-pinpoint-instructions-overlay {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(18, 26, 20, 0.88);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 20;
+  white-space: nowrap;
+}
+
+.es-img-size-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.es-img-size-badge--ok {
+  background: rgba(39, 174, 96, 0.14);
+  color: #27ae60;
+  border: 1px solid rgba(39, 174, 96, 0.35);
+}
+
+.es-img-size-badge--warning {
+  background: rgba(231, 76, 60, 0.14);
+  color: #e74c3c;
+  border: 1px solid rgba(231, 76, 60, 0.4);
+}
+
+/* ================================================================
    PAGE DÉDIÉE QUIZ FORMATION
    ================================================================ */
 .es-quiz-page-container {
@@ -5763,23 +6031,27 @@ body.modal-open .es-topbar {
   color: inherit;
 }
 
-/* Alerte rouge & pulsation quand il reste <= 1 min */
+/* Alerte rouge statique quand il reste <= 10% du temps */
 .es-quiz-timer-badge--danger {
   background: rgba(231, 76, 60, 0.18) !important;
   border-color: #e74c3c !important;
   color: #c0392b !important;
-  box-shadow: 0 0 12px rgba(231, 76, 60, 0.45) !important;
-  animation: es-timer-pulse 1s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  box-shadow: 0 0 10px rgba(231, 76, 60, 0.35) !important;
+}
+
+/* Pulsation active quand il reste <= 5% du temps */
+.es-quiz-timer-badge--pulsing {
+  animation: es-timer-pulse 0.75s infinite cubic-bezier(0.4, 0, 0.6, 1) !important;
 }
 
 @keyframes es-timer-pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.5);
+    box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.6);
   }
   50% {
-    transform: scale(1.06);
-    box-shadow: 0 0 14px 4px rgba(231, 76, 60, 0.35);
+    transform: scale(1.08);
+    box-shadow: 0 0 16px 5px rgba(231, 76, 60, 0.45);
   }
 }
 

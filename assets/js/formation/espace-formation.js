@@ -12,6 +12,9 @@ let stagiaireSubmissionsMap = {};
 let currentQuizModule = null;
 let currentFormationModulesList = [];
 let currentEditingQuestions = [];
+let showFormationStats = true;
+let showFormationTags = true;
+let isSimulatedStagiaireRole = false;
 
 const pageLoader = document.getElementById('pageLoader');
 const formationView = document.getElementById('formationView');
@@ -37,10 +40,13 @@ async function getFormationModulesList() {
                 icon: m.icon || 'bi-journal-bookmark',
                 description: m.description || '',
                 enabled: false,
+                visible: m.visible !== false,
                 quizConfig: {
                     quizTitle: m.title,
                     maxAttempts: 0,
                     timerMinutes: 0,
+                    timerSeconds: 0,
+                    timerTotalSeconds: 0,
                     showResultsAtEnd: false
                 },
                 questionsCount: (m.questions || []).length
@@ -59,10 +65,13 @@ async function getFormationModulesList() {
                             icon: m.icon || 'bi-journal-bookmark',
                             description: m.description || '',
                             enabled: false,
+                            visible: m.visible !== false,
                             quizConfig: {
                                 quizTitle: m.title,
                                 maxAttempts: 0,
                                 timerMinutes: 0,
+                                timerSeconds: 0,
+                                timerTotalSeconds: 0,
                                 showResultsAtEnd: false
                             },
                             questionsCount: (m.questions || []).length,
@@ -107,6 +116,7 @@ async function getFormationModulesList() {
             list = (window.FORMATION_MODULES || []).map(m => ({
                 ...m,
                 enabled: false,
+                visible: m.visible !== false,
                 questionsCount: (m.questions || []).length
             }));
         }
@@ -160,8 +170,10 @@ async function saveFormationModule(moduleData, questionsList = []) {
         title: moduleData.title,
         subtitle: moduleData.subtitle || '',
         icon: moduleData.icon || 'bi-journal-bookmark',
+        bgImage: moduleData.bgImage || '',
         description: moduleData.description || '',
         enabled: moduleData.enabled !== undefined ? moduleData.enabled : false,
+        visible: moduleData.visible !== false,
         quizConfig: moduleData.quizConfig || {},
         questionsCount: questionsList.length,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -200,6 +212,12 @@ async function saveFormationModule(moduleData, questionsList = []) {
             if (q.type === 'qcm') {
                 qDoc.options = q.options || [];
                 qDoc.correctIndex = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+            } else if (q.type === 'pinpoint') {
+                qDoc.pinImage = q.pinImage || '';
+                qDoc.targetX = (q.targetX !== undefined && q.targetX !== null) ? parseFloat(q.targetX) : 50;
+                qDoc.targetY = (q.targetY !== undefined && q.targetY !== null) ? parseFloat(q.targetY) : 50;
+                qDoc.radius = (q.radius !== undefined && q.radius !== null) ? parseFloat(q.radius) : 12;
+                qDoc.targetLabel = q.targetLabel || '';
             } else if (q.type === 'boolean') {
                 qDoc.correctAnswer = (q.correctAnswer === true || q.correctAnswer === 'true');
             } else if (q.type === 'range') {
@@ -281,6 +299,8 @@ async function loadFormationModules() {
         adminControls?.classList.add('hidden');
     }
 
+    const effectiveRole = (actualRole === 'admin' && isSimulatedStagiaireRole) ? 'stagiaire' : actualRole;
+
     try {
         const modules = await getFormationModulesList();
 
@@ -334,8 +354,30 @@ async function loadFormationModules() {
 
         if (loader) loader.classList.add('hidden');
 
-        grid.innerHTML = modules.map(m => {
+        // Filtrage pour les stagiaires : masquer totalement les modules si visible === false
+        const visibleModules = modules.filter(m => {
+            const isVisible = m.visible !== false;
+            if (effectiveRole === 'stagiaire' && !isVisible) {
+                return false;
+            }
+            return true;
+        });
+
+        if (visibleModules.length === 0) {
+            grid.innerHTML = `
+                <div class="es-empty" style="grid-column: 1 / -1; padding: 40px 20px;">
+                    <div class="es-empty__icon">📚</div>
+                    <div class="es-empty__title">Aucun module disponible</div>
+                    <p class="es-empty__text">Les modules de formation seront bientôt mis à disposition par votre formateur.</p>
+                </div>
+            `;
+            if (grid) grid.classList.remove('hidden');
+            return;
+        }
+
+        grid.innerHTML = visibleModules.map(m => {
             const isEnabled = m.enabled === true;
+            const isVisible = m.visible !== false;
             const existingSub = stagiaireSubmissionsMap[m.id];
             const hasSubmitted = !!existingSub;
             const adminStats = adminCountsMap[m.id] || { totalAttempts: 0, uniqueStagiaires: 0 };
@@ -346,39 +388,70 @@ async function loadFormationModules() {
             const isAttemptsExceeded = (maxAttempts > 0 && attemptsCount >= maxAttempts);
 
             let cardClass = 'es-formation-card ';
+            if (!isVisible && effectiveRole === 'admin') {
+                cardClass += 'es-formation-card--invisible ';
+            }
             if (hasSubmitted) {
                 cardClass += 'es-formation-card--completed ';
-            } else if (isEnabled || actualRole === 'admin') {
+            } else if (isEnabled || effectiveRole === 'admin') {
                 cardClass += 'es-formation-card--active ';
             } else {
                 cardClass += 'es-formation-card--locked ';
             }
 
-            let badgeHtml = '';
+            let bgStyle = '';
+            if (m.bgImage) {
+                cardClass += 'es-formation-card--has-bg ';
+                bgStyle = `style="background-image: linear-gradient(to bottom, rgba(14, 24, 16, 0.50) 0%, rgba(14, 24, 16, 0.90) 100%), url('${escapeHtml(m.bgImage)}');"`;
+            }
+
+            let statsDisplay = '';
+            if (adminStats.totalAttempts === 0) {
+                statsDisplay = '0 réponse';
+            } else if (adminStats.uniqueStagiaires === adminStats.totalAttempts) {
+                statsDisplay = `${adminStats.totalAttempts} réponse${adminStats.totalAttempts > 1 ? 's' : ''}`;
+            } else {
+                statsDisplay = `${adminStats.totalAttempts} réponse${adminStats.totalAttempts > 1 ? 's' : ''} (${adminStats.uniqueStagiaires} stagiaire${adminStats.uniqueStagiaires > 1 ? 's' : ''})`;
+            }
+
+            const questionsCount = m.questionsCount || (m.questions ? m.questions.length : 0);
+
+            // 1. Tag Masqué
+            let hiddenTagHtml = '';
+            if (!isVisible && effectiveRole === 'admin') {
+                hiddenTagHtml = `<span class="es-formation-tag es-formation-tag--hidden-status es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="Module masqué pour les candidats"><i class="bi bi-eye-slash-fill"></i> Masqué</span>`;
+            }
+
+            // 2. Tag Nombre de Questions
+            const questionsTagHtml = `<span class="es-formation-tag es-formation-tag--questions es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="Nombre de questions dans ce quiz"><i class="bi bi-patch-question"></i> ${questionsCount} question${questionsCount > 1 ? 's' : ''}</span>`;
+
+            // 3. Tag Nombre de réponses et stagiaires (Admin)
+            let statsTagHtml = '';
+            if (effectiveRole === 'admin') {
+                statsTagHtml = `<span class="es-formation-tag es-formation-tag--stats es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="${adminStats.uniqueStagiaires} stagiaire(s) distinct(s) — ${adminStats.totalAttempts} réponse(s) au total"><i class="bi bi-chat-left-text"></i> ${statsDisplay}</span>`;
+            }
+
+            // 4. Info Statut du Quiz (Disponible / Verrouillé / Répondu) placé dans l'en-tête
+            let statusInfoHtml = '';
             if (hasSubmitted) {
                 const scoreText = (showResultsAtEnd && existingSub.score) ? ` (${existingSub.score.correct}/${existingSub.score.total})` : '';
-                badgeHtml = `<span class="es-badge es-badge--approved"><i class="bi bi-check-circle"></i> Répondu${scoreText}</span>`;
+                statusInfoHtml = `<span class="es-badge es-badge--approved" style="font-size:0.75rem;"><i class="bi bi-check-circle"></i> Répondu${scoreText}</span>`;
             } else if (isEnabled) {
-                badgeHtml = `<span class="es-badge es-badge--anim"><i class="bi bi-play-fill"></i> Disponible</span>`;
+                statusInfoHtml = `<span class="es-badge es-badge--approved" style="font-size:0.75rem;"><i class="bi bi-play-fill"></i> Disponible</span>`;
             } else {
-                badgeHtml = `<span class="es-badge es-badge--pending"><i class="bi bi-lock"></i> Verrouillé</span>`;
+                statusInfoHtml = `<span class="es-badge es-badge--pending" style="font-size:0.75rem;"><i class="bi bi-lock"></i> Verrouillé</span>`;
             }
 
             let actionBtn = '';
-            if (actualRole === 'admin') {
+            if (effectiveRole === 'admin') {
                 actionBtn = `
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:8px;">
                     <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-admin-edit-module" data-module-id="${m.id}" title="Éditer le module et son quiz">
                         <i class="bi bi-pencil"></i> Modifier
                     </button>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:0.75rem; font-weight:700; color:var(--clr-primary);" title="${adminStats.uniqueStagiaires} stagiaire(s) ayant répondu (${adminStats.totalAttempts} réponses au total)">
-                            📝 ${adminStats.uniqueStagiaires} (${adminStats.totalAttempts})
-                        </span>
-                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-admin-view-res" data-module-id="${m.id}">
-                            <i class="bi bi-eye"></i> Réponses
-                        </button>
-                    </div>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-admin-view-res" data-module-id="${m.id}">
+                        <i class="bi bi-eye"></i> Réponses (${adminStats.totalAttempts})
+                    </button>
                 </div>`;
             } else {
                 if (isEnabled) {
@@ -401,27 +474,33 @@ async function loadFormationModules() {
                 }
             }
 
-            const questionsCount = m.questionsCount || (m.questions ? m.questions.length : 0);
-
             return `
-            <div class="${cardClass}">
+            <div class="${cardClass}" ${bgStyle}>
                 <div>
                     <div class="es-formation-header">
                         <div class="es-formation-icon-wrap">
                             <i class="bi ${m.icon || 'bi-journal-bookmark'}"></i>
                         </div>
                         <div style="display:flex; align-items:center; gap:8px;">
-                            ${badgeHtml}
-                            ${actualRole === 'admin' ? `
-                                <label class="es-switch" style="transform:scale(0.8); transform-origin:center right;">
+                            ${statusInfoHtml}
+                            ${effectiveRole === 'admin' ? `
+                                <button type="button" class="es-card-action-btn btn-admin-toggle-module-visibility" data-module-id="${m.id}" data-visible="${isVisible}" title="${isVisible ? 'Masquer pour les candidats' : 'Rendre visible pour les candidats'}" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#ffffff; border-radius:6px; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;">
+                                    <i class="bi bi-${isVisible ? 'eye' : 'eye-slash'}"></i>
+                                </button>
+                                <label class="es-switch" style="transform:scale(0.8); transform-origin:center right;" title="Activer / Verrouiller le module pour les candidats">
                                     <input type="checkbox" class="check-stagiaire-module-toggle" data-module-id="${m.id}" ${isEnabled ? 'checked' : ''}>
                                     <span class="es-slider"></span>
                                 </label>
                             ` : ''}
                         </div>
                     </div>
-                    <div class="es-formation-num">Module ${m.num < 10 ? '0' + m.num : m.num} • ${questionsCount} question${questionsCount > 1 ? 's' : ''}</div>
-                    <h3 class="es-formation-title">${escapeHtml(m.title)}</h3>
+                    <div class="es-formation-num">Module ${m.num < 10 ? '0' + m.num : m.num}</div>
+                    <h3 class="es-formation-title" style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:4px;">
+                        <span>${escapeHtml(m.title)}</span>
+                        ${hiddenTagHtml}
+                        ${questionsTagHtml}
+                        ${statsTagHtml}
+                    </h3>
                     <p class="es-formation-desc">${escapeHtml(m.description || m.subtitle || '')}</p>
                 </div>
                 <div class="es-formation-footer">
@@ -451,6 +530,29 @@ async function loadFormationModules() {
             btn.addEventListener('click', async () => {
                 const moduleId = btn.getAttribute('data-module-id');
                 await openFormationResultsModal(moduleId);
+            });
+        });
+
+        grid.querySelectorAll('.btn-admin-toggle-module-visibility').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const moduleId = btn.getAttribute('data-module-id');
+                const currentlyVisible = btn.getAttribute('data-visible') === 'true';
+                const newVisible = !currentlyVisible;
+                try {
+                    await db.collection('formation').doc(moduleId).update({
+                        visible: newVisible,
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    const mod = currentFormationModulesList.find(m => m.id === moduleId);
+                    if (mod) mod.visible = newVisible;
+                    localStorage.setItem('offline_formation_modules', JSON.stringify(currentFormationModulesList));
+                    showToast(newVisible ? "Module visible pour les stagiaires." : "Module masqué pour les stagiaires.", "info");
+                    loadFormationModules();
+                } catch (err) {
+                    console.error("Toggle module visibility error:", err);
+                    showToast("Erreur lors de la modification de la visibilité.", "error");
+                }
             });
         });
 
@@ -516,11 +618,28 @@ async function openFormationModuleEdit(moduleId = null) {
         document.getElementById('editModuleSubtitle').value = moduleData.subtitle || '';
         document.getElementById('editModuleIcon').value = moduleData.icon || 'bi-journal-bookmark';
         document.getElementById('editModuleDesc').value = moduleData.description || '';
+        document.getElementById('editModuleBgImage').value = moduleData.bgImage || '';
+        updateModuleBgPreview(moduleData.bgImage || '');
+        if (document.getElementById('editModuleVisible')) {
+            document.getElementById('editModuleVisible').checked = (moduleData.visible !== false);
+        }
         
         const qConfig = moduleData.quizConfig || {};
         document.getElementById('editQuizTitle').value = qConfig.quizTitle || moduleData.title || '';
         document.getElementById('editMaxAttempts').value = (qConfig.maxAttempts !== undefined) ? qConfig.maxAttempts : 0;
-        document.getElementById('editQuizTimerMinutes').value = (qConfig.timerMinutes !== undefined && qConfig.timerMinutes !== null) ? qConfig.timerMinutes : 0;
+        
+        let initialMins = 0;
+        let initialSecs = 0;
+        if (qConfig.timerTotalSeconds !== undefined && qConfig.timerTotalSeconds !== null) {
+            const tot = parseInt(qConfig.timerTotalSeconds, 10) || 0;
+            initialMins = Math.floor(tot / 60);
+            initialSecs = tot % 60;
+        } else {
+            initialMins = parseInt(qConfig.timerMinutes, 10) || 0;
+            initialSecs = parseInt(qConfig.timerSeconds, 10) || 0;
+        }
+        document.getElementById('editQuizTimerMinutes').value = initialMins;
+        document.getElementById('editQuizTimerSeconds').value = initialSecs;
         document.getElementById('editShowResultsAtEnd').checked = qConfig.showResultsAtEnd === true;
 
         currentEditingQuestions = JSON.parse(JSON.stringify(questions || []));
@@ -539,10 +658,16 @@ async function openFormationModuleEdit(moduleId = null) {
         document.getElementById('editModuleSubtitle').value = '';
         document.getElementById('editModuleIcon').value = 'bi-journal-bookmark';
         document.getElementById('editModuleDesc').value = '';
+        document.getElementById('editModuleBgImage').value = '';
+        updateModuleBgPreview('');
+        if (document.getElementById('editModuleVisible')) {
+            document.getElementById('editModuleVisible').checked = true;
+        }
         
         document.getElementById('editQuizTitle').value = '';
         document.getElementById('editMaxAttempts').value = 0;
         document.getElementById('editQuizTimerMinutes').value = 0;
+        document.getElementById('editQuizTimerSeconds').value = 0;
         document.getElementById('editShowResultsAtEnd').checked = false;
 
         currentEditingQuestions = [
@@ -550,7 +675,7 @@ async function openFormationModuleEdit(moduleId = null) {
                 id: 'q_' + Date.now() + '_1',
                 type: 'qcm',
                 text: '',
-                options: ['Option A', 'Option B'],
+                options: ['Option 1', 'Option 2'],
                 correctIndex: 0,
                 hint: ''
             }
@@ -600,7 +725,20 @@ const AVAILABLE_FORMATION_ICONS = [
     { icon: 'bi-fire', label: 'Feu de camp & Bivouac', tags: 'feu camp bivouac secours pompier' },
     { icon: 'bi-megaphone', label: 'Lancement de jeu', tags: 'lancement appel rassemblement animateur' },
     { icon: 'bi-lightbulb', label: 'Pédagogie & Idée', tags: 'idee pedagogie astuce reflexion concept' },
-    { icon: 'bi-check2-circle', label: 'Évaluation & Bilan', tags: 'bilan validation check grille reussite' }
+    { icon: 'bi-check2-circle', label: 'Évaluation & Bilan', tags: 'bilan validation check grille reussite' },
+    { icon: 'bi-water', label: 'Baignade & Piscine', tags: 'eau baignade piscine mer lac surveillant ssb noyade nager' },
+    { icon: 'bi-backpack', label: 'Sac à dos & Randonnée', tags: 'sac rando bagages marche bivouac materiel trek' },
+    { icon: 'bi-geo-alt', label: 'Lieu & Découverte', tags: 'lieu geographie visite excursion camp voyage repere' },
+    { icon: 'bi-balloon', label: 'Fête & Anniversaire', tags: 'ballon fete boom kermesse anniversaire celebration joie' },
+    { icon: 'bi-bicycle', label: 'Vélo & VTT', tags: 'velo vtt deux roues route casque balade piste cyclable' },
+    { icon: 'bi-film', label: 'Cinéma & Vidéo', tags: 'cinema film video tournage projection pop corn ecran' },
+    { icon: 'bi-controller', label: 'Jeux vidéo & Numérique', tags: 'jeux console manette gaming e-sport ecrans digital' },
+    { icon: 'bi-magic', label: 'Magie & Imaginaire', tags: 'magie imaginaire conte sorcier illusion theatre univers' },
+    { icon: 'bi-puzzle', label: 'Énigme & Escape Game', tags: 'enigme escape game puzzle recherche indice mystere' },
+    { icon: 'bi-umbrella', label: 'Météo & Pluie', tags: 'pluie repli parapluie tempete meteo orage activites interieur' },
+    { icon: 'bi-camera', label: 'Photo & Souvenirs', tags: 'photo appareil image reportage souvenirs album' },
+    { icon: 'bi-award', label: 'Diplôme & Récompense', tags: 'recompense medaille trophee reussite badge' },
+    { icon: 'bi-shield-shaded', label: 'Sécurité & Prévention', tags: 'securite vigilance regles alerte prevention secours psc1' }
 ];
 
 function renderIconPicker(selectedIcon = 'bi-journal-bookmark', filter = '') {
@@ -686,6 +824,41 @@ document.getElementById('iconFilterInput')?.addEventListener('input', (e) => {
     renderIconPicker(currentIcon, e.target.value);
 });
 
+async function compressImageToBase64(file, maxWidth = 1200, maxHeight = 900, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+        if (!file) return reject(new Error("Aucun fichier fourni."));
+        if (!file.type.startsWith('image/')) return reject(new Error("Le fichier doit être une image."));
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const base64 = canvas.toDataURL('image/jpeg', quality);
+                resolve(base64);
+            };
+            img.onerror = () => reject(new Error("Impossible de charger l'image."));
+            img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error("Erreur lors de la lecture du fichier."));
+        reader.readAsDataURL(file);
+    });
+}
+
 function renderQuestionsEditor() {
     const container = document.getElementById('moduleQuestionsEditorList');
     const countLabel = document.getElementById('questionsCountLabel');
@@ -744,6 +917,78 @@ function renderQuestionsEditor() {
                     </label>
                 </div>
             </div>`;
+        } else if (q.type === 'pinpoint') {
+            const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+            const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+            const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+            const sizeKB = q.pinImage ? Math.round((q.pinImage.length * 3 / 4) / 1024) : 0;
+            const isHeavy = sizeKB > 550;
+
+            if (q.pinImage) {
+                typeBody = `
+                <div class="es-pinpoint-builder-box">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                            <span class="es-img-size-badge ${isHeavy ? 'es-img-size-badge--warning' : 'es-img-size-badge--ok'}">
+                                <i class="bi bi-${isHeavy ? 'exclamation-triangle-fill' : 'check-circle-fill'}"></i>
+                                Image ${sizeKB} Ko (Base64) ${isHeavy ? '⚠️ Assez lourde' : '✓ Optimisé Firestore'}
+                            </span>
+                            <span style="font-size:0.75rem; color:var(--clr-text-muted);">
+                                Cible : <strong style="color:var(--clr-primary);">X: ${targetX.toFixed(1)}%, Y: ${targetY.toFixed(1)}%</strong>
+                            </span>
+                        </div>
+                        <div style="display:flex; gap:6px;">
+                            <label class="es-btn es-btn--ghost es-btn--sm" style="cursor:pointer; padding:3px 8px; font-size:0.75rem;">
+                                <i class="bi bi-arrow-repeat"></i> Remplacer l'image
+                                <input type="file" class="q-pinpoint-file-input hidden" data-q-idx="${qIdx}" accept="image/*">
+                            </label>
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-remove-pinpoint-img" data-q-idx="${qIdx}" style="color:var(--clr-danger); padding:3px 8px; font-size:0.75rem;">
+                                <i class="bi bi-trash"></i> Supprimer
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="text-align:center;">
+                        <div class="es-pinpoint-setter" data-q-idx="${qIdx}">
+                            <img src="${escapeHtml(q.pinImage)}" alt="Image repère" class="es-pinpoint-img">
+                            <div class="es-pinpoint-target-zone" id="pin_target_zone_${qIdx}" style="left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%;"></div>
+                            <div class="es-pinpoint-pin es-pinpoint-pin--admin" id="pin_marker_${qIdx}" style="left:${targetX}%; top:${targetY}%;">
+                                <i class="bi bi-geo-alt-fill"></i>
+                            </div>
+                        </div>
+                        <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:4px;">
+                            👆 <strong>Cliquez sur l'image</strong> pour définir l'emplacement exact de la bonne réponse attendue.
+                        </p>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:12px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                <label style="font-size:0.78rem; font-weight:700; color:var(--clr-text);">Rayon de tolérance :</label>
+                                <span style="font-size:0.8rem; font-weight:800; color:var(--clr-primary);" id="pin_radius_val_${qIdx}">±${radius}%</span>
+                            </div>
+                            <input type="range" class="es-input q-pinpoint-radius-slider" data-q-idx="${qIdx}" min="3" max="30" step="1" value="${radius}" style="padding:0;">
+                            <div style="font-size:0.72rem; color:var(--clr-text-muted); margin-top:2px;">Marge acceptée autour du repère (zone verte).</div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.78rem; font-weight:700; color:var(--clr-text); margin-bottom:4px; display:block;">Description de la zone cible (optionnel) :</label>
+                            <input type="text" class="es-input q-pinpoint-target-label" data-q-idx="${qIdx}" value="${escapeHtml(q.targetLabel || '')}" placeholder="Ex: Sortie de secours, Trousse secours..." style="font-size:0.82rem; padding:5px 8px;">
+                        </div>
+                    </div>
+                </div>`;
+            } else {
+                typeBody = `
+                <div class="es-pinpoint-builder-box">
+                    <label class="es-pinpoint-dropzone" style="display:block;">
+                        <input type="file" class="q-pinpoint-file-input hidden" data-q-idx="${qIdx}" accept="image/*">
+                        <i class="bi bi-geo-alt-fill" style="font-size:2rem; color:var(--clr-primary); margin-bottom:6px; display:block;"></i>
+                        <div style="font-weight:700; font-size:0.9rem; color:var(--clr-text);">Cliquez ou glissez une image / schéma ici</div>
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:4px;">
+                            Compression automatique & encodage Base64 direct (aucun stockage Firebase requis).
+                        </div>
+                    </label>
+                </div>`;
+            }
         } else if (q.type === 'range') {
             const minVal = (q.min !== undefined && q.min !== null) ? q.min : 0;
             const maxVal = (q.max !== undefined && q.max !== null) ? q.max : 10;
@@ -846,8 +1091,9 @@ function renderQuestionsEditor() {
             <div class="es-question-builder-header">
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                     <span style="font-weight:700; font-size:0.82rem; color:var(--clr-primary); text-transform:uppercase;">Question ${qIdx + 1}</span>
-                    <select class="es-input q-type-select" data-q-idx="${qIdx}" style="width:230px; font-size:0.8rem; padding:4px 8px;">
+                    <select class="es-input q-type-select" data-q-idx="${qIdx}" style="width:245px; font-size:0.8rem; padding:4px 8px;">
                         <option value="qcm" ${q.type === 'qcm' ? 'selected' : ''}>🔘 QCM (Choix multiple)</option>
+                        <option value="pinpoint" ${q.type === 'pinpoint' ? 'selected' : ''}>📍 Placer un repère (Pin sur image)</option>
                         <option value="puzzle" ${q.type === 'puzzle' ? 'selected' : ''}>🧩 Puzzle / Ordonnancement</option>
                         <option value="range" ${q.type === 'range' ? 'selected' : ''}>📏 Curseur horizontal (Slider)</option>
                         <option value="boolean" ${q.type === 'boolean' ? 'selected' : ''}>⚖️ Vrai / Faux</option>
@@ -862,6 +1108,7 @@ function renderQuestionsEditor() {
                 <textarea class="es-input q-text-input" data-q-idx="${qIdx}" rows="2" placeholder="Énoncé de la question..." required style="font-size:0.9rem;">${escapeHtml(q.text || '')}</textarea>
             </div>
             
+            ${q.type !== 'pinpoint' ? `
             <div style="margin-top:8px;">
                 <div style="display:flex; align-items:center; gap:6px;">
                     <i class="bi bi-image" style="color:var(--clr-primary); font-size:0.9rem;"></i>
@@ -871,7 +1118,7 @@ function renderQuestionsEditor() {
                 <div class="q-image-preview-box" style="margin-top:6px; background:#ffffff; padding:6px; border:1px solid var(--clr-surface-3); border-radius:6px; display:inline-block;">
                     <img src="${escapeHtml(q.imageUrl)}" alt="Aperçu" style="max-height:80px; max-width:180px; border-radius:4px; object-fit:contain; display:block;" onerror="this.parentElement.style.display='none'">
                 </div>` : ''}
-            </div>
+            </div>` : ''}
 
             ${typeBody}
         </div>`;
@@ -905,6 +1152,10 @@ function renderQuestionsEditor() {
                     currentEditingQuestions[idx].correctIndex = 0;
                 } else if (newType === 'puzzle' && (!currentEditingQuestions[idx].items || currentEditingQuestions[idx].items.length === 0)) {
                     currentEditingQuestions[idx].items = ['Étape 1', 'Étape 2', 'Étape 3'];
+                } else if (newType === 'pinpoint') {
+                    if (currentEditingQuestions[idx].targetX === undefined) currentEditingQuestions[idx].targetX = 50;
+                    if (currentEditingQuestions[idx].targetY === undefined) currentEditingQuestions[idx].targetY = 50;
+                    if (currentEditingQuestions[idx].radius === undefined) currentEditingQuestions[idx].radius = 12;
                 } else if (newType === 'range') {
                     if (currentEditingQuestions[idx].min === undefined) currentEditingQuestions[idx].min = 0;
                     if (currentEditingQuestions[idx].max === undefined) currentEditingQuestions[idx].max = 10;
@@ -912,6 +1163,109 @@ function renderQuestionsEditor() {
                 } else if (newType === 'boolean') {
                     if (currentEditingQuestions[idx].correctAnswer === undefined) currentEditingQuestions[idx].correctAnswer = true;
                 }
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    // Pinpoint setter click
+    container.querySelectorAll('.es-pinpoint-setter').forEach(setter => {
+        setter.addEventListener('click', (e) => {
+            const qIdx = parseInt(setter.getAttribute('data-q-idx'), 10);
+            const rect = setter.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            const xPercent = Math.max(0, Math.min(100, (clickX / rect.width) * 100));
+            const yPercent = Math.max(0, Math.min(100, (clickY / rect.height) * 100));
+
+            if (currentEditingQuestions[qIdx]) {
+                currentEditingQuestions[qIdx].targetX = parseFloat(xPercent.toFixed(1));
+                currentEditingQuestions[qIdx].targetY = parseFloat(yPercent.toFixed(1));
+
+                const marker = document.getElementById(`pin_marker_${qIdx}`);
+                const zone = document.getElementById(`pin_target_zone_${qIdx}`);
+                if (marker) {
+                    marker.style.left = `${xPercent}%`;
+                    marker.style.top = `${yPercent}%`;
+                }
+                if (zone) {
+                    zone.style.left = `${xPercent}%`;
+                    zone.style.top = `${yPercent}%`;
+                }
+            }
+        });
+    });
+
+    // Pinpoint radius slider
+    container.querySelectorAll('.q-pinpoint-radius-slider').forEach(slider => {
+        slider.addEventListener('input', (e) => {
+            const qIdx = parseInt(e.target.getAttribute('data-q-idx'), 10);
+            const rad = parseFloat(e.target.value) || 12;
+            if (currentEditingQuestions[qIdx]) {
+                currentEditingQuestions[qIdx].radius = rad;
+                const radiusValEl = document.getElementById(`pin_radius_val_${qIdx}`);
+                if (radiusValEl) radiusValEl.textContent = `±${rad}%`;
+                const zone = document.getElementById(`pin_target_zone_${qIdx}`);
+                if (zone) {
+                    zone.style.width = `${rad * 2}%`;
+                    zone.style.height = `${rad * 2}%`;
+                }
+            }
+        });
+    });
+
+    // Pinpoint target label
+    container.querySelectorAll('.q-pinpoint-target-label').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qIdx = parseInt(e.target.getAttribute('data-q-idx'), 10);
+            if (currentEditingQuestions[qIdx]) {
+                currentEditingQuestions[qIdx].targetLabel = e.target.value.trim();
+            }
+        });
+    });
+
+    // Pinpoint file inputs (compression client-side Base64)
+    container.querySelectorAll('.q-pinpoint-file-input').forEach(input => {
+        input.addEventListener('change', async (e) => {
+            const qIdx = parseInt(e.target.getAttribute('data-q-idx'), 10);
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            if (file.size > 10 * 1024 * 1024) {
+                showToast("L'image est trop lourde (> 10 Mo). Choisissez une image plus légère.", "warning");
+                return;
+            }
+
+            try {
+                showToast("Compression et encodage Base64...", "info");
+                const base64 = await compressImageToBase64(file);
+                const sizeKB = Math.round((base64.length * 3 / 4) / 1024);
+                if (sizeKB > 550) {
+                    showToast(`Image encodée (${sizeKB} Ko). Attention, la taille reste un peu élevée.`, "warning");
+                } else {
+                    showToast(`Image optimisée et encodée (${sizeKB} Ko).`, "success");
+                }
+
+                if (currentEditingQuestions[qIdx]) {
+                    currentEditingQuestions[qIdx].pinImage = base64;
+                    if (currentEditingQuestions[qIdx].targetX === undefined) currentEditingQuestions[qIdx].targetX = 50;
+                    if (currentEditingQuestions[qIdx].targetY === undefined) currentEditingQuestions[qIdx].targetY = 50;
+                    if (currentEditingQuestions[qIdx].radius === undefined) currentEditingQuestions[qIdx].radius = 12;
+                    renderQuestionsEditor();
+                }
+            } catch (err) {
+                console.error("Pinpoint compression error:", err);
+                showToast("Erreur lors de la compression de l'image.", "error");
+            }
+        });
+    });
+
+    // Pinpoint remove image
+    container.querySelectorAll('.btn-remove-pinpoint-img').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const qIdx = parseInt(btn.getAttribute('data-q-idx'), 10);
+            if (currentEditingQuestions[qIdx]) {
+                delete currentEditingQuestions[qIdx].pinImage;
                 renderQuestionsEditor();
             }
         });
@@ -1205,6 +1559,12 @@ document.getElementById('btnExportJsonQuestions')?.addEventListener('click', () 
         if (q.type === 'qcm') {
             item.options = q.options || ['Option 1', 'Option 2'];
             item.correctIndex = q.correctIndex !== undefined ? q.correctIndex : 0;
+        } else if (q.type === 'pinpoint') {
+            item.pinImage = q.pinImage;
+            item.targetX = q.targetX !== undefined ? q.targetX : 50;
+            item.targetY = q.targetY !== undefined ? q.targetY : 50;
+            item.radius = q.radius !== undefined ? q.radius : 12;
+            if (q.targetLabel) item.targetLabel = q.targetLabel;
         } else if (q.type === 'puzzle') {
             item.items = q.items || ['Étape 1', 'Étape 2', 'Étape 3'];
         } else if (q.type === 'boolean') {
@@ -1275,6 +1635,8 @@ document.getElementById('btnApplyJsonImport')?.addEventListener('click', () => {
             let type = 'qcm';
             if (item.type === 'text' || item.type === 'open' || item.type === 'redaction') {
                 type = 'text';
+            } else if (item.type === 'pinpoint' || item.type === 'pin' || item.type === 'image_pin' || item.type === 'repere') {
+                type = 'pinpoint';
             } else if (item.type === 'range' || item.type === 'slider' || item.type === 'curseur') {
                 type = 'range';
             } else if (item.type === 'puzzle' || item.type === 'order' || item.type === 'ordonnancement' || item.type === 'sequence') {
@@ -1310,6 +1672,12 @@ document.getElementById('btnApplyJsonImport')?.addEventListener('click', () => {
 
                 resQ.options = options;
                 resQ.correctIndex = correctIndex;
+            } else if (type === 'pinpoint') {
+                resQ.pinImage = item.pinImage || item.image || item.imageUrl || '';
+                resQ.targetX = item.targetX !== undefined ? parseFloat(item.targetX) : 50;
+                resQ.targetY = item.targetY !== undefined ? parseFloat(item.targetY) : 50;
+                resQ.radius = item.radius !== undefined ? parseFloat(item.radius) : 12;
+                if (item.targetLabel) resQ.targetLabel = String(item.targetLabel).trim();
             } else if (type === 'puzzle') {
                 let itemsList = ['Étape 1', 'Étape 2', 'Étape 3'];
                 if (Array.isArray(item.items) && item.items.length > 0) {
@@ -1371,11 +1739,14 @@ document.getElementById('btnSaveModule')?.addEventListener('click', async () => 
     const title = document.getElementById('editModuleTitle').value.trim();
     const subtitle = document.getElementById('editModuleSubtitle').value.trim();
     const icon = document.getElementById('editModuleIcon').value.trim() || 'bi-journal-bookmark';
+    const bgImage = document.getElementById('editModuleBgImage').value.trim();
     const description = document.getElementById('editModuleDesc').value.trim();
     
     const quizTitle = document.getElementById('editQuizTitle').value.trim() || title;
     const maxAttempts = parseInt(document.getElementById('editMaxAttempts').value, 10) || 0;
     const timerMinutes = parseInt(document.getElementById('editQuizTimerMinutes').value, 10) || 0;
+    const timerSeconds = parseInt(document.getElementById('editQuizTimerSeconds').value, 10) || 0;
+    const timerTotalSeconds = (timerMinutes * 60) + timerSeconds;
     const showResultsAtEnd = document.getElementById('editShowResultsAtEnd').checked;
 
     if (!title) {
@@ -1412,6 +1783,14 @@ document.getElementById('btnSaveModule')?.addEventListener('click', async () => 
                     return;
                 }
             }
+        } else if (q.type === 'pinpoint') {
+            if (!q.pinImage || !q.pinImage.trim()) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `La question ${i + 1} (Repère sur image) nécessite une image illustrative.`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
         } else if (q.type === 'puzzle') {
             if (!q.items || q.items.length < 2) {
                 if (errorAlert && errorMsg) {
@@ -1437,18 +1816,23 @@ document.getElementById('btnSaveModule')?.addEventListener('click', async () => 
 
     try {
         const existingMod = currentFormationModulesList.find(m => m.id === id);
+        const isModVisible = document.getElementById('editModuleVisible') ? document.getElementById('editModuleVisible').checked : true;
         const modulePayload = {
             id: id,
             num: num,
             title: title,
             subtitle: subtitle,
             icon: icon,
+            bgImage: bgImage,
             description: description,
             enabled: existingMod ? (existingMod.enabled === true) : false,
+            visible: isModVisible,
             quizConfig: {
                 quizTitle: quizTitle,
                 maxAttempts: maxAttempts,
                 timerMinutes: timerMinutes,
+                timerSeconds: timerSeconds,
+                timerTotalSeconds: timerTotalSeconds,
                 showResultsAtEnd: showResultsAtEnd
             }
         };
@@ -1463,6 +1847,54 @@ document.getElementById('btnSaveModule')?.addEventListener('click', async () => 
         console.error("Save module error:", err);
         showToast("Erreur lors de l'enregistrement.", "error");
     }
+});
+
+function updateModuleBgPreview(url) {
+    const wrap = document.getElementById('moduleBgPreviewWrap');
+    if (!wrap) return;
+    if (url) {
+        wrap.style.backgroundImage = `url('${url}')`;
+        wrap.classList.remove('hidden');
+    } else {
+        wrap.style.backgroundImage = 'none';
+        wrap.classList.add('hidden');
+    }
+}
+
+document.querySelectorAll('.btn-bg-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const url = btn.getAttribute('data-url');
+        const input = document.getElementById('editModuleBgImage');
+        if (input) input.value = url;
+        updateModuleBgPreview(url);
+    });
+});
+
+document.getElementById('editModuleBgImage')?.addEventListener('input', (e) => {
+    updateModuleBgPreview(e.target.value.trim());
+});
+
+document.getElementById('btnRemoveModuleBg')?.addEventListener('click', () => {
+    const input = document.getElementById('editModuleBgImage');
+    if (input) input.value = '';
+    updateModuleBgPreview('');
+});
+
+document.getElementById('inputModuleBgFile')?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+        showToast("L'image ne doit pas dépasser 5 Mo.", "warning");
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (re) => {
+        const base64 = re.target.result;
+        const input = document.getElementById('editModuleBgImage');
+        if (input) input.value = base64;
+        updateModuleBgPreview(base64);
+    };
+    reader.readAsDataURL(file);
 });
 
 document.getElementById('btnDeleteModule')?.addEventListener('click', async () => {
@@ -1492,47 +1924,69 @@ document.getElementById('btnDeleteModule')?.addEventListener('click', async () =
 document.getElementById('btnCloseModuleEdit')?.addEventListener('click', () => closeModal('overlayModuleEdit'));
 document.getElementById('btnCancelModuleEdit')?.addEventListener('click', () => closeModal('overlayModuleEdit'));
 
-// Formateur actions globales
-document.getElementById('btnStagiaireUnlockAll')?.addEventListener('click', async () => {
-    const modules = await getFormationModulesList();
+// ----------------------------------------------------------------
+// GESTION DES TOGGLES FORMATION (TAGS, RÔLE SIMULÉ)
+// ----------------------------------------------------------------
+function initFormationGlobalSettingsListener() {
     try {
-        const batch = db.batch();
-        modules.forEach(m => {
-            const ref = db.collection('formation').doc(m.id);
-            batch.update(ref, {
-                enabled: true,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        const cached = localStorage.getItem('offline_formation_settings');
+        if (cached) {
+            const data = JSON.parse(cached);
+            if (data.showFormationTags !== undefined) showFormationTags = data.showFormationTags;
+        }
+    } catch (e) {}
+
+    const toggleTags = document.getElementById('checkShowFormationTags');
+    if (toggleTags) toggleTags.checked = showFormationTags;
+
+    const toggleRole = document.getElementById('checkFormationRoleToggle');
+    if (toggleRole) toggleRole.checked = isSimulatedStagiaireRole;
+
+    try {
+        if (window.formationSettingsUnsub) {
+            window.formationSettingsUnsub();
+        }
+        window.formationSettingsUnsub = db.collection('globalSettings').doc('formation').onSnapshot(doc => {
+            if (doc.exists) {
+                const data = doc.data();
+                if (data.showFormationTags !== undefined) showFormationTags = data.showFormationTags;
+                localStorage.setItem('offline_formation_settings', JSON.stringify(data));
+            }
+
+            const tTags = document.getElementById('checkShowFormationTags');
+            if (tTags) tTags.checked = showFormationTags;
+
+            document.querySelectorAll('.es-formation-card__badge-tag').forEach(el => {
+                el.classList.toggle('es-tags--hidden', !showFormationTags);
             });
-            m.enabled = true;
         });
-        await batch.commit();
-        showToast("Tous les modules sont déverrouillés.", "success");
-        loadFormationModules();
+    } catch (listenerErr) {
+        console.warn("Formation settings listener err:", listenerErr);
+    }
+}
+
+document.getElementById('checkShowFormationTags')?.addEventListener('change', async (e) => {
+    const val = e.target.checked;
+    showFormationTags = val;
+    document.querySelectorAll('.es-formation-card__badge-tag').forEach(el => {
+        el.classList.toggle('es-tags--hidden', !val);
+    });
+    try {
+        await db.collection('globalSettings').doc('formation').set({
+            showFormationTags: val,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast("Visibilité des tags mise à jour.", "success");
     } catch (err) {
-        console.error("Unlock all error:", err);
-        showToast("Erreur lors du déverrouillage.", "error");
+        console.error("Save formation tags settings err:", err);
+        showToast("Erreur lors de la modification.", "error");
     }
 });
 
-document.getElementById('btnStagiaireLockAll')?.addEventListener('click', async () => {
-    const modules = await getFormationModulesList();
-    try {
-        const batch = db.batch();
-        modules.forEach(m => {
-            const ref = db.collection('formation').doc(m.id);
-            batch.update(ref, {
-                enabled: false,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            m.enabled = false;
-        });
-        await batch.commit();
-        showToast("Tous les modules sont verrouillés.", "success");
-        loadFormationModules();
-    } catch (err) {
-        console.error("Lock all error:", err);
-        showToast("Erreur lors du verrouillage.", "error");
-    }
+document.getElementById('checkFormationRoleToggle')?.addEventListener('change', (e) => {
+    isSimulatedStagiaireRole = e.target.checked;
+    showToast(isSimulatedStagiaireRole ? "Simulation : Vue Stagiaire activée." : "Vue Formateur / Admin restaurée.", "info");
+    loadFormationModules();
 });
 
 // ----------------------------------------------------------------
@@ -1616,6 +2070,47 @@ async function openFormationResultsModal(moduleId) {
                         </span>
                         ${!isCorrect ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Réponse attendue : <strong>${expectedBool ? '👍 VRAI' : '👎 FAUX'}</strong>)</div>` : ''}
                     </div>`;
+                } else if (q.type === 'pinpoint') {
+                    const userCoords = (ans && typeof ans === 'object') ? ans : (ans ? (typeof ans === 'string' ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null) : null);
+                    const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+                    const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+                    const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+
+                    let isCorrect = false;
+                    if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
+                        const dx = userCoords.x - targetX;
+                        const dy = userCoords.y - targetY;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        isCorrect = dist <= radius;
+                    }
+
+                    ansDisplay = `
+                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:6px; font-size:0.88rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                            <div>
+                                <strong>Repère placé par le stagiaire :</strong> 
+                                ${userCoords ? `X: ${userCoords.x.toFixed(1)}%, Y: ${userCoords.y.toFixed(1)}%` : '<span style="color:var(--clr-danger)">Pas de repère placé</span>'}
+                            </div>
+                            <span style="font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                                ${isCorrect ? '✅ Cible atteinte (+1 pt)' : '❌ Hors cible attendue'}
+                            </span>
+                        </div>
+                        ${q.pinImage ? `
+                        <div style="text-align:center; background:#181c19; padding:8px; border-radius:6px; margin-top:6px;">
+                            <div class="es-pinpoint-result-zone" style="max-width:480px; margin:0 auto;">
+                                <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" class="es-pinpoint-result-img">
+                                <div class="es-pinpoint-target-zone es-pinpoint-target-zone--result" style="left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%;" title="Zone attendue (±${radius}%)"></div>
+                                <div class="es-pinpoint-pin es-pinpoint-pin--admin" style="left:${targetX}%; top:${targetY}%;" title="Cible attendue"><i class="bi bi-bullseye" style="font-size:22px; color:#2ecc71;"></i></div>
+                                ${userCoords ? `
+                                <div class="es-pinpoint-pin ${isCorrect ? 'es-pinpoint-pin--correct' : 'es-pinpoint-pin--incorrect'}" style="left:${userCoords.x}%; top:${userCoords.y}%;" title="Point stagiaire"><i class="bi bi-geo-alt-fill"></i></div>
+                                ` : ''}
+                            </div>
+                            <div style="font-size:0.75rem; color:#ffffff; margin-top:6px; opacity:0.85;">
+                                🎯 Cible attendue (vert) : X=${targetX.toFixed(1)}%, Y=${targetY.toFixed(1)}% (±${radius}%) ${q.targetLabel ? `— <em>${escapeHtml(q.targetLabel)}</em>` : ''}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>`;
                 } else if (q.type === 'range') {
                     const val = (ans !== null && ans !== undefined) ? parseFloat(ans) : null;
                     const unit = q.unit || '';
@@ -1635,6 +2130,12 @@ async function openFormationResultsModal(moduleId) {
                         </div>`;
                     }
 
+                    ansDisplay = `
+                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.88rem;">
+                        <div><strong>Valeur choisie :</strong> <span style="font-weight:700; color:var(--clr-primary);">${val !== null ? `${val} ${escapeHtml(unit)}` : '<span style="color:var(--clr-danger)">Pas de réponse</span>'}</span>
+                            ${targetBadge}
+                        </div>
+                    </div>`;
                 } else if (q.type === 'puzzle') {
                     const candidateOrder = Array.isArray(ans) ? ans : [];
                     const expectedOrder = q.items || [];
@@ -1667,7 +2168,8 @@ async function openFormationResultsModal(moduleId) {
                 }
 
                 let typeLabel = 'QCM';
-                if (q.type === 'range') typeLabel = 'Curseur horizontal';
+                if (q.type === 'pinpoint') typeLabel = '📍 Repère sur image';
+                else if (q.type === 'range') typeLabel = 'Curseur horizontal';
                 else if (q.type === 'boolean') typeLabel = 'Vrai / Faux';
                 else if (q.type === 'puzzle') typeLabel = 'Puzzle / Ordonnancement';
                 else if (q.type === 'text') typeLabel = 'Rédaction';
@@ -1890,6 +2392,9 @@ auth.onAuthStateChanged(async (user) => {
         btnBrandDropdown?.classList.remove('es-topbar__brand--interactive');
         brandChevron?.classList.add('hidden');
     }
+
+    // Initialiser les réglages globaux (tags, stats, etc.)
+    initFormationGlobalSettingsListener();
 
     // Charger les modules de formation
     loadFormationModules();

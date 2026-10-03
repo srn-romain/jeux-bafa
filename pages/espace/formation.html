@@ -78,6 +78,10 @@
                         style="color:rgba(255,255,255,0.75); border-color:rgba(255,255,255,0.15);">
                         <i class="bi bi-house"></i> <span class="brand-label">Site</span>
                     </a>
+                    <a href="index.html" id="btnColosLink" class="es-btn es-btn--sm es-btn--ghost"
+                        style="color:#5dade2; border-color:rgba(52,152,219,0.35);">
+                        <i class="bi bi-tree"></i> <span class="brand-label">Colos</span>
+                    </a>
                     <a href="admin.html" id="btnAdminLink" class="es-btn es-btn--sm es-btn--ghost hidden"
                         style="color:var(--clr-primary); border-color:rgba(166,216,102,0.3);">
                         <i class="bi bi-shield-lock"></i> <span class="brand-label">Admin</span>
@@ -96,6 +100,9 @@
                             <button class="es-user-dropdown__item" id="btnOpenSettings">
                                 <i class="bi bi-person-gear"></i> Paramètres
                             </button>
+                            <a href="index.html" class="es-user-dropdown__item" id="linkColos">
+                                <i class="bi bi-tree"></i> Espace Colos
+                            </a>
                             <!-- Lien admin visible uniquement pour admin -->
                             <a href="admin.html" class="es-user-dropdown__item hidden" id="linkAdmin">
                                 <i class="bi bi-shield-lock"></i> Administration
@@ -131,16 +138,34 @@
                             Gérez les modules, configurez les quiz et consultez les résultats des stagiaires.
                         </div>
                     </div>
-                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                        <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnAdminNewModule" style="font-weight:600;">
-                            <i class="bi bi-plus-lg"></i> Nouveau module
-                        </button>
-                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnStagiaireUnlockAll">
-                            <i class="bi bi-unlock"></i> Tout déverrouiller
-                        </button>
-                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnStagiaireLockAll">
-                            <i class="bi bi-lock"></i> Tout verrouiller
-                        </button>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <div class="es-admin-panel__toggles-list" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <!-- Switch Rôle Admin / Vue Stagiaire -->
+                            <div id="formationRoleSwitchBar" class="es-stats-toggle" style="background: rgba(166, 216, 102, 0.12); border-color: rgba(166, 216, 102, 0.25);">
+                                <span class="es-stats-toggle__label" style="color: #a6d866; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-eye"></i> Vue Stagiaire
+                                </span>
+                                <label class="es-switch">
+                                    <input type="checkbox" id="checkFormationRoleToggle">
+                                    <span class="es-slider"></span>
+                                </label>
+                            </div>
+
+                            <!-- Toggle Tags (Contrôle tous les tags : questions, réponses, masqué) -->
+                            <div class="es-stats-toggle" id="formationTagToggle">
+                                <span class="es-stats-toggle__label">Tags</span>
+                                <label class="es-switch">
+                                    <input type="checkbox" id="checkShowFormationTags" checked>
+                                    <span class="es-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnAdminNewModule" style="font-weight:600;">
+                                <i class="bi bi-plus-lg"></i> Nouveau module
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -257,15 +282,63 @@
                             <label class="es-field__label" for="editModuleDesc">Description du module</label>
                             <textarea class="es-input" id="editModuleDesc" rows="2" placeholder="Objectifs et compétences abordées..."></textarea>
                         </div>
+
+                        <div class="es-field" style="margin-top:12px;">
+                            <label class="es-field__label">🖼️ Image de fond de la carte (comme dans Espace Colos) :</label>
+                            <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                                <input class="es-input" type="url" id="editModuleBgImage" placeholder="https://images.unsplash.com/... ou uploadez un fichier" style="flex:1;">
+                                <label class="es-btn es-btn--ghost es-btn--sm" style="cursor:pointer; white-space:nowrap; margin:0;" title="Choisir une image sur votre appareil">
+                                    <i class="bi bi-upload"></i> Parcourir
+                                    <input type="file" id="inputModuleBgFile" accept="image/*" class="hidden">
+                                </label>
+                            </div>
+                            
+                            <!-- Presets rapides Unsplash -->
+                            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
+                                <span style="font-size:0.75rem; color:var(--clr-text-muted); font-weight:600;">Idées d'images :</span>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">🌲 Forêt</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1508873696983-2df5293cb395?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">🔥 Feu de camp</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">🎨 Créativité</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">👥 Équipe & Jeux</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">🏔️ Montagne</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">🏖️ Plage / Eau</button>
+                            </div>
+
+                            <!-- Aperçu de l'image de fond -->
+                            <div id="moduleBgPreviewWrap" class="hidden" style="position:relative; border-radius:var(--radius-md); overflow:hidden; border:1.5px solid var(--clr-surface-3); height:90px; margin-top:6px; background-size:cover; background-position:center;">
+                                <div style="position:absolute; inset:0; background:linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.7)); display:flex; align-items:center; justify-content:space-between; padding:0 14px;">
+                                    <span style="color:#ffffff; font-weight:700; font-size:0.85rem; text-shadow:0 1px 3px rgba(0,0,0,0.8);">Aperçu de la couverture</span>
+                                    <button type="button" class="es-btn es-btn--danger es-btn--sm" id="btnRemoveModuleBg" style="padding:4px 10px; font-size:0.75rem;">
+                                        <i class="bi bi-trash3"></i> Retirer l'image
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visibilité du module pour les candidats -->
+                        <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:12px 16px; margin-top:14px;">
+                            <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; gap:12px; margin:0;">
+                                <div>
+                                    <div style="font-weight:600; font-size:0.88rem; color:var(--clr-text); display:flex; align-items:center; gap:6px;">
+                                        <i class="bi bi-eye"></i> Visible pour les stagiaires
+                                    </div>
+                                    <div style="font-size:0.78rem; color:var(--clr-text-muted);">Si désactivé, le module sera complètement invisible pour les candidats.</div>
+                                </div>
+                                <input type="checkbox" id="editModuleVisible" checked style="width:18px; height:18px; accent-color:var(--clr-primary);">
+                            </label>
+                        </div>
                     </div>
 
                     <hr style="border:none; border-top:1.5px solid var(--clr-surface-3); margin:20px 0;">
 
                     <!-- Section 2 : Configuration du Quiz -->
                     <div style="margin-bottom:20px;">
-                        <h3 style="font-size:0.95rem; font-weight:700; color:var(--clr-text); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                        <h3 style="font-size:0.95rem; font-weight:700; color:var(--clr-text); margin-bottom:4px; display:flex; align-items:center; gap:6px;">
                             <span>⚙️</span> Configuration du Quiz
                         </h3>
+                        <p style="font-size:0.78rem; color:var(--clr-text-muted); margin-bottom:12px;">
+                            ℹ️ Si un champ ci-dessous est réglé à 0 (zéro), il est considéré comme illimité ou sans limite de temps.
+                        </p>
                         <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
                             <div class="es-field">
                                 <label class="es-field__label" for="editQuizTitle">Nom du Quiz</label>
@@ -273,13 +346,20 @@
                             </div>
                             <div class="es-field">
                                 <label class="es-field__label" for="editMaxAttempts">Tentatives autorisées</label>
-                                <input class="es-input" type="number" id="editMaxAttempts" min="0" max="10" value="0" placeholder="0 = Illimité">
-                                <span style="font-size:0.75rem; color:var(--clr-text-muted);">0 = Illimitées</span>
+                                <input class="es-input" type="number" id="editMaxAttempts" min="0" max="10" value="0" placeholder="0">
                             </div>
                             <div class="es-field">
-                                <label class="es-field__label" for="editQuizTimerMinutes">⏱️ Chrono / Temps (min)</label>
-                                <input class="es-input" type="number" id="editQuizTimerMinutes" min="0" max="180" value="0" placeholder="0 = Sans chrono">
-                                <span style="font-size:0.75rem; color:var(--clr-text-muted);">0 = Temps libre (sans limite)</span>
+                                <label class="es-field__label">⏱️ Timer</label>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <div style="display:flex; align-items:center; gap:4px; flex:1;">
+                                        <input class="es-input" type="number" id="editQuizTimerMinutes" min="0" max="300" value="0" placeholder="0" style="text-align:center; padding:6px 8px;">
+                                        <span style="font-size:0.78rem; font-weight:700; color:var(--clr-text-muted);">min</span>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:4px; flex:1;">
+                                        <input class="es-input" type="number" id="editQuizTimerSeconds" min="0" max="59" value="0" placeholder="0" style="text-align:center; padding:6px 8px;">
+                                        <span style="font-size:0.78rem; font-weight:700; color:var(--clr-text-muted);">sec</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
