@@ -13,6 +13,11 @@ let currentQuestions = [];
 let userPreviousSubmissions = [];
 let isQuizActive = false;
 
+// Variables pour le chronomètre / timer
+let quizTimerInterval = null;
+let quizRemainingSeconds = 0;
+let hasWarnedOneMinute = false;
+
 // ----------------------------------------------------------------
 // GESTION ANTI-ABANDON PENDANT L'ÉPREUVE
 // ----------------------------------------------------------------
@@ -36,6 +41,13 @@ function escapeHtml(str) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+function formatTimerDisplay(totalSeconds) {
+    if (totalSeconds < 0) totalSeconds = 0;
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`;
 }
 
 function showToast(message, type = 'info', duration = 3500) {
@@ -153,6 +165,7 @@ function renderBriefingScreen() {
     const mod = currentModuleData;
     const qConfig = mod.quizConfig || {};
     const maxAttempts = parseInt(qConfig.maxAttempts, 10) || 0;
+    const timerMinutes = parseInt(qConfig.timerMinutes, 10) || 0;
     const prevAttempts = userPreviousSubmissions.length;
     const isLocked = (maxAttempts > 0 && prevAttempts >= maxAttempts);
     const showResults = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
@@ -176,6 +189,19 @@ function renderBriefingScreen() {
     // Badges / Pilules
     document.getElementById('pillQuestionsCount').innerHTML = `<i class="bi bi-list-check"></i> <span>${currentQuestions.length} question${currentQuestions.length > 1 ? 's' : ''}</span>`;
     
+    // Pilule Chronomètre
+    const timerPill = document.getElementById('pillQuizTimer');
+    const timerPillText = document.getElementById('pillQuizTimerText');
+    if (timerPill && timerPillText) {
+        if (timerMinutes > 0) {
+            timerPillText.textContent = `⏱️ ${timerMinutes} minute${timerMinutes > 1 ? 's' : ''} max`;
+            timerPill.className = 'es-quiz-pill es-quiz-pill--warning';
+        } else {
+            timerPillText.textContent = `⏱️ Temps libre (sans chrono)`;
+            timerPill.className = 'es-quiz-pill';
+        }
+    }
+
     const attemptsPill = document.getElementById('pillAttempts');
     const attemptsText = document.getElementById('pillAttemptsText');
     if (maxAttempts > 0) {
@@ -193,6 +219,17 @@ function renderBriefingScreen() {
         pillCorrection.textContent = "Corrigé immédiat à la fin";
     } else {
         pillCorrection.textContent = "Corrigé différé par le formateur";
+    }
+
+    // Avertissement de début d'épreuve
+    const warningTextEl = document.getElementById('briefingWarningText');
+    if (warningTextEl) {
+        let warnContent = `Ce module ${maxAttempts > 0 ? `autorise un maximum de <strong>${maxAttempts} tentative(s)</strong>.` : `est disponible pour évaluation.`} <strong>Une fois le quiz démarré, vous vous engagez à répondre aux questions et à valider votre copie.</strong><br>`;
+        if (timerMinutes > 0) {
+            warnContent += `⏱️ <strong>Épreuve minutée (${timerMinutes} min) :</strong> Un compte à rebours s'enclenchera dès le lancement. Le chronomètre passera en <strong>alerte rouge clignotante à 1 minute de la fin</strong> et vos réponses seront automatiquement soumises si le temps expire.<br>`;
+        }
+        warnContent += `Si vous quittez la page, fermez l'onglet ou rechargez votre navigateur en cours de route, cette tentative sera considérée comme <strong>consommée et abandonnée</strong>.`;
+        warningTextEl.innerHTML = warnContent;
     }
 
     // Gestion du bloc d'avertissement & boutons
@@ -240,14 +277,65 @@ function startActiveQuiz() {
     isQuizActive = true;
     window.addEventListener('beforeunload', handleBeforeUnload);
 
+    // Réinitialiser le timer
+    if (quizTimerInterval) {
+        clearInterval(quizTimerInterval);
+        quizTimerInterval = null;
+    }
+    hasWarnedOneMinute = false;
+
     const mod = currentModuleData;
     const prevAttempts = userPreviousSubmissions.length;
     const maxAttempts = parseInt(mod.quizConfig?.maxAttempts, 10) || 0;
+    const timerMinutes = parseInt(mod.quizConfig?.timerMinutes, 10) || 0;
 
     document.getElementById('activeHeaderNum').textContent = `Module ${mod.num < 10 ? '0' + mod.num : mod.num}`;
     document.getElementById('activeHeaderTitle').textContent = mod.quizConfig?.quizTitle || mod.title;
     document.getElementById('activeAttemptBadge').innerHTML = `<i class="bi bi-lightning-charge-fill"></i> Tentative #${prevAttempts + 1}${maxAttempts > 0 ? ` / ${maxAttempts}` : ''}`;
     document.getElementById('activeProgressLabel').textContent = `0 / ${currentQuestions.length} répondues`;
+
+    // Gestion de l'affichage et du lancement du timer
+    const timerBadge = document.getElementById('quizActiveTimerBadge');
+    const timerText = document.getElementById('quizActiveTimerText');
+
+    if (timerMinutes > 0) {
+        quizRemainingSeconds = timerMinutes * 60;
+        if (timerBadge) {
+            timerBadge.classList.remove('hidden');
+            timerBadge.classList.remove('es-quiz-timer-badge--danger');
+        }
+        if (timerText) {
+            timerText.textContent = formatTimerDisplay(quizRemainingSeconds);
+        }
+
+        quizTimerInterval = setInterval(() => {
+            quizRemainingSeconds--;
+            if (quizRemainingSeconds < 0) quizRemainingSeconds = 0;
+
+            if (timerText) {
+                timerText.textContent = formatTimerDisplay(quizRemainingSeconds);
+            }
+
+            // Alerte rouge quand il reste 1 min ou moins (<= 60 secondes)
+            if (quizRemainingSeconds <= 60 && timerBadge) {
+                timerBadge.classList.add('es-quiz-timer-badge--danger');
+                if (!hasWarnedOneMinute && quizRemainingSeconds > 0) {
+                    hasWarnedOneMinute = true;
+                    showToast("⚠️ Attention : Il ne vous reste plus qu'1 minute !", "warning", 5000);
+                }
+            }
+
+            // Expiration du chronomètre
+            if (quizRemainingSeconds <= 0) {
+                clearInterval(quizTimerInterval);
+                quizTimerInterval = null;
+                showToast("⏰ Temps écoulé ! Envoi automatique de votre copie...", "error", 4500);
+                submitQuizAnswers({ autoSubmitByTimer: true });
+            }
+        }, 1000);
+    } else {
+        if (timerBadge) timerBadge.classList.add('hidden');
+    }
 
     renderQuizQuestions();
 
@@ -503,10 +591,16 @@ function updateProgress() {
 }
 
 // ----------------------------------------------------------------
-// SOUMISSION DU QUIZ
+// SOUMISSION DU QUIZ (MANUELLE OU AUTOMATIQUE PAR TIMER)
 // ----------------------------------------------------------------
-document.getElementById('btnSubmitQuiz')?.addEventListener('click', async () => {
+async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
     if (!currentModuleData || !currentUser) return;
+
+    // Arrêter immédiatement le compte à rebours s'il tourne
+    if (quizTimerInterval) {
+        clearInterval(quizTimerInterval);
+        quizTimerInterval = null;
+    }
 
     const form = document.getElementById('quizFormEl');
     const errorAlert = document.getElementById('quizErrorAlert');
@@ -523,28 +617,30 @@ document.getElementById('btnSubmitQuiz')?.addEventListener('click', async () => 
     currentQuestions.forEach(q => {
         if (q.type === 'qcm') {
             qcmTotal++;
-            const selected = form.querySelector(`input[name="question_${q.id}"]:checked`);
+            const selected = form ? form.querySelector(`input[name="question_${q.id}"]:checked`) : null;
             const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
             if (selected) {
                 const val = parseInt(selected.value, 10);
                 answers[q.id] = val;
                 if (val === correctIdx) qcmCorrect++;
             } else {
+                answers[q.id] = null;
                 hasMissing = true;
             }
         } else if (q.type === 'boolean') {
             qcmTotal++;
-            const selected = form.querySelector(`input[name="question_${q.id}"]:checked`);
+            const selected = form ? form.querySelector(`input[name="question_${q.id}"]:checked`) : null;
             const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
             if (selected) {
                 const val = (selected.value === 'true');
                 answers[q.id] = val;
                 if (val === expectedBool) qcmCorrect++;
             } else {
+                answers[q.id] = null;
                 hasMissing = true;
             }
         } else if (q.type === 'range') {
-            const rangeInput = form.querySelector(`input[name="question_${q.id}"]`);
+            const rangeInput = form ? form.querySelector(`input[name="question_${q.id}"]`) : null;
             if (rangeInput) {
                 const val = parseFloat(rangeInput.value);
                 answers[q.id] = val;
@@ -557,11 +653,12 @@ document.getElementById('btnSubmitQuiz')?.addEventListener('click', async () => 
                     }
                 }
             } else {
+                answers[q.id] = (q.min !== undefined) ? parseFloat(q.min) : 0;
                 hasMissing = true;
             }
         } else if (q.type === 'puzzle') {
             qcmTotal++;
-            const puzzleContainer = form.querySelector(`#puzzle_list_${q.id}`);
+            const puzzleContainer = form ? form.querySelector(`#puzzle_list_${q.id}`) : null;
             if (puzzleContainer) {
                 const currentOrder = Array.from(puzzleContainer.querySelectorAll('.es-puzzle-item')).map(el => el.getAttribute('data-item-text'));
                 answers[q.id] = currentOrder;
@@ -571,20 +668,23 @@ document.getElementById('btnSubmitQuiz')?.addEventListener('click', async () => 
                     qcmCorrect++;
                 }
             } else {
+                answers[q.id] = [];
                 hasMissing = true;
             }
         } else {
-            const textarea = form.querySelector(`textarea[name="question_${q.id}"]`);
+            const textarea = form ? form.querySelector(`textarea[name="question_${q.id}"]`) : null;
             const val = textarea ? textarea.value.trim() : '';
             if (val.length >= 10) {
                 answers[q.id] = val;
             } else {
+                answers[q.id] = val;
                 hasMissing = true;
             }
         }
     });
 
-    if (hasMissing) {
+    // En mode soumission manuelle, on bloque si des questions sont incomplètes
+    if (hasMissing && !autoSubmitByTimer) {
         if (errorAlert && errorMsg) {
             errorMsg.textContent = "Merci de répondre à toutes les questions (les réponses rédigées doivent comporter au moins 10 caractères).";
             errorAlert.classList.remove('hidden');
@@ -594,7 +694,7 @@ document.getElementById('btnSubmitQuiz')?.addEventListener('click', async () => 
     }
 
     if (errorAlert) errorAlert.classList.add('hidden');
-    btnLoading(btn, true);
+    if (btn) btnLoading(btn, true);
 
     try {
         const nextAttemptCount = userPreviousSubmissions.length + 1;
@@ -612,6 +712,7 @@ document.getElementById('btnSubmitQuiz')?.addEventListener('click', async () => 
             answers: answers,
             attemptNumber: nextAttemptCount,
             attemptsCount: nextAttemptCount,
+            timeExpired: autoSubmitByTimer === true,
             score: {
                 correct: qcmCorrect,
                 total: qcmTotal,
@@ -631,17 +732,25 @@ document.getElementById('btnSubmitQuiz')?.addEventListener('click', async () => 
         isQuizActive = false;
         window.removeEventListener('beforeunload', handleBeforeUnload);
 
-        btnLoading(btn, false);
-        showToast("🎉 Vos réponses ont bien été enregistrées !", "success", 4000);
+        if (btn) btnLoading(btn, false);
+        if (autoSubmitByTimer) {
+            showToast("⏰ Temps écoulé : Votre copie a été transmise automatiquement !", "info", 5000);
+        } else {
+            showToast("🎉 Vos réponses ont bien été enregistrées !", "success", 4000);
+        }
 
         // Passer à la vue résultats
         renderResultsScreen(submissionData);
 
     } catch (err) {
-        btnLoading(btn, false);
+        if (btn) btnLoading(btn, false);
         console.error("Erreur soumission quiz:", err);
         showToast("Erreur lors de la transmission du quiz.", "error");
     }
+}
+
+document.getElementById('btnSubmitQuiz')?.addEventListener('click', () => {
+    submitQuizAnswers({ autoSubmitByTimer: false });
 });
 
 // ----------------------------------------------------------------
@@ -655,11 +764,15 @@ function renderResultsScreen(submission) {
 
     document.getElementById('resultScoreVal').textContent = `${score.percent}%`;
     document.getElementById('resultScoreRatio').textContent = `${score.correct} / ${score.total} QCM corrects`;
-    document.getElementById('resultAttemptBadge').textContent = `Tentative #${submission.attemptNumber || 1}`;
+    const timeExpiredBadge = submission.timeExpired ? ' • ⏰ Temps écoulé' : '';
+    document.getElementById('resultAttemptBadge').textContent = `Tentative #${submission.attemptNumber || 1}${timeExpiredBadge}`;
 
     const titleEl = document.getElementById('resultTitle');
     const subEl = document.getElementById('resultSubtitle');
-    if (score.percent >= 80) {
+    if (submission.timeExpired) {
+        titleEl.textContent = "⏰ Épreuve clôturée (Temps écoulé)";
+        subEl.textContent = "Le chronomètre est arrivé à terme. Vos réponses enregistrées jusqu'à l'échéance ont été transmises avec succès à l'équipe pédagogique.";
+    } else if (score.percent >= 80) {
         titleEl.textContent = "🎉 Excellent résultat !";
         subEl.textContent = "Vous avez brillamment validé l'évaluation de ce module. Vos résultats ont été transmis aux formateurs.";
     } else if (score.percent >= 50) {

@@ -266,15 +266,20 @@
                         <h3 style="font-size:0.95rem; font-weight:700; color:var(--clr-text); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
                             <span>⚙️</span> Configuration du Quiz
                         </h3>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:12px;">
                             <div class="es-field">
                                 <label class="es-field__label" for="editQuizTitle">Nom du Quiz</label>
                                 <input class="es-input" type="text" id="editQuizTitle" placeholder="Ex: Quiz d'évaluation module 1">
                             </div>
                             <div class="es-field">
-                                <label class="es-field__label" for="editMaxAttempts">Nombre de tentatives autorisées</label>
+                                <label class="es-field__label" for="editMaxAttempts">Tentatives autorisées</label>
                                 <input class="es-input" type="number" id="editMaxAttempts" min="0" max="10" value="0" placeholder="0 = Illimité">
-                                <span style="font-size:0.75rem; color:var(--clr-text-muted);">0 = Tentatives illimitées</span>
+                                <span style="font-size:0.75rem; color:var(--clr-text-muted);">0 = Illimitées</span>
+                            </div>
+                            <div class="es-field">
+                                <label class="es-field__label" for="editQuizTimerMinutes">⏱️ Chrono / Temps (min)</label>
+                                <input class="es-input" type="number" id="editQuizTimerMinutes" min="0" max="180" value="0" placeholder="0 = Sans chrono">
+                                <span style="font-size:0.75rem; color:var(--clr-text-muted);">0 = Temps libre (sans limite)</span>
                             </div>
                         </div>
 

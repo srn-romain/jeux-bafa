@@ -91,6 +91,9 @@
                     <div class="es-quiz-pill es-quiz-pill--primary" id="pillQuestionsCount">
                         <i class="bi bi-list-check"></i> <span>... questions</span>
                     </div>
+                    <div class="es-quiz-pill" id="pillQuizTimer">
+                        <i class="bi bi-stopwatch"></i> <span id="pillQuizTimerText">Temps libre</span>
+                    </div>
                     <div class="es-quiz-pill" id="pillAttempts">
                         <i class="bi bi-arrow-repeat"></i> <span id="pillAttemptsText">Tentative 1 / 1</span>
                     </div>
@@ -143,14 +146,19 @@
          VUE 2 : QUIZ ACTIF (ÉPREUVE EN COURS)
          ---------------------------------------------------- -->
         <section id="quizActiveView" class="hidden">
-            <!-- Header collant avec jauge de progression -->
+            <!-- Header collant avec jauge de progression & chronomètre -->
             <div class="es-quiz-active-header">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div>
                         <div style="font-size:0.75rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;" id="activeHeaderNum">Module 01</div>
                         <div style="font-size:1.05rem; font-weight:800; color:var(--clr-text);" id="activeHeaderTitle">Épreuve en cours</div>
                     </div>
-                    <div style="display:flex; align-items:center; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                        <!-- Badge Chrono Compte à rebours -->
+                        <div class="es-quiz-timer-badge hidden" id="quizActiveTimerBadge" title="Temps restant">
+                            <i class="bi bi-stopwatch-fill" id="quizActiveTimerIcon"></i>
+                            <span id="quizActiveTimerText">--:--</span>
+                        </div>
                         <span class="es-badge es-badge--anim" id="activeAttemptBadge">
                             <i class="bi bi-lightning-charge-fill"></i> Tentative en cours
                         </span>

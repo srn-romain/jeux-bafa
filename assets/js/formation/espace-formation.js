@@ -40,6 +40,7 @@ async function getFormationModulesList() {
                 quizConfig: {
                     quizTitle: m.title,
                     maxAttempts: 0,
+                    timerMinutes: 0,
                     showResultsAtEnd: false
                 },
                 questionsCount: (m.questions || []).length
@@ -61,6 +62,7 @@ async function getFormationModulesList() {
                             quizConfig: {
                                 quizTitle: m.title,
                                 maxAttempts: 0,
+                                timerMinutes: 0,
                                 showResultsAtEnd: false
                             },
                             questionsCount: (m.questions || []).length,
@@ -518,6 +520,7 @@ async function openFormationModuleEdit(moduleId = null) {
         const qConfig = moduleData.quizConfig || {};
         document.getElementById('editQuizTitle').value = qConfig.quizTitle || moduleData.title || '';
         document.getElementById('editMaxAttempts').value = (qConfig.maxAttempts !== undefined) ? qConfig.maxAttempts : 0;
+        document.getElementById('editQuizTimerMinutes').value = (qConfig.timerMinutes !== undefined && qConfig.timerMinutes !== null) ? qConfig.timerMinutes : 0;
         document.getElementById('editShowResultsAtEnd').checked = qConfig.showResultsAtEnd === true;
 
         currentEditingQuestions = JSON.parse(JSON.stringify(questions || []));
@@ -539,6 +542,7 @@ async function openFormationModuleEdit(moduleId = null) {
         
         document.getElementById('editQuizTitle').value = '';
         document.getElementById('editMaxAttempts').value = 0;
+        document.getElementById('editQuizTimerMinutes').value = 0;
         document.getElementById('editShowResultsAtEnd').checked = false;
 
         currentEditingQuestions = [
@@ -1371,6 +1375,7 @@ document.getElementById('btnSaveModule')?.addEventListener('click', async () => 
     
     const quizTitle = document.getElementById('editQuizTitle').value.trim() || title;
     const maxAttempts = parseInt(document.getElementById('editMaxAttempts').value, 10) || 0;
+    const timerMinutes = parseInt(document.getElementById('editQuizTimerMinutes').value, 10) || 0;
     const showResultsAtEnd = document.getElementById('editShowResultsAtEnd').checked;
 
     if (!title) {
@@ -1443,6 +1448,7 @@ document.getElementById('btnSaveModule')?.addEventListener('click', async () => 
             quizConfig: {
                 quizTitle: quizTitle,
                 maxAttempts: maxAttempts,
+                timerMinutes: timerMinutes,
                 showResultsAtEnd: showResultsAtEnd
             }
         };
