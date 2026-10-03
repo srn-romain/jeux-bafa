@@ -99,6 +99,9 @@
                 <button class="es-nav-tab" data-tab="utilisateurs" role="tab">
                     <i class="bi bi-people"></i> Utilisateurs
                 </button>
+                <button class="es-nav-tab" data-tab="formation" role="tab">
+                    <i class="bi bi-mortarboard"></i> Formation BAFA
+                </button>
                 <button class="es-nav-tab" data-tab="recherche" role="tab">
                     <i class="bi bi-search"></i> Recherche
                 </button>
@@ -336,6 +339,37 @@
             </div>
 
             <!-- ===================================================
+                 ONGLET FORMATION BAFA (16 MODULES)
+                 =================================================== -->
+            <div id="tab-formation" class="hidden">
+                <div class="es-formation-admin-banner">
+                    <div>
+                        <div style="font-weight: 800; font-size: 1.1rem; color: var(--clr-text); display:flex; align-items:center; gap:8px;">
+                            <span>🎓</span> Contrôle des 16 Modules BAFA
+                        </div>
+                        <div style="font-size: 0.85rem; color: var(--clr-text-muted); margin-top: 2px;">
+                            Activez les quiz au fur et à mesure de la session de formation et consultez les réponses des stagiaires.
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnAdminUnlockAllModules">
+                            <i class="bi bi-unlock"></i> Tout déverrouiller
+                        </button>
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnAdminLockAllModules">
+                            <i class="bi bi-lock"></i> Tout verrouiller
+                        </button>
+                    </div>
+                </div>
+
+                <div class="es-loader" id="adminFormationLoader">
+                    <div class="es-spinner"></div>
+                    <span>Chargement des modules…</span>
+                </div>
+
+                <div id="adminFormationList" class="es-formation-grid"></div>
+            </div>
+
+            <!-- ===================================================
                  ONGLET CONFIGURATION
                  =================================================== -->
 
@@ -350,13 +384,27 @@
                         
                         <div style="background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
                             <div>
-                                <div style="font-weight: 600; color: var(--clr-text); font-size: 0.95rem;">Création de compte animateur</div>
+                                <div style="font-weight: 600; color: var(--clr-text); font-size: 0.95rem;">Autoriser la création de compte</div>
                                 <div style="font-size: 0.82rem; color: var(--clr-text-muted); margin-top: 4px; line-height: 1.4;">Si désactivé, l'inscription est totalement bloquée à l'écran de connexion.</div>
                             </div>
                             <label class="switch" style="flex-shrink: 0; margin-left: 16px;">
                                 <input type="checkbox" id="checkAllowSignup" checked>
                                 <span class="slider"></span>
                             </label>
+                        </div>
+
+                        <div style="margin-top: 14px; background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                            <label class="es-field__label" for="selectSignupDefaultRole" style="font-weight:600; margin-bottom:6px; color:var(--clr-text);">
+                                Type de compte attribué par défaut à l'inscription
+                            </label>
+                            <div style="font-size: 0.82rem; color: var(--clr-text-muted); margin-bottom: 10px; line-height: 1.4;">
+                                Détermine si les nouveaux inscrits arrivent sur l'espace <strong>Animateurs (Colos)</strong> ou l'espace <strong>Stagiaires (Formation BAFA)</strong>.
+                            </div>
+                            <select id="selectSignupDefaultRole" class="es-input" style="width:100%; max-width:400px; background:var(--clr-surface);">
+                                <option value="anim">🎨 Animateur (Espace Colos par défaut)</option>
+                                <option value="stagiaire">🎓 Stagiaire (Espace Formation BAFA par défaut)</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div style="height: 1px; background: var(--clr-surface-3); margin: 32px 0;"></div>
@@ -897,6 +945,19 @@
             </div>
             <div class="es-modal__body" style="padding-bottom:8px;">
 
+                <!-- Section Rôle Utilisateur -->
+                <div style="margin-bottom: 16px; padding: 12px; background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <div>
+                        <div style="font-weight: 700; color: var(--clr-text); font-size: 0.88rem;">Rôle du compte</div>
+                        <div style="font-size: 0.72rem; color: var(--clr-text-muted);">Définit son espace d'accueil (Colos ou Formation BAFA).</div>
+                    </div>
+                    <select id="selectUserRightsRole" class="es-input" style="max-width: 190px; padding: 6px 10px; font-size: 0.85rem; background: var(--clr-surface);">
+                        <option value="anim">🎨 Animateur</option>
+                        <option value="stagiaire">🎓 Stagiaire BAFA</option>
+                        <option value="admin">👑 Administrateur</option>
+                    </select>
+                </div>
+
                 <!-- Section Bannissement -->
                 <div id="userRightsBanSection" style="margin-bottom: 20px; padding: 12px; background: rgba(231,76,60,0.06); border: 1px solid rgba(231,76,60,0.15); border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -1088,9 +1149,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="../../assets/js/firebase-config.js"></script>
-    <script src="../../assets/js/espace-auth.js"></script>
-    <script src="../../assets/js/espace-colo-form.js?v=2.9"></script>
-    <script src="../../assets/js/espace-admin.js?v=2.9"></script>
+    <script src="../../assets/js/colo/espace-auth.js"></script>
+    <script src="../../assets/js/formation/espace-formation-data.js"></script>
+    <script src="../../assets/js/colo/espace-colo-form.js?v=2.9"></script>
+    <script src="../../assets/js/colo/espace-admin.js?v=2.9"></script>
 </body>
 
 </html>

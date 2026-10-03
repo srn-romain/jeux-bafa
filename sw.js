@@ -3,7 +3,7 @@
    Gestion du mode hors ligne (PWA) et des notifications
    ================================================================ */
 
-const CACHE_NAME = 'bafa-espace-v10';
+const CACHE_NAME = 'bafa-espace-v15';
 
 const PRECACHE_URLS = [
     './',
@@ -15,11 +15,14 @@ const PRECACHE_URLS = [
     './assets/css/styleEspace.css',
     './assets/js/main.js',
     './assets/js/firebase-config.js',
-    './assets/js/espace-auth.js',
+    './assets/js/colo/espace-auth.js',
+    './assets/js/formation/espace-formation-data.js',
+    './assets/js/formation/espace-formation.js',
     './assets/js/espace-index.js',
     './assets/js/espace-colo.js',
-    './assets/js/espace-colo-form.js',
+    './assets/js/colo/espace-colo-form.js',
     './pages/espace/index.html',
+    './pages/espace/formation.html',
     './pages/espace/espace.html',
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
     'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js',

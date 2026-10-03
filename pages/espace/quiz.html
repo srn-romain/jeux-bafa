@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3WN5QK4J41"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-3WN5QK4J41');
+    </script>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Épreuve de Formation BAFA – Quiz interactif</title>
+    <meta name="description" content="Épreuve individuelle de contrôle de connaissances pour la formation BAFA.">
+    <link href="../../public/images/favicon.webp" rel="icon">
+    <link rel="manifest" href="../../manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../assets/css/styleEspace.css?v=3.6">
+</head>
+
+<body class="espace-body">
+
+    <!-- ========================================================
+     LOADER GLOBAL
+     ======================================================== -->
+    <div class="es-loader" id="pageLoader" style="height: 100vh;">
+        <div class="es-spinner"></div>
+        <span>Préparation de votre épreuve…</span>
+    </div>
+
+    <!-- ========================================================
+     TOPBAR DU QUIZ
+     ======================================================== -->
+    <header class="es-topbar" id="quizTopbar" style="display:none;">
+        <div class="es-topbar__inner">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <a href="formation.html" class="es-btn es-btn--sm es-btn--ghost" id="btnTopbarBack" style="color:rgba(255,255,255,0.85); border-color:rgba(255,255,255,0.2);">
+                    <i class="bi bi-arrow-left"></i> <span class="brand-label">Modules</span>
+                </a>
+                <div style="display:flex; flex-direction:column;">
+                    <span id="topbarModuleTitle" style="font-weight:700; font-size:0.95rem; color:#ffffff; line-height:1.2;">Module de formation</span>
+                    <span id="topbarModuleNum" style="font-size:0.75rem; color:var(--clr-primary); font-weight:700;">Épreuve individuelle</span>
+                </div>
+            </div>
+
+            <div class="es-topbar__actions">
+                <div class="es-user-chip" id="quizUserChip" style="cursor:default;">
+                    <div class="es-user-avatar" id="quizUserAvatar">
+                        <i class="bi bi-person-circle"></i>
+                    </div>
+                    <span class="es-user-chip__name" id="quizUserName">Stagiaire</span>
+                    <span class="es-badge es-badge--stagiaire" id="quizUserBadge">🎓 BAFA</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================================
+     CONTAINER PRINCIPAL
+     ======================================================== -->
+    <main class="es-quiz-page-container">
+
+        <!-- ----------------------------------------------------
+         VUE 1 : BRIEFING PRÉ-QUIZ & AVERTISSEMENT SOLENNEL
+         ---------------------------------------------------- -->
+        <section id="quizBriefingView" class="hidden">
+            <div class="es-quiz-briefing-card">
+                <div class="es-quiz-briefing-header">
+                    <div class="es-quiz-briefing-icon" id="briefingIcon">
+                        <i class="bi bi-journal-bookmark"></i>
+                    </div>
+                    <div>
+                        <div class="es-badge es-badge--stagiaire" id="briefingModuleNum" style="margin-bottom:4px;">Module 01</div>
+                        <h1 id="briefingModuleTitle" style="font-size:1.45rem; font-weight:800; color:var(--clr-text); margin:0; line-height:1.25;">Titre du module</h1>
+                        <p id="briefingModuleSubtitle" style="font-size:0.88rem; color:var(--clr-text-muted); margin:4px 0 0;"></p>
+                    </div>
+                </div>
+
+                <div id="briefingModuleDesc" style="font-size:0.92rem; line-height:1.6; color:var(--clr-text); background:var(--clr-surface-2); padding:16px; border-radius:var(--radius-md); border:1px solid var(--clr-surface-3);">
+                    Description des objectifs pédagogiques du module.
+                </div>
+
+                <!-- Récapitulatif en badges -->
+                <div class="es-quiz-pills-row">
+                    <div class="es-quiz-pill es-quiz-pill--primary" id="pillQuestionsCount">
+                        <i class="bi bi-list-check"></i> <span>... questions</span>
+                    </div>
+                    <div class="es-quiz-pill" id="pillAttempts">
+                        <i class="bi bi-arrow-repeat"></i> <span id="pillAttemptsText">Tentative 1 / 1</span>
+                    </div>
+                    <div class="es-quiz-pill" id="pillCorrectionMode">
+                        <i class="bi bi-eye"></i> <span id="pillCorrectionText">Corrigé à la fin</span>
+                    </div>
+                </div>
+
+                <!-- Avertissement de début d'épreuve -->
+                <div class="es-quiz-warning-box" id="briefingWarningBox">
+                    <div class="es-quiz-warning-icon">
+                        <i class="bi bi-exclamation-octagon-fill"></i>
+                    </div>
+                    <div class="es-quiz-warning-content">
+                        <div class="es-quiz-warning-title">⚠️ Avertissement important avant de commencer</div>
+                        <div class="es-quiz-warning-text" id="briefingWarningText">
+                            Ce module autorise un nombre limité de tentatives. <strong>Une fois le quiz démarré, vous vous engagez à répondre à toutes les questions et à valider vos réponses.</strong><br>
+                            Si vous quittez la page, fermez l'onglet ou rechargez votre navigateur en cours de route, cette tentative sera considérée comme <strong>consommée et abandonnée</strong>.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alerte si tentatives dépassées -->
+                <div class="es-alert es-alert--error hidden" id="briefingLockedAlert" style="margin-bottom:20px;">
+                    <i class="bi bi-lock-fill" style="font-size:1.3rem;"></i>
+                    <div>
+                        <strong>Tentatives maximales atteintes !</strong>
+                        <div style="font-size:0.84rem; margin-top:2px;">Vous avez déjà utilisé l'ensemble des tentatives autorisées pour ce module.</div>
+                    </div>
+                </div>
+
+                <!-- Boutons d'action -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:28px; padding-top:20px; border-top:1.5px solid var(--clr-surface-3);">
+                    <a href="formation.html" class="es-btn es-btn--ghost" id="btnReturnModules">
+                        <i class="bi bi-arrow-left"></i> Retour aux modules
+                    </a>
+                    <div style="display:flex; gap:10px;">
+                        <button type="button" class="es-btn es-btn--ghost hidden" id="btnViewPreviousResults">
+                            <i class="bi bi-clipboard-check"></i> Consulter mon corrigé
+                        </button>
+                        <button type="button" class="es-btn es-btn--primary" id="btnStartQuizNow" style="padding:12px 24px; font-size:0.95rem;">
+                            <i class="bi bi-rocket-takeoff-fill"></i> J'ai compris, commencer le quiz
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ----------------------------------------------------
+         VUE 2 : QUIZ ACTIF (ÉPREUVE EN COURS)
+         ---------------------------------------------------- -->
+        <section id="quizActiveView" class="hidden">
+            <!-- Header collant avec jauge de progression -->
+            <div class="es-quiz-active-header">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <div>
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;" id="activeHeaderNum">Module 01</div>
+                        <div style="font-size:1.05rem; font-weight:800; color:var(--clr-text);" id="activeHeaderTitle">Épreuve en cours</div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="es-badge es-badge--anim" id="activeAttemptBadge">
+                            <i class="bi bi-lightning-charge-fill"></i> Tentative en cours
+                        </span>
+                        <span style="font-size:0.85rem; font-weight:700; color:var(--clr-text-muted);" id="activeProgressLabel">0 / 0</span>
+                    </div>
+                </div>
+                <div class="es-quiz-progress-track">
+                    <div class="es-quiz-progress-fill" id="quizProgressBar"></div>
+                </div>
+            </div>
+
+            <!-- Formulaire contenant les questions -->
+            <form id="quizFormEl" onsubmit="return false;">
+                <div id="quizQuestionsContainer" style="display:flex; flex-direction:column; gap:20px;">
+                    <!-- Les questions dynamiques (QCM, Curseur, Vrai/Faux, Puzzle, Rédigée) sont injectées ici -->
+                </div>
+
+                <!-- Message d'erreur si champs manquants -->
+                <div class="es-alert es-alert--error hidden" id="quizErrorAlert" style="margin-top:24px;">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span id="quizErrorMsg">Merci de répondre à toutes les questions avant de valider.</span>
+                </div>
+
+                <!-- Barre d'action finale -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:32px; padding:24px; background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); box-shadow:0 4px 16px rgba(0,0,0,0.04);">
+                    <div style="font-size:0.82rem; color:var(--clr-text-muted);">
+                        <i class="bi bi-shield-check" style="color:var(--clr-primary);"></i> Vos réponses seront transmises et enregistrées de façon sécurisée.
+                    </div>
+                    <button type="button" class="es-btn es-btn--primary" id="btnSubmitQuiz" style="padding:14px 28px; font-size:1rem; font-weight:800;">
+                        <i class="bi bi-send-check-fill"></i>
+                        <span class="es-btn__text">Valider et envoyer mes réponses</span>
+                        <span class="es-btn__spinner"></span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- ----------------------------------------------------
+         VUE 3 : RÉSULTATS & CORRIGÉ DÉTAILLÉ
+         ---------------------------------------------------- -->
+        <section id="quizResultsView" class="hidden">
+            <div class="es-quiz-briefing-card">
+                <div class="es-quiz-result-header">
+                    <div class="es-quiz-result-score-circle" id="resultScoreCircle">
+                        <span class="val" id="resultScoreVal">100%</span>
+                        <span class="max" id="resultScoreRatio">10 / 10</span>
+                    </div>
+                    <h2 id="resultTitle" style="font-size:1.5rem; font-weight:800; color:var(--clr-text); margin:0 0 6px;">Félicitations !</h2>
+                    <p id="resultSubtitle" style="font-size:0.92rem; color:var(--clr-text-muted); margin:0 auto; max-width:540px;">
+                        Vos réponses ont bien été enregistrées et transmises à l'équipe de formation.
+                    </p>
+                </div>
+
+                <!-- Corrigé détaillé si activé -->
+                <div id="resultCorrectionSection" style="margin-top:24px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; padding-bottom:10px; border-bottom:1.5px solid var(--clr-surface-3);">
+                        <div style="font-size:1.05rem; font-weight:800; color:var(--clr-text);">
+                            <i class="bi bi-card-checklist" style="color:var(--clr-primary);"></i> Corrigé détaillé de votre tentative
+                        </div>
+                        <span class="es-badge es-badge--approved" id="resultAttemptBadge">Tentative #1</span>
+                    </div>
+                    <div id="resultQuestionsList" style="display:flex; flex-direction:column; gap:16px;">
+                        <!-- Les questions corrigées sont injectées ici -->
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:center; gap:12px; margin-top:36px; padding-top:20px; border-top:1.5px solid var(--clr-surface-3);">
+                    <a href="formation.html" class="es-btn es-btn--primary" style="padding:12px 28px; font-size:0.95rem;">
+                        <i class="bi bi-mortarboard-fill"></i> Revenir aux modules de formation
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast container -->
+    <div class="es-toast-container" id="toastContainer"></div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="../../assets/js/firebase-config.js"></script>
+    <script src="../../assets/js/colo/espace-auth.js?v=3.5"></script>
+    <script src="../../assets/js/formation/espace-formation-data.js?v=1.1"></script>
+    <script src="../../assets/js/formation/espace-quiz.js?v=1.0"></script>
+</body>
+
+</html>

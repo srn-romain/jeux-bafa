@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3WN5QK4J41"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-3WN5QK4J41');
+    </script>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espace Stagiaires – Formation BAFA & Quiz</title>
+    <meta name="description" content="Espace de formation BAFA – Modules pédagogiques, contrôles de connaissances et validation des quiz.">
+    <link href="../../public/images/favicon.webp" rel="icon">
+    <link rel="manifest" href="../../manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../assets/css/styleEspace.css?v=3.5">
+</head>
+
+<body class="espace-body">
+
+    <!-- ========================================================
+     LOADER GLOBAL
+     ======================================================== -->
+    <div class="es-loader" id="pageLoader" style="height: 100vh;">
+        <div class="es-spinner"></div>
+        <span>Vérification de votre session…</span>
+    </div>
+
+    <!-- ========================================================
+     PAGE FORMATION STAGIAIRES
+     ======================================================== -->
+    <div id="formationView" class="hidden" style="flex:1; display:flex; flex-direction:column;">
+
+        <!-- Topbar -->
+        <header class="es-topbar">
+            <div class="es-topbar__inner">
+                <!-- Brand avec Dropdown pour Admin -->
+                <div class="es-brand-dropdown-wrap" id="brandDropdownWrap">
+                    <button type="button" class="es-topbar__brand" id="btnBrandDropdown" aria-haspopup="true" aria-expanded="false" style="border:none; outline:none; background:transparent;">
+                        <div class="es-topbar__brand-icon" id="topbarBrandIcon">🎓</div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-start; text-align:left;">
+                            <span class="brand-label" id="brandName">Dashboard de ...</span>
+                            <span class="brand-sublabel" id="brandCurrentSpace" style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); line-height:1.2;">🎓 Espace Stagiaires</span>
+                        </div>
+                        <i class="bi bi-chevron-down hidden" id="brandChevron" style="font-size:11px; color:rgba(255,255,255,0.7); margin-left:6px; transition: transform 0.2s ease;"></i>
+                    </button>
+                    <div class="es-brand-menu hidden" id="brandDropdownMenu" role="menu">
+                        <div class="es-brand-menu__header">Changer d'espace</div>
+                        <button type="button" class="es-brand-menu__item" id="menuItemColos" role="menuitem">
+                            <span class="es-brand-menu__icon">🏕️</span>
+                            <div class="es-brand-menu__info">
+                                <div class="es-brand-menu__title">Espace Colos</div>
+                                <div class="es-brand-menu__desc">Séjours & animateurs</div>
+                            </div>
+                            <i class="bi bi-check2 es-brand-menu__check hidden"></i>
+                        </button>
+                        <button type="button" class="es-brand-menu__item es-brand-menu__item--stagiaire active" id="menuItemStagiaires" role="menuitem">
+                            <span class="es-brand-menu__icon">🎓</span>
+                            <div class="es-brand-menu__info">
+                                <div class="es-brand-menu__title">Espace Stagiaires</div>
+                                <div class="es-brand-menu__desc">Modules & Quiz BAFA</div>
+                            </div>
+                            <i class="bi bi-check2 es-brand-menu__check"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="es-topbar__actions">
+                    <a href="../../index.html" class="es-btn es-btn--sm es-btn--ghost"
+                        style="color:rgba(255,255,255,0.75); border-color:rgba(255,255,255,0.15);">
+                        <i class="bi bi-house"></i> <span class="brand-label">Site</span>
+                    </a>
+                    <a href="admin.html" id="btnAdminLink" class="es-btn es-btn--sm es-btn--ghost hidden"
+                        style="color:var(--clr-primary); border-color:rgba(166,216,102,0.3);">
+                        <i class="bi bi-shield-lock"></i> <span class="brand-label">Admin</span>
+                    </a>
+                    <!-- Menu Profil -->
+                    <div class="es-user-dropdown-wrap">
+                        <button class="es-user-chip" id="btnUserMenu">
+                            <div class="es-user-avatar" id="userAvatar">
+                                <i class="bi bi-person-circle"></i>
+                            </div>
+                            <span class="es-user-chip__name" id="userDisplayName">…</span>
+                            <span class="es-badge es-badge--stagiaire" id="userBadge">🎓 Stagiaire</span>
+                            <i class="bi bi-chevron-down" style="font-size:10px; opacity:0.6;"></i>
+                        </button>
+                        <div class="es-user-dropdown hidden" id="userDropdown">
+                            <button class="es-user-dropdown__item" id="btnOpenSettings">
+                                <i class="bi bi-person-gear"></i> Paramètres
+                            </button>
+                            <!-- Lien admin visible uniquement pour admin -->
+                            <a href="admin.html" class="es-user-dropdown__item hidden" id="linkAdmin">
+                                <i class="bi bi-shield-lock"></i> Administration
+                            </a>
+                            <div class="es-user-dropdown__sep"></div>
+                            <button class="es-user-dropdown__item es-user-dropdown__item--danger" id="btnLogout">
+                                <i class="bi bi-box-arrow-right"></i> Déconnexion
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Contenu Principal -->
+        <main class="es-page">
+            <div class="es-container">
+
+                <div class="es-page__header" style="margin-bottom: 24px;">
+                    <div>
+                        <h1 class="es-page__title">Formation <span style="color:var(--clr-accent);">BAFA</span> – Modules & Quiz</h1>
+                        <p class="es-page__subtitle" id="stagiairesSubtitle">Retrouve tes modules de formation et valide tes quiz au fur et à mesure.</p>
+                    </div>
+                </div>
+
+                <!-- Barre Formateur Admin (si connecté en admin) -->
+                <div id="formationAdminControls" class="es-formation-admin-banner hidden">
+                    <div>
+                        <div class="banner-title" style="font-weight: 700; font-size: 0.95rem; color: #ffffff; display:flex; align-items:center; gap:8px;">
+                            <i class="bi bi-shield-check"></i> Espace Formateur / Administration
+                        </div>
+                        <div class="banner-desc" style="font-size: 0.82rem; color: rgba(255, 255, 255, 0.8); margin-top: 2px;">
+                            Gérez les modules, configurez les quiz et consultez les résultats des stagiaires.
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnAdminNewModule" style="font-weight:600;">
+                            <i class="bi bi-plus-lg"></i> Nouveau module
+                        </button>
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnStagiaireUnlockAll">
+                            <i class="bi bi-unlock"></i> Tout déverrouiller
+                        </button>
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnStagiaireLockAll">
+                            <i class="bi bi-lock"></i> Tout verrouiller
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loader Formation -->
+                <div class="es-loader" id="formationLoader">
+                    <div class="es-spinner"></div>
+                    <span>Chargement des modules de formation…</span>
+                </div>
+
+                <!-- Grille des Modules Stagiaires -->
+                <div class="es-formation-grid hidden" id="formationModulesGrid"></div>
+
+            </div>
+        </main>
+
+    </div>
+
+
+
+    <!-- ========================================================
+     MODAL : Consulter les réponses Stagiaires (Admin / Formateur)
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlayFormationResults" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:760px; max-height:90vh; display:flex; flex-direction:column;">
+            <div class="es-modal__header" style="border-bottom:1.5px solid var(--clr-surface-3);">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div id="resultsModalIcon" class="es-formation-icon-wrap" style="width:40px; height:40px; font-size:18px;"></div>
+                    <div>
+                        <div id="resultsModalNum" class="es-formation-num">Module 01</div>
+                        <h2 class="es-modal__title" id="resultsModalTitle" style="font-size:1.1rem;">Réponses des stagiaires</h2>
+                    </div>
+                </div>
+                <button class="es-modal__close" id="btnCloseResultsModal"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body" style="overflow-y:auto; padding:20px 24px; flex:1;">
+                <div class="es-loader" id="resultsLoader">
+                    <div class="es-spinner"></div>
+                    <span>Chargement des réponses…</span>
+                </div>
+                <div id="resultsEmptyState" class="es-empty hidden">
+                    <div class="es-empty__icon">📝</div>
+                    <div class="es-empty__title">Aucune réponse soumise</div>
+                    <p class="es-empty__text">Aucun stagiaire n'a encore envoyé de réponses pour ce module.</p>
+                </div>
+                <div id="resultsSubmissionsList" class="hidden" style="display:flex; flex-direction:column; gap:16px;"></div>
+            </div>
+            <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3);">
+                <button class="es-btn es-btn--ghost" id="btnCloseResultsModal2">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+     MODAL : Créer / Modifier un module et son Quiz (Admin)
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlayModuleEdit" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:780px; max-height:92vh; display:flex; flex-direction:column;">
+            <div class="es-modal__header" style="border-bottom:1.5px solid var(--clr-surface-3);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div id="moduleEditIconPreview" class="es-formation-icon-wrap" style="width:38px; height:38px; font-size:18px;">
+                        <i class="bi bi-journal-bookmark" id="iconPreviewEl"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;" id="moduleEditBadge">Formateur BAFA</div>
+                        <h2 class="es-modal__title" id="moduleEditModalTitle" style="font-size:1.15rem;">Nouveau module & Quiz</h2>
+                    </div>
+                </div>
+                <button class="es-modal__close" id="btnCloseModuleEdit"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body" style="overflow-y:auto; padding:20px 24px; flex:1;">
+                <form id="moduleEditForm" novalidate>
+                    <input type="hidden" id="editModuleId" value="">
+
+                    <!-- Section 1 : Informations du Module -->
+                    <div style="margin-bottom:20px;">
+                        <h3 style="font-size:0.95rem; font-weight:700; color:var(--clr-text); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                            <span>📦</span> Informations du Module
+                        </h3>
+                        <div style="display:grid; grid-template-columns:100px 1fr; gap:12px; margin-bottom:12px;">
+                            <div class="es-field">
+                                <label class="es-field__label" for="editModuleNum">Numéro</label>
+                                <input class="es-input" type="number" id="editModuleNum" min="1" max="99" required placeholder="1">
+                            </div>
+                            <div class="es-field">
+                                <label class="es-field__label" for="editModuleTitle">Titre du module</label>
+                                <input class="es-input" type="text" id="editModuleTitle" required placeholder="Ex: PSAADRAFRA, Gestion de groupe...">
+                            </div>
+                        </div>
+
+                        <div class="es-field" style="margin-bottom:12px;">
+                            <label class="es-field__label">Icône du module (cliquez pour sélectionner) :</label>
+                            <input type="hidden" id="editModuleIcon" value="bi-journal-bookmark">
+                            
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                <div id="selectedIconBadge" style="display:inline-flex; align-items:center; gap:8px; background:var(--clr-surface-2); border:1.5px solid var(--clr-primary); padding:6px 12px; border-radius:var(--radius-md); font-weight:700; font-size:0.85rem; color:var(--clr-text); white-space:nowrap;">
+                                    <i class="bi bi-journal-bookmark" id="selectedIconPreview" style="font-size:1.15rem; color:var(--clr-primary);"></i>
+                                    <span id="selectedIconLabel">Livre & Étude</span>
+                                </div>
+                                <input type="text" id="iconFilterInput" class="es-input" placeholder="🔍 Filtrer les icônes (ex: jeu, sécurité, bus, nuit, repas...)" style="font-size:0.82rem; padding:6px 10px;">
+                            </div>
+
+                            <!-- Grille visuelle de toutes les icônes thématiques -->
+                            <div id="iconPickerGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(115px, 1fr)); gap:6px; max-height:165px; overflow-y:auto; padding:8px; background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-md);">
+                                <!-- Rempli en JS -->
+                            </div>
+                        </div>
+
+                        <div class="es-field">
+                            <label class="es-field__label" for="editModuleSubtitle">Sous-titre / Thématique</label>
+                            <input class="es-input" type="text" id="editModuleSubtitle" placeholder="Ex: Sigles et repères fondamentaux">
+                        </div>
+
+                        <div class="es-field">
+                            <label class="es-field__label" for="editModuleDesc">Description du module</label>
+                            <textarea class="es-input" id="editModuleDesc" rows="2" placeholder="Objectifs et compétences abordées..."></textarea>
+                        </div>
+                    </div>
+
+                    <hr style="border:none; border-top:1.5px solid var(--clr-surface-3); margin:20px 0;">
+
+                    <!-- Section 2 : Configuration du Quiz -->
+                    <div style="margin-bottom:20px;">
+                        <h3 style="font-size:0.95rem; font-weight:700; color:var(--clr-text); margin-bottom:12px; display:flex; align-items:center; gap:6px;">
+                            <span>⚙️</span> Configuration du Quiz
+                        </h3>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+                            <div class="es-field">
+                                <label class="es-field__label" for="editQuizTitle">Nom du Quiz</label>
+                                <input class="es-input" type="text" id="editQuizTitle" placeholder="Ex: Quiz d'évaluation module 1">
+                            </div>
+                            <div class="es-field">
+                                <label class="es-field__label" for="editMaxAttempts">Nombre de tentatives autorisées</label>
+                                <input class="es-input" type="number" id="editMaxAttempts" min="0" max="10" value="0" placeholder="0 = Illimité">
+                                <span style="font-size:0.75rem; color:var(--clr-text-muted);">0 = Tentatives illimitées</span>
+                            </div>
+                        </div>
+
+                        <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:12px 16px; margin-top:10px;">
+                            <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; gap:12px; margin:0;">
+                                <div>
+                                    <div style="font-weight:600; font-size:0.88rem; color:var(--clr-text);">Afficher les résultats & corrections à la fin</div>
+                                    <div style="font-size:0.78rem; color:var(--clr-text-muted);">Si activé, les stagiaires voient leur score et le corrigé détaillé dès la validation.</div>
+                                </div>
+                                <input type="checkbox" id="editShowResultsAtEnd" style="width:18px; height:18px; accent-color:var(--clr-primary);">
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr style="border:none; border-top:1.5px solid var(--clr-surface-3); margin:20px 0;">
+
+                    <!-- Section 3 : Questions du Quiz -->
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+                            <div>
+                                <h3 style="font-size:0.95rem; font-weight:700; color:var(--clr-text); display:flex; align-items:center; gap:6px;">
+                                    <span>❓</span> Questions du Quiz (<span id="questionsCountLabel">0</span>)
+                                </h3>
+                                <p style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:2px;">Ajoutez des questions QCM avec la bonne réponse sélectionnée ou des questions ouvertes.</p>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnToggleJsonBox" style="font-weight:600;">
+                                    <i class="bi bi-filetype-json"></i> Import / Export JSON
+                                </button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnAddQuestion" style="font-weight:600;">
+                                    <i class="bi bi-plus-circle"></i> Ajouter une question
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Panneau d'import / export JSON rapide -->
+                        <div id="jsonImportPanel" class="hidden" style="background:var(--clr-surface-2); border:1.5px dashed var(--clr-primary); border-radius:var(--radius-md); padding:14px; margin-bottom:16px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                <label style="font-size:0.82rem; font-weight:700; color:var(--clr-primary); display:flex; align-items:center; gap:6px;">
+                                    <i class="bi bi-code-square"></i> Coller du JSON pour insérer rapidement des questions :
+                                </label>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnInsertJsonExample" style="font-size:0.75rem; padding:2px 8px;">
+                                    <i class="bi bi-magic"></i> Insérer exemple
+                                </button>
+                            </div>
+                            <textarea id="jsonQuestionsInput" class="es-input" rows="6" placeholder='[\n  {\n    "type": "qcm",\n    "text": "Énoncé de la question ?",\n    "options": ["Choix 1", "Choix 2", "Choix 3"],\n    "correctIndex": 0\n  },\n  {\n    "type": "text",\n    "text": "Question ouverte...",\n    "hint": "Indice facultatif"\n  }\n]' style="font-family:Consolas, Monaco, monospace; font-size:0.82rem; resize:vertical; background:#ffffff;"></textarea>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px; flex-wrap:wrap; gap:8px;">
+                                <div style="font-size:0.75rem; color:var(--clr-text-muted);">
+                                    Formats acceptés : tableau <code>[...]</code> ou objet <code>{"questions": [...]}</code>.
+                                </div>
+                                <div style="display:flex; gap:8px;">
+                                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnExportJsonQuestions">
+                                        <i class="bi bi-download"></i> Exporter en JSON
+                                    </button>
+                                    <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnApplyJsonImport">
+                                        <i class="bi bi-check2-circle"></i> Charger les questions
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="jsonImportAlert" class="es-alert es-alert--error hidden mt-2" style="font-size:0.78rem; padding:6px 10px;"></div>
+                        </div>
+
+                        <div id="moduleQuestionsEditorList" style="display:flex; flex-direction:column; gap:16px;"></div>
+                    </div>
+
+                    <div class="es-alert es-alert--error hidden mt-3" id="moduleEditErrorAlert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <span id="moduleEditErrorMsg"></span>
+                    </div>
+                </form>
+            </div>
+            <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3); justify-content:space-between;">
+                <div>
+                    <button type="button" class="es-btn es-btn--danger es-btn--sm hidden" id="btnDeleteModule">
+                        <i class="bi bi-trash3"></i> Supprimer ce module
+                    </button>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" class="es-btn es-btn--ghost" id="btnCancelModuleEdit">Annuler</button>
+                    <button type="button" class="es-btn es-btn--primary" id="btnSaveModule">
+                        <i class="bi bi-check-lg"></i>
+                        <span class="es-btn__text">Enregistrer le module</span>
+                        <span class="es-btn__spinner"></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+     MODAL : Paramètres du compte
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlaySettings" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:440px;">
+            <div class="es-modal__header">
+                <h2 class="es-modal__title">Mon compte</h2>
+                <button class="es-modal__close" id="btnCloseSettings"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body">
+                <div class="es-settings-profile">
+                    <div class="es-settings-avatar-wrap">
+                        <img src="" alt="" class="es-settings-avatar hidden" id="settingsAvatarImg">
+                        <div class="es-settings-avatar-placeholder" id="settingsAvatarPlaceholder">
+                            <i class="bi bi-person"></i>
+                        </div>
+                        <button class="es-settings-avatar-edit" id="btnEditAvatar" title="Modifier la photo">
+                            <i class="bi bi-camera"></i>
+                        </button>
+                        <input type="file" id="inputAvatar" class="hidden" accept="image/*">
+                    </div>
+                    <div class="es-settings-info">
+                        <h3 id="settingsUserEmail" style="font-size:0.9rem;font-weight:700;margin-bottom:2px;">...</h3>
+                        <p id="settingsUserRole" style="font-size:0.75rem;color:var(--clr-text-light);text-transform:uppercase;"></p>
+                    </div>
+                </div>
+
+                <form id="settingsForm" style="margin-top:20px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                        <div class="es-field">
+                            <label class="es-field__label" for="settingsFirstName">Prénom</label>
+                            <input class="es-input" type="text" id="settingsFirstName" placeholder="Jean">
+                        </div>
+                        <div class="es-field">
+                            <label class="es-field__label" for="settingsLastName">Nom</label>
+                            <input class="es-input" type="text" id="settingsLastName" placeholder="Dupont">
+                        </div>
+                    </div>
+                    <div class="es-field" style="margin-top:12px;">
+                        <label class="es-field__label" for="settingsBirthdate">Date de naissance</label>
+                        <input class="es-input" type="date" id="settingsBirthdate" required>
+                    </div>
+                </form>
+
+                <div class="es-settings-danger-zone">
+                    <h4 class="es-settings-danger-title">Zone de danger</h4>
+                    <p style="font-size:0.78rem;color:var(--clr-text-light);margin-bottom:12px;">La suppression de votre compte est définitive.</p>
+                    <button class="es-btn es-btn--danger es-btn--sm es-btn--full" id="btnDeleteAccount">
+                        <i class="bi bi-trash3"></i> Supprimer mon compte
+                    </button>
+                </div>
+
+                <div class="es-alert es-alert--error hidden mt-3" id="settingsError">
+                    <i class="bi bi-exclamation-circle"></i> <span id="settingsErrorMsg"></span>
+                </div>
+            </div>
+            <div class="es-modal__footer">
+                <button class="es-btn es-btn--ghost" id="btnCancelSettings">Annuler</button>
+                <button class="es-btn es-btn--primary" id="btnSaveSettings">
+                    <i class="bi bi-check-lg"></i>
+                    <span class="es-btn__text">Enregistrer</span>
+                    <span class="es-btn__spinner"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="es-toast-container" id="toastContainer"></div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="../../assets/js/firebase-config.js"></script>
+    <script src="../../assets/js/colo/espace-auth.js?v=3.5"></script>
+    <script src="../../assets/js/formation/espace-formation-data.js?v=1.1"></script>
+    <script src="../../assets/js/formation/espace-formation.js?v=1.0"></script>
+</body>
+
+</html>

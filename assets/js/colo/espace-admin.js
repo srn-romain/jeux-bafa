@@ -72,12 +72,13 @@ function initAdminTabs() {
             btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 
             const tab = btn.getAttribute('data-tab');
-            ['colos', 'demandes', 'utilisateurs', 'recherche', 'config'].forEach(t => {
+            ['colos', 'demandes', 'utilisateurs', 'formation', 'recherche', 'config'].forEach(t => {
                 document.getElementById(`tab-${t}`)?.classList.toggle('hidden', t !== tab);
             });
             // Charger les données de l'onglet sélectionné à la demande
             if (tab === 'demandes') loadDemandes();
             if (tab === 'utilisateurs') loadUsers();
+            if (tab === 'formation') loadAdminFormationModules();
             if (tab === 'config') loadConfig();
             if (tab === 'recherche') initGlobalSearch();
         });
@@ -263,6 +264,10 @@ async function loadConfig() {
             const checkSignup = document.getElementById('checkAllowSignup');
             if (checkSignup) {
                 checkSignup.checked = globalDoc.data().allowSignup !== false; // true par défaut
+            }
+            const selectSignupRole = document.getElementById('selectSignupDefaultRole');
+            if (selectSignupRole) {
+                selectSignupRole.value = globalDoc.data().signupDefaultRole || 'anim';
             }
             const recapInput = document.getElementById('adminRecapBafaUrl');
             if (recapInput) {
@@ -609,6 +614,20 @@ document.getElementById('checkAllowSignup')?.addEventListener('change', async (e
         console.error("Erreur sauvegarde allowSignup:", err);
         showToast("Erreur lors de la modification.", "error");
         e.target.checked = !val; // revert on error
+    }
+});
+
+document.getElementById('selectSignupDefaultRole')?.addEventListener('change', async (e) => {
+    const val = e.target.value;
+    try {
+        await db.collection('globalSettings').doc('dashboard').set({
+            signupDefaultRole: val,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast(`Rôle par défaut défini sur : ${val === 'stagiaire' ? 'Stagiaire BAFA' : 'Animateur'}`, 'success');
+    } catch (err) {
+        console.error("Erreur sauvegarde signupDefaultRole:", err);
+        showToast("Erreur lors de la modification du rôle par défaut.", "error");
     }
 });
 
@@ -1652,8 +1671,8 @@ async function loadUsers() {
                             🚫 Banni
                         </span>
                     ` : `
-                        <span class="es-badge ${u.role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}">
-                            ${u.role === 'admin' ? '👑 Admin' : '🎨 Anim'}
+                        <span class="es-badge ${u.role === 'admin' ? 'es-badge--admin' : u.role === 'stagiaire' ? 'es-badge--stagiaire' : 'es-badge--anim'}">
+                            ${u.role === 'admin' ? '👑 Admin' : u.role === 'stagiaire' ? '🎓 Stagiaire' : '🎨 Anim'}
                         </span>
                     `}
                 </td>
@@ -1715,6 +1734,8 @@ async function openUserRightsPanel(uid, email, displayName) {
     // Reset
     const banCheckbox = document.getElementById('checkUserBanned');
     if (banCheckbox) banCheckbox.checked = false;
+    const roleSelect = document.getElementById('selectUserRightsRole');
+    if (roleSelect) roleSelect.value = 'anim';
     document.getElementById('userRightsLoader').classList.remove('hidden');
     document.getElementById('userRightsList').classList.add('hidden');
     document.getElementById('userRightsEmpty').classList.add('hidden');
@@ -1722,12 +1743,14 @@ async function openUserRightsPanel(uid, email, displayName) {
 
     openModal('overlayUserRights');
 
-    // Charger le statut banni
+    // Charger le statut banni et le rôle
     db.collection('users').doc(uid).get().then(doc => {
-        if (doc.exists && banCheckbox) {
-            banCheckbox.checked = doc.data().banned === true;
+        if (doc.exists) {
+            const uData = doc.data();
+            if (banCheckbox) banCheckbox.checked = uData.banned === true;
+            if (roleSelect) roleSelect.value = uData.role || 'anim';
         }
-    }).catch(err => console.error("Erreur chargement statut banni:", err));
+    }).catch(err => console.error("Erreur chargement profil utilisateur:", err));
 
     try {
         const espacesSnap = await db.collection('espaces').orderBy('dateDebut', 'desc').get();
@@ -2619,4 +2642,260 @@ function initLikedGamesEvents() {
         });
     }
 }
+
+// ----------------------------------------------------------------
+// CHANGEMENT DE RÔLE UTILISATEUR
+// ----------------------------------------------------------------
+document.getElementById('selectUserRightsRole')?.addEventListener('change', async (e) => {
+    if (!rightsUserId) return;
+    const newRole = e.target.value;
+    try {
+        await db.collection('users').doc(rightsUserId).update({
+            role: newRole
+        });
+        showToast(`Rôle mis à jour : ${newRole === 'admin' ? 'Administrateur' : newRole === 'stagiaire' ? 'Stagiaire BAFA' : 'Animateur'}`, 'success');
+        loadUsers();
+    } catch (err) {
+        console.error("Erreur mise à jour rôle:", err);
+        showToast("Erreur lors de la modification du rôle.", "error");
+    }
+});
+
+// ================================================================
+// GESTION DES 16 MODULES FORMATION BAFA (ADMIN)
+// ================================================================
+let adminFormationModulesMap = {};
+
+async function loadAdminFormationModules() {
+    const loader = document.getElementById('adminFormationLoader');
+    const list = document.getElementById('adminFormationList');
+    if (!list) return;
+
+    if (loader) loader.classList.remove('hidden');
+
+    try {
+        // 1. Récupérer l'état des modules depuis globalSettings/formationModules
+        const settingsDoc = await db.collection('globalSettings').doc('formationModules').get();
+        adminFormationModulesMap = settingsDoc.exists ? (settingsDoc.data().modules || {}) : {};
+
+        // 2. Récupérer les compteurs de réponses soumises pour chaque module
+        const submissionsSnap = await db.collection('formationSubmissions').get();
+        const countsByModule = {};
+        submissionsSnap.forEach(doc => {
+            const d = doc.data();
+            if (d.moduleId) {
+                countsByModule[d.moduleId] = (countsByModule[d.moduleId] || 0) + 1;
+            }
+        });
+
+        if (loader) loader.classList.add('hidden');
+
+        const modules = window.FORMATION_MODULES || [];
+        list.innerHTML = modules.map(m => {
+            const isEnabled = adminFormationModulesMap[m.id]?.enabled === true; // Défaut: disabled/false
+            const subCount = countsByModule[m.id] || 0;
+
+            return `
+            <div class="es-formation-card ${isEnabled ? 'es-formation-card--active' : 'es-formation-card--locked'}">
+                <div>
+                    <div class="es-formation-header">
+                        <div class="es-formation-icon-wrap">
+                            <i class="bi ${m.icon || 'bi-journal-bookmark'}"></i>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span class="es-badge ${isEnabled ? 'es-badge--approved' : 'es-badge--pending'}" style="font-size:0.7rem;">
+                                ${isEnabled ? '🟢 Actif' : '🔒 Verrouillé'}
+                            </span>
+                            <label class="switch" style="transform:scale(0.85); transform-origin:center right;">
+                                <input type="checkbox" class="check-module-toggle" data-module-id="${m.id}" ${isEnabled ? 'checked' : ''}>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="es-formation-num">Module ${m.num < 10 ? '0' + m.num : m.num}</div>
+                    <h3 class="es-formation-title">${escapeHtml(m.title)}</h3>
+                    <p class="es-formation-desc">${escapeHtml(m.description)}</p>
+                </div>
+                <div class="es-formation-footer">
+                    <span style="font-size:0.8rem; font-weight:700; color:${subCount > 0 ? '#8e44ad' : 'var(--clr-text-light)'};">
+                        📝 ${subCount} réponse${subCount > 1 ? 's' : ''}
+                    </span>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-view-module-responses" data-module-id="${m.id}" style="font-size:0.75rem; padding:4px 10px;">
+                        <i class="bi bi-eye"></i> Voir réponses
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
+
+        // Attacher les écouteurs de toggles
+        list.querySelectorAll('.check-module-toggle').forEach(toggle => {
+            toggle.addEventListener('change', async (e) => {
+                const moduleId = e.target.getAttribute('data-module-id');
+                const isChecked = e.target.checked;
+                await updateAdminModuleStatus(moduleId, isChecked);
+            });
+        });
+
+        // Attacher les écouteurs pour voir les réponses
+        list.querySelectorAll('.btn-view-module-responses').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const moduleId = btn.getAttribute('data-module-id');
+                openFormationResultsModal(moduleId);
+            });
+        });
+
+    } catch (err) {
+        if (loader) loader.classList.add('hidden');
+        console.error("loadAdminFormationModules:", err);
+        showToast("Erreur lors du chargement des modules de formation.", "error");
+    }
+}
+
+async function updateAdminModuleStatus(moduleId, enabled) {
+    try {
+        if (!adminFormationModulesMap[moduleId]) adminFormationModulesMap[moduleId] = {};
+        adminFormationModulesMap[moduleId].enabled = enabled;
+
+        await db.collection('globalSettings').doc('formationModules').set({
+            modules: adminFormationModulesMap,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        showToast(enabled ? `Module activé pour les stagiaires.` : `Module verrouillé.`, "success");
+        loadAdminFormationModules();
+    } catch (err) {
+        console.error("updateAdminModuleStatus:", err);
+        showToast("Erreur lors de la mise à jour du module.", "error");
+    }
+}
+
+// Tout déverrouiller / Tout verrouiller
+document.getElementById('btnAdminUnlockAllModules')?.addEventListener('click', async () => {
+    const modules = window.FORMATION_MODULES || [];
+    const newMap = {};
+    modules.forEach(m => { newMap[m.id] = { enabled: true }; });
+    try {
+        await db.collection('globalSettings').doc('formationModules').set({
+            modules: newMap,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast("Tous les 16 modules sont maintenant déverrouillés.", "success");
+        loadAdminFormationModules();
+    } catch (err) {
+        console.error("Unlock all error:", err);
+        showToast("Erreur lors du déverrouillage.", "error");
+    }
+});
+
+document.getElementById('btnAdminLockAllModules')?.addEventListener('click', async () => {
+    const modules = window.FORMATION_MODULES || [];
+    const newMap = {};
+    modules.forEach(m => { newMap[m.id] = { enabled: false }; });
+    try {
+        await db.collection('globalSettings').doc('formationModules').set({
+            modules: newMap,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        showToast("Tous les 16 modules sont maintenant verrouillés.", "success");
+        loadAdminFormationModules();
+    } catch (err) {
+        console.error("Lock all error:", err);
+        showToast("Erreur lors du verrouillage.", "error");
+    }
+});
+
+// Modal de consultation des réponses
+async function openFormationResultsModal(moduleId) {
+    const modal = document.getElementById('overlayFormationResults');
+    if (!modal) return;
+
+    const moduleData = (window.FORMATION_MODULES || []).find(m => m.id === moduleId);
+    if (!moduleData) return;
+
+    document.getElementById('resultsModalNum').textContent = `Module ${moduleData.num < 10 ? '0' + moduleData.num : moduleData.num}`;
+    document.getElementById('resultsModalTitle').textContent = `Réponses — ${moduleData.title}`;
+    const iconEl = document.getElementById('resultsModalIcon');
+    if (iconEl) iconEl.innerHTML = `<i class="bi ${moduleData.icon || 'bi-journal-bookmark'}"></i>`;
+
+    const loader = document.getElementById('resultsLoader');
+    const empty = document.getElementById('resultsEmptyState');
+    const list = document.getElementById('resultsSubmissionsList');
+
+    if (loader) loader.classList.remove('hidden');
+    if (empty) empty.classList.add('hidden');
+    if (list) { list.classList.add('hidden'); list.innerHTML = ''; }
+
+    openModal('overlayFormationResults');
+
+    try {
+        const snap = await db.collection('formationSubmissions')
+            .where('moduleId', '==', moduleId)
+            .orderBy('submittedAt', 'desc')
+            .get();
+
+        if (loader) loader.classList.add('hidden');
+
+        if (snap.empty) {
+            if (empty) empty.classList.remove('hidden');
+            return;
+        }
+
+        const subs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        list.innerHTML = subs.map((sub, sIdx) => {
+            const answersHtml = (moduleData.questions || []).map((q, qIdx) => {
+                const ans = sub.answers ? sub.answers[q.id] : null;
+                let ansDisplay = '';
+                if (q.type === 'qcm') {
+                    const optText = (ans !== null && ans !== undefined && q.options && q.options[ans]) ? q.options[ans] : '<span style="color:var(--clr-danger)">Pas de réponse</span>';
+                    const isCorrect = (ans === q.correctIndex);
+                    ansDisplay = `
+                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.88rem;">
+                        <strong>Réponse choisie :</strong> ${escapeHtml(optText)}
+                        <span style="margin-left:8px; font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                            ${isCorrect ? '✅ Exact' : '❌ Incorrect'}
+                        </span>
+                    </div>`;
+                } else {
+                    ansDisplay = `
+                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:6px; font-size:0.88rem; line-height:1.5; white-space:pre-wrap; color:var(--clr-text);">
+                        ${escapeHtml(ans || 'Pas de texte rédigé.')}
+                    </div>`;
+                }
+
+                return `
+                <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
+                    <div style="font-size:0.75rem; font-weight:800; color:#8e44ad; text-transform:uppercase;">Question ${qIdx + 1}</div>
+                    <div style="font-size:0.88rem; font-weight:700; color:var(--clr-text); margin-top:2px;">${escapeHtml(q.text)}</div>
+                    ${ansDisplay}
+                </div>`;
+            }).join('');
+
+            return `
+            <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <div>
+                        <div style="font-weight:800; font-size:0.95rem; color:var(--clr-text);">${escapeHtml(sub.userName || sub.userEmail || 'Stagiaire')}</div>
+                        <div style="font-size:0.78rem; color:var(--clr-text-muted);">${escapeHtml(sub.userEmail || '')}</div>
+                    </div>
+                    <div style="font-size:0.75rem; font-weight:700; color:var(--clr-text-light); background:var(--clr-surface); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3);">
+                        🕒 ${formatFullDate(sub.submittedAt)}
+                    </div>
+                </div>
+                ${answersHtml}
+            </div>`;
+        }).join('');
+
+        if (list) list.classList.remove('hidden');
+
+    } catch (err) {
+        if (loader) loader.classList.add('hidden');
+        console.error("openFormationResultsModal error:", err);
+        showToast("Erreur lors de la récupération des réponses.", "error");
+    }
+}
+
+document.getElementById('btnCloseResultsModal')?.addEventListener('click', () => closeModal('overlayFormationResults'));
+document.getElementById('btnCloseResultsModal2')?.addEventListener('click', () => closeModal('overlayFormationResults'));
+
 

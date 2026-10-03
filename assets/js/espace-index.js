@@ -28,6 +28,13 @@ db.collection('globalSettings').doc('dashboard').onSnapshot(doc => {
         }
     }
 
+    // Mise à jour dynamique du rôle par défaut d'inscription
+    const defaultRole = (doc.exists && doc.data().signupDefaultRole) ? doc.data().signupDefaultRole : 'anim';
+    const labelEl = document.getElementById('signupRoleLabel');
+    if (labelEl) {
+        labelEl.textContent = (defaultRole === 'stagiaire') ? 'Stagiaire BAFA' : 'Anim';
+    }
+
     // Mise à jour dynamique du titre du tableau de bord
     const titleEl = document.getElementById('pageDashboardTitle');
     if (titleEl) {
@@ -172,14 +179,22 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
             return;
         }
         
-        // 4. Inscription autorisée : créer le document utilisateur dans Firestore
+        // 4. Inscription autorisée : récupérer le rôle par défaut et créer le document utilisateur dans Firestore
+        let assignedRole = 'anim';
+        try {
+            const gDoc = await db.collection('globalSettings').doc('dashboard').get();
+            if (gDoc.exists && gDoc.data().signupDefaultRole) {
+                assignedRole = gDoc.data().signupDefaultRole;
+            }
+        } catch (e) {}
+
         await db.collection('users').doc(cred.user.uid).set({
             email: cred.user.email,
             firstName: firstName,
             lastName: lastName,
             displayName: `${firstName} ${lastName}`,
             birthdate: birthdate,
-            role: 'anim',
+            role: assignedRole,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
@@ -243,6 +258,12 @@ auth.onAuthStateChanged(async (user) => {
 
     if (userData.banned === true) {
         return; // Centralized handler will show ban screen
+    }
+
+    // Si le compte est un stagiaire, redirection directe vers la page dédiée Formation BAFA
+    if (userData.role === 'stagiaire') {
+        window.location.replace('formation.html');
+        return;
     }
     
     // Initialiser les données de l'utilisateur
@@ -431,21 +452,43 @@ function applyRoleSimulation(activeRole) {
     // 1. Mettre à jour la Topbar
     updateTopbarUser(currentUser, activeRole, actualUserData);
 
-    // 2. Afficher/Masquer les options et actions Admin
+    // 2. Initialiser le Switcher d'espaces / Dropdown Brand
+    initSpaceSwitcher();
+
+    // 3. Afficher/Masquer les options et actions Admin
     const adminOnlyElements = document.querySelectorAll('#adminControlsPanel .admin-only-toggle');
     const adminPanel = document.getElementById('adminControlsPanel');
-    if (activeRole === 'admin') {
-        adminOnlyElements.forEach(el => el.classList.remove('hidden'));
-        adminPanel?.classList.remove('es-admin-panel--simulated');
+    const brandChevron = document.getElementById('brandChevron');
+    const brandCurrentSpace = document.getElementById('brandCurrentSpace');
+    const btnBrandDropdown = document.getElementById('btnBrandDropdown');
+
+    if (actualRole === 'admin') {
+        btnBrandDropdown?.classList.add('es-topbar__brand--interactive');
+        brandChevron?.classList.remove('hidden');
+        brandCurrentSpace?.classList.remove('hidden');
+
+        if (activeRole === 'admin') {
+            adminOnlyElements.forEach(el => el.classList.remove('hidden'));
+            adminPanel?.classList.remove('es-admin-panel--simulated');
+        } else {
+            adminOnlyElements.forEach(el => el.classList.add('hidden'));
+            adminPanel?.classList.add('es-admin-panel--simulated');
+        }
     } else {
+        btnBrandDropdown?.classList.remove('es-topbar__brand--interactive');
+        brandChevron?.classList.add('hidden');
+        brandCurrentSpace?.classList.add('hidden');
+        document.getElementById('brandDropdownMenu')?.classList.add('hidden');
+        btnBrandDropdown?.classList.remove('open');
+
         adminOnlyElements.forEach(el => el.classList.add('hidden'));
-        adminPanel?.classList.add('es-admin-panel--simulated');
+        adminPanel?.classList.add('hidden');
     }
 
-    // 3. Mettre à jour le message du directeur
+    // 4. Mettre à jour le message du directeur
     updateDirectorMsgView(activeRole);
 
-    // 4. Recharger la liste des colonies
+    // 5. Charger les colos
     loadColos(currentUser, activeRole);
 }
 
@@ -1063,4 +1106,61 @@ window.filterColosYear = function(year) {
     }
     applyEspaceFilters();
 };
+
+// ================================================================
+// ESPACE SWITCHER (Colos / Stagiaires Navigation)
+// ================================================================
+let spaceSwitcherInitialized = false;
+
+function initSpaceSwitcher() {
+    if (spaceSwitcherInitialized) return;
+    spaceSwitcherInitialized = true;
+
+    const btnBrandDropdown = document.getElementById('btnBrandDropdown');
+    const brandDropdownMenu = document.getElementById('brandDropdownMenu');
+    const menuItemColos = document.getElementById('menuItemColos');
+    const menuItemStagiaires = document.getElementById('menuItemStagiaires');
+
+    // Clic sur le brand pour ouvrir/fermer le menu (réservé admin)
+    btnBrandDropdown?.addEventListener('click', (e) => {
+        if (actualRole !== 'admin') return;
+        e.stopPropagation();
+        const isHidden = brandDropdownMenu?.classList.contains('hidden');
+        if (isHidden) {
+            brandDropdownMenu?.classList.remove('hidden');
+            btnBrandDropdown?.classList.add('open');
+            btnBrandDropdown?.setAttribute('aria-expanded', 'true');
+        } else {
+            brandDropdownMenu?.classList.add('hidden');
+            btnBrandDropdown?.classList.remove('open');
+            btnBrandDropdown?.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    // Sélection de l'espace Colos -> Déjà sur place
+    menuItemColos?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        brandDropdownMenu?.classList.add('hidden');
+        btnBrandDropdown?.classList.remove('open');
+        btnBrandDropdown?.setAttribute('aria-expanded', 'false');
+    });
+
+    // Sélection de l'espace Stagiaires -> Redirection vers formation.html
+    menuItemStagiaires?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        window.location.href = 'formation.html';
+    });
+
+    // Fermeture du dropdown lors d'un clic extérieur
+    document.addEventListener('click', (e) => {
+        if (!brandDropdownMenu || brandDropdownMenu.classList.contains('hidden')) return;
+        const wrap = document.getElementById('brandDropdownWrap');
+        if (wrap && !wrap.contains(e.target)) {
+            brandDropdownMenu.classList.add('hidden');
+            btnBrandDropdown?.classList.remove('open');
+            btnBrandDropdown?.setAttribute('aria-expanded', 'false');
+        }
+    });
+}
+
 

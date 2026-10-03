@@ -154,8 +154,8 @@
                             </button>
                         </div>
                     </div>
-                    <p style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin:8px 0 4px">
-                        ℹ️ Profil <strong style="color:rgba(255,255,255,0.65)">Anim</strong> par défaut — un admin peut
+                    <p id="signupRoleNotice" style="color:rgba(255,255,255,0.4);font-size:0.78rem;margin:8px 0 4px">
+                        ℹ️ Profil <strong id="signupRoleLabel" style="color:rgba(255,255,255,0.75)">Anim</strong> par défaut — un admin peut
                         le modifier.
                     </p>
                     <button type="submit" class="es-btn es-btn--primary es-btn--full es-btn--lg mt-3" id="btnSignup">
@@ -211,9 +211,35 @@
         <!-- Topbar -->
         <header class="es-topbar">
             <div class="es-topbar__inner">
-                <div class="es-topbar__brand">
-                    <div class="es-topbar__brand-icon">🏕️</div>
-                    <span class="brand-label" id="brandName">Dashboard de Nom Prenom</span>
+                <!-- Brand avec Dropdown pour Admin -->
+                <div class="es-brand-dropdown-wrap" id="brandDropdownWrap">
+                    <button type="button" class="es-topbar__brand" id="btnBrandDropdown" aria-haspopup="true" aria-expanded="false" style="border:none; outline:none; background:transparent;">
+                        <div class="es-topbar__brand-icon" id="topbarBrandIcon">🏕️</div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-start; text-align:left;">
+                            <span class="brand-label" id="brandName">Dashboard de Nom Prenom</span>
+                            <span class="brand-sublabel hidden" id="brandCurrentSpace" style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); line-height:1.2;">🏕️ Espace Colos</span>
+                        </div>
+                        <i class="bi bi-chevron-down hidden" id="brandChevron" style="font-size:11px; color:rgba(255,255,255,0.7); margin-left:6px; transition: transform 0.2s ease;"></i>
+                    </button>
+                    <div class="es-brand-menu hidden" id="brandDropdownMenu" role="menu">
+                        <div class="es-brand-menu__header">Changer d'espace</div>
+                        <button type="button" class="es-brand-menu__item active" id="menuItemColos" role="menuitem">
+                            <span class="es-brand-menu__icon">🏕️</span>
+                            <div class="es-brand-menu__info">
+                                <div class="es-brand-menu__title">Espace Colos</div>
+                                <div class="es-brand-menu__desc">Séjours & animateurs</div>
+                            </div>
+                            <i class="bi bi-check2 es-brand-menu__check"></i>
+                        </button>
+                        <button type="button" class="es-brand-menu__item es-brand-menu__item--stagiaire" id="menuItemStagiaires" role="menuitem">
+                            <span class="es-brand-menu__icon">🎓</span>
+                            <div class="es-brand-menu__info">
+                                <div class="es-brand-menu__title">Espace Stagiaires</div>
+                                <div class="es-brand-menu__desc">16 Modules & Quiz BAFA</div>
+                            </div>
+                            <i class="bi bi-check2 es-brand-menu__check hidden"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="es-topbar__actions">
                     <a href="../../index.html" class="es-btn es-btn--sm es-btn--ghost"
@@ -255,117 +281,124 @@
         <!-- Contenu -->
         <main class="es-page">
             <div class="es-container">
-                <div class="es-page__header">
-                    <div>
-                         <h1 class="es-page__title" id="pageDashboardTitle">L' <span style="color:var(--clr-accent);">espace</span> colos <span id="pageDirectorName" style="display:none;"></span></h1>
-                        <p class="es-page__subtitle" id="dashSubtitle">Sélectionne une colonie pour accéder à son espace.</p>
+
+                <!-- ========================================================
+                     SECTION 1 : ESPACE COLOS (ANIMATEURS)
+                     ======================================================== -->
+                <div id="sectionColos">
+                    <div class="es-page__header">
+                        <div>
+                             <h1 class="es-page__title" id="pageDashboardTitle">L' <span style="color:var(--clr-accent);">espace</span> colos <span id="pageDirectorName" style="display:none;"></span></h1>
+                            <p class="es-page__subtitle" id="dashSubtitle">Sélectionne une colonie pour accéder à son espace.</p>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Panneau de Contrôle Administrateur -->
-                <div id="adminControlsPanel" class="es-admin-panel hidden">
-                    <div class="es-admin-panel__inner">
-                        <div id="adminColoActions">
-                            <div class="es-admin-panel__toggles-list">
-                                <!-- Switch Rôle Admin / Anim -->
-                                <div id="adminRoleSwitchBar" class="es-stats-toggle" style="background: rgba(166, 216, 102, 0.12); border-color: rgba(166, 216, 102, 0.25);">
-                                    <span class="es-stats-toggle__label" style="color: #a6d866; font-weight: 700; display: flex; align-items: center; gap: 6px;">
-                                        <i class="bi bi-eye"></i> Vue Anim
-                                    </span>
-                                    <label class="es-switch">
-                                        <input type="checkbox" id="checkRoleToggle">
-                                        <span class="es-slider"></span>
-                                    </label>
-                                </div>
+                    <!-- Panneau de Contrôle Administrateur -->
+                    <div id="adminControlsPanel" class="es-admin-panel hidden">
+                        <div class="es-admin-panel__inner">
+                            <div id="adminColoActions">
+                                <div class="es-admin-panel__toggles-list">
+                                    <!-- Switch Rôle Admin / Anim -->
+                                    <div id="adminRoleSwitchBar" class="es-stats-toggle" style="background: rgba(166, 216, 102, 0.12); border-color: rgba(166, 216, 102, 0.25);">
+                                        <span class="es-stats-toggle__label" style="color: #a6d866; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                            <i class="bi bi-eye"></i> Vue Anim
+                                        </span>
+                                        <label class="es-switch">
+                                            <input type="checkbox" id="checkRoleToggle">
+                                            <span class="es-slider"></span>
+                                        </label>
+                                    </div>
 
-                                <!-- Toggle Tags (En face de Vue Animateur) -->
-                                <div class="es-stats-toggle admin-only-toggle" id="adminTagToggle">
-                                    <span class="es-stats-toggle__label">Tags</span>
-                                    <label class="es-switch">
-                                        <input type="checkbox" id="checkShowTags" checked>
-                                        <span class="es-slider"></span>
-                                    </label>
+                                    <!-- Toggle Tags -->
+                                    <div class="es-stats-toggle admin-only-toggle" id="adminTagToggle">
+                                        <span class="es-stats-toggle__label">Tags</span>
+                                        <label class="es-switch">
+                                            <input type="checkbox" id="checkShowTags" checked>
+                                            <span class="es-slider"></span>
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- Toggle Statistiques -->
+                                    <div class="es-stats-toggle admin-only-toggle" id="adminStatsToggle">
+                                        <span class="es-stats-toggle__label">Statistiques</span>
+                                        <label class="es-switch">
+                                            <input type="checkbox" id="checkShowStats" checked>
+                                            <span class="es-slider"></span>
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- Toggle Organismes -->
+                                    <div class="es-stats-toggle admin-only-toggle" id="adminOrgToggle">
+                                        <span class="es-stats-toggle__label">Organismes</span>
+                                        <label class="es-switch">
+                                            <input type="checkbox" id="checkShowOrg" checked>
+                                            <span class="es-slider"></span>
+                                        </label>
+                                    </div>
                                 </div>
                                 
-                                <!-- Toggle Statistiques -->
-                                <div class="es-stats-toggle admin-only-toggle" id="adminStatsToggle">
-                                    <span class="es-stats-toggle__label">Statistiques</span>
-                                    <label class="es-switch">
-                                        <input type="checkbox" id="checkShowStats" checked>
-                                        <span class="es-slider"></span>
-                                    </label>
-                                </div>
-                                
-                                <!-- Toggle Organismes -->
-                                <div class="es-stats-toggle admin-only-toggle" id="adminOrgToggle">
-                                    <span class="es-stats-toggle__label">Organismes</span>
-                                    <label class="es-switch">
-                                        <input type="checkbox" id="checkShowOrg" checked>
-                                        <span class="es-slider"></span>
-                                    </label>
-                                </div>
+                                <button class="es-btn es-btn--primary es-btn--sm admin-only-toggle" id="btnNewColoIndex">
+                                    <i class="bi bi-plus-lg"></i> <span class="brand-label">Ajouter un espace</span>
+                                </button>
                             </div>
-                            
-                            <button class="es-btn es-btn--primary es-btn--sm admin-only-toggle" id="btnNewColoIndex">
-                                <i class="bi bi-plus-lg"></i> <span class="brand-label">Ajouter un espace</span>
-                            </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Stats globales Admin (Visible uniquement par l'admin) -->
-                <div id="adminGlobalStatsBanner" class="hidden"></div>
-                
-                <!-- Filtre par Année -->
-                <div id="yearFilterBar" class="hidden" style="margin-bottom: 24px;"></div>
+                    <!-- Stats globales Admin (Visible uniquement par l'admin) -->
+                    <div id="adminGlobalStatsBanner" class="hidden"></div>
+                    
+                    <!-- Filtre par Année -->
+                    <div id="yearFilterBar" class="hidden" style="margin-bottom: 24px;"></div>
 
-                <!-- Message du Directeur -->
-                <div id="dashDirectorMsgWrap" class="hidden" style="margin-bottom: 24px;">
-                    <!-- Vue Animateur -->
-                    <div id="dashDirectorMsgAnim" class="hidden"
-                        style="background:rgba(166,216,102,0.12); border:1.5px solid rgba(166,216,102,0.25); border-radius:var(--radius-lg); padding:16px; display:flex; align-items:flex-start; gap:16px;">
-                        <div style="font-size:1.8rem;">📢</div>
-                        <div style="flex:1;">
+                    <!-- Message du Directeur -->
+                    <div id="dashDirectorMsgWrap" class="hidden" style="margin-bottom: 24px;">
+                        <!-- Vue Animateur -->
+                        <div id="dashDirectorMsgAnim" class="hidden"
+                            style="background:rgba(166,216,102,0.12); border:1.5px solid rgba(166,216,102,0.25); border-radius:var(--radius-lg); padding:16px; display:flex; align-items:flex-start; gap:16px;">
+                            <div style="font-size:1.8rem;">📢</div>
+                            <div style="flex:1;">
+                                <div
+                                    style="font-size:0.7rem; text-transform:uppercase; font-weight:800; color:#a6d866; margin-bottom:4px; letter-spacing:0.5px;">
+                                    Message de la direction</div>
+                                <div id="dashDirectorMsgText"
+                                    style="font-size:0.95rem; color:#ffffff; line-height:1.5; white-space: pre-wrap;">
+                                    …</div>
+                            </div>
+                        </div>
+                        <!-- Vue Admin -->
+                        <div id="dashDirectorMsgAdmin" class="hidden"
+                            style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-lg); padding:16px;">
                             <div
-                                style="font-size:0.7rem; text-transform:uppercase; font-weight:800; color:#a6d866; margin-bottom:4px; letter-spacing:0.5px;">
-                                Message de la direction</div>
-                            <div id="dashDirectorMsgText"
-                                style="font-size:0.95rem; color:#ffffff; line-height:1.5; white-space: pre-wrap;">
-                                …</div>
+                                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                                <div
+                                    style="font-size:0.7rem; text-transform:uppercase; font-weight:800; color:var(--clr-text-muted); letter-spacing:0.5px;">
+                                    Édition du message global (Visible par tous vos anims)</div>
+                                <button id="btnSaveDirectorMsg" class="es-btn es-btn--sm es-btn--primary"
+                                    style="padding:4px 12px; font-size:0.75rem;">Enregistrer</button>
+                            </div>
+                            <textarea id="inputDirectorMsg" class="es-input"
+                                style="min-height:80px; font-size:0.9rem; background:rgba(124,120,120,0.2); color:#1b1a1a;"
+                                placeholder="Écris ici un message pour tes animateurs..."></textarea>
                         </div>
                     </div>
-                    <!-- Vue Admin -->
-                    <div id="dashDirectorMsgAdmin" class="hidden"
-                        style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-lg); padding:16px;">
-                        <div
-                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                            <div
-                                style="font-size:0.7rem; text-transform:uppercase; font-weight:800; color:var(--clr-text-muted); letter-spacing:0.5px;">
-                                Édition du message global (Visible par tous vos anims)</div>
-                            <button id="btnSaveDirectorMsg" class="es-btn es-btn--sm es-btn--primary"
-                                style="padding:4px 12px; font-size:0.75rem;">Enregistrer</button>
-                        </div>
-                        <textarea id="inputDirectorMsg" class="es-input"
-                            style="min-height:80px; font-size:0.9rem; background:rgba(124,120,120,0.2); color:#1b1a1a;"
-                            placeholder="Écris ici un message pour tes animateurs..."></textarea>
+
+                    <!-- Loader -->
+                    <div class="es-loader" id="colosLoader">
+                        <div class="es-spinner"></div>
+                        <span>Chargement des espaces…</span>
+                    </div>
+
+                    <!-- Grille des colos -->
+                    <div class="es-colos-grid hidden" id="colosGrid"></div>
+
+                    <!-- État vide -->
+                    <div class="es-empty hidden" id="colosEmpty">
+                        <div class="es-empty__icon">🏕️</div>
+                        <div class="es-empty__title">Aucune colonie disponible</div>
+                        <p class="es-empty__text">Un administrateur doit créer des espaces. Reviens bientôt !</p>
                     </div>
                 </div>
 
-                <!-- Loader -->
-                <div class="es-loader" id="colosLoader">
-                    <div class="es-spinner"></div>
-                    <span>Chargement des espaces…</span>
-                </div>
-
-                <!-- Grille des colos -->
-                <div class="es-colos-grid hidden" id="colosGrid"></div>
-
-                <!-- État vide -->
-                <div class="es-empty hidden" id="colosEmpty">
-                    <div class="es-empty__icon">🏕️</div>
-                    <div class="es-empty__title">Aucune colonie disponible</div>
-                    <p class="es-empty__text">Un administrateur doit créer des espaces. Reviens bientôt !</p>
-                </div>
             </div>
         </main>
 
@@ -489,9 +522,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="../../assets/js/firebase-config.js"></script>
-    <script src="../../assets/js/espace-auth.js?v=3.3"></script>
-    <script src="../../assets/js/espace-colo-form.js?v=3.3"></script>
-    <script src="../../assets/js/espace-index.js?v=3.3"></script>
+    <script src="../../assets/js/colo/espace-auth.js?v=3.4"></script>
+    <script src="../../assets/js/formation/espace-formation-data.js?v=1.0"></script>
+    <script src="../../assets/js/colo/espace-colo-form.js?v=3.4"></script>
+    <script src="../../assets/js/espace-index.js?v=3.4"></script>
 </body>
 
 </html>

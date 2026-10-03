@@ -214,8 +214,16 @@ function updateTopbarUser(user, role, userData = null) {
 
     if (nameEl) nameEl.textContent = displayFirstName;
     if (badgeEl) {
-        badgeEl.textContent = role === 'admin' ? '👑 Admin' : '🎨 Anim';
-        badgeEl.className = `es-badge ${role === 'admin' ? 'es-badge--admin' : 'es-badge--anim'}`;
+        if (role === 'admin') {
+            badgeEl.textContent = '👑 Admin';
+            badgeEl.className = 'es-badge es-badge--admin';
+        } else if (role === 'stagiaire') {
+            badgeEl.textContent = '🎓 Stagiaire';
+            badgeEl.className = 'es-badge es-badge--stagiaire';
+        } else {
+            badgeEl.textContent = '🎨 Anim';
+            badgeEl.className = 'es-badge es-badge--anim';
+        }
     }
     if (avatarEl) {
         if (userData?.photoURL || user.photoURL) {
@@ -563,6 +571,11 @@ async function signInWithGoogle() {
                 gLastName = parts.slice(1).join(' ') || '';
             }
 
+            let assignedRole = 'anim';
+            if (globalDoc.exists && globalDoc.data().signupDefaultRole) {
+                assignedRole = globalDoc.data().signupDefaultRole;
+            }
+
             // Inscription autorisée : créer le document Firestore
             await firebase.firestore().collection('users').doc(user.uid).set({
                 email: user.email,
@@ -570,7 +583,7 @@ async function signInWithGoogle() {
                 firstName: gFirstName,
                 lastName: gLastName,
                 photoURL: user.photoURL || '',
-                role: 'anim',
+                role: assignedRole,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             });
         } else {
