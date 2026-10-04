@@ -188,7 +188,7 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
             }
         } catch (e) {}
 
-        await db.collection('users').doc(cred.user.uid).set({
+        const newUserDoc = {
             email: cred.user.email,
             firstName: firstName,
             lastName: lastName,
@@ -196,7 +196,21 @@ document.getElementById('signupFormEl')?.addEventListener('submit', async (e) =>
             birthdate: birthdate,
             role: assignedRole,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        };
+
+        // Si compte stagiaire, enregistrer uniquement le promoId de la promotion actuelle
+        if (assignedRole === 'stagiaire') {
+            try {
+                const formSetDoc = await db.collection('globalSettings').doc('formation').get();
+                if (formSetDoc.exists && formSetDoc.data().activePromoId) {
+                    newUserDoc.promoId = formSetDoc.data().activePromoId;
+                }
+            } catch (errP) {
+                console.warn("Erreur attachement promoId au stagiaire:", errP);
+            }
+        }
+
+        await db.collection('users').doc(cred.user.uid).set(newUserDoc);
 
         // Si tout est ok, on recharge la page pour charger le dashboard proprement
         window.location.reload();
@@ -271,8 +285,24 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
 
-    // Si le compte est un stagiaire, redirection directe vers la page dédiée Formation BAFA
+    // Si le compte est un stagiaire, vérifier s'il correspond à la promo en cours avant redirection
     if (userData.role === 'stagiaire') {
+        let currentPromoId = window.globalFormationActivePromoId || '';
+        if (!currentPromoId) {
+            try {
+                const formSetDoc = await db.collection('globalSettings').doc('formation').get();
+                if (formSetDoc.exists && formSetDoc.data().activePromoId) {
+                    currentPromoId = formSetDoc.data().activePromoId;
+                    window.globalFormationActivePromoId = currentPromoId;
+                }
+            } catch (e) {}
+        }
+        if (typeof isStagiairePromoMismatch === 'function' && isStagiairePromoMismatch(userData, currentPromoId)) {
+            if (typeof showFormationExpiredScreen === 'function') {
+                showFormationExpiredScreen();
+            }
+            return;
+        }
         window.location.replace('formation.html');
         return;
     }

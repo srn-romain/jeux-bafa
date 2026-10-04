@@ -121,13 +121,37 @@
         <main class="es-page">
             <div class="es-container">
 
-                <div class="es-page__header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div class="es-page__header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
                     <div>
-                        <h1 class="es-page__title">Formation <span style="color:var(--clr-accent);">BAFA</span> – Modules & Quiz</h1>
+                        <h1 class="es-page__title">Formation <span style="color:var(--clr-accent);">BAFA</span> – Modules &amp; Quiz</h1>
                         <p class="es-page__subtitle" id="stagiairesSubtitle">Retrouve tes modules de formation et valide tes quiz au fur et à mesure.</p>
+
+                        <!-- Métadonnées de la session intégrées (Design System BAFA) -->
+                        <div id="formationPromoMetaList" class="hidden" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center;">
+                            <div class="es-colo-date-badge hidden" id="metaPromoDates">
+                                <i class="bi bi-calendar3"></i>
+                                <span id="metaPromoDatesVal">--</span>
+                            </div>
+                            <div class="es-colo-date-badge hidden" id="metaPromoLieu">
+                                <i class="bi bi-geo-alt"></i>
+                                <span id="metaPromoLieuVal">--</span>
+                            </div>
+                            <div class="es-colo-date-badge hidden" id="metaPromoParticipants">
+                                <i class="bi bi-people"></i>
+                                <span id="metaPromoParticipantsVal">--</span>
+                            </div>
+                            <div class="es-colo-date-badge hidden" id="metaPromoOrganisme">
+                                <i class="bi bi-building"></i>
+                                <span id="metaPromoOrganismeVal">--</span>
+                            </div>
+                            <div class="es-colo-date-badge hidden" id="metaPromoFormateur">
+                                <i class="bi bi-person-badge"></i>
+                                <span id="metaPromoFormateurVal">--</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Sélecteur de Promo de Formation -->
+                    <!-- Sélecteur de Promo de Formation (En-tête) -->
                     <div id="formationPromoWidget" style="display: inline-flex; align-items: center; gap: 12px; background: var(--clr-surface-2); border: 1.5px solid var(--clr-surface-3); border-radius: var(--radius-lg); padding: 8px 16px; box-shadow: var(--shadow-sm);">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <span style="font-size: 1.35rem; line-height: 1;" id="promoEmojiIcon">🎓</span>

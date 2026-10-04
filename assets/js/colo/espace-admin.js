@@ -2665,9 +2665,14 @@ document.getElementById('selectUserRightsRole')?.addEventListener('change', asyn
     if (!rightsUserId) return;
     const newRole = e.target.value;
     try {
-        await db.collection('users').doc(rightsUserId).update({
-            role: newRole
-        });
+        const updates = { role: newRole };
+        if (newRole === 'stagiaire') {
+            const fDoc = await db.collection('globalSettings').doc('formation').get();
+            if (fDoc.exists && fDoc.data().activePromoId) {
+                updates.promoId = fDoc.data().activePromoId;
+            }
+        }
+        await db.collection('users').doc(rightsUserId).update(updates);
         showToast(`Rôle mis à jour : ${newRole === 'admin' ? 'Administrateur' : newRole === 'stagiaire' ? 'Stagiaire BAFA' : 'Animateur'}`, 'success');
         loadUsers();
     } catch (err) {

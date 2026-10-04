@@ -1150,6 +1150,28 @@ auth.onAuthStateChanged(async (user) => {
         console.warn("User profile fetch error:", err);
     }
 
+    if (actualUserData && (actualUserData.banned === true || actualUserData.isBanned === true)) {
+        if (typeof showBannedScreen === 'function') showBannedScreen();
+        return;
+    }
+
+    if (actualUserData && actualUserData.role === 'stagiaire') {
+        let currentPromoId = window.globalFormationActivePromoId || '';
+        if (!currentPromoId) {
+            try {
+                const formSetDoc = await db.collection('globalSettings').doc('formation').get();
+                if (formSetDoc.exists && formSetDoc.data().activePromoId) {
+                    currentPromoId = formSetDoc.data().activePromoId;
+                    window.globalFormationActivePromoId = currentPromoId;
+                }
+            } catch (e) {}
+        }
+        if (typeof isStagiairePromoMismatch === 'function' && isStagiairePromoMismatch(actualUserData, currentPromoId)) {
+            if (typeof showFormationExpiredScreen === 'function') showFormationExpiredScreen();
+            return;
+        }
+    }
+
     // Topbar User info
     const nameEl = document.getElementById('quizUserName');
     if (nameEl) nameEl.textContent = actualUserData?.displayName || `${actualUserData?.firstName || ''} ${actualUserData?.lastName || ''}`.trim() || user.email;

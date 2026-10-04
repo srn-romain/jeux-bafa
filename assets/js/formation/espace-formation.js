@@ -290,6 +290,14 @@ async function loadFormationModules() {
 
     if (!grid) return;
 
+    // Blocage strict si stagiaire non relié à la promo active
+    if (actualRole === 'stagiaire' && typeof isStagiairePromoMismatch === 'function' && isStagiairePromoMismatch(actualUserData, globalActivePromoId || window.globalFormationActivePromoId)) {
+        if (typeof showFormationExpiredScreen === 'function') {
+            showFormationExpiredScreen();
+        }
+        return;
+    }
+
     if (loader) loader.classList.remove('hidden');
     if (grid) grid.classList.add('hidden');
 
@@ -2042,6 +2050,19 @@ function initFormationGlobalSettingsListener() {
                 if (data.activePromoEmoji !== undefined) {
                     globalActivePromoEmoji = data.activePromoEmoji;
                 }
+                globalActivePromoData = {
+                    id: data.activePromoId || '',
+                    nom: data.activePromoNom || '',
+                    emoji: data.activePromoEmoji || '🎓',
+                    organisme: data.activePromoOrganisme || '',
+                    lieu: data.activePromoLieu || '',
+                    ville: data.activePromoVille || '',
+                    dateDebut: data.activePromoDateDebut || '',
+                    dateFin: data.activePromoDateFin || '',
+                    nbParticipants: data.activePromoNbParticipants || '',
+                    directeur: data.activePromoDirecteur || '',
+                    stageType: data.activePromoStageType || ''
+                };
                 localStorage.setItem('offline_formation_settings', JSON.stringify(data));
                 updatePromoHeaderUI();
             }
@@ -3508,6 +3529,43 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
 
+    // Récupérer la promotion active actuelle
+    let currentPromoId = '';
+    try {
+        const formSetDoc = await db.collection('globalSettings').doc('formation').get();
+        if (formSetDoc.exists && formSetDoc.data().activePromoId) {
+            currentPromoId = formSetDoc.data().activePromoId;
+            globalActivePromoId = currentPromoId;
+            window.globalFormationActivePromoId = currentPromoId;
+        }
+    } catch (errP) {
+        console.warn("Erreur chargement activePromoId:", errP);
+    }
+
+    // Si compte stagiaire sans promoId sur son profil, vérifier s'il a un espace approuvé dans accessRequests
+    if (userData.role === 'stagiaire' && !userData.promoId && navigator.onLine) {
+        try {
+            const reqSnap = await db.collection('accessRequests')
+                .where('userId', '==', user.uid)
+                .where('status', '==', 'approved').get();
+            if (!reqSnap.empty) {
+                const origPromoId = reqSnap.docs[0].data().espaceId;
+                if (origPromoId) {
+                    userData.promoId = origPromoId;
+                    await db.collection('users').doc(user.uid).update({ promoId: origPromoId });
+                }
+            }
+        } catch (e) {}
+    }
+
+    // Vérifier si le compte stagiaire correspond exactement à la promo en cours
+    if (userData.role === 'stagiaire' && isStagiairePromoMismatch(userData, currentPromoId)) {
+        if (typeof showFormationExpiredScreen === 'function') {
+            showFormationExpiredScreen();
+        }
+        return;
+    }
+
     currentUser = user;
     actualRole = userData.role || 'stagiaire';
     actualUserData = userData;
@@ -3583,8 +3641,41 @@ let currentSelectedPromoId = localStorage.getItem('formation_selected_promo_id')
 let globalActivePromoId = '';
 let globalActivePromoNom = '';
 let globalActivePromoEmoji = '🎓';
+let globalActivePromoData = null;
 let userApprovedPromo = null;
 let formationPromosList = [];
+
+function formatStageType(type) {
+    if (type === 'base') return 'Formation Générale BAFA (Base)';
+    if (type === 'appro') return 'Session d\'Approfondissement BAFA';
+    if (type === 'qualif') return 'Session de Qualification BAFA';
+    return 'Session de formation BAFA';
+}
+
+function computePromoStatus(dateDebut, dateFin) {
+    if (!dateDebut) return { label: 'Session active', cls: '' };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(dateDebut);
+    start.setHours(0, 0, 0, 0);
+
+    if (dateFin) {
+        const end = new Date(dateFin);
+        end.setHours(23, 59, 59, 999);
+        if (today > end) {
+            return { label: 'Session clôturée', cls: 'es-promo-banner__status--ended' };
+        }
+    }
+
+    const diffTime = start.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 0) {
+        return { label: `Débute dans ${diffDays} j`, cls: 'es-promo-banner__status--upcoming' };
+    } else {
+        return { label: 'Session en cours', cls: '' };
+    }
+}
 
 async function loadFormationPromos() {
     formationPromosList = [];
@@ -3616,15 +3707,29 @@ async function loadFormationPromos() {
             if (sData.activePromoId !== undefined) globalActivePromoId = sData.activePromoId || '';
             if (sData.activePromoNom !== undefined) globalActivePromoNom = sData.activePromoNom || '';
             if (sData.activePromoEmoji !== undefined) globalActivePromoEmoji = sData.activePromoEmoji || '🎓';
+            globalActivePromoData = {
+                id: sData.activePromoId || '',
+                nom: sData.activePromoNom || '',
+                emoji: sData.activePromoEmoji || '🎓',
+                organisme: sData.activePromoOrganisme || '',
+                lieu: sData.activePromoLieu || '',
+                ville: sData.activePromoVille || '',
+                dateDebut: sData.activePromoDateDebut || '',
+                dateFin: sData.activePromoDateFin || '',
+                nbParticipants: sData.activePromoNbParticipants || '',
+                directeur: sData.activePromoDirecteur || '',
+                stageType: sData.activePromoStageType || ''
+            };
         }
     } catch (e) {}
 
-    // Si on a un ID global mais pas encore de nom explicite, le retrouver dans la liste des espaces
-    if (globalActivePromoId && !globalActivePromoNom) {
+    // Si on a un ID global mais pas encore de données complètes, les retrouver dans la liste des espaces
+    if (globalActivePromoId) {
         const found = allEspacesList.find(p => p.id === globalActivePromoId);
         if (found) {
             globalActivePromoNom = found.nom || '';
             globalActivePromoEmoji = found.emoji || '🎓';
+            globalActivePromoData = found;
         }
     }
 
@@ -3640,16 +3745,20 @@ async function loadFormationPromos() {
                     // Chercher d'abord dans les formations puis dans tous les espaces
                     const matched = allEspacesList.find(p => p.id === eId);
                     if (matched) {
-                        userApprovedPromo = {
-                            id: matched.id,
-                            nom: matched.nom,
-                            emoji: matched.emoji || '🎓'
-                        };
+                        userApprovedPromo = matched;
                         break;
                     }
                 }
             }
         } catch (e) {}
+
+        // Si le stagiaire a un promoId rattaché à son profil
+        if (!userApprovedPromo && actualUserData && actualUserData.promoId) {
+            const matched = allEspacesList.find(p => p.id === actualUserData.promoId);
+            if (matched) {
+                userApprovedPromo = matched;
+            }
+        }
     }
 
     updatePromoHeaderUI();
@@ -3669,43 +3778,120 @@ function updatePromoHeaderUI() {
 
     // Déterminer quelle promotion afficher :
     // 1. Session approuvée spécifique du stagiaire
-    // 2. Nom de promotion globale synchronisé
+    // 2. Promotion globale synchronisée (objet complet)
     // 3. Promotion globale par ID
     // 4. Choix manuel local (admin)
     // 5. Si une seule promotion existe sur la plateforme
-    let promoNomToDisplay = '';
-    let promoEmojiToDisplay = '🎓';
+    let activePromoObj = null;
 
     if (userApprovedPromo) {
-        promoNomToDisplay = userApprovedPromo.nom;
-        promoEmojiToDisplay = userApprovedPromo.emoji || '🎓';
-    } else if (globalActivePromoNom) {
-        promoNomToDisplay = globalActivePromoNom;
-        promoEmojiToDisplay = globalActivePromoEmoji || '🎓';
+        activePromoObj = userApprovedPromo;
+    } else if (globalActivePromoData && (globalActivePromoData.nom || globalActivePromoData.id)) {
+        activePromoObj = globalActivePromoData;
     } else if (globalActivePromoId) {
-        const found = formationPromosList.find(p => p.id === globalActivePromoId);
-        if (found) {
-            promoNomToDisplay = found.nom;
-            promoEmojiToDisplay = found.emoji || '🎓';
-        }
+        activePromoObj = formationPromosList.find(p => p.id === globalActivePromoId) || null;
     } else if (currentSelectedPromoId) {
-        const found = formationPromosList.find(p => p.id === currentSelectedPromoId);
-        if (found) {
-            promoNomToDisplay = found.nom;
-            promoEmojiToDisplay = found.emoji || '🎓';
-        }
+        activePromoObj = formationPromosList.find(p => p.id === currentSelectedPromoId) || null;
     } else if (formationPromosList.length === 1) {
-        promoNomToDisplay = formationPromosList[0].nom;
-        promoEmojiToDisplay = formationPromosList[0].emoji || '🎓';
+        activePromoObj = formationPromosList[0];
     }
 
-    if (promoNomToDisplay) {
-        nameEl.textContent = promoNomToDisplay;
-        if (emojiEl) emojiEl.textContent = promoEmojiToDisplay;
+    if (activePromoObj && activePromoObj.nom) {
+        nameEl.textContent = activePromoObj.nom;
+        if (emojiEl) emojiEl.textContent = activePromoObj.emoji || '🎓';
     } else {
         nameEl.textContent = (actualRole === 'stagiaire') ? "Formation BAFA" : "Toutes les promotions";
         if (emojiEl) emojiEl.textContent = "🎓";
     }
+
+    // Mettre à jour les métadonnées de la promotion dans l'en-tête (Design System BAFA)
+    updatePromoHeaderMeta(activePromoObj);
+}
+
+function updatePromoHeaderMeta(promo) {
+    const metaContainer = document.getElementById('formationPromoMetaList');
+    if (!metaContainer) return;
+
+    if (!promo || !promo.nom) {
+        metaContainer.classList.add('hidden');
+        return;
+    }
+
+    let hasAnyMeta = false;
+
+    // 1. Dates
+    const metaDates = document.getElementById('metaPromoDates');
+    const valDates = document.getElementById('metaPromoDatesVal');
+    if (metaDates && valDates) {
+        if (promo.dateDebut && promo.dateFin) {
+            valDates.textContent = `${formatDate(promo.dateDebut)} → ${formatDate(promo.dateFin)}`;
+            metaDates.classList.remove('hidden');
+            hasAnyMeta = true;
+        } else if (promo.dateDebut) {
+            valDates.textContent = `Dès le ${formatDate(promo.dateDebut)}`;
+            metaDates.classList.remove('hidden');
+            hasAnyMeta = true;
+        } else {
+            metaDates.classList.add('hidden');
+        }
+    }
+
+    // 2. Lieu / Centre
+    const metaLieu = document.getElementById('metaPromoLieu');
+    const valLieu = document.getElementById('metaPromoLieuVal');
+    const lieuStr = [promo.lieu, promo.ville].filter(Boolean).join(', ');
+    if (metaLieu && valLieu) {
+        if (lieuStr) {
+            valLieu.textContent = lieuStr;
+            metaLieu.classList.remove('hidden');
+            hasAnyMeta = true;
+        } else {
+            metaLieu.classList.add('hidden');
+        }
+    }
+
+    // 3. Effectif
+    const metaEffectif = document.getElementById('metaPromoParticipants');
+    const valEffectif = document.getElementById('metaPromoParticipantsVal');
+    if (metaEffectif && valEffectif) {
+        const nb = parseInt(promo.nbParticipants, 10);
+        if (!isNaN(nb) && nb > 0) {
+            valEffectif.textContent = `${nb} stagiaire${nb > 1 ? 's' : ''}`;
+            metaEffectif.classList.remove('hidden');
+            hasAnyMeta = true;
+        } else {
+            metaEffectif.classList.add('hidden');
+        }
+    }
+
+    // 4. Organisme
+    const metaOrganisme = document.getElementById('metaPromoOrganisme');
+    const valOrganisme = document.getElementById('metaPromoOrganismeVal');
+    if (metaOrganisme && valOrganisme) {
+        if (promo.organisme) {
+            valOrganisme.textContent = promo.organisme;
+            metaOrganisme.classList.remove('hidden');
+            hasAnyMeta = true;
+        } else {
+            metaOrganisme.classList.add('hidden');
+        }
+    }
+
+    // 5. Formateur
+    const metaFormateur = document.getElementById('metaPromoFormateur');
+    const valFormateur = document.getElementById('metaPromoFormateurVal');
+    const formateurNom = promo.directeur || promo.createurNom || '';
+    if (metaFormateur && valFormateur) {
+        if (formateurNom) {
+            valFormateur.textContent = `Formateur : ${formateurNom}`;
+            metaFormateur.classList.remove('hidden');
+            hasAnyMeta = true;
+        } else {
+            metaFormateur.classList.add('hidden');
+        }
+    }
+
+    metaContainer.classList.toggle('hidden', !hasAnyMeta);
 }
 
 let promoModalEventsInitialized = false;
@@ -3747,6 +3933,19 @@ function initPromoModalEvents() {
         const promo = formationPromosList.find(p => p.id === val);
         globalActivePromoNom = promo ? (promo.nom || '') : '';
         globalActivePromoEmoji = promo ? (promo.emoji || '🎓') : '🎓';
+        globalActivePromoData = promo ? {
+            id: promo.id,
+            nom: promo.nom || '',
+            emoji: promo.emoji || '🎓',
+            organisme: promo.organisme || '',
+            lieu: promo.lieu || '',
+            ville: promo.ville || '',
+            dateDebut: promo.dateDebut || '',
+            dateFin: promo.dateFin || '',
+            nbParticipants: promo.nbParticipants || '',
+            directeur: promo.directeur || promo.createurNom || '',
+            stageType: promo.stageType || ''
+        } : null;
 
         if (val) {
             localStorage.setItem('formation_selected_promo_id', val);
@@ -3763,6 +3962,14 @@ function initPromoModalEvents() {
                     activePromoId: val || '',
                     activePromoNom: globalActivePromoNom,
                     activePromoEmoji: globalActivePromoEmoji,
+                    activePromoOrganisme: promo?.organisme || '',
+                    activePromoLieu: promo?.lieu || '',
+                    activePromoVille: promo?.ville || '',
+                    activePromoDateDebut: promo?.dateDebut || '',
+                    activePromoDateFin: promo?.dateFin || '',
+                    activePromoNbParticipants: promo?.nbParticipants || '',
+                    activePromoDirecteur: promo?.directeur || promo?.createurNom || '',
+                    activePromoStageType: promo?.stageType || '',
                     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true });
             } catch (err) {

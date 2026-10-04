@@ -597,8 +597,7 @@ async function signInWithGoogle() {
                 assignedRole = globalDoc.data().signupDefaultRole;
             }
 
-            // Inscription autorisée : créer le document Firestore
-            await firebase.firestore().collection('users').doc(user.uid).set({
+            const newUserDoc = {
                 email: user.email,
                 displayName: user.displayName || `${gFirstName} ${gLastName}`.trim(),
                 firstName: gFirstName,
@@ -606,7 +605,22 @@ async function signInWithGoogle() {
                 photoURL: user.photoURL || '',
                 role: assignedRole,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            };
+
+            // Si compte stagiaire, rattacher uniquement l'identifiant de la promotion active
+            if (assignedRole === 'stagiaire') {
+                try {
+                    const formSetDoc = await firebase.firestore().collection('globalSettings').doc('formation').get();
+                    if (formSetDoc.exists && formSetDoc.data().activePromoId) {
+                        newUserDoc.promoId = formSetDoc.data().activePromoId;
+                    }
+                } catch (errP) {
+                    console.warn("Erreur attachement promoId au stagiaire:", errP);
+                }
+            }
+
+            // Inscription autorisée : créer le document Firestore
+            await firebase.firestore().collection('users').doc(user.uid).set(newUserDoc);
         } else {
             // UTILISATEUR EXISTANT : Connexion normale
             const currentData = doc.data();
@@ -795,42 +809,243 @@ function showBannedScreen() {
 }
 window.showBannedScreen = showBannedScreen;
 
-// Écouteur global pour intercepter et bloquer en temps réel si banni
+// ----------------------------------------------------------------
+// VÉRIFICATION DE LA PROMO DU COMPTE STAGIAIRE (COMPARAISON ID DIRECTE)
+// ----------------------------------------------------------------
+let globalFormationActivePromoId = '';
+
+try {
+    firebase.firestore().collection('globalSettings').doc('formation').onSnapshot(doc => {
+        if (doc.exists) {
+            globalFormationActivePromoId = doc.data().activePromoId || '';
+            window.globalFormationActivePromoId = globalFormationActivePromoId;
+
+            // Re-vérifier l'accès si un stagiaire est connecté
+            if (window.currentAuthUserData && window.currentAuthUserData.role === 'stagiaire') {
+                if (isStagiairePromoMismatch(window.currentAuthUserData, globalFormationActivePromoId)) {
+                    showFormationExpiredScreen();
+                } else {
+                    const container = document.getElementById('banScreenContainer');
+                    if (container && !window.currentAuthUserData.banned && !window.currentAuthUserData.isBanned) {
+                        container.remove();
+                        document.body.style.overflow = '';
+                    }
+                }
+            }
+        }
+    });
+} catch (e) {}
+
+function isStagiairePromoMismatch(userData, activePromoId) {
+    if (!userData || userData.role !== 'stagiaire') return false;
+    if (userData.role === 'admin') return false;
+
+    const currentPromoId = (activePromoId !== undefined && activePromoId !== null)
+        ? activePromoId
+        : (window.globalFormationActivePromoId || globalFormationActivePromoId || '');
+    
+    const userPromo = userData.promoId || userData.espaceId || userData.promotionId || userData.promo || '';
+    
+    // Le stagiaire n'a accès que si une promo active est définie ET que son compte correspond exactement à cet identifiant
+    if (!currentPromoId || !userPromo || userPromo !== currentPromoId) {
+        return true;
+    }
+    
+    return false;
+}
+window.isStagiairePromoMismatch = isStagiairePromoMismatch;
+
+function showFormationExpiredScreen() {
+    // Masquer loaders et contenus
+    document.getElementById('pageLoader')?.classList.add('hidden');
+    document.getElementById('adminLoader')?.classList.add('hidden');
+    document.getElementById('colosLoader')?.classList.add('hidden');
+    document.getElementById('formationLoader')?.classList.add('hidden');
+    document.getElementById('dashOfflineBanner')?.classList.add('hidden');
+
+    document.getElementById('dashboardView')?.classList.add('hidden');
+    document.getElementById('coloContent')?.classList.add('hidden');
+    document.getElementById('formationView')?.classList.add('hidden');
+    document.getElementById('adminContent')?.classList.add('hidden');
+    document.getElementById('accessDenied')?.classList.add('hidden');
+    document.getElementById('formationModulesGrid')?.classList.add('hidden');
+    document.getElementById('quizContainer')?.classList.add('hidden');
+
+    if (!document.getElementById('ban-screen-styles')) {
+        const style = document.createElement('style');
+        style.id = 'ban-screen-styles';
+        style.innerHTML = `
+            .es-ban-screen {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: var(--clr-bg-dark, #121212);
+                color: var(--clr-text, #ffffff);
+                z-index: 999999;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .es-ban-card {
+                background: var(--clr-surface-2, #1e1e1e);
+                border: 1px solid var(--clr-surface-3, rgba(255,255,255,0.08));
+                padding: 40px;
+                border-radius: var(--radius-lg, 16px);
+                max-width: 480px;
+                width: 100%;
+                text-align: center;
+                box-shadow: var(--shadow-lg, 0 10px 25px rgba(0,0,0,0.5));
+                animation: es-ban-fadein 0.4s ease-out;
+            }
+            @keyframes es-ban-fadein {
+                from { opacity: 0; transform: translateY(20px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            .es-ban-icon {
+                font-size: 3.5rem;
+                margin-bottom: 24px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .es-ban-icon--expired {
+                color: var(--clr-accent, #f39c12);
+            }
+            .es-ban-title {
+                font-size: 1.5rem;
+                font-weight: 800;
+                margin-top: 0;
+                margin-bottom: 16px;
+                color: var(--clr-text, #ffffff);
+            }
+            .es-ban-message {
+                font-size: 0.95rem;
+                line-height: 1.6;
+                color: var(--clr-text-muted, rgba(255,255,255,0.7));
+                margin-bottom: 30px;
+            }
+            .es-ban-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 12px;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const expiredHtml = `
+        <div class="es-ban-screen">
+            <div class="es-ban-card">
+                <div class="es-ban-icon es-ban-icon--expired">
+                    <i class="bi bi-mortarboard-fill"></i>
+                </div>
+                <h1 class="es-ban-title">Formation terminée</h1>
+                <p class="es-ban-message">
+                    Votre compte est désactivé car votre session de formation est terminée.<br><br>
+                    Veuillez contacter l'administrateur si vous pensez qu'il s'agit d'une erreur.
+                </p>
+                <div class="es-ban-actions">
+                    <button id="btnExpiredLogout" class="es-btn es-btn--primary es-btn--full es-btn--lg" style="background: var(--clr-accent, #f39c12); border-color: var(--clr-accent, #f39c12); color: #121212; font-weight: 700;">
+                        <i class="bi bi-box-arrow-right"></i> Déconnexion
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    let container = document.getElementById('banScreenContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'banScreenContainer';
+        document.body.appendChild(container);
+    }
+    container.innerHTML = expiredHtml;
+    document.body.style.overflow = 'hidden';
+
+    document.getElementById('btnExpiredLogout')?.addEventListener('click', async () => {
+        await firebase.auth().signOut();
+        window.location.reload();
+    });
+}
+window.showFormationExpiredScreen = showFormationExpiredScreen;
+
+// Écouteur global pour intercepter et bloquer en temps réel si banni ou promo inactive
 firebase.auth().onAuthStateChanged((user) => {
     if (user) {
         if (window.currentUserUnsub) window.currentUserUnsub();
-        window.currentUserUnsub = firebase.firestore().collection('users').doc(user.uid).onSnapshot(doc => {
+        window.currentUserUnsub = firebase.firestore().collection('users').doc(user.uid).onSnapshot(async (doc) => {
             if (doc.exists) {
                 const userData = doc.data();
+                window.currentAuthUserData = userData;
+
                 if (userData.banned === true || userData.isBanned === true) {
                     showBannedScreen();
-                } else {
-                    // Si le membre a été débanni en temps réel, on supprime l'écran de ban s'il existe
-                    const container = document.getElementById('banScreenContainer');
-                    if (container) {
-                        container.remove();
-                        document.body.style.overflow = '';
-                        window.location.reload(); // Recharger pour restaurer l'état
+                    return;
+                }
+
+                if (userData.role === 'stagiaire') {
+                    // S'assurer de charger l'activePromoId le plus récent
+                    if (!window.globalFormationActivePromoId) {
+                        try {
+                            const setDoc = await firebase.firestore().collection('globalSettings').doc('formation').get();
+                            if (setDoc.exists && setDoc.data().activePromoId) {
+                                globalFormationActivePromoId = setDoc.data().activePromoId;
+                                window.globalFormationActivePromoId = globalFormationActivePromoId;
+                            }
+                        } catch (e) {}
                     }
 
-                    // VÉRIFIER SI LE COMPTE EST INCOMPLET
-                    if (!userData.firstName || !userData.lastName || !userData.birthdate) {
-                        setTimeout(() => {
-                            const overlay = document.getElementById('overlaySettings');
-                            if (overlay && overlay.classList.contains('hidden')) {
-                                window.triggerOpenSettings();
-                                showToast("Merci de compléter ton profil (Prénom, Nom et Date de naissance) pour continuer.", "default", 8000);
+                    // Si pas de promoId explicite sur le doc, chercher dans accessRequests
+                    if (!userData.promoId && navigator.onLine) {
+                        try {
+                            const reqSnap = await firebase.firestore().collection('accessRequests')
+                                .where('userId', '==', user.uid)
+                                .where('status', '==', 'approved').get();
+                            if (!reqSnap.empty) {
+                                const origPromoId = reqSnap.docs[0].data().espaceId;
+                                if (origPromoId) {
+                                    userData.promoId = origPromoId;
+                                }
                             }
-                        }, 500);
+                        } catch (e) {}
                     }
+
+                    if (isStagiairePromoMismatch(userData, window.globalFormationActivePromoId)) {
+                        showFormationExpiredScreen();
+                        return;
+                    }
+                }
+
+                // Si le membre n'est ni banni ni expiré, supprimer l'écran keeping s'il existe
+                const container = document.getElementById('banScreenContainer');
+                if (container) {
+                    container.remove();
+                    document.body.style.overflow = '';
+                }
+
+                // VÉRIFIER SI LE COMPTE EST INCOMPLET
+                if (!userData.firstName || !userData.lastName || !userData.birthdate) {
+                    setTimeout(() => {
+                        const overlay = document.getElementById('overlaySettings');
+                        if (overlay && overlay.classList.contains('hidden')) {
+                            window.triggerOpenSettings();
+                            showToast("Merci de compléter ton profil (Prénom, Nom et Date de naissance) pour continuer.", "default", 8000);
+                        }
+                    }, 500);
                 }
             }
         }, err => {
             if (err.code !== 'permission-denied') {
-                console.error("Erreur écoute statut ban:", err);
+                console.error("Erreur écoute statut ban/expiration:", err);
             }
         });
     } else {
+        window.currentAuthUserData = null;
         if (window.currentUserUnsub) {
             window.currentUserUnsub();
             window.currentUserUnsub = null;

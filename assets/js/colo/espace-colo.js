@@ -310,6 +310,25 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
 
+    if (userData && userData.role === 'stagiaire') {
+        let currentPromoId = window.globalFormationActivePromoId || '';
+        if (!currentPromoId) {
+            try {
+                const formSetDoc = await db.collection('globalSettings').doc('formation').get();
+                if (formSetDoc.exists && formSetDoc.data().activePromoId) {
+                    currentPromoId = formSetDoc.data().activePromoId;
+                    window.globalFormationActivePromoId = currentPromoId;
+                }
+            } catch (e) {}
+        }
+        if (typeof isStagiairePromoMismatch === 'function' && isStagiairePromoMismatch(userData, currentPromoId)) {
+            if (typeof showFormationExpiredScreen === 'function') {
+                showFormationExpiredScreen();
+            }
+            return;
+        }
+    }
+
     // Synchroniser les espaces épinglés (pinnedColos) avec Firestore
     if (userData && userData.pinnedColos) {
         localStorage.setItem('pinnedColos', JSON.stringify(userData.pinnedColos));
