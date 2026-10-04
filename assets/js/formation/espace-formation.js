@@ -2069,6 +2069,7 @@ document.getElementById('checkShowFormationTags')?.addEventListener('change', as
 document.getElementById('checkFormationRoleToggle')?.addEventListener('change', (e) => {
     isSimulatedStagiaireRole = e.target.checked;
     showToast(isSimulatedStagiaireRole ? "Simulation : Vue Stagiaire activée." : "Vue Formateur / Admin restaurée.", "info");
+    updatePromoHeaderUI();
     loadFormationModules();
 });
 
@@ -3557,6 +3558,141 @@ auth.onAuthStateChanged(async (user) => {
     // Initialiser les réglages globaux (tags, stats, etc.)
     initFormationGlobalSettingsListener();
 
+    // Initialiser le système de Promo de Formation
+    initPromoModalEvents();
+    loadFormationPromos();
+
     // Charger les modules de formation
     loadFormationModules();
 });
+
+// ----------------------------------------------------------------
+// SYSTÈME DE PROMOTION DE FORMATION (Synchronisation Espace Colos)
+// ----------------------------------------------------------------
+let currentSelectedPromoId = localStorage.getItem('formation_selected_promo_id') || '';
+let formationPromosList = [];
+
+async function loadFormationPromos() {
+    formationPromosList = [];
+    try {
+        const snap = await db.collection('espaces').where('isFormation', '==', true).get();
+        if (!snap.empty) {
+            formationPromosList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        }
+    } catch (err) {
+        console.warn("Erreur chargement promos depuis Firestore:", err);
+        // Fallback local storage
+        try {
+            const cached = localStorage.getItem('offline_espaces_list');
+            if (cached) {
+                const list = JSON.parse(cached);
+                formationPromosList = list.filter(e => e.isFormation === true);
+            }
+        } catch (e) {}
+    }
+
+    // Si rôle stagiaire et aucune promo sélectionnée, essayer d'auto-sélectionner son espace de formation approuvé
+    if (!currentSelectedPromoId && actualRole === 'stagiaire' && currentUser) {
+        try {
+            const reqSnap = await db.collection('accessRequests')
+                .where('userId', '==', currentUser.uid)
+                .where('status', '==', 'approved').get();
+            if (!reqSnap.empty) {
+                for (const reqDoc of reqSnap.docs) {
+                    const eId = reqDoc.data().espaceId;
+                    const matched = formationPromosList.find(p => p.id === eId);
+                    if (matched) {
+                        currentSelectedPromoId = matched.id;
+                        localStorage.setItem('formation_selected_promo_id', currentSelectedPromoId);
+                        break;
+                    }
+                }
+            }
+        } catch (e) {}
+    }
+
+    updatePromoHeaderUI();
+}
+
+function updatePromoHeaderUI() {
+    const nameEl = document.getElementById('promoCurrentName');
+    const emojiEl = document.getElementById('promoEmojiIcon');
+    const btnChange = document.getElementById('btnChangePromo');
+    if (!nameEl) return;
+
+    // Seul l'administrateur formateur réel (sans simulation stagiaire) a le bouton pour modifier
+    const canEditPromo = (actualRole === 'admin' && !isSimulatedStagiaireRole);
+    if (btnChange) {
+        btnChange.classList.toggle('hidden', !canEditPromo);
+    }
+
+    if (!currentSelectedPromoId) {
+        nameEl.textContent = (actualRole === 'stagiaire') ? "Session en cours" : "Toutes les promotions";
+        if (emojiEl) emojiEl.textContent = "🎓";
+        return;
+    }
+
+    const promo = formationPromosList.find(p => p.id === currentSelectedPromoId);
+    if (promo) {
+        nameEl.textContent = promo.nom || 'Session de formation';
+        if (emojiEl) emojiEl.textContent = promo.emoji || '🎓';
+    } else {
+        nameEl.textContent = (actualRole === 'stagiaire') ? "Session en cours" : "Toutes les promotions";
+        if (emojiEl) emojiEl.textContent = "🎓";
+    }
+}
+
+let promoModalEventsInitialized = false;
+
+function initPromoModalEvents() {
+    if (promoModalEventsInitialized) return;
+    promoModalEventsInitialized = true;
+
+    const btnChangePromo = document.getElementById('btnChangePromo');
+    const overlay = document.getElementById('overlayChangePromo');
+    const select = document.getElementById('selectFormationPromo');
+    const btnClose = document.getElementById('btnClosePromoModal');
+    const btnCancel = document.getElementById('btnCancelPromoModal');
+    const btnSave = document.getElementById('btnSavePromoSelection');
+
+    btnChangePromo?.addEventListener('click', () => {
+        if (actualRole !== 'admin') return;
+        if (select) {
+            select.innerHTML = '<option value="">🌐 Toutes les promotions (Vue globale)</option>';
+            formationPromosList.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.emoji || '🎓'} ${p.nom} ${p.organisme ? `(${p.organisme})` : ''}`;
+                select.appendChild(opt);
+            });
+            select.value = currentSelectedPromoId || '';
+        }
+        openModal('overlayChangePromo');
+    });
+
+    btnClose?.addEventListener('click', () => closeModal('overlayChangePromo'));
+    btnCancel?.addEventListener('click', () => closeModal('overlayChangePromo'));
+
+    btnSave?.addEventListener('click', () => {
+        const val = select ? select.value : '';
+        currentSelectedPromoId = val;
+        if (val) {
+            localStorage.setItem('formation_selected_promo_id', val);
+            const promo = formationPromosList.find(p => p.id === val);
+            showToast(`Promotion active : ${promo?.nom || 'Session sélectionnée'}`, "success");
+        } else {
+            localStorage.removeItem('formation_selected_promo_id');
+            showToast("Affichage global (Toutes les promotions)", "info");
+        }
+        updatePromoHeaderUI();
+        closeModal('overlayChangePromo');
+
+        if (typeof renderStagiairesResultsTable === 'function') {
+            renderStagiairesResultsTable();
+        }
+    });
+
+    overlay?.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal('overlayChangePromo');
+    });
+}

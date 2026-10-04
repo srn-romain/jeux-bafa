@@ -264,13 +264,17 @@ async function loadConfig() {
             if (globalDoc.data().geminiKey && !loadedGeminiKey) {
                 loadedGeminiKey = globalDoc.data().geminiKey;
             }
-            const checkSignup = document.getElementById('checkAllowSignup');
-            if (checkSignup) {
-                checkSignup.checked = globalDoc.data().allowSignup !== false; // true par défaut
-            }
-            const selectSignupRole = document.getElementById('selectSignupDefaultRole');
-            if (selectSignupRole) {
-                selectSignupRole.value = globalDoc.data().signupDefaultRole || 'anim';
+            const selectSignupMode = document.getElementById('selectSignupMode');
+            if (selectSignupMode) {
+                const allowSignup = globalDoc.data().allowSignup !== false;
+                const role = globalDoc.data().signupDefaultRole || 'anim';
+                if (!allowSignup) {
+                    selectSignupMode.value = 'disabled';
+                } else if (role === 'stagiaire') {
+                    selectSignupMode.value = 'formation';
+                } else {
+                    selectSignupMode.value = 'colo';
+                }
             }
             const recapInput = document.getElementById('adminRecapBafaUrl');
             if (recapInput) {
@@ -605,32 +609,40 @@ async function exportBatchParticipants(selectedColos) {
     }
 }
 
-document.getElementById('checkAllowSignup')?.addEventListener('change', async (e) => {
-    const val = e.target.checked;
-    try {
-        await db.collection('globalSettings').doc('dashboard').set({
-            allowSignup: val,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        showToast(val ? "Création de compte activée." : "Création de compte désactivée.", "success");
-    } catch (err) {
-        console.error("Erreur sauvegarde allowSignup:", err);
-        showToast("Erreur lors de la modification.", "error");
-        e.target.checked = !val; // revert on error
-    }
-});
+document.getElementById('selectSignupMode')?.addEventListener('change', async (e) => {
+    const mode = e.target.value;
+    let allowSignup = true;
+    let signupDefaultRole = 'anim';
 
-document.getElementById('selectSignupDefaultRole')?.addEventListener('change', async (e) => {
-    const val = e.target.value;
+    if (mode === 'disabled') {
+        allowSignup = false;
+        signupDefaultRole = 'anim';
+    } else if (mode === 'formation') {
+        allowSignup = true;
+        signupDefaultRole = 'stagiaire';
+    } else {
+        // colo
+        allowSignup = true;
+        signupDefaultRole = 'anim';
+    }
+
     try {
         await db.collection('globalSettings').doc('dashboard').set({
-            signupDefaultRole: val,
+            allowSignup: allowSignup,
+            signupDefaultRole: signupDefaultRole,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
-        showToast(`Rôle par défaut défini sur : ${val === 'stagiaire' ? 'Stagiaire BAFA' : 'Animateur'}`, 'success');
+
+        if (mode === 'disabled') {
+            showToast("Création de compte désactivée (Inscriptions fermées).", "info");
+        } else if (mode === 'formation') {
+            showToast("Création de compte activée pour la Formation (Stagiaires BAFA).", "success");
+        } else {
+            showToast("Création de compte activée pour les Séjours (Animateurs).", "success");
+        }
     } catch (err) {
-        console.error("Erreur sauvegarde signupDefaultRole:", err);
-        showToast("Erreur lors de la modification du rôle par défaut.", "error");
+        console.error("Erreur sauvegarde selectSignupMode:", err);
+        showToast("Erreur lors de la modification des accès.", "error");
     }
 });
 

@@ -351,33 +351,23 @@
             <div id="tab-config" class="hidden">
                 <div class="es-card">
                     
-                    <!-- Section 1 : Inscription -->
+                    <!-- Section 1 : Inscription & Accès -->
                     <div style="margin-bottom: 32px;">
                         <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--clr-text); margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
-                            <i class="bi bi-person-plus" style="color: var(--clr-primary);"></i> Gestion des accès
+                            <i class="bi bi-person-plus" style="color: var(--clr-primary);"></i> Gestion des inscriptions
                         </h3>
                         
-                        <div style="background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
-                            <div>
-                                <div style="font-weight: 600; color: var(--clr-text); font-size: 0.95rem;">Autoriser la création de compte</div>
-                                <div style="font-size: 0.82rem; color: var(--clr-text-muted); margin-top: 4px; line-height: 1.4;">Si désactivé, l'inscription est totalement bloquée à l'écran de connexion.</div>
-                            </div>
-                            <label class="switch" style="flex-shrink: 0; margin-left: 16px;">
-                                <input type="checkbox" id="checkAllowSignup" checked>
-                                <span class="slider"></span>
+                        <div style="background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
+                            <label class="es-field__label" for="selectSignupMode" style="font-weight:600; margin-bottom:6px; color:var(--clr-text); font-size:0.95rem;">
+                                Inscription et création de compte
                             </label>
-                        </div>
-
-                        <div style="margin-top: 14px; background: var(--clr-surface-2); border: 1px solid var(--clr-surface-3); border-radius: var(--radius-md); padding: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
-                            <label class="es-field__label" for="selectSignupDefaultRole" style="font-weight:600; margin-bottom:6px; color:var(--clr-text);">
-                                Type de compte attribué par défaut à l'inscription
-                            </label>
-                            <div style="font-size: 0.82rem; color: var(--clr-text-muted); margin-bottom: 10px; line-height: 1.4;">
-                                Détermine si les nouveaux inscrits arrivent sur l'espace <strong>Animateurs (Colos)</strong> ou l'espace <strong>Stagiaires (Formation BAFA)</strong>.
+                            <div style="font-size: 0.82rem; color: var(--clr-text-muted); margin-bottom: 14px; line-height: 1.45;">
+                                Choisissez si la création de compte est ouverte ou fermée, et vers quel type d'espace les nouveaux inscrits sont orientés.
                             </div>
-                            <select id="selectSignupDefaultRole" class="es-input" style="width:100%; max-width:400px; background:var(--clr-surface);">
-                                <option value="anim">🎨 Animateur (Espace Colos par défaut)</option>
-                                <option value="stagiaire">🎓 Stagiaire (Espace Formation BAFA par défaut)</option>
+                            <select id="selectSignupMode" class="es-select" style="width:100%; max-width:480px; font-weight:600; background:var(--clr-surface);">
+                                <option value="disabled" selected>Désactiver</option>
+                                <option value="formation">Activer - Formation</option>
+                                <option value="colo">Activer - Animateurs</option>
                             </select>
                         </div>
                     </div>
@@ -1126,8 +1116,8 @@
     <script src="../../assets/js/firebase-config.js"></script>
     <script src="../../assets/js/colo/espace-auth.js"></script>
     <script src="../../assets/js/formation/espace-formation-data.js"></script>
-    <script src="../../assets/js/colo/espace-colo-form.js?v=2.9"></script>
-    <script src="../../assets/js/colo/espace-admin.js?v=2.9"></script>
+    <script src="../../assets/js/colo/espace-colo-form.js?v=3.0"></script>
+    <script src="../../assets/js/colo/espace-admin.js?v=3.0"></script>
 </body>
 
 </html>
