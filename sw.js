@@ -3,7 +3,7 @@
    Gestion du mode hors ligne (PWA) et des notifications
    ================================================================ */
 
-const CACHE_NAME = 'bafa-espace-v21';
+const CACHE_NAME = 'bafa-espace-v22';
 
 const PRECACHE_URLS = [
     './',

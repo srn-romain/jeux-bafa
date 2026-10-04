@@ -2033,7 +2033,17 @@ function initFormationGlobalSettingsListener() {
             if (doc.exists) {
                 const data = doc.data();
                 if (data.showFormationTags !== undefined) showFormationTags = data.showFormationTags;
+                if (data.activePromoId !== undefined) {
+                    globalActivePromoId = data.activePromoId;
+                }
+                if (data.activePromoNom !== undefined) {
+                    globalActivePromoNom = data.activePromoNom;
+                }
+                if (data.activePromoEmoji !== undefined) {
+                    globalActivePromoEmoji = data.activePromoEmoji;
+                }
                 localStorage.setItem('offline_formation_settings', JSON.stringify(data));
+                updatePromoHeaderUI();
             }
 
             const tTags = document.getElementById('checkShowFormationTags');
@@ -3567,17 +3577,23 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ----------------------------------------------------------------
-// SYSTÈME DE PROMOTION DE FORMATION (Synchronisation Espace Colos)
+// SYSTÈME DE PROMOTION DE FORMATION (Synchronisation Espace Colos & Firestore)
 // ----------------------------------------------------------------
 let currentSelectedPromoId = localStorage.getItem('formation_selected_promo_id') || '';
+let globalActivePromoId = '';
+let globalActivePromoNom = '';
+let globalActivePromoEmoji = '🎓';
+let userApprovedPromo = null;
 let formationPromosList = [];
 
 async function loadFormationPromos() {
     formationPromosList = [];
+    let allEspacesList = [];
     try {
-        const snap = await db.collection('espaces').where('isFormation', '==', true).get();
+        const snap = await db.collection('espaces').get();
         if (!snap.empty) {
-            formationPromosList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            allEspacesList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            formationPromosList = allEspacesList.filter(e => e.isFormation === true);
         }
     } catch (err) {
         console.warn("Erreur chargement promos depuis Firestore:", err);
@@ -3586,13 +3602,34 @@ async function loadFormationPromos() {
             const cached = localStorage.getItem('offline_espaces_list');
             if (cached) {
                 const list = JSON.parse(cached);
+                allEspacesList = list;
                 formationPromosList = list.filter(e => e.isFormation === true);
             }
         } catch (e) {}
     }
 
-    // Si rôle stagiaire et aucune promo sélectionnée, essayer d'auto-sélectionner son espace de formation approuvé
-    if (!currentSelectedPromoId && actualRole === 'stagiaire' && currentUser) {
+    // Récupérer la promo globale définie par le formateur dans Firestore
+    try {
+        const setDoc = await db.collection('globalSettings').doc('formation').get();
+        if (setDoc.exists) {
+            const sData = setDoc.data();
+            if (sData.activePromoId !== undefined) globalActivePromoId = sData.activePromoId || '';
+            if (sData.activePromoNom !== undefined) globalActivePromoNom = sData.activePromoNom || '';
+            if (sData.activePromoEmoji !== undefined) globalActivePromoEmoji = sData.activePromoEmoji || '🎓';
+        }
+    } catch (e) {}
+
+    // Si on a un ID global mais pas encore de nom explicite, le retrouver dans la liste des espaces
+    if (globalActivePromoId && !globalActivePromoNom) {
+        const found = allEspacesList.find(p => p.id === globalActivePromoId);
+        if (found) {
+            globalActivePromoNom = found.nom || '';
+            globalActivePromoEmoji = found.emoji || '🎓';
+        }
+    }
+
+    // Si rôle stagiaire, vérifier s'il est inscrit et approuvé dans une session précise
+    if (actualRole === 'stagiaire' && currentUser) {
         try {
             const reqSnap = await db.collection('accessRequests')
                 .where('userId', '==', currentUser.uid)
@@ -3600,10 +3637,14 @@ async function loadFormationPromos() {
             if (!reqSnap.empty) {
                 for (const reqDoc of reqSnap.docs) {
                     const eId = reqDoc.data().espaceId;
-                    const matched = formationPromosList.find(p => p.id === eId);
+                    // Chercher d'abord dans les formations puis dans tous les espaces
+                    const matched = allEspacesList.find(p => p.id === eId);
                     if (matched) {
-                        currentSelectedPromoId = matched.id;
-                        localStorage.setItem('formation_selected_promo_id', currentSelectedPromoId);
+                        userApprovedPromo = {
+                            id: matched.id,
+                            nom: matched.nom,
+                            emoji: matched.emoji || '🎓'
+                        };
                         break;
                     }
                 }
@@ -3626,18 +3667,43 @@ function updatePromoHeaderUI() {
         btnChange.classList.toggle('hidden', !canEditPromo);
     }
 
-    if (!currentSelectedPromoId) {
-        nameEl.textContent = (actualRole === 'stagiaire') ? "Session en cours" : "Toutes les promotions";
-        if (emojiEl) emojiEl.textContent = "🎓";
-        return;
+    // Déterminer quelle promotion afficher :
+    // 1. Session approuvée spécifique du stagiaire
+    // 2. Nom de promotion globale synchronisé
+    // 3. Promotion globale par ID
+    // 4. Choix manuel local (admin)
+    // 5. Si une seule promotion existe sur la plateforme
+    let promoNomToDisplay = '';
+    let promoEmojiToDisplay = '🎓';
+
+    if (userApprovedPromo) {
+        promoNomToDisplay = userApprovedPromo.nom;
+        promoEmojiToDisplay = userApprovedPromo.emoji || '🎓';
+    } else if (globalActivePromoNom) {
+        promoNomToDisplay = globalActivePromoNom;
+        promoEmojiToDisplay = globalActivePromoEmoji || '🎓';
+    } else if (globalActivePromoId) {
+        const found = formationPromosList.find(p => p.id === globalActivePromoId);
+        if (found) {
+            promoNomToDisplay = found.nom;
+            promoEmojiToDisplay = found.emoji || '🎓';
+        }
+    } else if (currentSelectedPromoId) {
+        const found = formationPromosList.find(p => p.id === currentSelectedPromoId);
+        if (found) {
+            promoNomToDisplay = found.nom;
+            promoEmojiToDisplay = found.emoji || '🎓';
+        }
+    } else if (formationPromosList.length === 1) {
+        promoNomToDisplay = formationPromosList[0].nom;
+        promoEmojiToDisplay = formationPromosList[0].emoji || '🎓';
     }
 
-    const promo = formationPromosList.find(p => p.id === currentSelectedPromoId);
-    if (promo) {
-        nameEl.textContent = promo.nom || 'Session de formation';
-        if (emojiEl) emojiEl.textContent = promo.emoji || '🎓';
+    if (promoNomToDisplay) {
+        nameEl.textContent = promoNomToDisplay;
+        if (emojiEl) emojiEl.textContent = promoEmojiToDisplay;
     } else {
-        nameEl.textContent = (actualRole === 'stagiaire') ? "Session en cours" : "Toutes les promotions";
+        nameEl.textContent = (actualRole === 'stagiaire') ? "Formation BAFA" : "Toutes les promotions";
         if (emojiEl) emojiEl.textContent = "🎓";
     }
 }
@@ -3665,7 +3731,7 @@ function initPromoModalEvents() {
                 opt.textContent = `${p.emoji || '🎓'} ${p.nom} ${p.organisme ? `(${p.organisme})` : ''}`;
                 select.appendChild(opt);
             });
-            select.value = currentSelectedPromoId || '';
+            select.value = globalActivePromoId || currentSelectedPromoId || '';
         }
         openModal('overlayChangePromo');
     });
@@ -3673,17 +3739,37 @@ function initPromoModalEvents() {
     btnClose?.addEventListener('click', () => closeModal('overlayChangePromo'));
     btnCancel?.addEventListener('click', () => closeModal('overlayChangePromo'));
 
-    btnSave?.addEventListener('click', () => {
+    btnSave?.addEventListener('click', async () => {
         const val = select ? select.value : '';
         currentSelectedPromoId = val;
+        globalActivePromoId = val;
+
+        const promo = formationPromosList.find(p => p.id === val);
+        globalActivePromoNom = promo ? (promo.nom || '') : '';
+        globalActivePromoEmoji = promo ? (promo.emoji || '🎓') : '🎓';
+
         if (val) {
             localStorage.setItem('formation_selected_promo_id', val);
-            const promo = formationPromosList.find(p => p.id === val);
-            showToast(`Promotion active : ${promo?.nom || 'Session sélectionnée'}`, "success");
+            showToast(`Promotion active : ${globalActivePromoNom || 'Session sélectionnée'}`, "success");
         } else {
             localStorage.removeItem('formation_selected_promo_id');
             showToast("Affichage global (Toutes les promotions)", "info");
         }
+
+        // Sauvegarder dans Firestore pour synchroniser tous les comptes stagiaires en temps réel
+        if (actualRole === 'admin' && navigator.onLine) {
+            try {
+                await db.collection('globalSettings').doc('formation').set({
+                    activePromoId: val || '',
+                    activePromoNom: globalActivePromoNom,
+                    activePromoEmoji: globalActivePromoEmoji,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            } catch (err) {
+                console.error("Erreur enregistrement activePromoId Firestore:", err);
+            }
+        }
+
         updatePromoHeaderUI();
         closeModal('overlayChangePromo');
 
