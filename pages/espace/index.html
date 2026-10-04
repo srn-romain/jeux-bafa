@@ -316,6 +316,17 @@
                                         </label>
                                     </div>
 
+                                    <!-- Toggle Vue Liste / Cartes -->
+                                    <div class="es-stats-toggle admin-only-toggle" id="adminViewModeToggle" title="Basculer entre la vue Cartes (grille) et la vue Longues cartes (liste horizontale)">
+                                        <span class="es-stats-toggle__label" style="display: flex; align-items: center; gap: 6px;">
+                                            <i class="bi bi-view-stacked" id="iconViewMode"></i> <span id="labelViewMode">Vue Liste</span>
+                                        </span>
+                                        <label class="es-switch">
+                                            <input type="checkbox" id="checkViewMode">
+                                            <span class="es-slider"></span>
+                                        </label>
+                                    </div>
+
                                     <!-- Toggle Tags -->
                                     <div class="es-stats-toggle admin-only-toggle" id="adminTagToggle">
                                         <span class="es-stats-toggle__label">Tags</span>
@@ -517,6 +528,32 @@
 
     <!-- Toast container -->
     <div class="es-toast-container" id="toastContainer"></div>
+
+    <!-- ========================================================
+     MODAL : Confirmer la suppression d'une colonie (Admin)
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlayConfirmDeleteColo" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:400px;">
+            <div class="es-modal__header">
+                <h2 class="es-modal__title">Confirmer la suppression</h2>
+                <button class="es-modal__close" id="btnCloseConfirmDeleteColo"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body">
+                <div class="es-alert es-alert--error">
+                    <i class="bi bi-trash3"></i>
+                    <span id="confirmDeleteColoText">Cette action est irréversible. Confirmes-tu la suppression ?</span>
+                </div>
+            </div>
+            <div class="es-modal__footer">
+                <button class="es-btn es-btn--ghost" id="btnCancelDeleteColo">Annuler</button>
+                <button class="es-btn es-btn--danger" id="btnConfirmDeleteColo">
+                    <i class="bi bi-trash3"></i>
+                    <span class="es-btn__text">Supprimer</span>
+                    <span class="es-btn__spinner"></span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- ========================================================
      MODAL : Créer / Modifier une colonie (Admin)

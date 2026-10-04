@@ -52,7 +52,7 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('adminContent')?.classList.remove('hidden');
 
     initAdminTabs();
-    loadColos();
+    loadDemandes();
     loadPendingBadge(); // badge demandes en attente dès l'ouverture
 });
 
@@ -72,7 +72,7 @@ function initAdminTabs() {
             btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
 
             const tab = btn.getAttribute('data-tab');
-            ['colos', 'demandes', 'utilisateurs', 'formation', 'recherche', 'config'].forEach(t => {
+            ['demandes', 'utilisateurs', 'formation', 'recherche', 'config'].forEach(t => {
                 document.getElementById(`tab-${t}`)?.classList.toggle('hidden', t !== tab);
             });
             // Charger les données de l'onglet sélectionné à la demande
@@ -1668,11 +1668,11 @@ async function loadUsers() {
                 <td style="text-align: center;">
                     ${u.banned === true ? `
                         <span class="es-badge es-badge--banned">
-                            🚫 Banni
+                            Banni
                         </span>
                     ` : `
                         <span class="es-badge ${u.role === 'admin' ? 'es-badge--admin' : u.role === 'stagiaire' ? 'es-badge--stagiaire' : 'es-badge--anim'}">
-                            ${u.role === 'admin' ? '👑 Admin' : u.role === 'stagiaire' ? '🎓 Stagiaire' : '🎨 Anim'}
+                            ${u.role === 'admin' ? 'Admin' : u.role === 'stagiaire' ? 'Stagiaire' : 'Anim'}
                         </span>
                     `}
                 </td>

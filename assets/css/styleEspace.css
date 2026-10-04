@@ -1334,6 +1334,13 @@ input::-ms-clear {
   gap: 16px;
 }
 
+.es-colos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
 @media (min-width: 540px) {
   .es-colos-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -1747,11 +1754,13 @@ input:checked+.es-slider:before {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 0;
   border: 2px solid rgba(255, 255, 255, 0.08);
   color: #ffffff;
   position: relative;
   transition: transform var(--transition), box-shadow var(--transition);
+  cursor: pointer;
+  width: 100%;
 }
 
 .es-colo-admin-card:hover {
@@ -3694,6 +3703,29 @@ body.modal-open .es-topbar {
 .es-card-action-btn i {
   font-size: 0.85rem;
   color: #ffffff !important;
+}
+
+.es-card-action-btn--sm {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+}
+
+.es-card-action-btn--sm i {
+  font-size: 0.78rem !important;
+}
+
+.es-colo-card__actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 28px);
+  grid-template-rows: repeat(2, 28px);
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  z-index: 10;
+  flex-shrink: 0;
 }
 
 .es-card-action-btn--danger {

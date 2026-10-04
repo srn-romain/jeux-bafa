@@ -324,10 +324,10 @@ auth.onAuthStateChanged(async (user) => {
         if (toggleTags) toggleTags.checked = showTags;
 
         // Appliquer aux cartes existantes sans recharger tout
-        document.querySelectorAll('.es-colo-card__stats').forEach(el => {
+        document.querySelectorAll('.es-colo-card__stats, .es-stats-target').forEach(el => {
             el.classList.toggle('es-stats--hidden', !showStats);
         });
-        document.querySelectorAll('.es-colo-card__lock').forEach(el => {
+        document.querySelectorAll('.es-colo-card__lock, .es-org-target').forEach(el => {
             el.classList.toggle('es-org--hidden', !showOrg);
         });
         document.querySelectorAll('.es-colo-card__badge-tag').forEach(el => {
@@ -470,6 +470,7 @@ function applyRoleSimulation(activeRole) {
         if (activeRole === 'admin') {
             adminOnlyElements.forEach(el => el.classList.remove('hidden'));
             adminPanel?.classList.remove('es-admin-panel--simulated');
+            updateViewModeUI(currentViewMode);
         } else {
             adminOnlyElements.forEach(el => el.classList.add('hidden'));
             adminPanel?.classList.add('es-admin-panel--simulated');
@@ -514,12 +515,37 @@ let showTags = true;
 let activeTypeFilter = 'all';
 let activeYearFilter = 'all';
 let globalRecapBafaUrl = '';
+let currentViewMode = localStorage.getItem('dashboard_colos_view') || 'grid';
+
+function updateViewModeUI(mode) {
+    const check = document.getElementById('checkViewMode');
+    if (check) check.checked = (mode === 'list');
+    const label = document.getElementById('labelViewMode');
+    const icon = document.getElementById('iconViewMode');
+    if (label) label.textContent = mode === 'list' ? 'Vue Liste' : 'Vue Cartes';
+    if (icon) icon.className = mode === 'list' ? 'bi bi-view-stacked' : 'bi bi-grid-fill';
+}
+
+document.getElementById('checkViewMode')?.addEventListener('change', (e) => {
+    currentViewMode = e.target.checked ? 'list' : 'grid';
+    localStorage.setItem('dashboard_colos_view', currentViewMode);
+    updateViewModeUI(currentViewMode);
+    if (currentUser && currentRole) {
+        loadColos(currentUser, currentRole);
+    }
+});
 
 async function loadColos(user, role) {
-    currentUser = user;
-    currentRole = role;
+    if (user) currentUser = user;
+    if (role) currentRole = role;
+    const effectiveRole = role || currentRole || actualRole || 'anim';
+    currentRole = effectiveRole;
     activeTypeFilter = 'all';
     activeYearFilter = 'all';
+
+    // Toujours synchroniser le mode d'affichage depuis localStorage
+    currentViewMode = localStorage.getItem('dashboard_colos_view') || 'grid';
+    updateViewModeUI(currentViewMode);
 
     const loader = document.getElementById('colosLoader');
     const grid = document.getElementById('colosGrid');
@@ -755,22 +781,33 @@ async function loadColos(user, role) {
     }
 
     grid.innerHTML = '';
+    const isListView = (effectiveRole === 'admin' && currentViewMode === 'list');
+    if (isListView) {
+        grid.className = 'es-colos-list';
+    } else {
+        grid.className = 'es-colos-grid';
+    }
+
     for (const colo of colosList) {
         const visible = colo.visible !== false;
 
         // SI ANIMATEUR : On cache totalement si non visible
-        if (role === 'anim' && !visible) continue;
+        if (effectiveRole === 'anim' && !visible) continue;
 
-        let accessStatus = role === 'admin' ? 'admin' : (accessMap[colo.id] || 'none');
+        let accessStatus = effectiveRole === 'admin' ? 'admin' : (accessMap[colo.id] || 'none');
         const nbAnims = animCounts[colo.id] || 0;
         let nbParticipants = colo.nbParticipants || 0;
 
-        grid.appendChild(buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role));
+        if (isListView) {
+            grid.appendChild(buildColoAdminHorizontalCard(colo, accessStatus, nbParticipants, nbAnims, effectiveRole));
+        } else {
+            grid.appendChild(buildColoCard(colo, accessStatus, nbParticipants, nbAnims, effectiveRole));
+        }
     }
 
     grid.classList.remove('hidden');
 
-    if (role === 'anim') {
+    if (effectiveRole === 'anim') {
         subtitle.textContent = 'Clique sur une colonie pour demander ou accéder à son espace.';
     } else {
         subtitle.textContent = 'Gérez vos espaces ci-dessous ou ouvrez le panneau admin.';
@@ -781,6 +818,15 @@ async function loadColos(user, role) {
 window.addEventListener('online', () => {
     if (currentUser && currentRole) {
         loadColos(currentUser, currentRole);
+    }
+});
+
+// Rafraîchir lors du retour arrière navigateur (BFCache)
+window.addEventListener('pageshow', () => {
+    currentViewMode = localStorage.getItem('dashboard_colos_view') || 'grid';
+    updateViewModeUI(currentViewMode);
+    if (currentUser) {
+        loadColos(currentUser, currentRole || actualRole);
     }
 });
 
@@ -863,9 +909,15 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
             finalUrl = `${finalUrl}${separator}startDate=${colo.dateDebut}&endDate=${colo.dateFin}`;
         }
         recapBadge = `
-            <a href="${finalUrl}" target="_blank" onclick="event.stopPropagation();" class="es-card-action-btn" style="background: rgba(155, 89, 182, 0.15); border: 1px solid rgba(155, 89, 182, 0.35); text-decoration: none; display: inline-flex;" onmouseover="this.style.background='rgba(155, 89, 182, 0.25)'" onmouseout="this.style.background='rgba(155, 89, 182, 0.15)'" title="Ouvrir la fiche Récap BAFA">
-                <i class="bi bi-journal-check" style="color: #af7ac5 !important;"></i>
+            <a href="${finalUrl}" target="_blank" onclick="event.stopPropagation();" class="es-card-action-btn es-card-action-btn--sm" style="background: rgba(155, 89, 182, 0.2); border: 1px solid rgba(155, 89, 182, 0.45); text-decoration: none; display: inline-flex;" onmouseover="this.style.background='rgba(155, 89, 182, 0.35)'" onmouseout="this.style.background='rgba(155, 89, 182, 0.2)'" title="Ouvrir la fiche Récap BAFA">
+                <i class="bi bi-journal-check" style="color: #c39bd3 !important;"></i>
             </a>
+        `;
+    } else if (role === 'admin') {
+        recapBadge = `
+            <button class="es-card-action-btn es-card-action-btn--sm" onclick="event.stopPropagation(); showToast('Aucune URL Récap BAFA configurée dans les paramètres admin.', 'warning');" title="Fiche Récap BAFA (non configurée)" style="background: rgba(155, 89, 182, 0.12); border: 1px solid rgba(155, 89, 182, 0.25); opacity: 0.5;">
+                <i class="bi bi-journal-check" style="color: #c39bd3 !important;"></i>
+            </button>
         `;
     }
 
@@ -899,21 +951,32 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
                 </div>
                 <div class="es-colo-card__dates">${dateStr}</div>
             </div>
-            <div style="margin-left:auto;display:flex;align-items:center;gap:6px;z-index:10;">
-                ${recapBadge}
-                ${role === 'admin' ? `
-                    <button class="es-card-action-btn" 
+            ${role === 'admin' ? `
+                <div class="es-colo-card__actions-grid">
+                    <!-- Ligne 1 (haut) : Récap BAFA & Modifier -->
+                    ${recapBadge}
+                    <button class="es-card-action-btn es-card-action-btn--sm" 
                             title="Modifier la colonie"
                             onclick="event.stopPropagation(); openEditColoIndex('${colo.id}')">
                         <i class="bi bi-pencil"></i>
                     </button>
-                    <button class="es-card-action-btn" 
+                    <!-- Ligne 2 (bas) : Visibilité & Supprimer -->
+                    <button class="es-card-action-btn es-card-action-btn--sm" 
                             title="Changer la visibilité pour les animateurs"
                             onclick="event.stopPropagation(); toggleColoVisibility('${colo.id}', ${visible})">
                         <i class="bi bi-${visible ? 'eye' : 'eye-slash'}"></i>
                     </button>
-                ` : ''}
-            </div>
+                    <button class="es-card-action-btn es-card-action-btn--sm es-card-action-btn--danger" 
+                            title="Supprimer la colonie"
+                            onclick="event.stopPropagation(); confirmDeleteColoIndex('${colo.id}', ${escapeHtml(JSON.stringify(colo.nom || ''))})">
+                        <i class="bi bi-trash3"></i>
+                    </button>
+                </div>
+            ` : (recapBadge ? `
+                <div style="margin-left:auto;display:flex;align-items:center;gap:6px;z-index:10;">
+                    ${recapBadge}
+                </div>
+            ` : '')}
         </div>
         <div class="es-colo-card__body">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: auto; width: 100%;">
@@ -937,6 +1000,143 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
 
     card.addEventListener('click', () => handleColoClick(colo, accessStatus));
     return card;
+}
+
+// ----------------------------------------------------------------
+// CONSTRUCTION D'UNE CARTE HORIZONTALE (VUE LISTE ADMIN)
+// ----------------------------------------------------------------
+function buildColoAdminHorizontalCard(colo, accessStatus, nbParticipants, nbAnims, role) {
+    const div = document.createElement('div');
+    div.className = 'es-colo-admin-card';
+    div.dataset.type = colo.isFormation ? 'formation' : 'colo';
+    div.dataset.year = colo.dateDebut ? colo.dateDebut.split('-')[0] : 'none';
+
+    if (colo.bgImage) {
+        div.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.7) 100%), url('${colo.bgImage}')`;
+        div.style.backgroundSize = 'cover';
+        div.style.backgroundPosition = 'center';
+    }
+
+    const dateStr = (colo.dateDebut && colo.dateFin)
+        ? `${formatDate(colo.dateDebut)} → ${formatDate(colo.dateFin)}`
+        : colo.dateDebut ? `Début : ${formatDate(colo.dateDebut)}` : 'Dates non définies';
+
+    const visible = colo.visible !== false; // true par défaut
+    const locked = colo.participantsLocked !== false; // true par défaut
+
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    const startDate = colo.dateDebut ? new Date(colo.dateDebut) : null;
+    if (startDate) startDate.setHours(0,0,0,0);
+    const isUpcoming = startDate && startDate > now;
+
+    let recapBtn = '';
+    if (globalRecapBafaUrl) {
+        let finalUrl = globalRecapBafaUrl;
+        if (colo.dateDebut && colo.dateFin) {
+            const separator = finalUrl.includes('?') ? '&' : '?';
+            finalUrl = `${finalUrl}${separator}startDate=${colo.dateDebut}&endDate=${colo.dateFin}`;
+        }
+        recapBtn = `
+            <a href="${finalUrl}" target="_blank" onclick="event.stopPropagation();" class="es-card-action-btn" style="background: rgba(155, 89, 182, 0.25); border: 1px solid rgba(155, 89, 182, 0.45); text-decoration: none; display: inline-flex;" onmouseover="this.style.background='rgba(155, 89, 182, 0.35)'" onmouseout="this.style.background='rgba(155, 89, 182, 0.25)'" title="Ouvrir la fiche Récap BAFA">
+                <i class="bi bi-journal-check" style="color: #c39bd3 !important;"></i>
+            </a>
+        `;
+    }
+
+    const isOfflineReady = !!localStorage.getItem('offline_participants_' + colo.id);
+
+    div.innerHTML = `
+        <div class="es-colo-admin-card__header" style="position: relative;">
+            <div style="padding-right: 48px; width: 100%;">
+                <div class="es-colo-admin-card__title" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <span>${colo.emoji || '🏕️'} ${colo.nom || 'Sans nom'}</span>
+                    ${isOfflineReady ? `
+                        <span title="Liste des participants enregistrée pour consultation hors ligne" style="color:var(--clr-primary); font-size:0.9rem; display:inline-flex; align-items:center;">
+                            <i class="bi bi-cloud-check-fill"></i>
+                        </span>
+                    ` : ''}
+                    ${isUpcoming ? `
+                        <span class="es-colo-card__badge-tag ${!showTags ? 'es-tags--hidden' : ''}" style="background:rgba(52,152,219,0.25);color:#ffffff;border:1px solid rgba(52,152,219,0.4);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;font-weight:800;vertical-align:middle;text-shadow:none;white-space:nowrap;">
+                            À venir
+                        </span>
+                    ` : ''}
+                    ${!visible ? `
+                        <span style="background:rgba(255,165,0,0.25);color:#ffffff;border:1px solid rgba(255,165,0,0.4);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;font-weight:800;text-shadow:none;white-space:nowrap;">
+                            <i class="bi bi-eye-slash-fill"></i> Caché
+                        </span>
+                    ` : ''}
+                    ${colo.archived ? `
+                        <span class="es-colo-card__badge-tag ${!showTags ? 'es-tags--hidden' : ''}" style="background:rgba(243,156,18,0.25);color:#ffffff;border:1px solid rgba(243,156,18,0.4);padding:2px 8px;border-radius:6px;font-size:0.65rem;text-transform:uppercase;font-weight:800;text-shadow:none;white-space:nowrap;">
+                            <i class="bi bi-archive-fill"></i> Archivé
+                        </span>
+                    ` : ''}
+                </div>
+                <div style="font-size:0.78rem;color:rgba(255,255,255,0.7);margin-top:4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;text-shadow:0 1px 2px rgba(0,0,0,0.5);">
+                    <span><i class="bi bi-calendar3"></i> ${dateStr}</span>
+                    <span style="
+                        padding:2px 9px;border-radius:20px;font-size:0.7rem;font-weight:700;text-shadow:none;
+                        ${locked
+                            ? 'background:rgba(231,76,60,0.25);color:#ffffff;border:1px solid rgba(231,76,60,0.4);'
+                            : 'background:rgba(39,174,96,0.25);color:#ffffff;border:1px solid rgba(39,174,96,0.4);'}
+                    ">
+                        ${locked ? '🔒 Participants verrouillés' : '🔓 Participants ouverts'}
+                    </span>
+                </div>
+            </div>
+            <a href="espace.html?id=${colo.id}" onclick="event.stopPropagation();" class="es-card-action-btn" style="position: absolute; top: 18px; right: 18px; text-decoration: none; z-index: 10;" title="Accéder à l'espace">
+                <i class="bi bi-arrow-right" style="font-size: 1.1rem; color: #ffffff !important;"></i>
+            </a>
+        </div>
+        <div class="es-colo-admin-card__body">
+            <div class="es-colo-admin-card__info">
+                <div class="es-colo-admin-card__organisme es-org-target ${!showOrg ? 'es-org--hidden' : ''}">
+                    <i class="bi bi-building" style="color:var(--clr-primary)"></i> ${colo.organisme ? colo.organisme : '<span style="opacity:0.5;font-style:italic;">Organisme non défini.</span>'}
+                </div>
+                <div class="es-colo-admin-card__meta">
+                    <span class="es-stats-target ${!showStats ? 'es-stats--hidden' : ''}"><i class="bi bi-people"></i> ${nbParticipants} ${colo.isFormation ? 'stagiaire' : 'jeune'}${nbParticipants !== 1 ? 's' : ''}</span>
+                    ${colo.createdAt ? `<span><i class="bi bi-plus-circle"></i> Créé le ${formatFullDate(colo.createdAt)}</span>` : ''}
+                    ${colo.updatedAt ? `<span><i class="bi bi-pencil-square"></i> Modifié le ${formatFullDate(colo.updatedAt)}</span>` : ''}
+                </div>
+            </div>
+            <div class="es-colo-admin-card__actions">
+                ${recapBtn}
+                <button class="es-card-action-btn"
+                        title="Visibilité pour les animateurs"
+                        onclick="event.stopPropagation(); toggleColoVisibility('${colo.id}', ${visible})">
+                    <i class="bi bi-${visible ? 'eye' : 'eye-slash'}"></i>
+                </button>
+                <button class="es-card-action-btn ${colo.archived ? 'es-card-action-btn--warning' : ''}"
+                        title="${colo.archived ? 'Désarchiver l\'espace' : 'Archiver l\'espace'}"
+                        onclick="event.stopPropagation(); toggleColoArchived('${colo.id}', ${colo.archived === true})">
+                    <i class="bi bi-${colo.archived ? 'folder-symlink' : 'archive'}"></i>
+                </button>
+                <div style="width:1px;height:24px;background:rgba(255,255,255,0.15);margin:4px 2px 0 2px;"></div>
+                <button class="es-card-action-btn es-card-action-btn--pill ${locked ? 'es-card-action-btn--danger' : 'es-card-action-btn--success'}"
+                        title="${locked ? 'Déverrouiller la gestion des participants' : 'Verrouiller la gestion des participants'}"
+                        onclick="event.stopPropagation(); toggleParticipantsLock('${colo.id}', ${locked})">
+                    <i class="bi bi-${locked ? 'unlock' : 'lock'}"></i>
+                    <span class="brand-label" style="color:inherit; font-size: inherit; font-weight: inherit;">${locked ? 'Déverrouiller' : 'Verrouiller'}</span>
+                </button>
+                <button class="es-card-action-btn"
+                        title="Modifier la colonie"
+                        onclick="event.stopPropagation(); openEditColoIndex('${colo.id}')">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="es-card-action-btn es-card-action-btn--danger"
+                        title="Supprimer la colonie"
+                        onclick="event.stopPropagation(); confirmDeleteColoIndex('${colo.id}', ${escapeHtml(JSON.stringify(colo.nom || ''))})">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </div>
+        </div>
+    `;
+
+    div.addEventListener('click', (e) => {
+        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.es-card-action-btn')) return;
+        handleColoClick(colo, accessStatus);
+    });
+    return div;
 }
 
 // ----------------------------------------------------------------
@@ -1045,8 +1245,33 @@ async function toggleColoVisibility(coloId, currentVisible) {
     }
 }
 
+async function toggleParticipantsLock(coloId, currentlyLocked) {
+    const newLocked = !currentlyLocked;
+    const label = newLocked ? 'verrouillés' : 'ouverts aux animateurs';
+    try {
+        await db.collection('espaces').doc(coloId).update({ participantsLocked: newLocked });
+        showToast(`Participants ${label} pour cette colo.`, 'success');
+        loadColos(currentUser, currentRole);
+    } catch (err) {
+        console.error('toggleParticipantsLock:', err);
+        showToast('Erreur lors du changement de verrouillage.', 'error');
+    }
+}
+
+async function toggleColoArchived(coloId, currentlyArchived) {
+    const newArchived = !currentlyArchived;
+    try {
+        await db.collection('espaces').doc(coloId).update({ archived: newArchived });
+        showToast(newArchived ? 'Espace archivé.' : 'Espace restauré (désarchivé).', 'success');
+        loadColos(currentUser, currentRole);
+    } catch (err) {
+        console.error('toggleColoArchived:', err);
+        showToast('Erreur lors du changement d\'archivage.', 'error');
+    }
+}
+
 // ================================================================
-// GESTION COLO (Créer / Modifier) - INDEX (Via Formulaire Partagé)
+// GESTION COLO (Créer / Modifier / Supprimer) - INDEX
 // ================================================================
 
 document.getElementById('btnNewColoIndex')?.addEventListener('click', () => ColoFormManager.open('index'));
@@ -1060,11 +1285,58 @@ async function openEditColoIndex(id) {
     }
 }
 
+let deleteColoTargetId = null;
+
+function confirmDeleteColoIndex(id, nom) {
+    deleteColoTargetId = id;
+    const textEl = document.getElementById('confirmDeleteColoText');
+    if (textEl) {
+        textEl.textContent = `Supprimer la colonie "${nom}" ? Tous ses participants et accès seront perdus (irréversible).`;
+    }
+    openModal('overlayConfirmDeleteColo');
+}
+
+document.getElementById('btnCloseConfirmDeleteColo')?.addEventListener('click', () => closeModal('overlayConfirmDeleteColo'));
+document.getElementById('btnCancelDeleteColo')?.addEventListener('click', () => closeModal('overlayConfirmDeleteColo'));
+
+document.getElementById('btnConfirmDeleteColo')?.addEventListener('click', async () => {
+    if (!deleteColoTargetId) return;
+    const btn = document.getElementById('btnConfirmDeleteColo');
+    btnLoading(btn, true);
+
+    try {
+        // Supprimer les participants de la sous-collection
+        const pSnap = await db.collection('espaces').doc(deleteColoTargetId).collection('participants').get();
+        const batch = db.batch();
+        pSnap.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+
+        // Supprimer les demandes d'accès associées
+        const reqSnap = await db.collection('accessRequests')
+            .where('espaceId', '==', deleteColoTargetId).get();
+        const batch2 = db.batch();
+        reqSnap.forEach(d => batch2.delete(d.ref));
+        await batch2.commit();
+
+        // Supprimer la colonie
+        await db.collection('espaces').doc(deleteColoTargetId).delete();
+        showToast('Colonie supprimée.', 'success');
+        closeModal('overlayConfirmDeleteColo');
+        loadColos(currentUser, currentRole);
+    } catch (err) {
+        console.error('delete colo dashboard:', err);
+        showToast('Erreur lors de la suppression.', 'error');
+    } finally {
+        btnLoading(btn, false);
+        deleteColoTargetId = null;
+    }
+});
+
 // Initialisation du formulaire partagé au chargement
 ColoFormManager.init('index', () => loadColos(currentUser, currentRole));
 
 window.applyEspaceFilters = function() {
-    const cards = document.querySelectorAll('.es-colos-grid .es-colo-card');
+    const cards = document.querySelectorAll('#colosGrid > *');
     cards.forEach(card => {
         const matchesType = (activeTypeFilter === 'all' || card.dataset.type === activeTypeFilter);
         const matchesYear = (activeYearFilter === 'all' || card.dataset.year === activeYearFilter);

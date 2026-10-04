@@ -93,10 +93,7 @@
 
             <!-- Onglets principaux -->
             <div class="es-nav-tabs" id="adminTabs" role="tablist">
-                <button class="es-nav-tab active" data-tab="colos" role="tab">
-                    <i class="bi bi-house"></i> Espaces
-                </button>
-                <button class="es-nav-tab" data-tab="demandes" role="tab">
+                <button class="es-nav-tab active" data-tab="demandes" role="tab">
                     <i class="bi bi-bell"></i> Demandes
                     <span class="es-badge es-badge--pending hidden" id="badgePending"
                         style="margin-left:4px;font-size:0.7rem;"></span>
@@ -113,33 +110,6 @@
                 <button class="es-nav-tab" data-tab="config" role="tab">
                     <i class="bi bi-gear"></i> Configuration
                 </button>
-            </div>
-
-
-            <!-- ===================================================
-         ONGLET COLONIES
-         =================================================== -->
-            <div id="tab-colos">
-                <!-- Stats / Filtres globales Admin -->
-                <div id="adminGlobalStatsBanner" style="margin-bottom: 24px;"></div>
-
-                <div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
-                    <button class="es-btn es-btn--primary" id="btnNewColo">
-                        <i class="bi bi-plus-lg"></i> Ajouter un espace
-                    </button>
-                </div>
-
-                <div class="es-loader hidden" id="colosLoader2">
-                    <div class="es-spinner"></div>
-                </div>
-
-                <div id="colosAdminList"></div>
-
-                <div class="es-empty hidden" id="colosAdminEmpty">
-                    <div class="es-empty__icon">🏕️</div>
-                    <div class="es-empty__title">Aucune colonie</div>
-                    <p class="es-empty__text">Crée la première colonie pour commencer.</p>
-                </div>
             </div>
 
 
@@ -272,7 +242,7 @@
             <!-- ===================================================
          ONGLET DEMANDES D'ACCÈS
          =================================================== -->
-            <div id="tab-demandes" class="hidden">
+            <div id="tab-demandes">
                 <div class="es-loader" id="demandesLoader">
                     <div class="es-spinner"></div>
                     <span>Chargement…</span>
