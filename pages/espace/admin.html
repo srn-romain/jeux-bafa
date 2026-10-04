@@ -37,11 +37,11 @@
                 <a href="../../index.html" class="es-btn es-btn--sm es-btn--ghost" style="color:rgba(255,255,255,0.75); border-color:rgba(255,255,255,0.15);">
                     <i class="bi bi-house"></i> <span class="brand-label">Site</span>
                 </a>
-                <a href="index.html" class="es-btn es-btn--sm es-btn--ghost" style="color:#5dade2; border-color:rgba(52,152,219,0.35);">
-                    <i class="bi bi-tree"></i> <span class="brand-label">Espace Colos</span>
-                </a>
                 <a href="formation.html" class="es-btn es-btn--sm es-btn--ghost" style="color:var(--clr-accent); border-color:rgba(243,156,18,0.35);">
                     <i class="bi bi-mortarboard"></i> <span class="brand-label">Espace Formation</span>
+                </a>
+                <a href="index.html" class="es-btn es-btn--sm es-btn--ghost" style="color:#5dade2; border-color:rgba(52,152,219,0.35);">
+                    <i class="bi bi-tree"></i> <span class="brand-label">Espace Colos</span>
                 </a>
                 <!-- Menu Profil -->
                 <div class="es-user-dropdown-wrap">
@@ -314,34 +314,155 @@
             </div>
 
             <!-- ===================================================
-                 ONGLET FORMATION BAFA (16 MODULES)
+                 ONGLET FORMATION BAFA (GESTION DES PROMOTIONS & ACCÈS STAGIAIRES)
                  =================================================== -->
             <div id="tab-formation" class="hidden">
-                <div class="es-formation-admin-banner">
-                    <div>
-                        <div style="font-weight: 800; font-size: 1.1rem; color: var(--clr-text); display:flex; align-items:center; gap:8px;">
-                            <span>🎓</span> Contrôle des 16 Modules BAFA
+
+                <!-- 1. En-tête : Promotion active en cours sur la plateforme -->
+                <div class="es-card" style="margin-bottom: 24px; padding: 22px 24px; background: linear-gradient(135deg, var(--clr-surface-2), var(--clr-surface)); border: 1.5px solid var(--clr-surface-3);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 16px;">
+                            <div id="adminActivePromoEmoji" style="width: 52px; height: 52px; border-radius: 12px; background: rgba(243, 156, 18, 0.15); color: var(--clr-accent, #f39c12); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; flex-shrink: 0; border: 1px solid rgba(243, 156, 18, 0.3);">
+                                🎓
+                            </div>
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <span style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; letter-spacing: 0.5px; color: var(--clr-accent, #f39c12);">Session en cours sur la plateforme</span>
+                                    <span id="adminActivePromoStatusBadge" class="es-badge es-badge--approved" style="font-size: 0.72rem;">Active</span>
+                                </div>
+                                <h2 id="adminActivePromoTitle" style="font-size: 1.35rem; font-weight: 800; color: var(--clr-text); margin: 4px 0 2px 0;">
+                                    Chargement de la session…
+                                </h2>
+                                <div id="adminActivePromoMeta" style="font-size: 0.82rem; color: var(--clr-text-muted); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px;">
+                                    <span><i class="bi bi-calendar-event"></i> Dates à définir</span>
+                                </div>
+                            </div>
                         </div>
-                        <div style="font-size: 0.85rem; color: var(--clr-text-muted); margin-top: 2px;">
-                            Activez les quiz au fur et à mesure de la session de formation et consultez les réponses des stagiaires.
+
+                        <!-- Sélecteur rapide de session active -->
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <select id="selectGlobalActivePromo" class="es-select" style="min-width: 240px; font-weight: 600; font-size: 0.88rem; background: var(--clr-surface-2);">
+                                <option value="">⏳ Chargement des promotions…</option>
+                            </select>
+                            <button type="button" class="es-btn es-btn--primary" id="btnSaveGlobalActivePromo" style="white-space: nowrap;">
+                                <i class="bi bi-check2"></i> Définir comme session active
+                            </button>
                         </div>
                     </div>
-                    <div style="display:flex; gap:10px; align-items:center;">
-                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnAdminUnlockAllModules">
-                            <i class="bi bi-unlock"></i> Tout déverrouiller
-                        </button>
-                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnAdminLockAllModules">
-                            <i class="bi bi-lock"></i> Tout verrouiller
-                        </button>
+
+                    <div style="margin-top: 14px; padding: 10px 14px; background: rgba(52, 152, 219, 0.08); border: 1px solid rgba(52, 152, 219, 0.2); border-radius: 8px; font-size: 0.8rem; color: var(--clr-text-muted); line-height: 1.45;">
+                        ℹ️ <strong>Règle d'accès stagiaires :</strong> Seuls les comptes stagiaires rattachés à la <strong style="color: var(--clr-text);">session active ci-dessus</strong> peuvent accéder aux modules et passer les quiz. Les anciens stagiaires (alumni) voient automatiquement leur compte verrouillé avec l'écran de fin de formation.
                     </div>
                 </div>
 
-                <div class="es-loader" id="adminFormationLoader">
-                    <div class="es-spinner"></div>
-                    <span>Chargement des modules…</span>
+                <!-- 2. Barre d'outils et statistiques stagiaires -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 20px;">
+                    <div class="es-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(52, 152, 219, 0.15); color: #3498db; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div>
+                            <div id="statTotalStagiaires" style="font-size: 1.35rem; font-weight: 800; color: var(--clr-text);">0</div>
+                            <div style="font-size: 0.76rem; color: var(--clr-text-muted); font-weight: 600; text-transform: uppercase;">Total Stagiaires</div>
+                        </div>
+                    </div>
+
+                    <div class="es-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(46, 204, 113, 0.15); color: #2ecc71; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                            <i class="bi bi-person-check-fill"></i>
+                        </div>
+                        <div>
+                            <div id="statActivePromoStagiaires" style="font-size: 1.35rem; font-weight: 800; color: #2ecc71;">0</div>
+                            <div style="font-size: 0.76rem; color: var(--clr-text-muted); font-weight: 600; text-transform: uppercase;">Session en cours (Accès OK)</div>
+                        </div>
+                    </div>
+
+                    <div class="es-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(243, 156, 18, 0.15); color: #f39c12; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
+                        <div>
+                            <div id="statAlumniStagiaires" style="font-size: 1.35rem; font-weight: 800; color: #f39c12;">0</div>
+                            <div style="font-size: 0.76rem; color: var(--clr-text-muted); font-weight: 600; text-transform: uppercase;">Alumni / Sessions passées</div>
+                        </div>
+                    </div>
+
+                    <div class="es-card" style="padding: 16px 20px; display: flex; align-items: center; gap: 14px;">
+                        <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(231, 76, 60, 0.15); color: #e74c3c; display: flex; align-items: center; justify-content: center; font-size: 1.3rem;">
+                            <i class="bi bi-person-x-fill"></i>
+                        </div>
+                        <div>
+                            <div id="statUnassignedStagiaires" style="font-size: 1.35rem; font-weight: 800; color: #e74c3c;">0</div>
+                            <div style="font-size: 0.76rem; color: var(--clr-text-muted); font-weight: 600; text-transform: uppercase;">Sans promotion</div>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="adminFormationList" class="es-formation-grid"></div>
+                <!-- 3. Tableau des Stagiaires et Affectation de Promotion -->
+                <div class="es-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
+                        <div>
+                            <h3 style="font-size: 1.1rem; font-weight: 800; color: var(--clr-text); margin: 0;">
+                                Comptes Stagiaires & Promotions
+                            </h3>
+                            <p style="font-size: 0.8rem; color: var(--clr-text-muted); margin: 2px 0 0 0;">
+                                Gérez l'attribution des promotions pour chaque stagiaire afin de contrôler leurs droits d'accès.
+                            </p>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <!-- Filtre promo -->
+                            <select id="filterStagiairesPromo" class="es-select" style="min-width: 200px; font-size: 0.85rem;">
+                                <option value="all">🌐 Toutes les promotions</option>
+                                <option value="active_only">Session en cours uniquement</option>
+                                <option value="alumni_only">🔒 Uniquement les sessions passées</option>
+                                <option value="unassigned_only">⚠️ Sans promotion attribuée</option>
+                            </select>
+
+                            <!-- Recherche -->
+                            <div class="es-input-wrap" style="width: 220px;">
+                                <i class="bi bi-search es-input-icon"></i>
+                                <input type="text" id="searchStagiairesInput" class="es-input es-input--icon es-input--dark" placeholder="Filtrer un stagiaire..." style="padding: 7px 10px 7px 34px; font-size: 0.85rem;">
+                            </div>
+
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnRefreshStagiairesList" title="Actualiser">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="es-loader" id="adminFormationLoader">
+                        <div class="es-spinner"></div>
+                        <span>Chargement des stagiaires et promotions…</span>
+                    </div>
+
+                    <div class="es-table-wrap hidden" id="stagiairesTableWrap">
+                        <table class="es-table">
+                            <thead>
+                                <tr>
+                                    <th>Stagiaire</th>
+                                    <th>Date de naissance</th>
+                                    <th>Promotion attribuée</th>
+                                    <th style="text-align: center;">Statut d'accès</th>
+                                    <th style="text-align: center;">Dernière connexion</th>
+                                    <th style="text-align: right;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminStagiairesTbody">
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted" style="padding: 28px;">Chargement…</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="es-empty hidden" id="stagiairesEmptyState" style="padding: 40px 20px;">
+                        <div class="es-empty__icon">🎓</div>
+                        <div class="es-empty__title">Aucun stagiaire trouvé</div>
+                        <p class="es-empty__text">Aucun compte stagiaire ne correspond aux filtres sélectionnés.</p>
+                    </div>
+                </div>
+
             </div>
 
             <!-- ===================================================
@@ -1104,6 +1225,42 @@
         </div>
     </div>
 
+    <!-- ===================================================
+     MODAL : Affecter / Modifier la promotion d'un stagiaire
+     =================================================== -->
+    <div class="es-overlay hidden" id="overlayAssignStagiairePromo" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width: 480px;">
+            <div class="es-modal__header">
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <h2 class="es-modal__title" style="display:flex; align-items:center; gap:8px;">
+                        <span>🎓</span> Promotion du stagiaire
+                    </h2>
+                    <p id="assignPromoStagiaireEmail" style="font-size:0.8rem; color:var(--clr-text-muted); margin:0;"></p>
+                </div>
+                <button class="es-modal__close" id="btnCloseAssignPromoModal"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body">
+                <div class="es-field">
+                    <label class="es-field__label" for="selectAssignPromoChoice">Attribuer la promotion :</label>
+                    <select class="es-select" id="selectAssignPromoChoice" style="font-weight:600;">
+                        <option value="">⚠️ Aucune promotion (Accès bloqué)</option>
+                        <!-- Rempli en JS avec les promotions existantes -->
+                    </select>
+                </div>
+
+                <div style="margin-top:14px; padding:12px 14px; border-radius:8px; background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); font-size:0.8rem; color:var(--clr-text-muted); line-height:1.45;">
+                    💡 <strong>Rappel :</strong> Si la promotion choisie correspond à la promotion actuellement active sur la plateforme, le stagiaire aura immédiatement accès aux modules et quiz. Dans le cas contraire, son compte sera en fin de session.
+                </div>
+            </div>
+            <div class="es-modal__footer" style="display:flex; justify-content:flex-end; gap:8px;">
+                <button type="button" class="es-btn es-btn--ghost" id="btnCancelAssignPromoModal">Annuler</button>
+                <button type="button" class="es-btn es-btn--primary" id="btnConfirmAssignPromo">
+                    <i class="bi bi-check2"></i> Enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast container -->
     <div class="es-toast-container" id="toastContainer"></div>
 
@@ -1114,10 +1271,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="../../assets/js/firebase-config.js"></script>
-    <script src="../../assets/js/colo/espace-auth.js"></script>
-    <script src="../../assets/js/formation/espace-formation-data.js"></script>
+    <script src="../../assets/js/colo/espace-auth.js?v=3.6"></script>
     <script src="../../assets/js/colo/espace-colo-form.js?v=3.0"></script>
-    <script src="../../assets/js/colo/espace-admin.js?v=3.0"></script>
+    <script src="../../assets/js/colo/espace-admin.js?v=3.1"></script>
 </body>
 
 </html>

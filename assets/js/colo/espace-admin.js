@@ -2682,240 +2682,481 @@ document.getElementById('selectUserRightsRole')?.addEventListener('change', asyn
 });
 
 // ================================================================
-// GESTION DES 16 MODULES FORMATION BAFA (ADMIN)
+// GESTION DES PROMOTIONS ET ACCÈS STAGIAIRES (ADMIN FORMATION)
 // ================================================================
-let adminFormationModulesMap = {};
+let adminFormationPromosList = [];
+let adminAllStagiairesList = [];
+let adminGlobalActivePromoId = '';
+let adminGlobalActivePromoData = null;
+let currentEditingStagiaireUid = null;
+let adminFormationEventsAttached = false;
 
 async function loadAdminFormationModules() {
     const loader = document.getElementById('adminFormationLoader');
-    const list = document.getElementById('adminFormationList');
-    if (!list) return;
+    const tableWrap = document.getElementById('stagiairesTableWrap');
+    const emptyState = document.getElementById('stagiairesEmptyState');
 
     if (loader) loader.classList.remove('hidden');
+    if (tableWrap) tableWrap.classList.add('hidden');
+    if (emptyState) emptyState.classList.add('hidden');
+
+    initAdminFormationEvents();
 
     try {
-        // 1. Récupérer l'état des modules depuis globalSettings/formationModules
-        const settingsDoc = await db.collection('globalSettings').doc('formationModules').get();
-        adminFormationModulesMap = settingsDoc.exists ? (settingsDoc.data().modules || {}) : {};
-
-        // 2. Récupérer les compteurs de réponses soumises pour chaque module
-        const submissionsSnap = await db.collection('formationSubmissions').get();
-        const countsByModule = {};
-        submissionsSnap.forEach(doc => {
-            const d = doc.data();
-            if (d.moduleId) {
-                countsByModule[d.moduleId] = (countsByModule[d.moduleId] || 0) + 1;
+        // 1. Charger la session active globale depuis globalSettings/formation
+        try {
+            const formSetDoc = await db.collection('globalSettings').doc('formation').get();
+            if (formSetDoc.exists) {
+                const fData = formSetDoc.data();
+                adminGlobalActivePromoId = fData.activePromoId || '';
+                adminGlobalActivePromoData = fData;
+            } else {
+                adminGlobalActivePromoId = '';
+                adminGlobalActivePromoData = null;
             }
-        });
-
-        if (loader) loader.classList.add('hidden');
-
-        const modules = window.FORMATION_MODULES || [];
-        list.innerHTML = modules.map(m => {
-            const isEnabled = adminFormationModulesMap[m.id]?.enabled === true; // Défaut: disabled/false
-            const subCount = countsByModule[m.id] || 0;
-
-            return `
-            <div class="es-formation-card ${isEnabled ? 'es-formation-card--active' : 'es-formation-card--locked'}">
-                <div>
-                    <div class="es-formation-header">
-                        <div class="es-formation-icon-wrap">
-                            <i class="bi ${m.icon || 'bi-journal-bookmark'}"></i>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span class="es-badge ${isEnabled ? 'es-badge--approved' : 'es-badge--pending'}" style="font-size:0.7rem;">
-                                ${isEnabled ? '🟢 Actif' : '🔒 Verrouillé'}
-                            </span>
-                            <label class="switch" style="transform:scale(0.85); transform-origin:center right;">
-                                <input type="checkbox" class="check-module-toggle" data-module-id="${m.id}" ${isEnabled ? 'checked' : ''}>
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                    <div class="es-formation-num">Module ${m.num < 10 ? '0' + m.num : m.num}</div>
-                    <h3 class="es-formation-title">${escapeHtml(m.title)}</h3>
-                    <p class="es-formation-desc">${escapeHtml(m.description)}</p>
-                </div>
-                <div class="es-formation-footer">
-                    <span style="font-size:0.8rem; font-weight:700; color:${subCount > 0 ? '#8e44ad' : 'var(--clr-text-light)'};">
-                        📝 ${subCount} réponse${subCount > 1 ? 's' : ''}
-                    </span>
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-view-module-responses" data-module-id="${m.id}" style="font-size:0.75rem; padding:4px 10px;">
-                        <i class="bi bi-eye"></i> Voir réponses
-                    </button>
-                </div>
-            </div>`;
-        }).join('');
-
-        // Attacher les écouteurs de toggles
-        list.querySelectorAll('.check-module-toggle').forEach(toggle => {
-            toggle.addEventListener('change', async (e) => {
-                const moduleId = e.target.getAttribute('data-module-id');
-                const isChecked = e.target.checked;
-                await updateAdminModuleStatus(moduleId, isChecked);
-            });
-        });
-
-        // Attacher les écouteurs pour voir les réponses
-        list.querySelectorAll('.btn-view-module-responses').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const moduleId = btn.getAttribute('data-module-id');
-                openFormationResultsModal(moduleId);
-            });
-        });
-
-    } catch (err) {
-        if (loader) loader.classList.add('hidden');
-        console.error("loadAdminFormationModules:", err);
-        showToast("Erreur lors du chargement des modules de formation.", "error");
-    }
-}
-
-async function updateAdminModuleStatus(moduleId, enabled) {
-    try {
-        if (!adminFormationModulesMap[moduleId]) adminFormationModulesMap[moduleId] = {};
-        adminFormationModulesMap[moduleId].enabled = enabled;
-
-        await db.collection('globalSettings').doc('formationModules').set({
-            modules: adminFormationModulesMap,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-
-        showToast(enabled ? `Module activé pour les stagiaires.` : `Module verrouillé.`, "success");
-        loadAdminFormationModules();
-    } catch (err) {
-        console.error("updateAdminModuleStatus:", err);
-        showToast("Erreur lors de la mise à jour du module.", "error");
-    }
-}
-
-// Tout déverrouiller / Tout verrouiller
-document.getElementById('btnAdminUnlockAllModules')?.addEventListener('click', async () => {
-    const modules = window.FORMATION_MODULES || [];
-    const newMap = {};
-    modules.forEach(m => { newMap[m.id] = { enabled: true }; });
-    try {
-        await db.collection('globalSettings').doc('formationModules').set({
-            modules: newMap,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        showToast("Tous les 16 modules sont maintenant déverrouillés.", "success");
-        loadAdminFormationModules();
-    } catch (err) {
-        console.error("Unlock all error:", err);
-        showToast("Erreur lors du déverrouillage.", "error");
-    }
-});
-
-document.getElementById('btnAdminLockAllModules')?.addEventListener('click', async () => {
-    const modules = window.FORMATION_MODULES || [];
-    const newMap = {};
-    modules.forEach(m => { newMap[m.id] = { enabled: false }; });
-    try {
-        await db.collection('globalSettings').doc('formationModules').set({
-            modules: newMap,
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-        showToast("Tous les 16 modules sont maintenant verrouillés.", "success");
-        loadAdminFormationModules();
-    } catch (err) {
-        console.error("Lock all error:", err);
-        showToast("Erreur lors du verrouillage.", "error");
-    }
-});
-
-// Modal de consultation des réponses
-async function openFormationResultsModal(moduleId) {
-    const modal = document.getElementById('overlayFormationResults');
-    if (!modal) return;
-
-    const moduleData = (window.FORMATION_MODULES || []).find(m => m.id === moduleId);
-    if (!moduleData) return;
-
-    document.getElementById('resultsModalNum').textContent = `Module ${moduleData.num < 10 ? '0' + moduleData.num : moduleData.num}`;
-    document.getElementById('resultsModalTitle').textContent = `Réponses — ${moduleData.title}`;
-    const iconEl = document.getElementById('resultsModalIcon');
-    if (iconEl) iconEl.innerHTML = `<i class="bi ${moduleData.icon || 'bi-journal-bookmark'}"></i>`;
-
-    const loader = document.getElementById('resultsLoader');
-    const empty = document.getElementById('resultsEmptyState');
-    const list = document.getElementById('resultsSubmissionsList');
-
-    if (loader) loader.classList.remove('hidden');
-    if (empty) empty.classList.add('hidden');
-    if (list) { list.classList.add('hidden'); list.innerHTML = ''; }
-
-    openModal('overlayFormationResults');
-
-    try {
-        const snap = await db.collection('formationSubmissions')
-            .where('moduleId', '==', moduleId)
-            .orderBy('submittedAt', 'desc')
-            .get();
-
-        if (loader) loader.classList.add('hidden');
-
-        if (snap.empty) {
-            if (empty) empty.classList.remove('hidden');
-            return;
+        } catch (e) {
+            console.warn("Erreur chargement globalSettings/formation:", e);
         }
 
-        const subs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        list.innerHTML = subs.map((sub, sIdx) => {
-            const answersHtml = (moduleData.questions || []).map((q, qIdx) => {
-                const ans = sub.answers ? sub.answers[q.id] : null;
-                let ansDisplay = '';
-                if (q.type === 'qcm') {
-                    const optText = (ans !== null && ans !== undefined && q.options && q.options[ans]) ? q.options[ans] : '<span style="color:var(--clr-danger)">Pas de réponse</span>';
-                    const isCorrect = (ans === q.correctIndex);
-                    ansDisplay = `
-                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.88rem;">
-                        <strong>Réponse choisie :</strong> ${escapeHtml(optText)}
-                        <span style="margin-left:8px; font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${isCorrect ? '✅ Exact' : '❌ Incorrect'}
-                        </span>
-                    </div>`;
-                } else {
-                    ansDisplay = `
-                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:6px; font-size:0.88rem; line-height:1.5; white-space:pre-wrap; color:var(--clr-text);">
-                        ${escapeHtml(ans || 'Pas de texte rédigé.')}
-                    </div>`;
+        // 2. Charger toutes les promotions depuis la collection 'espaces' (isFormation === true)
+        const espacesSnap = await db.collection('espaces').get();
+        adminFormationPromosList = [];
+        if (!espacesSnap.empty) {
+            espacesSnap.forEach(doc => {
+                const data = doc.data();
+                if (data.isFormation === true) {
+                    adminFormationPromosList.push({ id: doc.id, ...data });
                 }
+            });
+            // Trier par date de début décroissante
+            adminFormationPromosList.sort((a, b) => {
+                const da = a.dateDebut ? new Date(a.dateDebut).getTime() : 0;
+                const dbTime = b.dateDebut ? new Date(b.dateDebut).getTime() : 0;
+                return dbTime - da;
+            });
+        }
 
-                return `
-                <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
-                    <div style="font-size:0.75rem; font-weight:800; color:#8e44ad; text-transform:uppercase;">Question ${qIdx + 1}</div>
-                    <div style="font-size:0.88rem; font-weight:700; color:var(--clr-text); margin-top:2px;">${escapeHtml(q.text)}</div>
-                    ${ansDisplay}
-                </div>`;
-            }).join('');
+        // 3. Charger tous les utilisateurs ayant le rôle 'stagiaire'
+        const usersSnap = await db.collection('users').get();
+        adminAllStagiairesList = [];
+        if (!usersSnap.empty) {
+            usersSnap.forEach(doc => {
+                const u = doc.data();
+                if (u.role === 'stagiaire') {
+                    adminAllStagiairesList.push({ id: doc.id, ...u });
+                }
+            });
+            // Trier par dernière connexion ou nom
+            adminAllStagiairesList.sort((a, b) => {
+                const ta = a.lastLogin?.toMillis ? a.lastLogin.toMillis() : (a.lastLogin?.seconds ? a.lastLogin.seconds * 1000 : 0);
+                const tb = b.lastLogin?.toMillis ? b.lastLogin.toMillis() : (b.lastLogin?.seconds ? b.lastLogin.seconds * 1000 : 0);
+                return tb - ta;
+            });
+        }
 
-            return `
-            <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:16px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div>
-                        <div style="font-weight:800; font-size:0.95rem; color:var(--clr-text);">${escapeHtml(sub.userName || sub.userEmail || 'Stagiaire')}</div>
-                        <div style="font-size:0.78rem; color:var(--clr-text-muted);">${escapeHtml(sub.userEmail || '')}</div>
-                    </div>
-                    <div style="font-size:0.75rem; font-weight:700; color:var(--clr-text-light); background:var(--clr-surface); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3);">
-                        🕒 ${formatFullDate(sub.submittedAt)}
-                    </div>
-                </div>
-                ${answersHtml}
-            </div>`;
-        }).join('');
+        // 4. Mettre à jour l'en-tête de la promotion active
+        renderAdminActivePromoHeader();
 
-        if (list) list.classList.remove('hidden');
+        // 5. Remplir le sélecteur global de promo active
+        populateGlobalActivePromoSelect();
+
+        // 6. Remplir le sélecteur de filtre promo
+        populateFilterPromoSelect();
+
+        // 7. Rendre le tableau des stagiaires
+        renderAdminStagiairesTable();
 
     } catch (err) {
+        console.error("loadAdminFormationModules (Promos) error:", err);
+        showToast("Erreur lors du chargement des promotions et stagiaires.", "error");
+    } finally {
         if (loader) loader.classList.add('hidden');
-        console.error("openFormationResultsModal error:", err);
-        showToast("Erreur lors de la récupération des réponses.", "error");
     }
 }
 
-document.getElementById('btnCloseResultsModal')?.addEventListener('click', () => closeModal('overlayFormationResults'));
-document.getElementById('btnCloseResultsModal2')?.addEventListener('click', () => closeModal('overlayFormationResults'));
+function renderAdminActivePromoHeader() {
+    const titleEl = document.getElementById('adminActivePromoTitle');
+    const emojiEl = document.getElementById('adminActivePromoEmoji');
+    const metaEl = document.getElementById('adminActivePromoMeta');
+    const badgeEl = document.getElementById('adminActivePromoStatusBadge');
+
+    if (!titleEl) return;
+
+    const matchedPromo = adminFormationPromosList.find(p => p.id === adminGlobalActivePromoId);
+
+    if (matchedPromo) {
+        titleEl.textContent = matchedPromo.nom || 'Session de formation';
+        if (emojiEl) emojiEl.textContent = matchedPromo.emoji || '🎓';
+        if (badgeEl) {
+            badgeEl.className = 'es-badge es-badge--approved';
+            badgeEl.textContent = 'Active';
+        }
+
+        const dates = (matchedPromo.dateDebut && matchedPromo.dateFin)
+            ? `${formatDate(matchedPromo.dateDebut)} → ${formatDate(matchedPromo.dateFin)}`
+            : 'Dates à définir';
+        const org = matchedPromo.organisme ? ` • ${matchedPromo.organisme}` : '';
+        const lieu = (matchedPromo.lieu || matchedPromo.ville) ? ` • 📍 ${matchedPromo.lieu || matchedPromo.ville}` : '';
+
+        if (metaEl) {
+            metaEl.innerHTML = `
+                <span><i class="bi bi-calendar-event"></i> ${dates}</span>
+                ${org ? `<span><i class="bi bi-building"></i> ${escapeHtml(matchedPromo.organisme)}</span>` : ''}
+                ${lieu ? `<span><i class="bi bi-geo-alt"></i> ${escapeHtml(matchedPromo.lieu || matchedPromo.ville)}</span>` : ''}
+            `;
+        }
+    } else if (adminGlobalActivePromoId) {
+        titleEl.textContent = adminGlobalActivePromoData?.activePromoNom || 'Promotion active';
+        if (emojiEl) emojiEl.textContent = adminGlobalActivePromoData?.activePromoEmoji || '🎓';
+        if (badgeEl) {
+            badgeEl.className = 'es-badge es-badge--approved';
+            badgeEl.textContent = 'Active';
+        }
+        if (metaEl) {
+            metaEl.innerHTML = `<span><i class="bi bi-info-circle"></i> ID: ${adminGlobalActivePromoId}</span>`;
+        }
+    } else {
+        titleEl.textContent = 'Aucune session active';
+        if (emojiEl) emojiEl.textContent = '🔒';
+        if (badgeEl) {
+            badgeEl.className = 'es-badge es-badge--refused';
+            badgeEl.textContent = 'Inactive';
+        }
+        if (metaEl) {
+            metaEl.innerHTML = `<span style="color:var(--clr-text-muted);"><i class="bi bi-shield-lock"></i> Aucune session de formation n'est actuellement active. L'accès des stagiaires est fermé.</span>`;
+        }
+    }
+}
+
+function populateGlobalActivePromoSelect() {
+    const select = document.getElementById('selectGlobalActivePromo');
+    if (!select) return;
+
+    select.innerHTML = '';
+    
+    const optNone = document.createElement('option');
+    optNone.value = '';
+    optNone.textContent = '🔒 Aucune session active (Accès stagiaires fermé)';
+    select.appendChild(optNone);
+
+    adminFormationPromosList.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        const dateStr = p.dateDebut ? ` (${formatDate(p.dateDebut)})` : '';
+        opt.textContent = `${p.emoji || '🎓'} ${p.nom} ${p.organisme ? `[${p.organisme}]` : ''}${dateStr}`;
+        if (p.id === adminGlobalActivePromoId) {
+            opt.selected = true;
+        }
+        select.appendChild(opt);
+    });
+
+    if (!adminGlobalActivePromoId) {
+        optNone.selected = true;
+    }
+}
+
+function populateFilterPromoSelect() {
+    const select = document.getElementById('filterStagiairesPromo');
+    if (!select) return;
+
+    const currentVal = select.value || 'all';
+    select.innerHTML = `
+        <option value="all">🌐 Tous les stagiaires (${adminAllStagiairesList.length})</option>
+        <option value="active_only">Session en cours uniquement</option>
+        <option value="alumni_only">🔒 Sessions passées uniquement</option>
+        <option value="unassigned_only">⚠️ Sans promotion attribuée</option>
+    `;
+
+    if (adminFormationPromosList.length > 0) {
+        const optGroup = document.createElement('optgroup');
+        optGroup.label = '— Par promotion spécifique —';
+        adminFormationPromosList.forEach(p => {
+            const count = adminAllStagiairesList.filter(s => s.promoId === p.id).length;
+            const opt = document.createElement('option');
+            opt.value = `promo_${p.id}`;
+            opt.textContent = `${p.emoji || '🎓'} ${p.nom} (${count})`;
+            optGroup.appendChild(opt);
+        });
+        select.appendChild(optGroup);
+    }
+
+    select.value = currentVal;
+}
+
+function renderAdminStagiairesTable() {
+    const tbody = document.getElementById('adminStagiairesTbody');
+    const tableWrap = document.getElementById('stagiairesTableWrap');
+    const emptyState = document.getElementById('stagiairesEmptyState');
+    const filterSelect = document.getElementById('filterStagiairesPromo');
+    const searchInput = document.getElementById('searchStagiairesInput');
+
+    if (!tbody) return;
+
+    // Calcul des KPIs
+    let countActive = 0;
+    let countAlumni = 0;
+    let countUnassigned = 0;
+
+    adminAllStagiairesList.forEach(s => {
+        const pId = s.promoId || '';
+        if (!pId) {
+            countUnassigned++;
+        } else if (adminGlobalActivePromoId && pId === adminGlobalActivePromoId) {
+            countActive++;
+        } else {
+            countAlumni++;
+        }
+    });
+
+    document.getElementById('statTotalStagiaires') && (document.getElementById('statTotalStagiaires').textContent = adminAllStagiairesList.length);
+    document.getElementById('statActivePromoStagiaires') && (document.getElementById('statActivePromoStagiaires').textContent = countActive);
+    document.getElementById('statAlumniStagiaires') && (document.getElementById('statAlumniStagiaires').textContent = countAlumni);
+    document.getElementById('statUnassignedStagiaires') && (document.getElementById('statUnassignedStagiaires').textContent = countUnassigned);
+
+    // Filtrage
+    const filterVal = filterSelect ? filterSelect.value : 'all';
+    const searchVal = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    let filtered = adminAllStagiairesList.filter(s => {
+        // Filtre catégorie
+        const pId = s.promoId || '';
+        if (filterVal === 'active_only') {
+            if (!adminGlobalActivePromoId || pId !== adminGlobalActivePromoId) return false;
+        } else if (filterVal === 'alumni_only') {
+            if (!pId || (adminGlobalActivePromoId && pId === adminGlobalActivePromoId)) return false;
+        } else if (filterVal === 'unassigned_only') {
+            if (pId) return false;
+        } else if (filterVal.startsWith('promo_')) {
+            const targetPromoId = filterVal.replace('promo_', '');
+            if (pId !== targetPromoId) return false;
+        }
+
+        // Filtre recherche textuelle
+        if (searchVal) {
+            const name = `${s.firstName || ''} ${s.lastName || ''} ${s.displayName || ''}`.toLowerCase();
+            const email = (s.email || '').toLowerCase();
+            if (!name.includes(searchVal) && !email.includes(searchVal)) return false;
+        }
+
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        if (tableWrap) tableWrap.classList.add('hidden');
+        if (emptyState) emptyState.classList.remove('hidden');
+        return;
+    }
+
+    if (tableWrap) tableWrap.classList.remove('hidden');
+    if (emptyState) emptyState.classList.add('hidden');
+
+    tbody.innerHTML = filtered.map(s => {
+        const pId = s.promoId || '';
+        const matchedPromo = pId ? adminFormationPromosList.find(p => p.id === pId) : null;
+        
+        let promoDisplay = '';
+        let statusBadge = '';
+
+        if (!pId) {
+            promoDisplay = `<span class="es-badge" style="background: rgba(231,76,60,0.12); color: var(--clr-danger); border: 1px solid rgba(231,76,60,0.25); font-size:0.75rem;">Non assigné</span>`;
+            statusBadge = `<span class="es-badge es-badge--refused" style="font-size:0.75rem;"><i class="bi bi-x-circle-fill"></i> Bloqué</span>`;
+        } else {
+            const promoNom = matchedPromo ? matchedPromo.nom : (s.promoNom || pId);
+            const promoEmoji = matchedPromo ? (matchedPromo.emoji || '🎓') : '🎓';
+            
+            promoDisplay = `
+                <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:1.1rem;">${promoEmoji}</span>
+                    <strong style="color:var(--clr-text); font-size:0.86rem;">${escapeHtml(promoNom)}</strong>
+                </div>
+            `;
+
+            if (adminGlobalActivePromoId && pId === adminGlobalActivePromoId) {
+                statusBadge = `<span class="es-badge es-badge--approved" style="font-size:0.75rem;"><i class="bi bi-check-circle-fill"></i> Accès actif</span>`;
+            } else if (!adminGlobalActivePromoId) {
+                statusBadge = `<span class="es-badge es-badge--pending" style="font-size:0.75rem; background: rgba(243,156,18,0.15); color: #f39c12; border: 1px solid rgba(243,156,18,0.3);"><i class="bi bi-pause-circle-fill"></i> Session inactive</span>`;
+            } else {
+                statusBadge = `<span class="es-badge es-badge--pending" style="font-size:0.75rem; background: rgba(243,156,18,0.15); color: #f39c12; border: 1px solid rgba(243,156,18,0.3);"><i class="bi bi-lock-fill"></i> Session passée</span>`;
+            }
+        }
+
+        const fullName = `${s.firstName || ''} ${s.lastName || ''}`.trim() || s.displayName || s.email;
+        const avatarLetter = (fullName.charAt(0) || 'S').toUpperCase();
+
+        return `
+            <tr>
+                <td>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:34px; height:34px; border-radius:50%; background: linear-gradient(135deg, var(--clr-primary), var(--clr-accent)); color:#ffffff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.82rem; flex-shrink:0;">
+                            ${avatarLetter}
+                        </div>
+                        <div>
+                            <div style="font-weight:700; color:var(--clr-text); font-size:0.88rem;">${escapeHtml(fullName)}</div>
+                            <div style="font-size:0.75rem; color:var(--clr-text-muted);">${escapeHtml(s.email || '')}</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-size:0.84rem; color:var(--clr-text-muted);">
+                    ${s.birthdate ? formatDate(s.birthdate) : '<span style="opacity:0.4;">Non renseignée</span>'}
+                </td>
+                <td>
+                    ${promoDisplay}
+                </td>
+                <td style="text-align:center;">
+                    ${statusBadge}
+                </td>
+                <td style="text-align:center; font-size:0.8rem; color:var(--clr-text-muted);">
+                    ${s.lastLogin ? formatFullDate(s.lastLogin) : 'Jamais'}
+                </td>
+                <td style="text-align:right;">
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-edit-stagiaire-promo" 
+                            data-uid="${s.id}" 
+                            data-email="${escapeHtml(s.email || '')}" 
+                            data-name="${escapeHtml(fullName)}"
+                            data-promoid="${pId}"
+                            style="font-size:0.78rem; padding:5px 12px; gap:6px;">
+                        <i class="bi bi-pencil-square"></i> Modifier la promo
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Attacher les écouteurs sur les boutons Modifier promo
+    tbody.querySelectorAll('.btn-edit-stagiaire-promo').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const uid = btn.getAttribute('data-uid');
+            const email = btn.getAttribute('data-email');
+            const name = btn.getAttribute('data-name');
+            const promoId = btn.getAttribute('data-promoid');
+            openAssignStagiairePromoModal(uid, email, name, promoId);
+        });
+    });
+}
+
+function openAssignStagiairePromoModal(uid, email, name, currentPromoId) {
+    currentEditingStagiaireUid = uid;
+
+    const emailEl = document.getElementById('assignPromoStagiaireEmail');
+    if (emailEl) emailEl.textContent = `${name} (${email})`;
+
+    const select = document.getElementById('selectAssignPromoChoice');
+    if (select) {
+        select.innerHTML = '<option value="">⚠️ Aucune promotion (Accès restreint)</option>';
+        adminFormationPromosList.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            const dateStr = p.dateDebut ? ` (${formatDate(p.dateDebut)})` : '';
+            opt.textContent = `${p.emoji || '🎓'} ${p.nom} ${p.organisme ? `[${p.organisme}]` : ''}${dateStr}`;
+            if (p.id === currentPromoId) {
+                opt.selected = true;
+            }
+            select.appendChild(opt);
+        });
+        if (!currentPromoId) {
+            select.value = '';
+        }
+    }
+
+    openModal('overlayAssignStagiairePromo');
+}
+
+function initAdminFormationEvents() {
+    if (adminFormationEventsAttached) return;
+    adminFormationEventsAttached = true;
+
+    // Définir la promo active globale
+    document.getElementById('btnSaveGlobalActivePromo')?.addEventListener('click', async () => {
+        const select = document.getElementById('selectGlobalActivePromo');
+        const newActiveId = select ? select.value : '';
+        const btn = document.getElementById('btnSaveGlobalActivePromo');
+
+        btnLoading(btn, true);
+        try {
+            const matched = adminFormationPromosList.find(p => p.id === newActiveId);
+            const updates = {
+                activePromoId: newActiveId || '',
+                activePromoNom: matched ? (matched.nom || '') : '',
+                activePromoEmoji: matched ? (matched.emoji || '🎓') : '🎓',
+                activePromoOrganisme: matched?.organisme || '',
+                activePromoLieu: matched?.lieu || '',
+                activePromoVille: matched?.ville || '',
+                activePromoDateDebut: matched?.dateDebut || '',
+                activePromoDateFin: matched?.dateFin || '',
+                activePromoNbParticipants: matched?.nbParticipants || '',
+                activePromoDirecteur: matched?.directeur || matched?.createurNom || '',
+                activePromoStageType: matched?.stageType || '',
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection('globalSettings').doc('formation').set(updates, { merge: true });
+
+            adminGlobalActivePromoId = newActiveId;
+            adminGlobalActivePromoData = updates;
+
+            renderAdminActivePromoHeader();
+            renderAdminStagiairesTable();
+
+            showToast(newActiveId ? `Session active mise à jour : "${matched?.nom || 'Promotion'}"` : "Aucune session active définie.", "success");
+        } catch (err) {
+            console.error("Erreur mise à jour activePromoId:", err);
+            showToast("Erreur lors de la mise à jour de la session active.", "error");
+        } finally {
+            btnLoading(btn, false);
+        }
+    });
+
+    // Filtre stagiaires
+    document.getElementById('filterStagiairesPromo')?.addEventListener('change', () => {
+        renderAdminStagiairesTable();
+    });
+
+    // Recherche stagiaires
+    document.getElementById('searchStagiairesInput')?.addEventListener('input', () => {
+        renderAdminStagiairesTable();
+    });
+
+    // Bouton rafraîchir
+    document.getElementById('btnRefreshStagiairesList')?.addEventListener('click', () => {
+        loadAdminFormationModules();
+    });
+
+    // Modale assigner promo
+    document.getElementById('btnCloseAssignPromoModal')?.addEventListener('click', () => closeModal('overlayAssignStagiairePromo'));
+    document.getElementById('btnCancelAssignPromoModal')?.addEventListener('click', () => closeModal('overlayAssignStagiairePromo'));
+
+    document.getElementById('btnConfirmAssignPromo')?.addEventListener('click', async () => {
+        if (!currentEditingStagiaireUid) return;
+        const select = document.getElementById('selectAssignPromoChoice');
+        const newPromoId = select ? select.value : '';
+        const btn = document.getElementById('btnConfirmAssignPromo');
+
+        btnLoading(btn, true);
+        try {
+            const updates = {
+                promoId: newPromoId || firebase.firestore.FieldValue.delete()
+            };
+
+            await db.collection('users').doc(currentEditingStagiaireUid).update(updates);
+
+            // Mettre à jour en mémoire
+            const stagiaire = adminAllStagiairesList.find(s => s.id === currentEditingStagiaireUid);
+            if (stagiaire) {
+                stagiaire.promoId = newPromoId;
+            }
+
+            closeModal('overlayAssignStagiairePromo');
+            showToast("Promotion du stagiaire mise à jour avec succès.", "success");
+            renderAdminStagiairesTable();
+            populateFilterPromoSelect();
+        } catch (err) {
+            console.error("Erreur affectation promotion stagiaire:", err);
+            showToast("Erreur lors de la modification de la promotion.", "error");
+        } finally {
+            btnLoading(btn, false);
+        }
+    });
+}
+
 
 

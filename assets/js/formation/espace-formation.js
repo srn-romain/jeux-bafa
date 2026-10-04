@@ -29,81 +29,6 @@ async function getFormationModulesList() {
         if (!snap.empty) {
             list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             localStorage.setItem('offline_formation_modules', JSON.stringify(list));
-        } else {
-            // Premier démarrage : initialiser la collection 'formation' avec les 16 modules officiels
-            const defaultModules = window.FORMATION_MODULES || [];
-            list = defaultModules.map(m => ({
-                id: m.id,
-                num: m.num,
-                title: m.title,
-                subtitle: m.subtitle || '',
-                icon: m.icon || 'bi-journal-bookmark',
-                description: m.description || '',
-                enabled: false,
-                visible: m.visible !== false,
-                quizConfig: {
-                    quizTitle: m.title,
-                    maxAttempts: 0,
-                    timerMinutes: 0,
-                    timerSeconds: 0,
-                    timerTotalSeconds: 0,
-                    showResultsAtEnd: false
-                },
-                questionsCount: (m.questions || []).length
-            }));
-            localStorage.setItem('offline_formation_modules', JSON.stringify(list));
-
-            if (actualRole === 'admin' && navigator.onLine) {
-                try {
-                    for (const m of defaultModules) {
-                        const moduleRef = db.collection('formation').doc(m.id);
-                        await moduleRef.set({
-                            id: m.id,
-                            num: m.num,
-                            title: m.title,
-                            subtitle: m.subtitle || '',
-                            icon: m.icon || 'bi-journal-bookmark',
-                            description: m.description || '',
-                            enabled: false,
-                            visible: m.visible !== false,
-                            quizConfig: {
-                                quizTitle: m.title,
-                                maxAttempts: 0,
-                                timerMinutes: 0,
-                                timerSeconds: 0,
-                                timerTotalSeconds: 0,
-                                showResultsAtEnd: false
-                            },
-                            questionsCount: (m.questions || []).length,
-                            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-
-                        // Enregistrer les questions dans la sous-collection 'questions'
-                        if (Array.isArray(m.questions) && m.questions.length > 0) {
-                            const batch = db.batch();
-                            m.questions.forEach((q, qIdx) => {
-                                const qRef = moduleRef.collection('questions').doc(q.id || `q_${qIdx + 1}`);
-                                batch.set(qRef, {
-                                    id: q.id || `q_${qIdx + 1}`,
-                                    moduleId: m.id,
-                                    type: q.type || 'qcm',
-                                    text: q.text || '',
-                                    options: q.options || [],
-                                    correctIndex: (q.correctIndex !== undefined) ? q.correctIndex : 0,
-                                    hint: q.hint || '',
-                                    order: qIdx + 1,
-                                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                                }, { merge: true });
-                            });
-                            await batch.commit();
-                        }
-                    }
-                } catch (batchErr) {
-                    console.warn("Auto-seed formation collection warning:", batchErr);
-                }
-            }
         }
     } catch (e) {
         console.warn("Offline fallback for formation collection:", e);
@@ -111,15 +36,6 @@ async function getFormationModulesList() {
             const cached = localStorage.getItem('offline_formation_modules');
             if (cached) list = JSON.parse(cached);
         } catch (cacheErr) {}
-
-        if (!list || list.length === 0) {
-            list = (window.FORMATION_MODULES || []).map(m => ({
-                ...m,
-                enabled: false,
-                visible: m.visible !== false,
-                questionsCount: (m.questions || []).length
-            }));
-        }
     }
 
     currentFormationModulesList = list.sort((a, b) => (parseInt(a.num, 10) || 0) - (parseInt(b.num, 10) || 0));
@@ -136,22 +52,6 @@ async function fetchModuleQuestions(moduleId) {
         }
     } catch (err) {
         console.warn(`Could not load questions for module ${moduleId} from subcollection:`, err);
-    }
-
-    if (questions.length === 0) {
-        const fallbackMod = (window.FORMATION_MODULES || []).find(m => m.id === moduleId);
-        if (fallbackMod && fallbackMod.questions) {
-            questions = fallbackMod.questions.map((q, idx) => ({
-                id: q.id || `q_${idx + 1}`,
-                moduleId: moduleId,
-                type: q.type || 'qcm',
-                text: q.text || '',
-                options: q.options || [],
-                correctIndex: q.correctIndex !== undefined ? q.correctIndex : 0,
-                hint: q.hint || '',
-                order: idx + 1
-            }));
-        }
     }
 
     const mod = currentFormationModulesList.find(m => m.id === moduleId);

@@ -118,8 +118,6 @@ async function loadQuizModule(moduleId) {
         const docSnap = await db.collection('formation').doc(moduleId).get();
         if (docSnap.exists) {
             mod = { id: docSnap.id, ...docSnap.data() };
-        } else if (typeof FORMATION_MODULES !== 'undefined') {
-            mod = FORMATION_MODULES.find(m => m.id === moduleId);
         }
 
         if (!mod) {

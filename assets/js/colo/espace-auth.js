@@ -938,16 +938,21 @@ function showFormationExpiredScreen() {
         document.head.appendChild(style);
     }
 
+    const isNoActiveSession = !window.globalFormationActivePromoId && !globalFormationActivePromoId;
+    const titleText = isNoActiveSession ? "Session de formation inactive" : "Formation terminée";
+    const messageText = isNoActiveSession
+        ? "Votre compte stagiaire n'a pas d'accès pour le moment car aucune session de formation n'est actuellement active sur la plateforme.<br><br>Veuillez contacter l'administrateur si vous pensez qu'il s'agit d'une erreur."
+        : "Votre compte est désactivé car votre session de formation est terminée.<br><br>Veuillez contacter l'administrateur si vous pensez qu'il s'agit d'une erreur.";
+
     const expiredHtml = `
         <div class="es-ban-screen">
             <div class="es-ban-card">
                 <div class="es-ban-icon es-ban-icon--expired">
-                    <i class="bi bi-mortarboard-fill"></i>
+                    <i class="bi ${isNoActiveSession ? 'bi-shield-lock' : 'bi-mortarboard-fill'}"></i>
                 </div>
-                <h1 class="es-ban-title">Formation terminée</h1>
+                <h1 class="es-ban-title">${titleText}</h1>
                 <p class="es-ban-message">
-                    Votre compte est désactivé car votre session de formation est terminée.<br><br>
-                    Veuillez contacter l'administrateur si vous pensez qu'il s'agit d'une erreur.
+                    ${messageText}
                 </p>
                 <div class="es-ban-actions">
                     <button id="btnExpiredLogout" class="es-btn es-btn--primary es-btn--full es-btn--lg" style="background: var(--clr-accent, #f39c12); border-color: var(--clr-accent, #f39c12); color: #121212; font-weight: 700;">
