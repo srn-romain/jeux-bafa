@@ -822,7 +822,7 @@
 
             <div id="activityAIBlockMessage" class="es-alert es-alert--warning hidden" style="margin-top:20px; justify-content: center; align-items: center; text-align: center;">
               <i class="bi bi-lock-fill" style="margin-top: 0;"></i>
-              <span>L'assistant IA est désactivé par le directeur.</span>
+              <span>L'assistant IA est désactivé par l'administrateur.</span>
             </div>
             <button id="btnGenerateActivity" class="es-btn es-btn--primary" style="width:100%; margin-top:20px;">
               <i class="bi bi-stars"></i> Générer une idée
@@ -1651,7 +1651,7 @@
       <div class="es-modal__footer" style="flex-direction:column; gap:12px;">
         <div id="aiBlockMessage" class="es-alert es-alert--warning hidden" style="width:100%; justify-content: center; align-items: center; text-align: center;">
           <i class="bi bi-lock-fill" style="margin-top: 0;"></i>
-          <span>L'assistant IA est désactivé par le directeur.</span>
+          <span>L'assistant IA est désactivé par l'administrateur.</span>
         </div>
         <div style="display:flex; justify-content:space-between; width:100%; gap:8px;">
           <button class="es-btn es-btn--ghost" onclick="closeModal('overlayAIGenerator')">Annuler</button>
@@ -1729,10 +1729,12 @@
         <div class="es-field">
           <label class="es-field__label" for="selectCustomRole">Rôle dans la colo</label>
           <select id="selectCustomRole" class="es-select" onchange="handleSelectCustomRoleChange()">
-            <option value="">Animateur polyvalent (Par défaut)</option>
+            <option value="Directeur">Directeur</option>
+            <option value="Animateur polyvalent">Animateur polyvalent</option>
             <option value="Animateur AS">Animateur AS</option>
             <option value="Animateur SB">Animateur SB</option>
             <option value="Animateur spécifique">Animateur spécifique</option>
+            <option value="Adjoint de direction">Adjoint de direction</option>
             <option value="custom">Rôle personnalisé...</option>
           </select>
         </div>

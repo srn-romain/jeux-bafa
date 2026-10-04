@@ -25,6 +25,77 @@ let isColoArchived = false;      // Si la colo est archivée
 let currentColoDateFin = null;   // Date de fin de la colo
 let currentGeminiKey = "";       // Clé API Gemini de la session (depuis Firestore)
 let isAIGeneratorEnabled = true; // Si les anims ont le droit d'utiliser l'IA
+let currentColoData = null;      // Données de la colonie active
+window.currentTeamMembers = [];  // Membres de l'équipe chargés
+
+function getLockAuthorityLabel() {
+    const team = window.currentTeamMembers;
+    const adminRoles = currentColoData?.adminCustomRoles || {};
+    const myUid = currentUser?.uid;
+
+    // 1. Déterminer si l'utilisateur actuellement connecté est lui-même le directeur de la colo
+    let isCurrentUserDirector = false;
+    if (Array.isArray(team) && team.length > 0) {
+        const myMember = team.find(anim => anim.id === myUid);
+        const myRole = (myMember?.customRole || adminRoles[myUid] || '').trim().toLowerCase();
+        isCurrentUserDirector = (myRole === 'directeur' || myRole === 'directrice' || myRole.startsWith('directeur') || myRole.startsWith('directrice'));
+    } else {
+        const myRole = (adminRoles[myUid] || '').trim().toLowerCase();
+        isCurrentUserDirector = (myRole === 'directeur' || myRole === 'directrice' || myRole.startsWith('directeur') || myRole.startsWith('directrice'));
+    }
+
+    // Si l'utilisateur connecté est LUI-MÊME le directeur, le verrouillage vient de l'administrateur du site
+    if (isCurrentUserDirector) {
+        return "L'administrateur";
+    }
+
+    // 2. Si l'utilisateur connecté n'est PAS le directeur, vérifier si un autre membre est directeur
+    if (Array.isArray(team) && team.length > 0) {
+        const hasOtherDirector = team.some(anim => {
+            if (anim.id === myUid || anim.isPending) return false;
+            const cRole = (anim.customRole || '').trim().toLowerCase();
+            const isUserAdmin = (anim.role === 'admin' || anim.espaceRole === 'admin');
+            if (cRole === 'directeur' || cRole === 'directrice' || cRole.startsWith('directeur') || cRole.startsWith('directrice')) {
+                return true;
+            }
+            if (isUserAdmin && !cRole) {
+                return true;
+            }
+            return false;
+        });
+
+        return hasOtherDirector ? "Le directeur" : "L'administrateur";
+    }
+
+    // 3. Repli si l'équipe n'est pas encore en mémoire
+    const hasDirectorInRoles = Object.entries(adminRoles).some(([uid, r]) => {
+        if (uid === myUid) return false;
+        const cr = (r || '').trim().toLowerCase();
+        return cr === 'directeur' || cr === 'directrice' || cr.startsWith('directeur') || cr.startsWith('directrice');
+    });
+
+    if (hasDirectorInRoles) {
+        return "Le directeur";
+    }
+
+    return "L'administrateur";
+}
+
+function updateLockBanner() {
+    const lockBanner = document.getElementById('lockBanner');
+    if (!lockBanner) return;
+
+    if (currentRole === 'anim' && isAnimAdmin && currentLocked) {
+        const authLabel = getLockAuthorityLabel();
+        const textSpan = lockBanner.querySelector('span');
+        if (textSpan) {
+            textSpan.textContent = `${authLabel} a verrouillé la gestion des participants. Vous pouvez consulter la liste mais pas la modifier.`;
+        }
+        lockBanner.classList.remove('hidden');
+    } else {
+        lockBanner.classList.add('hidden');
+    }
+}
 
 // Helper pour parser les dates sans décalage de timezone UTC
 function parseLocalDate(dateStr) {
@@ -375,6 +446,7 @@ function showAccessDenied() {
 // INITIALISER LE CONTENU DE LA COLO
 // ----------------------------------------------------------------
 async function initColoContent(colo, role) {
+    currentColoData = colo;
     currentRole = role;
     document.getElementById('pageLoader').classList.add('hidden');
     document.getElementById('accessDenied').classList.add('hidden');
@@ -1043,14 +1115,7 @@ function renderParticipantsTable(role) {
     if (!tbody) return;
 
     // Bannière de verrou pour les anims
-    const lockBanner = document.getElementById('lockBanner');
-    if (lockBanner) {
-        if (role === 'anim' && isAnimAdmin && currentLocked) {
-            lockBanner.classList.remove('hidden');
-        } else {
-            lockBanner.classList.add('hidden');
-        }
-    }
+    updateLockBanner();
 
     let filteredParticipants = [...participants];
 
@@ -1179,7 +1244,7 @@ function renderParticipantsTable(role) {
                 </button>
                 <button class="es-btn es-btn--danger es-btn--sm" 
                         onclick="${canDelete ? `deleteParticipant('${p.id}', ${escapeHtml(JSON.stringify(p.prenom + ' ' + p.nom))})` : 'void(0)'}"
-                        ${isColoArchived ? 'disabled title="Espace archivé"' : (!canDelete ? 'disabled title="Verrouillé par le directeur"' : 'title="Supprimer"')}
+                        ${isColoArchived ? 'disabled title="Espace archivé"' : (!canDelete ? 'disabled title="Verrouillé par l\'administrateur"' : 'title="Supprimer"')}
                         style="${isColoArchived || (!canDelete && role === 'anim') ? 'opacity:0.4;cursor:not-allowed;' : ''}">
                     <i class="bi bi-trash3"></i>
                 </button>
@@ -2820,7 +2885,11 @@ function calculateAge(birthdateStr) {
 // DÉTERMINATION DE LA COULEUR ET DU CONTENU DES BADGES (RÔLES)
 // ----------------------------------------------------------------
 function getRoleBadgeInfo(anim) {
-    if (anim.role === 'admin' || anim.espaceRole === 'admin') {
+    const isAdminUser = (anim.role === 'admin' || anim.espaceRole === 'admin');
+    const customRole = (anim.customRole || '').trim();
+
+    // Si c'est un admin et qu'aucun rôle spécifique n'a été choisi ou qu'il a choisi explicitement "Directeur"
+    if (isAdminUser && (!customRole || customRole.toLowerCase() === 'directeur')) {
         return {
             className: 'es-badge--admin',
             style: '',
@@ -2828,16 +2897,29 @@ function getRoleBadgeInfo(anim) {
         };
     }
 
-    const role = anim.customRole || '';
-    const isAnimAdmin = (anim.espaceRole === 'anim-admin');
+    // Par défaut, si aucun rôle personnalisé n'est défini, on attribue 'Animateur polyvalent' (ou 'Directeur' pour admin)
+    const defaultRole = isAdminUser ? 'Directeur' : 'Animateur polyvalent';
+    const finalRole = customRole || defaultRole;
     
-    // Par défaut, si aucun rôle personnalisé n'est défini, on attribue 'Animateur polyvalent'
-    const defaultRole = 'Animateur polyvalent';
-    const finalRole = role || defaultRole;
-    
-    const roleLabel = isAnimAdmin ? `${finalRole} (Admin)` : finalRole;
     const cleanRole = finalRole.trim().toLowerCase();
+    const isDirectorRole = (cleanRole === 'directeur' || cleanRole === 'directrice' || cleanRole.startsWith('directeur') || cleanRole.startsWith('directrice'));
+
+    // Si c'est un animateur promu admin (anim-admin), on affiche (Admin) sauf si le rôle est déjà Directeur ou si c'est le vrai admin du site
+    const isAnimAdmin = (anim.espaceRole === 'anim-admin');
+    const roleLabel = (isAnimAdmin && !isAdminUser && !isDirectorRole) ? `${finalRole} (Admin)` : finalRole;
     
+    // Directeur / Directrice -> doré
+    if (isDirectorRole) {
+        return { className: 'es-badge--admin', style: '', label: finalRole };
+    }
+    // Adjoint -> ambre / or doux
+    if (cleanRole.includes('adjoint')) {
+        return {
+            className: '',
+            style: 'background: rgba(245, 158, 11, 0.15); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.35);',
+            label: roleLabel
+        };
+    }
     // SB -> bleu
     if (cleanRole === 'sb' || cleanRole === 'animateur sb' || cleanRole.includes('sb') || cleanRole.includes('baignade')) {
         return { className: 'es-badge--sb', style: '', label: roleLabel };
@@ -2851,7 +2933,7 @@ function getRoleBadgeInfo(anim) {
         return { className: 'es-badge--specifique', style: '', label: roleLabel };
     }
     // polyvalent -> vert sapin
-    if (cleanRole.includes('polyvalent')) {
+    if (cleanRole.includes('polyvalent') || cleanRole === 'anim' || cleanRole === 'animateur' || cleanRole === 'animatrice') {
         return { className: 'es-badge--polyvalent', style: '', label: roleLabel };
     }
 
@@ -2901,13 +2983,51 @@ async function loadAnimateurs(coloId) {
         });
         const userIds = Object.keys(reqMap);
 
-        // On récupère aussi l'admin qui a créé la colo s'il n'est pas déjà dans la liste
+        // On récupère aussi la colo pour les rôles custom admin et le créateur
         const coloDoc = await db.collection('espaces').doc(coloId).get();
-        if (coloDoc.exists && coloDoc.data().createdBy) {
-            const creatorId = coloDoc.data().createdBy;
+        const coloData = coloDoc.exists ? coloDoc.data() : {};
+        const adminCustomRoles = coloData.adminCustomRoles || {};
+
+        // 1. Ajouter tous les utilisateurs enregistrés dans adminCustomRoles
+        Object.keys(adminCustomRoles).forEach(adminUid => {
+            if (!userIds.includes(adminUid)) {
+                userIds.push(adminUid);
+                reqMap[adminUid] = {
+                    requestId: null,
+                    espaceRole: 'admin',
+                    customRole: adminCustomRoles[adminUid]
+                };
+            } else if (adminCustomRoles[adminUid]) {
+                reqMap[adminUid].customRole = adminCustomRoles[adminUid];
+            }
+        });
+
+        // 2. Ajouter le créateur de la colo s'il n'est pas encore présent
+        if (coloData.createdBy) {
+            const creatorId = coloData.createdBy;
             if (!userIds.includes(creatorId)) {
                 userIds.push(creatorId);
-                reqMap[creatorId] = { requestId: null, espaceRole: 'admin' };
+                reqMap[creatorId] = { 
+                    requestId: null, 
+                    espaceRole: 'admin',
+                    customRole: adminCustomRoles[creatorId] || coloData.adminCustomRole || 'Directeur'
+                };
+            } else if (adminCustomRoles[creatorId]) {
+                reqMap[creatorId].customRole = adminCustomRoles[creatorId];
+            }
+        }
+
+        // 3. Si l'utilisateur connecté est admin (et n'est pas encore dans la liste)
+        if (currentUser && currentRole === 'admin') {
+            if (!userIds.includes(currentUser.uid)) {
+                userIds.push(currentUser.uid);
+                reqMap[currentUser.uid] = {
+                    requestId: null,
+                    espaceRole: 'admin',
+                    customRole: adminCustomRoles[currentUser.uid] || 'Directeur'
+                };
+            } else if (adminCustomRoles[currentUser.uid]) {
+                reqMap[currentUser.uid].customRole = adminCustomRoles[currentUser.uid];
             }
         }
 
@@ -2944,18 +3064,24 @@ async function loadAnimateurs(coloId) {
             const uid = userIds[index];
             if (uDoc.exists) {
                 const req = reqMap[uid];
+                const uData = uDoc.data();
+                const isUserAdmin = (uData.role === 'admin' || req.espaceRole === 'admin');
+                const customRole = adminCustomRoles[uid] || req.customRole || (isUserAdmin ? 'Directeur' : '');
+
                 approvedAnimsData.push({ 
+                    ...uData,
                     id: uDoc.id, 
                     isPending: false, 
                     requestId: req.requestId,
-                    espaceRole: req.espaceRole || 'anim',
-                    customRole: req.customRole || '',
-                    ...uDoc.data()
+                    espaceRole: req.espaceRole || (uData.role === 'admin' ? 'admin' : 'anim'),
+                    customRole: customRole
                 });
             }
         });
 
         const allAnims = [...pendingAnimsData, ...approvedAnimsData];
+        window.currentTeamMembers = allAnims;
+        updateLockBanner();
 
         // Mettre à jour les points de notification si ADMIN
         if (currentRole === 'admin') {
@@ -3024,17 +3150,19 @@ async function loadAnimateurs(coloId) {
                             ${escapeHtml(badgeInfo.label)}
                         </div>
 
-                        ${(!isColoArchived && currentRole === 'admin' && anim.role !== 'admin' && anim.espaceRole !== 'admin' && anim.requestId) ? `
+                        ${(!isColoArchived && currentRole === 'admin') ? `
                             <button class="es-btn-edit-role" 
-                                    onclick="openCustomRoleModal('${anim.requestId}', ${escapeHtml(JSON.stringify(anim.customRole || ''))}, ${escapeHtml(JSON.stringify(anim.displayName || 'Animateur'))})"
+                                    onclick="openCustomRoleModal(${anim.requestId ? `'${anim.requestId}'` : 'null'}, ${escapeHtml(JSON.stringify(anim.customRole || (anim.role === 'admin' || anim.espaceRole === 'admin' ? 'Directeur' : 'Animateur polyvalent')))}, ${escapeHtml(JSON.stringify(anim.displayName || 'Membre'))}, '${anim.id}')"
                                     title="Définir le rôle dans la colo">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
-                            <button class="es-btn-promote ${anim.espaceRole === 'anim-admin' ? 'es-btn-promote--active' : ''}" 
-                                    onclick="toggleAnimAdmin('${anim.requestId}', '${anim.espaceRole === 'anim-admin' ? 'anim' : 'anim-admin'}')"
-                                    title="${anim.espaceRole === 'anim-admin' ? 'Retirer les droits Admin' : 'Donner les droits Admin'}">
-                                ${anim.espaceRole === 'anim-admin' ? '<i class="bi bi-shield-slash"></i>' : '<i class="bi bi-shield-plus"></i>'}
-                            </button>
+                            ${(anim.role !== 'admin' && anim.espaceRole !== 'admin' && anim.requestId) ? `
+                                <button class="es-btn-promote ${anim.espaceRole === 'anim-admin' ? 'es-btn-promote--active' : ''}" 
+                                        onclick="toggleAnimAdmin('${anim.requestId}', '${anim.espaceRole === 'anim-admin' ? 'anim' : 'anim-admin'}')"
+                                        title="${anim.espaceRole === 'anim-admin' ? 'Retirer les droits Admin' : 'Donner les droits Admin'}">
+                                    ${anim.espaceRole === 'anim-admin' ? '<i class="bi bi-shield-slash"></i>' : '<i class="bi bi-shield-plus"></i>'}
+                                </button>
+                            ` : ''}
                         ` : ''}
                     </div>
                 `}
@@ -3110,6 +3238,7 @@ async function toggleAnimAdmin(requestId, newRole) {
 // ----------------------------------------------------------------
 
 let currentEditRoleRequestId = null;
+let currentEditRoleUserId = null;
 
 function handleSelectCustomRoleChange() {
     const select = document.getElementById('selectCustomRole');
@@ -3119,8 +3248,9 @@ function handleSelectCustomRoleChange() {
     }
 }
 
-function openCustomRoleModal(requestId, currentCustomRole, displayName) {
-    currentEditRoleRequestId = requestId;
+function openCustomRoleModal(requestId, currentCustomRole, displayName, userId) {
+    currentEditRoleRequestId = requestId || null;
+    currentEditRoleUserId = userId || null;
     const select = document.getElementById('selectCustomRole');
     const input = document.getElementById('inputCustomRoleVal');
     const title = document.getElementById('customRoleModalTitle');
@@ -3130,13 +3260,13 @@ function openCustomRoleModal(requestId, currentCustomRole, displayName) {
     }
 
     if (select && input) {
-        const standardRoles = ["", "Animateur AS", "Animateur SB", "Animateur spécifique"];
-        let mappedRole = currentCustomRole;
-        if (mappedRole === "Animateur polyvalent") {
-            mappedRole = "";
-        }
+        const standardRoles = ["Directeur", "Animateur polyvalent", "Animateur AS", "Animateur SB", "Animateur spécifique", "Adjoint de direction"];
+        let mappedRole = (currentCustomRole || '').trim();
         if (standardRoles.includes(mappedRole)) {
             select.value = mappedRole;
+            input.value = '';
+        } else if (!mappedRole) {
+            select.value = 'Animateur polyvalent';
             input.value = '';
         } else {
             select.value = 'custom';
@@ -3160,7 +3290,7 @@ async function saveCustomRole(btn) {
         showToast("L'espace est archivé. Les modifications sont impossibles.", "error");
         return;
     }
-    if (!currentEditRoleRequestId) return;
+    if (!currentEditRoleRequestId && !currentEditRoleUserId) return;
     
     const select = document.getElementById('selectCustomRole');
     const input = document.getElementById('inputCustomRoleVal');
@@ -3177,12 +3307,38 @@ async function saveCustomRole(btn) {
 
     btnLoading(btn, true);
     try {
-        await db.collection('accessRequests').doc(currentEditRoleRequestId).update({
-            customRole: finalRoleVal
-        });
+        const promises = [];
+        if (currentEditRoleRequestId) {
+            const updatePayload = {
+                customRole: finalRoleVal
+            };
+            const cleanFinal = finalRoleVal.trim().toLowerCase();
+            // Si le rôle choisi est Directeur ou Directrice, on lui accorde l'habilitation anim-admin pour l'espace
+            if (cleanFinal === 'directeur' || cleanFinal === 'directrice' || cleanFinal.startsWith('directeur') || cleanFinal.startsWith('directrice')) {
+                updatePayload.espaceRole = 'anim-admin';
+            }
+            promises.push(
+                db.collection('accessRequests').doc(currentEditRoleRequestId).update(updatePayload)
+            );
+        }
+        if (currentEditRoleUserId && espaceId) {
+            if (!currentColoData) currentColoData = {};
+            if (!currentColoData.adminCustomRoles) currentColoData.adminCustomRoles = {};
+            currentColoData.adminCustomRoles[currentEditRoleUserId] = finalRoleVal;
+            promises.push(
+                db.collection('espaces').doc(espaceId).set({
+                    adminCustomRoles: {
+                        [currentEditRoleUserId]: finalRoleVal
+                    }
+                }, { merge: true })
+            );
+        }
+        await Promise.all(promises);
         showToast("Rôle mis à jour avec succès.", "success");
         closeModal('overlayCustomRole');
-        loadAnimateurs(espaceId);
+        await loadAnimateurs(espaceId);
+        updateLockBanner();
+        renderParticipantsTable(currentRole);
     } catch (err) {
         console.error("Erreur saveCustomRole:", err);
         showToast("Erreur lors de la mise à jour du rôle.", "error");
@@ -3565,7 +3721,7 @@ function renderAlerts(alerts, role) {
                             <i class="bi bi-x-lg" style="font-size:0.85rem;"></i>
                         </button>
                     ` : `
-                        <div style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; opacity:0.35; flex-shrink:0; margin-top: 2px;" title="Verrouillé par le directeur">
+                        <div style="width:30px; height:30px; display:flex; align-items:center; justify-content:center; opacity:0.35; flex-shrink:0; margin-top: 2px;" title="Verrouillé par l'administrateur">
                             <i class="bi bi-lock-fill" style="font-size:0.95rem;"></i>
                         </div>
                     `}
