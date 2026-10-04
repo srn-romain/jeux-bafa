@@ -243,6 +243,14 @@ auth.onAuthStateChanged(async (user) => {
             setCachedUserData(user.uid, userData);
         }
     } catch (err) {
+        if (err && (err.code === 'permission-denied' || String(err).includes('permission') || String(err.message).includes('permission'))) {
+            console.warn("Profil bloqué par Firestore (bannissement)");
+            loginView?.classList.add('hidden');
+            dashboardView?.classList.add('hidden');
+            document.getElementById('dashOfflineBanner')?.classList.add('hidden');
+            if (typeof showBannedScreen === 'function') showBannedScreen();
+            return;
+        }
         console.warn("Offline auth fallback for userDoc:", err);
         if (typeof getCachedUserData === 'function') {
             userData = getCachedUserData(user.uid);
@@ -256,8 +264,11 @@ auth.onAuthStateChanged(async (user) => {
         }
     }
 
-    if (userData.banned === true) {
-        return; // Centralized handler will show ban screen
+    if (userData.banned === true || userData.isBanned === true) {
+        if (typeof showBannedScreen === 'function') {
+            showBannedScreen();
+        }
+        return;
     }
 
     // Si le compte est un stagiaire, redirection directe vers la page dédiée Formation BAFA
@@ -623,6 +634,18 @@ async function loadColos(user, role) {
         }
 
     } catch (err) {
+        if (err && (err.code === 'permission-denied' || String(err).includes('permission') || String(err.message).includes('permission'))) {
+            console.warn('Accès refusé par Firestore sur les colos -> Affichage écran ban');
+            loader.classList.add('hidden');
+            grid.classList.add('hidden');
+            document.getElementById('dashOfflineBanner')?.classList.add('hidden');
+            if (typeof showBannedScreen === 'function') {
+                showBannedScreen();
+            } else if (typeof showGlobalAccessDenied === 'function') {
+                showGlobalAccessDenied('accessDenied');
+            }
+            return;
+        }
         console.warn('Mode hors ligne ou échec réseau sur le dashboard:', err);
         isOfflineMode = true;
 

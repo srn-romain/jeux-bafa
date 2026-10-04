@@ -507,15 +507,16 @@
                                 </label>
                             </div>
                             
-                            <!-- Presets rapides Unsplash -->
+                            <!-- Presets rapides Unsplash avec rotation multi-images -->
                             <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin-bottom:8px;">
                                 <span style="font-size:0.75rem; color:var(--clr-text-muted); font-weight:600;">Idées d'images :</span>
-                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">🌲 Forêt</button>
-                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1508873696983-2df5293cb395?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">🔥 Feu de camp</button>
-                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">🎨 Créativité</button>
-                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">👥 Équipe & Jeux</button>
-                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">🏔️ Montagne</button>
-                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-url="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80" style="font-size:0.72rem; padding:2px 8px;">🏖️ Plage / Eau</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-category="foret" data-url="https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=80" title="Cliquez à nouveau pour voir une autre photo forêt" style="font-size:0.72rem; padding:2px 8px;">🌲 Forêt</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-category="feu" data-url="https://images.unsplash.com/photo-1508873696983-2df5293cb395?w=800&auto=format&fit=crop&q=80" title="Cliquez à nouveau pour voir une autre photo feu de camp" style="font-size:0.72rem; padding:2px 8px;">🔥 Feu de camp</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-category="creativite" data-url="https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=800&auto=format&fit=crop&q=80" title="Cliquez à nouveau pour voir une autre photo créativité" style="font-size:0.72rem; padding:2px 8px;">🎨 Créativité</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-category="equipe" data-url="https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop&q=80" title="Cliquez à nouveau pour voir une autre photo équipe" style="font-size:0.72rem; padding:2px 8px;">👥 Équipe & Jeux</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-category="montagne" data-url="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80" title="Cliquez à nouveau pour voir une autre photo montagne" style="font-size:0.72rem; padding:2px 8px;">🏔️ Montagne</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-category="plage" data-url="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80" title="Cliquez à nouveau pour voir une autre photo plage" style="font-size:0.72rem; padding:2px 8px;">🏖️ Plage / Eau</button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-bg-preset" data-category="nuit" data-url="https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=800&auto=format&fit=crop&q=80" title="Cliquez à nouveau pour voir une autre photo veillée" style="font-size:0.72rem; padding:2px 8px;">🌌 Veillée & Nuit</button>
                             </div>
 
                             <!-- Aperçu de l'image de fond -->
@@ -791,8 +792,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="../../assets/js/firebase-config.js"></script>
     <script src="../../assets/js/colo/espace-auth.js?v=3.5"></script>
-    <script src="../../assets/js/formation/espace-formation-data.js?v=1.1"></script>
-    <script src="../../assets/js/formation/espace-formation.js?v=1.0"></script>
+    <script src="../../assets/js/formation/espace-formation-data.js?v=1.5"></script>
+    <script src="../../assets/js/formation/espace-formation.js?v=1.5"></script>
 </body>
 
 </html>

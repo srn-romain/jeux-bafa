@@ -34,8 +34,11 @@ auth.onAuthStateChanged(async (user) => {
     const role = userDoc.data().role;
     const userData = userDoc.data();
 
-    if (userData.banned === true) {
-        return; // Centralized handler will show ban screen
+    if (userData.banned === true || userData.isBanned === true) {
+        if (typeof showBannedScreen === 'function') {
+            showBannedScreen();
+        }
+        return;
     }
 
     // Mettre à jour lastLogin

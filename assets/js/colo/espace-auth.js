@@ -277,6 +277,8 @@ function updateTopbarUser(user, role, userData = null) {
         // Animateur
         linkAdmin?.classList.add('hidden');
         btnAdminLink?.classList.add('hidden');
+        linkFormation?.classList.add('hidden');
+        btnFormationLink?.classList.add('hidden');
         linkColos?.classList.remove('hidden');
         btnColosLink?.classList.remove('hidden');
     }
@@ -679,9 +681,19 @@ if ('serviceWorker' in navigator) {
 // ----------------------------------------------------------------
 
 function showBannedScreen() {
-    // Hide standard page loaders
+    // Hide standard page loaders and banners
     document.getElementById('pageLoader')?.classList.add('hidden');
     document.getElementById('adminLoader')?.classList.add('hidden');
+    document.getElementById('colosLoader')?.classList.add('hidden');
+    document.getElementById('formationLoader')?.classList.add('hidden');
+    document.getElementById('dashOfflineBanner')?.classList.add('hidden');
+
+    // Hide main views if already rendered
+    document.getElementById('dashboardView')?.classList.add('hidden');
+    document.getElementById('coloContent')?.classList.add('hidden');
+    document.getElementById('formationView')?.classList.add('hidden');
+    document.getElementById('adminContent')?.classList.add('hidden');
+    document.getElementById('accessDenied')?.classList.add('hidden');
 
     if (!document.getElementById('ban-screen-styles')) {
         const style = document.createElement('style');
@@ -781,6 +793,7 @@ function showBannedScreen() {
         window.location.reload();
     });
 }
+window.showBannedScreen = showBannedScreen;
 
 // Écouteur global pour intercepter et bloquer en temps réel si banni
 firebase.auth().onAuthStateChanged((user) => {
@@ -789,7 +802,7 @@ firebase.auth().onAuthStateChanged((user) => {
         window.currentUserUnsub = firebase.firestore().collection('users').doc(user.uid).onSnapshot(doc => {
             if (doc.exists) {
                 const userData = doc.data();
-                if (userData.banned === true) {
+                if (userData.banned === true || userData.isBanned === true) {
                     showBannedScreen();
                 } else {
                     // Si le membre a été débanni en temps réel, on supprime l'écran de ban s'il existe

@@ -1864,13 +1864,93 @@ function updateModuleBgPreview(url) {
     }
 }
 
-document.querySelectorAll('.btn-bg-preset').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const url = btn.getAttribute('data-url');
-        const input = document.getElementById('editModuleBgImage');
-        if (input) input.value = url;
-        updateModuleBgPreview(url);
-    });
+// ----------------------------------------------------------------
+// BANQUE D'IMAGES PAR CATÉGORIE (Rotation au clic)
+// ----------------------------------------------------------------
+const BG_IMAGE_PRESETS = {
+    foret: [
+        "https://images.unsplash.com/photo-1448375240586-882707db888b?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1511497584788-87676104235f?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1425913397330-cf8af2ff40a1?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&auto=format&fit=crop&q=80"
+    ],
+    feu: [
+        "https://images.unsplash.com/photo-1508873696983-2df5293cb395?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1470246973918-29a93221c455?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1496545672447-f699b503d270?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1475483768296-6163e08872a1?w=800&auto=format&fit=crop&q=80"
+    ],
+    creativite: [
+        "https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1501612780327-45045538702b?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1456086272160-b28b0645b729?w=800&auto=format&fit=crop&q=80"
+    ],
+    equipe: [
+        "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1485546246426-74dc88dec4d9?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1526976668912-1a811878dd37?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=800&auto=format&fit=crop&q=80"
+    ],
+    montagne: [
+        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=800&auto=format&fit=crop&q=80"
+    ],
+    plage: [
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1506929562872-bb421503ef21?w=800&auto=format&fit=crop&q=80"
+    ],
+    nuit: [
+        "https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?w=800&auto=format&fit=crop&q=80"
+    ]
+};
+
+const bgPresetCategoryIndices = {};
+
+document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-bg-preset');
+    if (!btn) return;
+    e.preventDefault();
+
+    const cat = btn.getAttribute('data-category') || 'foret';
+    let list = BG_IMAGE_PRESETS[cat];
+    if (!list || list.length === 0) {
+        const fallbackUrl = btn.getAttribute('data-url');
+        if (fallbackUrl) list = [fallbackUrl];
+    }
+    if (!list || list.length === 0) {
+        list = BG_IMAGE_PRESETS.foret || [];
+    }
+    if (!list || list.length === 0) return;
+
+    const currentIdx = bgPresetCategoryIndices[cat] !== undefined ? bgPresetCategoryIndices[cat] : -1;
+    const nextIdx = (currentIdx + 1) % list.length;
+    bgPresetCategoryIndices[cat] = nextIdx;
+
+    const nextUrl = list[nextIdx];
+    const input = document.getElementById('editModuleBgImage');
+    if (input) {
+        input.value = nextUrl;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    updateModuleBgPreview(nextUrl);
+
+    btn.style.transition = 'transform 0.15s ease';
+    btn.style.transform = 'scale(0.92)';
+    setTimeout(() => { btn.style.transform = ''; }, 150);
 });
 
 document.getElementById('editModuleBgImage')?.addEventListener('input', (e) => {
@@ -3409,7 +3489,9 @@ auth.onAuthStateChanged(async (user) => {
     }
 
     if (userData.banned === true || userData.isBanned === true) {
-        if (typeof showGlobalAccessDenied === 'function') {
+        if (typeof showBannedScreen === 'function') {
+            showBannedScreen();
+        } else if (typeof showGlobalAccessDenied === 'function') {
             showGlobalAccessDenied();
         }
         return;

@@ -283,6 +283,12 @@ auth.onAuthStateChanged(async (user) => {
             return;
         }
     } catch (err) {
+        if (err && (err.code === 'permission-denied' || String(err).includes('permission') || String(err.message).includes('permission'))) {
+            console.warn("Profil bloqué par Firestore (bannissement dans espace-colo)");
+            document.getElementById('pageLoader')?.classList.add('hidden');
+            if (typeof showBannedScreen === 'function') showBannedScreen();
+            return;
+        }
         console.warn("Mode hors ligne pour le profil utilisateur:", err);
         if (typeof getCachedUserData === 'function') {
             userData = getCachedUserData(user.uid);
@@ -297,8 +303,11 @@ auth.onAuthStateChanged(async (user) => {
         role = userData.role || 'anim';
     }
 
-    if (userData.banned === true) {
-        return; // Centralized handler will show ban screen
+    if (userData.banned === true || userData.isBanned === true) {
+        if (typeof showBannedScreen === 'function') {
+            showBannedScreen();
+        }
+        return;
     }
 
     // Synchroniser les espaces épinglés (pinnedColos) avec Firestore
