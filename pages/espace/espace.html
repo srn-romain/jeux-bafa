@@ -193,6 +193,67 @@
         <!-- === ONGLET GROUPES === -->
         <div id="tab-groupes" class="hidden">
 
+          <!-- SECTION 0 : ASSOCIATION DES COMPTES DE FORMATION (Admin uniquement & si Espace Formation) -->
+          <div class="es-section hidden" id="sectionZeroFormationAdmin" style="margin-bottom: 24px;">
+            <div id="sectionZeroToggleHeader" style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <h3 class="es-section__title" style="margin:0; display:flex; align-items:center; gap:8px;">
+                  <i class="bi bi-person-check" style="color:var(--clr-primary);"></i> 0. Association des comptes stagiaires
+                </h3>
+                <span id="sectionZeroStatusBadge" class="es-badge es-badge--pending" style="font-size:0.75rem;">
+                  <i class="bi bi-clock-history"></i> Non validé
+                </span>
+              </div>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span id="sectionZeroCountSummary" style="font-size:0.8rem; color:var(--clr-text-muted);">0 stagiaire(s)</span>
+                <i class="bi bi-chevron-down es-section-zero__chevron" id="sectionZeroChevron"></i>
+              </div>
+            </div>
+
+            <p class="es-section__desc" style="margin-top:8px; margin-bottom:14px;">
+              Associez chaque compte stagiaire à son participant dans la liste de la promotion. L'algorithme propose automatiquement les correspondances basées sur le nom et le prénom. Vous pouvez modifier chaque proposition avant de valider.
+            </p>
+
+            <div class="es-section__content" id="sectionZeroBody">
+              <div id="sectionZeroLoader" class="es-loader" style="padding:20px 0;">
+                <div class="es-spinner"></div>
+                <span>Analyse des correspondances…</span>
+              </div>
+
+              <div id="sectionZeroContent" class="hidden">
+                <!-- Correspondances proposées par l'algorithme -->
+                <div id="sectionZeroMatchedGroup" style="margin-bottom:16px;">
+                  <div style="font-size:0.85rem; font-weight:700; color:var(--clr-text); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                    <i class="bi bi-check2-circle" style="color:var(--clr-primary);"></i> Correspondances proposées par l'algorithme (<span id="sectionZeroMatchedCount">0</span>)
+                  </div>
+                  <div class="es-section-zero__list" id="sectionZeroMatchedList"></div>
+                </div>
+
+                <!-- Non déterminés / À associer manuellement -->
+                <div id="sectionZeroUnmatchedGroup" style="margin-bottom:16px;">
+                  <div style="font-size:0.85rem; font-weight:700; color:var(--clr-text); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                    <i class="bi bi-question-circle" style="color:var(--clr-text-muted);"></i> Comptes non déterminés / À associer manuellement (<span id="sectionZeroUnmatchedCount">0</span>)
+                  </div>
+                  <div class="es-section-zero__list" id="sectionZeroUnmatchedList"></div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; padding-top:14px; border-top:1px solid var(--clr-surface-3); margin-top:14px;">
+                  <div style="font-size:0.8rem; color:var(--clr-text-muted);" id="sectionZeroValidationDate">
+                    <i class="bi bi-shield-check"></i> Non encore validé
+                  </div>
+                  <div style="display:flex; gap:8px; align-items:center;">
+                    <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnRematchSectionZero" title="Relancer l'algorithme d'auto-association">
+                      <i class="bi bi-arrow-clockwise"></i> Ré-exécuter l'algorithme
+                    </button>
+                    <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnSaveSectionZeroMapping" style="font-weight:700;">
+                      <i class="bi bi-check-lg"></i> Valider l'association des comptes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div class="es-section">
             <h3 class="es-section__title">
               <i class="bi bi-shuffle"></i> 1. Création de groupes aléatoires

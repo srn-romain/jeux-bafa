@@ -1066,6 +1066,10 @@ async function loadParticipants(coloId, role) {
         updateStats();
         selectDefaultAIAgeRange();
         regenerateGroups();
+
+        if (typeof loadColoSectionZeroMapping === 'function') {
+            loadColoSectionZeroMapping(coloId, role);
+        }
     } catch (err) {
         console.warn('loadParticipants échec réseau / mode hors ligne:', err);
         const cached = localStorage.getItem('offline_participants_' + coloId);
@@ -1080,6 +1084,10 @@ async function loadParticipants(coloId, role) {
             updateStats();
             selectDefaultAIAgeRange();
             regenerateGroups();
+
+            if (typeof loadColoSectionZeroMapping === 'function') {
+                loadColoSectionZeroMapping(coloId, role);
+            }
         } else {
             // Afficher un message d'erreur réseau dans le tableau (uniquement si aucun cache)
             const tbody = document.getElementById('participantsTbody');
@@ -5482,6 +5490,442 @@ window.addEventListener('online', () => {
         loadGroups(espaceId, currentRole);
     }
 });
+
+// ================================================================
+// SECTION 0 : ASSOCIATION DES COMPTES STAGIAIRES (ESPACE FORMATION)
+// ================================================================
+let coloSectionZeroUsers = [];
+let coloSectionZeroProposedMatches = {}; // participantId -> userId
+let isColoSectionZeroValidated = false;
+let persistentColoMappingToast = null;
+let coloSectionZeroEventsInitialized = false;
+
+function normalizeNameForMatch(str) {
+    if (!str) return '';
+    return str.toString()
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function computeColoSectionZeroAutoMatches(participantsList = [], usersList = []) {
+    const matched = [];
+    const unmatched = [];
+    const proposedMapping = {};
+
+    participantsList.forEach(p => {
+        // Si le participant a déjà un userId attribué
+        if (p.userId) {
+            const existingUser = usersList.find(u => (u.uid === p.userId || u.id === p.userId));
+            if (existingUser) {
+                proposedMapping[p.id] = existingUser.uid || existingUser.id;
+                matched.push({ participant: p, matchedUser: existingUser, score: 100, isExisting: true });
+                return;
+            }
+        }
+
+        const pNom = normalizeNameForMatch(p.nom || '');
+        const pPrenom = normalizeNameForMatch(p.prenom || '');
+        const pFullName = `${pNom} ${pPrenom}`.trim();
+        const pReverseFullName = `${pPrenom} ${pNom}`.trim();
+
+        let bestUser = null;
+        let bestScore = 0;
+
+        usersList.forEach(u => {
+            const uNom = normalizeNameForMatch(u.lastName || u.nom || '');
+            const uPrenom = normalizeNameForMatch(u.firstName || u.prenom || '');
+            const uFullName = `${uNom} ${uPrenom}`.trim();
+            const uReverseFullName = `${uPrenom} ${uNom}`.trim();
+            const uDisplayName = normalizeNameForMatch(u.displayName || '');
+            const uEmailPrefix = normalizeNameForMatch((u.email || '').split('@')[0]);
+
+            let score = 0;
+
+            if (pNom && pPrenom && ((pNom === uNom && pPrenom === uPrenom) || (pNom === uPrenom && pPrenom === uNom))) {
+                score = 100;
+            } else if (pFullName && (pFullName === uFullName || pFullName === uReverseFullName || pFullName === uDisplayName)) {
+                score = 95;
+            } else if (pReverseFullName && (pReverseFullName === uFullName || pReverseFullName === uReverseFullName || pReverseFullName === uDisplayName)) {
+                score = 95;
+            } else if (pNom && pPrenom && uDisplayName.includes(pNom) && uDisplayName.includes(pPrenom)) {
+                score = 80;
+            } else if (pNom && pPrenom && uEmailPrefix.includes(pNom) && uEmailPrefix.includes(pPrenom)) {
+                score = 75;
+            } else if (pPrenom && uPrenom && pPrenom === uPrenom && pNom && uNom && (pNom.includes(uNom) || uNom.includes(pNom))) {
+                score = 70;
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestUser = u;
+            }
+        });
+
+        if (bestUser && bestScore >= 70) {
+            proposedMapping[p.id] = bestUser.uid || bestUser.id;
+            matched.push({ participant: p, matchedUser: bestUser, score: bestScore, isExisting: false });
+        } else {
+            proposedMapping[p.id] = '';
+            unmatched.push({ participant: p, matchedUser: null, score: 0, isExisting: false });
+        }
+    });
+
+    return { matched, unmatched, proposedMapping };
+}
+
+function renderColoSectionZeroUI(matchedList = [], unmatchedList = [], allUsers = []) {
+    const matchedContainer = document.getElementById('sectionZeroMatchedList');
+    const unmatchedContainer = document.getElementById('sectionZeroUnmatchedList');
+    const matchedCountEl = document.getElementById('sectionZeroMatchedCount');
+    const unmatchedCountEl = document.getElementById('sectionZeroUnmatchedCount');
+    const countSummary = document.getElementById('sectionZeroCountSummary');
+    const statusBadge = document.getElementById('sectionZeroStatusBadge');
+    const validationDateEl = document.getElementById('sectionZeroValidationDate');
+
+    const totalCount = matchedList.length + unmatchedList.length;
+    if (countSummary) countSummary.textContent = `${totalCount} stagiaire${totalCount > 1 ? 's' : ''}`;
+    if (matchedCountEl) matchedCountEl.textContent = matchedList.length;
+    if (unmatchedCountEl) unmatchedCountEl.textContent = unmatchedList.length;
+
+    if (statusBadge) {
+        if (isColoSectionZeroValidated) {
+            statusBadge.className = 'es-badge es-badge--approved';
+            statusBadge.innerHTML = '<i class="bi bi-check-circle-fill"></i> Validé';
+        } else {
+            statusBadge.className = 'es-badge es-badge--pending';
+            statusBadge.innerHTML = '<i class="bi bi-clock-history"></i> Non validé';
+        }
+    }
+
+    if (validationDateEl) {
+        if (isColoSectionZeroValidated) {
+            validationDateEl.innerHTML = '<i class="bi bi-shield-check" style="color:var(--clr-success);"></i> Validé pour cette formation';
+        } else {
+            validationDateEl.innerHTML = '<i class="bi bi-exclamation-triangle" style="color:var(--clr-warning, #f39c12);"></i> <strong>Action requise :</strong> Cliquez sur "Valider l\'association des comptes" pour confirmer';
+        }
+    }
+
+    const generateUserOptions = (selectedUid) => {
+        let html = '<option value="">-- Aucun compte associé --</option>';
+        allUsers.forEach(u => {
+            const uid = u.uid || u.id;
+            const uName = (u.lastName || u.firstName)
+                ? `${(u.lastName || '').toUpperCase()} ${u.firstName || ''}`.trim()
+                : (u.displayName || u.email || 'Compte sans nom');
+            const emailStr = u.email ? ` (${u.email})` : '';
+            const isSel = (uid === selectedUid) ? 'selected' : '';
+            html += `<option value="${escapeHtml(uid)}" ${isSel}>${escapeHtml(uName)}${escapeHtml(emailStr)}</option>`;
+        });
+        return html;
+    };
+
+    // 1. Liste des correspondances proposées
+    if (matchedContainer) {
+        if (matchedList.length === 0) {
+            matchedContainer.innerHTML = `
+                <div style="grid-column: 1 / -1; padding: 12px; text-align: center; color: var(--clr-text-muted); font-size: 0.82rem; background: var(--clr-surface-2); border-radius: var(--radius-md); border: 1px dashed var(--clr-surface-3);">
+                    Aucune correspondance automatique trouvée.
+                </div>
+            `;
+        } else {
+            matchedContainer.innerHTML = matchedList.map(({ participant, matchedUser, isExisting }) => {
+                const pName = `${(participant.nom || '').toUpperCase()} ${participant.prenom || ''}`.trim() || 'Stagiaire sans nom';
+                const selectedUid = coloSectionZeroProposedMatches[participant.id] || (matchedUser ? (matchedUser.uid || matchedUser.id) : '');
+                const initials = ((participant.prenom?.[0] || '') + (participant.nom?.[0] || '')).toUpperCase() || 'S';
+
+                return `
+                    <div class="es-section-zero__item" data-participant-id="${escapeHtml(participant.id)}">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                            <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                                <div style="width:32px; height:32px; border-radius:50%; background:var(--clr-surface-3); color:var(--clr-primary); font-weight:700; font-size:0.75rem; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    ${escapeHtml(initials)}
+                                </div>
+                                <div style="min-width:0;">
+                                    <div style="font-weight:700; font-size:0.86rem; color:var(--clr-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                        ${escapeHtml(pName)}
+                                    </div>
+                                    <div style="font-size:0.72rem; color:var(--clr-text-muted);">
+                                        ${participant.email ? escapeHtml(participant.email) : 'Liste stagiaires'}
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="es-badge es-badge--approved" style="font-size:0.68rem; padding:2px 6px; flex-shrink:0;">
+                                <i class="bi bi-${isExisting ? 'check2' : 'robot'}"></i> ${isExisting ? 'Enregistré' : 'Proposé'}
+                            </span>
+                        </div>
+                        <div style="margin-top:2px;">
+                            <label style="display:block; font-size:0.72rem; color:var(--clr-text-muted); margin-bottom:3px; font-weight:600;">
+                                Compte utilisateur associé :
+                            </label>
+                            <select class="es-input es-input--sm colo-section-zero-select" data-participant-id="${escapeHtml(participant.id)}" style="width:100%; font-size:0.8rem;">
+                                ${generateUserOptions(selectedUid)}
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    // 2. Liste des non déterminés / à associer manuellement
+    if (unmatchedContainer) {
+        if (unmatchedList.length === 0) {
+            unmatchedContainer.innerHTML = `
+                <div style="grid-column: 1 / -1; padding: 12px; text-align: center; color: var(--clr-text-muted); font-size: 0.82rem; background: var(--clr-surface-2); border-radius: var(--radius-md); border: 1px dashed var(--clr-surface-3);">
+                    Tous les stagiaires ont un compte proposé ou attribué !
+                </div>
+            `;
+        } else {
+            unmatchedContainer.innerHTML = unmatchedList.map(({ participant }) => {
+                const pName = `${(participant.nom || '').toUpperCase()} ${participant.prenom || ''}`.trim() || 'Stagiaire sans nom';
+                const selectedUid = coloSectionZeroProposedMatches[participant.id] || '';
+                const initials = ((participant.prenom?.[0] || '') + (participant.nom?.[0] || '')).toUpperCase() || '?';
+
+                return `
+                    <div class="es-section-zero__item" data-participant-id="${escapeHtml(participant.id)}">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px;">
+                            <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                                <div style="width:32px; height:32px; border-radius:50%; background:var(--clr-surface-3); color:#f39c12; font-weight:700; font-size:0.75rem; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    ${escapeHtml(initials)}
+                                </div>
+                                <div style="min-width:0;">
+                                    <div style="font-weight:700; font-size:0.86rem; color:var(--clr-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                        ${escapeHtml(pName)}
+                                    </div>
+                                    <div style="font-size:0.72rem; color:var(--clr-text-muted);">
+                                        ${participant.email ? escapeHtml(participant.email) : 'Non déterminé'}
+                                    </div>
+                                </div>
+                            </div>
+                            <span class="es-badge es-badge--pending" style="font-size:0.68rem; padding:2px 6px; flex-shrink:0;">
+                                <i class="bi bi-question-circle"></i> À associer
+                            </span>
+                        </div>
+                        <div style="margin-top:2px;">
+                            <label style="display:block; font-size:0.72rem; color:var(--clr-text-muted); margin-bottom:3px; font-weight:600;">
+                                Choisir le compte :
+                            </label>
+                            <select class="es-input es-input--sm colo-section-zero-select" data-participant-id="${escapeHtml(participant.id)}" style="width:100%; font-size:0.8rem;">
+                                ${generateUserOptions(selectedUid)}
+                            </select>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    }
+
+    document.querySelectorAll('.colo-section-zero-select').forEach(sel => {
+        sel.addEventListener('change', (e) => {
+            const pId = e.target.getAttribute('data-participant-id');
+            const uId = e.target.value;
+            coloSectionZeroProposedMatches[pId] = uId;
+        });
+    });
+}
+
+function checkAndShowPersistentColoMappingToast() {
+    if (isColoSectionZeroValidated || currentRole !== 'admin' || !isColoFormation) {
+        return;
+    }
+    if (document.querySelector('.es-toast--colo-mapping-warning')) return;
+
+    const container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    const t = document.createElement('div');
+    t.className = 'es-toast es-toast--warning es-toast--colo-mapping-warning';
+    t.innerHTML = `
+        <i class="bi bi-exclamation-triangle" style="flex-shrink: 0; font-size: 1.15rem; color: #f39c12;"></i>
+        <div style="flex: 1; min-width: 0;">
+            <div style="font-weight: 700; font-size: 0.85rem; margin-bottom: 2px;">Comptes stagiaires non associés</div>
+            <div style="font-size: 0.78rem; opacity: 0.95;">La Section 0 (onglet Fonctions) doit être validée pour synchroniser les comptes des stagiaires.</div>
+        </div>
+        <button type="button" class="es-btn es-btn--primary es-btn--sm btn-toast-go-colo-section-zero" style="font-size: 0.74rem; padding: 4px 10px; margin-left: 8px; white-space: nowrap;">
+            Voir Section 0
+        </button>
+        <i class="bi bi-x es-toast-close-btn" style="cursor: pointer; font-size: 1.2rem; opacity: 0.7; margin-left: 6px; flex-shrink: 0;"></i>
+    `;
+
+    const closeBtn = t.querySelector('.es-toast-close-btn');
+    closeBtn?.addEventListener('click', () => {
+        t.style.opacity = '0';
+        t.style.transition = 'opacity .3s';
+        setTimeout(() => t.remove(), 300);
+    });
+
+    const goBtn = t.querySelector('.btn-toast-go-colo-section-zero');
+    goBtn?.addEventListener('click', () => {
+        const tabBtn = document.querySelector('[data-tab="groupes"]');
+        tabBtn?.click();
+        const card = document.getElementById('sectionZeroFormationAdmin');
+        if (card) {
+            card.classList.remove('collapsed');
+            card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+
+    container.appendChild(t);
+    persistentColoMappingToast = t;
+}
+
+function dismissPersistentColoMappingToast() {
+    const existing = document.querySelectorAll('.es-toast--colo-mapping-warning');
+    existing.forEach(t => {
+        t.style.opacity = '0';
+        t.style.transition = 'opacity .3s';
+        setTimeout(() => t.remove(), 300);
+    });
+    persistentColoMappingToast = null;
+}
+
+async function loadColoSectionZeroMapping(coloId, role) {
+    const sectionContainer = document.getElementById('sectionZeroFormationAdmin');
+    const loader = document.getElementById('sectionZeroLoader');
+    const content = document.getElementById('sectionZeroContent');
+
+    if (!sectionContainer) return;
+
+    // Visible UNIQUEMENT si l'espace est une formation ET que l'utilisateur est admin
+    if (!isColoFormation || role !== 'admin') {
+        sectionContainer.classList.add('hidden');
+        return;
+    }
+
+    sectionContainer.classList.remove('hidden');
+    if (loader) loader.classList.remove('hidden');
+    if (content) content.classList.add('hidden');
+
+    initColoSectionZeroEvents();
+
+    try {
+        // 1. Vérifier si l'espace a déjà été validé
+        isColoSectionZeroValidated = currentColoData?.mappingValidated === true;
+
+        if (isColoSectionZeroValidated) {
+            sectionContainer.classList.add('collapsed');
+        } else {
+            sectionContainer.classList.remove('collapsed');
+        }
+
+        // 2. Récupérer les comptes stagiaires
+        try {
+            const uSnap = await db.collection('users').where('role', '==', 'stagiaire').get();
+            if (!uSnap.empty) {
+                coloSectionZeroUsers = uSnap.docs.map(d => ({ uid: d.id, id: d.id, ...d.data() }));
+            } else {
+                const allUsersSnap = await db.collection('users').get();
+                coloSectionZeroUsers = allUsersSnap.docs
+                    .map(d => ({ uid: d.id, id: d.id, ...d.data() }))
+                    .filter(u => u.role === 'stagiaire' || !u.role || u.role === 'participant');
+            }
+        } catch (e) {
+            console.warn("Erreur chargement users pour section 0:", e);
+            const allUsersSnap = await db.collection('users').get();
+            coloSectionZeroUsers = allUsersSnap.docs.map(d => ({ uid: d.id, id: d.id, ...d.data() }));
+        }
+
+        // Tri alphabétique des comptes stagiaires
+        coloSectionZeroUsers.sort((a, b) => {
+            const nameA = `${a.lastName || ''} ${a.firstName || ''} ${a.displayName || ''}`.trim().toLowerCase();
+            const nameB = `${b.lastName || ''} ${b.firstName || ''} ${b.displayName || ''}`.trim().toLowerCase();
+            return nameA.localeCompare(nameB, 'fr');
+        });
+
+        // 3. Calcul de l'algorithme d'association
+        const { matched, unmatched, proposedMapping } = computeColoSectionZeroAutoMatches(participants, coloSectionZeroUsers);
+        coloSectionZeroProposedMatches = proposedMapping;
+
+        // 4. Rendu de l'interface
+        renderColoSectionZeroUI(matched, unmatched, coloSectionZeroUsers);
+
+        if (loader) loader.classList.add('hidden');
+        if (content) content.classList.remove('hidden');
+
+        // 5. Toast persistant si non validé et participants présents
+        if (!isColoSectionZeroValidated && participants.length > 0) {
+            checkAndShowPersistentColoMappingToast();
+        }
+
+    } catch (err) {
+        console.error("loadColoSectionZeroMapping error:", err);
+        if (loader) loader.classList.add('hidden');
+        if (content) content.classList.remove('hidden');
+    }
+}
+
+function initColoSectionZeroEvents() {
+    if (coloSectionZeroEventsInitialized) return;
+    coloSectionZeroEventsInitialized = true;
+
+    // Toggle repli/dépli
+    const header = document.getElementById('sectionZeroToggleHeader');
+    const card = document.getElementById('sectionZeroFormationAdmin');
+    header?.addEventListener('click', () => {
+        card?.classList.toggle('collapsed');
+    });
+
+    // Bouton ré-exécuter l'algorithme
+    const btnRematch = document.getElementById('btnRematchSectionZero');
+    btnRematch?.addEventListener('click', () => {
+        const { matched, unmatched, proposedMapping } = computeColoSectionZeroAutoMatches(participants, coloSectionZeroUsers);
+        coloSectionZeroProposedMatches = proposedMapping;
+        renderColoSectionZeroUI(matched, unmatched, coloSectionZeroUsers);
+        showToast("Algorithme ré-exécuté avec succès !", "info");
+    });
+
+    // Bouton sauvegarder & valider
+    const btnSave = document.getElementById('btnSaveSectionZeroMapping');
+    btnSave?.addEventListener('click', async () => {
+        if (!espaceId) {
+            showToast("Identifiant de l'espace introuvable.", "error");
+            return;
+        }
+
+        try {
+            btnSave.disabled = true;
+            btnSave.innerHTML = `<span class="es-spinner" style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-right:6px;"></span> Validation en cours...`;
+
+            // 1. Mettre à jour chaque participant avec son userId
+            const batchPromises = participants.map(async (p) => {
+                const assignedUserId = coloSectionZeroProposedMatches[p.id] || null;
+                const pRef = db.collection('espaces').doc(espaceId).collection('participants').doc(p.id);
+                await pRef.set({ userId: assignedUserId }, { merge: true });
+                p.userId = assignedUserId;
+            });
+            await Promise.all(batchPromises);
+
+            // 2. Marquer la formation comme validée
+            await db.collection('espaces').doc(espaceId).set({
+                mappingValidated: true,
+                mappingValidatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            if (currentColoData) {
+                currentColoData.mappingValidated = true;
+            }
+            isColoSectionZeroValidated = true;
+            dismissPersistentColoMappingToast();
+
+            // Mettre à jour l'UI
+            const { matched, unmatched } = computeColoSectionZeroAutoMatches(participants, coloSectionZeroUsers);
+            renderColoSectionZeroUI(matched, unmatched, coloSectionZeroUsers);
+
+            showToast("Association des comptes validée avec succès !", "success");
+
+        } catch (err) {
+            console.error("Erreur validation Section 0:", err);
+            showToast("Erreur lors de la validation : " + (err.message || err), "error");
+        } finally {
+            btnSave.disabled = false;
+            btnSave.innerHTML = `<i class="bi bi-check-lg"></i> Valider l'association des comptes`;
+        }
+    });
+}
 
 
 

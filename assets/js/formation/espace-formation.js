@@ -190,8 +190,16 @@ async function loadFormationModules() {
 
     if (!grid) return;
 
-    // Blocage strict si stagiaire non relié à la promo active
-    if (actualRole === 'stagiaire' && typeof isStagiairePromoMismatch === 'function' && isStagiairePromoMismatch(actualUserData, globalActivePromoId || window.globalFormationActivePromoId)) {
+    // Blocage strict si stagiaire ou formateur non relié à la promo active
+    if ((actualRole === 'stagiaire' || actualRole === 'formateur') && typeof isUserPromoMismatch === 'function') {
+        const mismatch = await isUserPromoMismatch(actualUserData, globalActivePromoId || window.globalFormationActivePromoId, currentUser?.uid);
+        if (mismatch) {
+            if (typeof showFormationExpiredScreen === 'function') {
+                showFormationExpiredScreen();
+            }
+            return;
+        }
+    } else if (actualRole === 'stagiaire' && typeof isStagiairePromoMismatch === 'function' && isStagiairePromoMismatch(actualUserData, globalActivePromoId || window.globalFormationActivePromoId)) {
         if (typeof showFormationExpiredScreen === 'function') {
             showFormationExpiredScreen();
         }
@@ -3477,8 +3485,16 @@ auth.onAuthStateChanged(async (user) => {
         } catch (e) {}
     }
 
-    // Vérifier si le compte stagiaire correspond exactement à la promo en cours
-    if (userData.role === 'stagiaire' && isStagiairePromoMismatch(userData, currentPromoId)) {
+    // Vérifier si le compte stagiaire ou formateur correspond exactement à la promo en cours
+    if ((userData.role === 'stagiaire' || userData.role === 'formateur') && typeof isUserPromoMismatch === 'function') {
+        const mismatch = await isUserPromoMismatch(userData, currentPromoId, user.uid);
+        if (mismatch) {
+            if (typeof showFormationExpiredScreen === 'function') {
+                showFormationExpiredScreen();
+            }
+            return;
+        }
+    } else if (userData.role === 'stagiaire' && typeof isStagiairePromoMismatch === 'function' && isStagiairePromoMismatch(userData, currentPromoId)) {
         if (typeof showFormationExpiredScreen === 'function') {
             showFormationExpiredScreen();
         }

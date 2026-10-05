@@ -829,14 +829,17 @@ window.showBannedScreen = showBannedScreen;
 let globalFormationActivePromoId = '';
 
 try {
-    firebase.firestore().collection('globalSettings').doc('formation').onSnapshot(doc => {
+    firebase.firestore().collection('globalSettings').doc('formation').onSnapshot(async doc => {
         if (doc.exists) {
             globalFormationActivePromoId = doc.data().activePromoId || '';
             window.globalFormationActivePromoId = globalFormationActivePromoId;
 
-            // Re-vérifier l'accès si un stagiaire est connecté
-            if (window.currentAuthUserData && window.currentAuthUserData.role === 'stagiaire') {
-                if (isStagiairePromoMismatch(window.currentAuthUserData, globalFormationActivePromoId)) {
+            const isFormationPage = window.location.pathname.includes('formation.html') || window.location.pathname.includes('quiz.html');
+
+            // Re-vérifier l'accès si un stagiaire ou formateur est connecté sur une page de formation
+            if (window.currentAuthUserData && (window.currentAuthUserData.role === 'stagiaire' || (window.currentAuthUserData.role === 'formateur' && isFormationPage))) {
+                const isMismatch = await isUserPromoMismatch(window.currentAuthUserData, globalFormationActivePromoId);
+                if (isMismatch) {
                     showFormationExpiredScreen();
                 } else {
                     const container = document.getElementById('banScreenContainer');
@@ -850,22 +853,64 @@ try {
     });
 } catch (e) {}
 
+async function isUserPromoMismatch(userData, activePromoId, userId) {
+    if (!userData || userData.role === 'admin') return false;
+    if (userData.role !== 'stagiaire' && userData.role !== 'formateur') return false;
+
+    const currentPromoId = (activePromoId !== undefined && activePromoId !== null)
+        ? activePromoId
+        : (window.globalFormationActivePromoId || globalFormationActivePromoId || '');
+
+    // Si aucune promo n'est active sur la plateforme, l'accès à la formation est fermé pour stagiaires et formateurs
+    if (!currentPromoId) return true;
+
+    // 1. Vérification par promoId direct sur l'utilisateur
+    const userPromo = userData.promoId || userData.espaceId || userData.promotionId || userData.promo || '';
+    if (userPromo && userPromo === currentPromoId) {
+        return false;
+    }
+
+    // 2. Vérification dans accessRequests pour le compte connecté (en ligne)
+    const uId = userId || userData.uid || (firebase.auth().currentUser ? firebase.auth().currentUser.uid : null);
+    if (uId && navigator.onLine) {
+        try {
+            const reqDoc = await firebase.firestore().collection('accessRequests').doc(`${uId}_${currentPromoId}`).get();
+            if (reqDoc.exists && reqDoc.data().status === 'approved') {
+                return false;
+            }
+            const reqSnap = await firebase.firestore().collection('accessRequests')
+                .where('userId', '==', uId)
+                .where('espaceId', '==', currentPromoId)
+                .where('status', '==', 'approved')
+                .get();
+            if (!reqSnap.empty) {
+                return false;
+            }
+        } catch (e) {
+            console.warn("Erreur vérification accessRequests promo:", e);
+        }
+    }
+
+    return true;
+}
+window.isUserPromoMismatch = isUserPromoMismatch;
+
 function isStagiairePromoMismatch(userData, activePromoId) {
-    if (!userData || userData.role !== 'stagiaire') return false;
+    if (!userData || (userData.role !== 'stagiaire' && userData.role !== 'formateur')) return false;
     if (userData.role === 'admin') return false;
 
     const currentPromoId = (activePromoId !== undefined && activePromoId !== null)
         ? activePromoId
         : (window.globalFormationActivePromoId || globalFormationActivePromoId || '');
-    
+
+    if (!currentPromoId) return true;
+
     const userPromo = userData.promoId || userData.espaceId || userData.promotionId || userData.promo || '';
-    
-    // Le stagiaire n'a accès que si une promo active est définie ET que son compte correspond exactement à cet identifiant
-    if (!currentPromoId || !userPromo || userPromo !== currentPromoId) {
-        return true;
+    if (userPromo && userPromo === currentPromoId) {
+        return false;
     }
-    
-    return false;
+
+    return !userPromo || userPromo !== currentPromoId;
 }
 window.isStagiairePromoMismatch = isStagiairePromoMismatch;
 
@@ -953,10 +998,21 @@ function showFormationExpiredScreen() {
     }
 
     const isNoActiveSession = !window.globalFormationActivePromoId && !globalFormationActivePromoId;
-    const titleText = isNoActiveSession ? "Session de formation inactive" : "Formation terminée";
-    const messageText = isNoActiveSession
-        ? "Votre compte stagiaire n'a pas d'accès pour le moment car aucune session de formation n'est actuellement active sur la plateforme.<br><br>Veuillez contacter l'administrateur si vous pensez qu'il s'agit d'une erreur."
-        : "Votre compte est désactivé car votre session de formation est terminée.<br><br>Veuillez contacter l'administrateur si vous pensez qu'il s'agit d'une erreur.";
+    const isFormateur = window.currentAuthUserData?.role === 'formateur';
+    
+    let titleText = isNoActiveSession ? "Session de formation inactive" : "Formation fermée";
+    let messageText = "";
+
+    if (isFormateur) {
+        titleText = isNoActiveSession ? "Aucune session active" : "Session de formation inaccessible";
+        messageText = isNoActiveSession 
+            ? "L'espace de formation n'est pas accessible car aucune promotion n'est actuellement sélectionnée comme active par l'administrateur.<br><br>Vous pouvez toujours accéder à vos séjours dans l'espace Colos."
+            : "Vous n'avez pas accès à la promotion de formation actuellement en cours sur la plateforme.<br><br>Votre compte doit être associé à cette session de formation (via l'espace Colos) pour y accéder.";
+    } else {
+        messageText = isNoActiveSession
+            ? "Votre compte stagiaire n'a pas d'accès pour le moment car aucune session de formation n'est actuellement active sur la plateforme.<br><br>Veuillez contacter l'administrateur si vous pensez qu'il s'agit d'une erreur."
+            : "Votre compte est désactivé car votre session de formation est terminée.<br><br>Veuillez contacter l'administrateur si vous pensez qu'il s'agit d'une erreur.";
+    }
 
     const expiredHtml = `
         <div class="es-ban-screen">
@@ -969,7 +1025,12 @@ function showFormationExpiredScreen() {
                     ${messageText}
                 </p>
                 <div class="es-ban-actions">
-                    <button id="btnExpiredLogout" class="es-btn es-btn--primary es-btn--full es-btn--lg" style="background: var(--clr-accent, #f39c12); border-color: var(--clr-accent, #f39c12); color: #121212; font-weight: 700;">
+                    ${isFormateur ? `
+                        <a href="index.html" class="es-btn es-btn--primary es-btn--full es-btn--lg" style="text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px;">
+                            <i class="bi bi-house-door-fill"></i> Espace Séjours / Colos
+                        </a>
+                    ` : ''}
+                    <button id="btnExpiredLogout" class="es-btn ${isFormateur ? 'es-btn--ghost' : 'es-btn--primary'} es-btn--full es-btn--lg" ${!isFormateur ? 'style="background: var(--clr-accent, #f39c12); border-color: var(--clr-accent, #f39c12); color: #121212; font-weight: 700;"' : ''}>
                         <i class="bi bi-box-arrow-right"></i> Déconnexion
                     </button>
                 </div>
@@ -1007,7 +1068,9 @@ firebase.auth().onAuthStateChanged((user) => {
                     return;
                 }
 
-                if (userData.role === 'stagiaire') {
+                const isFormationPage = window.location.pathname.includes('formation.html') || window.location.pathname.includes('quiz.html');
+
+                if (userData.role === 'stagiaire' || (userData.role === 'formateur' && isFormationPage)) {
                     // S'assurer de charger l'activePromoId le plus récent
                     if (!window.globalFormationActivePromoId) {
                         try {
@@ -1034,7 +1097,8 @@ firebase.auth().onAuthStateChanged((user) => {
                         } catch (e) {}
                     }
 
-                    if (isStagiairePromoMismatch(userData, window.globalFormationActivePromoId)) {
+                    const mismatch = await isUserPromoMismatch(userData, window.globalFormationActivePromoId, user.uid);
+                    if (mismatch) {
                         showFormationExpiredScreen();
                         return;
                     }

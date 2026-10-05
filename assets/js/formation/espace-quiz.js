@@ -1153,7 +1153,7 @@ auth.onAuthStateChanged(async (user) => {
         return;
     }
 
-    if (actualUserData && actualUserData.role === 'stagiaire') {
+    if (actualUserData && (actualUserData.role === 'stagiaire' || actualUserData.role === 'formateur')) {
         let currentPromoId = window.globalFormationActivePromoId || '';
         if (!currentPromoId) {
             try {
@@ -1164,7 +1164,13 @@ auth.onAuthStateChanged(async (user) => {
                 }
             } catch (e) {}
         }
-        if (typeof isStagiairePromoMismatch === 'function' && isStagiairePromoMismatch(actualUserData, currentPromoId)) {
+        if (typeof isUserPromoMismatch === 'function') {
+            const mismatch = await isUserPromoMismatch(actualUserData, currentPromoId, user.uid);
+            if (mismatch) {
+                if (typeof showFormationExpiredScreen === 'function') showFormationExpiredScreen();
+                return;
+            }
+        } else if (typeof isStagiairePromoMismatch === 'function' && isStagiairePromoMismatch(actualUserData, currentPromoId)) {
             if (typeof showFormationExpiredScreen === 'function') showFormationExpiredScreen();
             return;
         }
