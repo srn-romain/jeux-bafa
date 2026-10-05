@@ -2133,10 +2133,19 @@ async function loadParticipantQuizBilan(p) {
     currentParticipantQuizBilan = null;
 
     try {
-        // 1. Charger ou récupérer les modules de formation
-        if (!formationModulesCache) {
-            const snap = await db.collection('formation').orderBy('order', 'asc').get().catch(() => db.collection('formation').get());
-            formationModulesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        // 1. Charger ou récupérer les modules de formation (sans filtre cassé orderBy('order'))
+        if (!formationModulesCache || formationModulesCache.length === 0) {
+            let snap = await db.collection('formation').get().catch(e => { console.warn("Fetch formation error:", e); return null; });
+            if (!snap || snap.empty) {
+                snap = await db.collection('formationModules').get().catch(e => { console.warn("Fetch formationModules error:", e); return null; });
+            }
+            if (snap && !snap.empty) {
+                formationModulesCache = snap.docs
+                    .map(d => ({ id: d.id, ...d.data() }))
+                    .sort((a, b) => (parseInt(a.num, 10) || 0) - (parseInt(b.num, 10) || 0));
+            } else {
+                formationModulesCache = [];
+            }
         }
 
         const activeModules = (formationModulesCache || []).filter(m => m.visible !== false);
@@ -2149,10 +2158,11 @@ async function loadParticipantQuizBilan(p) {
         }
 
         // 2. Normalisation du nom / prénom pour matching
-        const pPrenom = (p.prenom || '').trim().toLowerCase();
-        const pNom = (p.nom || '').trim().toLowerCase();
-        const pFullName = `${pPrenom} ${pNom}`.trim();
-        const pRevFullName = `${pNom} ${pPrenom}`.trim();
+        const cleanStr = (str) => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+        const pPrenomClean = cleanStr(p.prenom);
+        const pNomClean = cleanStr(p.nom);
+        const pFullNameClean = `${pPrenomClean} ${pNomClean}`.trim();
+        const pRevFullNameClean = `${pNomClean} ${pPrenomClean}`.trim();
         const targetUid = p.userId || p.uid || null;
 
         // 3. Récupérer les soumissions pour chaque module
@@ -2167,21 +2177,25 @@ async function loadParticipantQuizBilan(p) {
                 const subSnap = await db.collection('formation').doc(m.id).collection('submissions').get();
                 const subs = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-                // Recherche par userId prioritaire
+                // 1. Recherche par userId prioritaire
                 if (targetUid) {
                     matchedSub = subs.find(s => s.userId === targetUid);
                 }
 
-                // Si non trouvé par userId, recherche par matching nom/prénom
-                if (!matchedSub && (pPrenom || pNom)) {
+                // 2. Si non trouvé par userId, recherche par nom / prénom / email
+                if (!matchedSub && (pPrenomClean || pNomClean)) {
                     matchedSub = subs.find(s => {
-                        const sName = (s.userName || '').trim().toLowerCase();
-                        const sEmail = (s.userEmail || '').trim().toLowerCase();
-                        if (sName && (sName === pFullName || sName === pRevFullName || (pPrenom && sName.includes(pPrenom) && pNom && sName.includes(pNom)))) {
-                            return true;
+                        const sName = cleanStr(s.userName);
+                        const sEmail = cleanStr(s.userEmail);
+                        if (sName) {
+                            if (sName === pFullNameClean || sName === pRevFullNameClean) return true;
+                            if (pPrenomClean && pNomClean && sName.includes(pPrenomClean) && sName.includes(pNomClean)) return true;
+                            if (pPrenomClean && sName === pPrenomClean) return true;
+                            if (pNomClean && sName === pNomClean) return true;
                         }
-                        if (sEmail && pNom && sEmail.includes(pNom)) {
-                            return true;
+                        if (sEmail) {
+                            if (pNomClean && sEmail.includes(pNomClean)) return true;
+                            if (pPrenomClean && sEmail.includes(pPrenomClean)) return true;
                         }
                         return false;
                     });
@@ -2201,7 +2215,7 @@ async function loadParticipantQuizBilan(p) {
 
                 moduleResults.push({
                     moduleId: m.id,
-                    title: m.title || m.titre || `Module ${m.order || ''}`,
+                    title: m.title || m.titre || (m.num ? `Module ${m.num}` : 'Module'),
                     isCompleted: true,
                     percent,
                     correct,
@@ -2212,7 +2226,7 @@ async function loadParticipantQuizBilan(p) {
             } else {
                 moduleResults.push({
                     moduleId: m.id,
-                    title: m.title || m.titre || `Module ${m.order || ''}`,
+                    title: m.title || m.titre || (m.num ? `Module ${m.num}` : 'Module'),
                     isCompleted: false,
                     percent: null
                 });
