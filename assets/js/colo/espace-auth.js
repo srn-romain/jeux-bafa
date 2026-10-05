@@ -217,12 +217,19 @@ function updateTopbarUser(user, role, userData = null) {
         if (role === 'admin') {
             badgeEl.textContent = '👑 Admin';
             badgeEl.className = 'es-badge es-badge--admin';
+            badgeEl.style.cssText = '';
+        } else if (role === 'formateur') {
+            badgeEl.textContent = '🧑‍🏫 Formateur';
+            badgeEl.className = 'es-badge es-badge--formateur';
+            badgeEl.style.cssText = 'background: rgba(142,68,173,0.18); color: #9b59b6; border: 1px solid rgba(142,68,173,0.35); font-weight:700;';
         } else if (role === 'stagiaire') {
             badgeEl.textContent = '🎓 Stagiaire';
             badgeEl.className = 'es-badge es-badge--stagiaire';
+            badgeEl.style.cssText = '';
         } else {
             badgeEl.textContent = '🎨 Anim';
             badgeEl.className = 'es-badge es-badge--anim';
+            badgeEl.style.cssText = '';
         }
     }
     if (avatarEl) {
@@ -238,7 +245,7 @@ function updateTopbarUser(user, role, userData = null) {
         if (brandNameEl) brandNameEl.textContent = `Dashboard de ${firstName}`;
         if (pageDirectorNameEl) pageDirectorNameEl.textContent = fullName;
     } else {
-        // Si c'est un animateur, on cherche le nom d'un directeur (admin) pour l'afficher
+        // Si c'est un animateur ou formateur, on cherche le nom d'un directeur (admin) pour l'afficher
         firebase.firestore().collection('users').where('role', '==', 'admin').limit(1).get()
             .then(snap => {
                 if (!snap.empty) {
@@ -262,6 +269,13 @@ function updateTopbarUser(user, role, userData = null) {
     if (role === 'admin') {
         linkAdmin?.classList.remove('hidden');
         btnAdminLink?.classList.remove('hidden');
+        linkFormation?.classList.remove('hidden');
+        btnFormationLink?.classList.remove('hidden');
+        linkColos?.classList.remove('hidden');
+        btnColosLink?.classList.remove('hidden');
+    } else if (role === 'formateur') {
+        linkAdmin?.classList.add('hidden');
+        btnAdminLink?.classList.add('hidden');
         linkFormation?.classList.remove('hidden');
         btnFormationLink?.classList.remove('hidden');
         linkColos?.classList.remove('hidden');

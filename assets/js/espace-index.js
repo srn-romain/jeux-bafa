@@ -503,7 +503,7 @@ function applyRoleSimulation(activeRole) {
     const brandCurrentSpace = document.getElementById('brandCurrentSpace');
     const btnBrandDropdown = document.getElementById('btnBrandDropdown');
 
-    if (actualRole === 'admin') {
+    if (actualRole === 'admin' || actualRole === 'formateur') {
         btnBrandDropdown?.classList.add('es-topbar__brand--interactive');
         brandChevron?.classList.remove('hidden');
         brandCurrentSpace?.classList.remove('hidden');
@@ -515,6 +515,7 @@ function applyRoleSimulation(activeRole) {
         } else {
             adminOnlyElements.forEach(el => el.classList.add('hidden'));
             adminPanel?.classList.add('es-admin-panel--simulated');
+            if (actualRole === 'formateur') adminPanel?.classList.add('hidden');
         }
     } else {
         btnBrandDropdown?.classList.remove('es-topbar__brand--interactive');
@@ -629,8 +630,8 @@ async function loadColos(user, role) {
             });
         } catch (e) {}
 
-        // Si animateur, récupérer ses propres demandes d'accès
-        if (role === 'anim') {
+        // Si animateur ou formateur (non-admin), récupérer ses propres demandes d'accès
+        if (role !== 'admin') {
             try {
                 const accessSnap = await db.collection('accessRequests')
                     .where('userId', '==', user.uid).get();
@@ -782,7 +783,7 @@ async function loadColos(user, role) {
     const yearsSet = new Set();
     colosList.forEach(colo => {
         const visible = colo.visible !== false;
-        if (role === 'anim' && !visible) return;
+        if (role !== 'admin' && !visible) return;
 
         if (colo.dateDebut) {
             const year = colo.dateDebut.split('-')[0];
@@ -844,8 +845,8 @@ async function loadColos(user, role) {
     for (const colo of colosList) {
         const visible = colo.visible !== false;
 
-        // SI ANIMATEUR : On cache totalement si non visible
-        if (effectiveRole === 'anim' && !visible) continue;
+        // Si non-admin (anim ou formateur) : On cache totalement si non visible
+        if (effectiveRole !== 'admin' && !visible) continue;
 
         let accessStatus = effectiveRole === 'admin' ? 'admin' : (accessMap[colo.id] || 'none');
         const nbAnims = animCounts[colo.id] || 0;
@@ -860,7 +861,7 @@ async function loadColos(user, role) {
 
     grid.classList.remove('hidden');
 
-    if (effectiveRole === 'anim') {
+    if (effectiveRole !== 'admin') {
         subtitle.textContent = 'Clique sur une colonie pour demander ou accéder à son espace.';
     } else {
         subtitle.textContent = 'Gérez vos espaces ci-dessous ou ouvrez le panneau admin.';
@@ -1446,9 +1447,9 @@ function initSpaceSwitcher() {
     const menuItemColos = document.getElementById('menuItemColos');
     const menuItemStagiaires = document.getElementById('menuItemStagiaires');
 
-    // Clic sur le brand pour ouvrir/fermer le menu (réservé admin)
+    // Clic sur le brand pour ouvrir/fermer le menu (réservé admin et formateur)
     btnBrandDropdown?.addEventListener('click', (e) => {
-        if (actualRole !== 'admin') return;
+        if (actualRole !== 'admin' && actualRole !== 'formateur') return;
         e.stopPropagation();
         const isHidden = brandDropdownMenu?.classList.contains('hidden');
         if (isHidden) {

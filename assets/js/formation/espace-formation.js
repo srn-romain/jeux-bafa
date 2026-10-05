@@ -239,9 +239,9 @@ async function loadFormationModules() {
             }));
         }
 
-        // 2. Compteurs administrateur par module (nombre de réponses & stagiaires uniques)
+        // 2. Compteurs administrateur / formateur par module (nombre de réponses & stagiaires uniques)
         let adminCountsMap = {};
-        if (actualRole === 'admin') {
+        if (actualRole === 'admin' || actualRole === 'formateur') {
             await Promise.all(modules.map(async (m) => {
                 try {
                     const allSubSnap = await db.collection('formation').doc(m.id).collection('submissions').get();
@@ -296,12 +296,12 @@ async function loadFormationModules() {
             const isAttemptsExceeded = (maxAttempts > 0 && attemptsCount >= maxAttempts);
 
             let cardClass = 'es-formation-card ';
-            if (!isVisible && effectiveRole === 'admin') {
+            if (!isVisible && (effectiveRole === 'admin' || effectiveRole === 'formateur')) {
                 cardClass += 'es-formation-card--invisible ';
             }
             if (hasSubmitted) {
                 cardClass += 'es-formation-card--completed ';
-            } else if (isEnabled || effectiveRole === 'admin') {
+            } else if (isEnabled || effectiveRole === 'admin' || effectiveRole === 'formateur') {
                 cardClass += 'es-formation-card--active ';
             } else {
                 cardClass += 'es-formation-card--locked ';
@@ -326,16 +326,16 @@ async function loadFormationModules() {
 
             // 1. Tag Masqué
             let hiddenTagHtml = '';
-            if (!isVisible && effectiveRole === 'admin') {
+            if (!isVisible && (effectiveRole === 'admin' || effectiveRole === 'formateur')) {
                 hiddenTagHtml = `<span class="es-formation-tag es-formation-tag--hidden-status es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="Module masqué pour les candidats"><i class="bi bi-eye-slash-fill"></i> Masqué</span>`;
             }
 
             // 2. Tag Nombre de Questions
             const questionsTagHtml = `<span class="es-formation-tag es-formation-tag--questions es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="Nombre de questions dans ce quiz"><i class="bi bi-patch-question"></i> ${questionsCount} question${questionsCount > 1 ? 's' : ''}</span>`;
 
-            // 3. Tag Nombre de réponses et stagiaires (Admin)
+            // 3. Tag Nombre de réponses et stagiaires (Admin / Formateur)
             let statsTagHtml = '';
-            if (effectiveRole === 'admin') {
+            if (effectiveRole === 'admin' || effectiveRole === 'formateur') {
                 statsTagHtml = `<span class="es-formation-tag es-formation-tag--stats es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="${adminStats.uniqueStagiaires} stagiaire(s) distinct(s) — ${adminStats.totalAttempts} réponse(s) au total"><i class="bi bi-chat-left-text"></i> ${statsDisplay}</span>`;
             }
 
@@ -356,6 +356,16 @@ async function loadFormationModules() {
                 <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:8px;">
                     <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-admin-edit-module" data-module-id="${m.id}" title="Éditer le module et son quiz">
                         <i class="bi bi-pencil"></i> Modifier
+                    </button>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-admin-view-res" data-module-id="${m.id}">
+                        <i class="bi bi-eye"></i> Réponses (${adminStats.totalAttempts})
+                    </button>
+                </div>`;
+            } else if (effectiveRole === 'formateur') {
+                actionBtn = `
+                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:8px;">
+                    <button type="button" class="es-btn es-btn--primary es-btn--sm btn-formateur-add-question" data-module-id="${m.id}" title="Consulter et ajouter des questions à ce module">
+                        <i class="bi bi-list-check"></i> Questions (${questionsCount})
                     </button>
                     <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-admin-view-res" data-module-id="${m.id}">
                         <i class="bi bi-eye"></i> Réponses (${adminStats.totalAttempts})
@@ -391,10 +401,12 @@ async function loadFormationModules() {
                         </div>
                         <div style="display:flex; align-items:center; gap:8px;">
                             ${statusInfoHtml}
-                            ${effectiveRole === 'admin' ? `
+                            ${(effectiveRole === 'admin' || effectiveRole === 'formateur') ? `
                                 <button type="button" class="es-card-action-btn btn-admin-toggle-module-visibility" data-module-id="${m.id}" data-visible="${isVisible}" title="${isVisible ? 'Masquer pour les candidats' : 'Rendre visible pour les candidats'}" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#ffffff; border-radius:6px; width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer;">
-                                    <i class="bi bi-${isVisible ? 'eye' : 'eye-slash'}"></i>
-                                </button>
+                                <i class="bi bi-${isVisible ? 'eye' : 'eye-slash'}"></i>
+                            </button>
+                            ` : ''}
+                            ${effectiveRole === 'admin' ? `
                                 <label class="es-switch" style="transform:scale(0.8); transform-origin:center right;" title="Activer / Verrouiller le module pour les candidats">
                                     <input type="checkbox" class="check-stagiaire-module-toggle" data-module-id="${m.id}" ${isEnabled ? 'checked' : ''}>
                                     <span class="es-slider"></span>
@@ -431,6 +443,13 @@ async function loadFormationModules() {
             btn.addEventListener('click', async () => {
                 const moduleId = btn.getAttribute('data-module-id');
                 await openFormationModuleEdit(moduleId);
+            });
+        });
+
+        grid.querySelectorAll('.btn-formateur-add-question').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const moduleId = btn.getAttribute('data-module-id');
+                openAddQuestionFormateur(moduleId);
             });
         });
 
@@ -2306,7 +2325,7 @@ function renderStagiaireBilan() {
     const stagiaireContainer = document.getElementById('bilanStagiaireContainer');
     const adminContainer = document.getElementById('bilanAdminContainer');
 
-    if (effectiveRole === 'admin') {
+    if (effectiveRole === 'admin' || effectiveRole === 'formateur') {
         if (stagiaireContainer) stagiaireContainer.classList.add('hidden');
         if (adminContainer) adminContainer.classList.remove('hidden');
         renderAdminBilan();
@@ -3482,13 +3501,13 @@ auth.onAuthStateChanged(async (user) => {
     // Mettre à jour la Topbar
     updateTopbarUser(currentUser, actualRole, actualUserData);
 
-    // Initialiser le dropdown switcher d'espace pour l'admin
+    // Initialiser le dropdown switcher d'espace pour l'admin et formateur
     const btnBrandDropdown = document.getElementById('btnBrandDropdown');
     const brandDropdownMenu = document.getElementById('brandDropdownMenu');
     const brandChevron = document.getElementById('brandChevron');
     const menuItemColos = document.getElementById('menuItemColos');
 
-    if (actualRole === 'admin') {
+    if (actualRole === 'admin' || actualRole === 'formateur') {
         btnBrandDropdown?.classList.add('es-topbar__brand--interactive');
         brandChevron?.classList.remove('hidden');
 
@@ -3528,6 +3547,7 @@ auth.onAuthStateChanged(async (user) => {
 
     // Initialiser le système de Promo de Formation
     initPromoModalEvents();
+    initFormateurAddQuestionEvents();
     loadFormationPromos();
 
     // Charger les modules de formation
@@ -3889,3 +3909,509 @@ function initPromoModalEvents() {
         if (e.target === overlay) closeModal('overlayChangePromo');
     });
 }
+
+// ----------------------------------------------------------------
+// MODAL : AJOUT DE QUESTION PAR LE FORMATEUR (SANS SUPPRESSION/MODIF EXISTANTES)
+// ----------------------------------------------------------------
+let formateurAddQEventsInitialized = false;
+let formateurTempOptions = ['Option 1', 'Option 2'];
+let formateurTempCorrectIndex = 0;
+let formateurTempPuzzleItems = ['Étape 1', 'Étape 2', 'Étape 3'];
+
+async function openAddQuestionFormateur(moduleId) {
+    if (!moduleId) return;
+    const mod = (currentFormationModulesList || []).find(m => m.id === moduleId);
+    const modTitle = mod ? (mod.title || `Module ${mod.num || ''}`) : moduleId;
+
+    const modalTitle = document.getElementById('formateurAddQModalTitle');
+    const subtitle = document.getElementById('formateurAddQModuleSubtitle');
+    const hiddenInput = document.getElementById('formateurAddQModuleId');
+    const textInput = document.getElementById('formateurAddQText');
+    const imgInput = document.getElementById('formateurAddQImageUrl');
+    const hintInput = document.getElementById('formateurAddQHint');
+    const typeSelect = document.getElementById('formateurAddQType');
+    const existingListEl = document.getElementById('formateurExistingQuestionsList');
+    const countBadge = document.getElementById('badgeFormateurQuestionsCount');
+
+    if (modalTitle) modalTitle.innerHTML = `<span>📋</span> Questions du module`;
+    if (subtitle) subtitle.textContent = `Module : ${modTitle}`;
+    if (hiddenInput) hiddenInput.value = moduleId;
+    if (textInput) textInput.value = '';
+    if (imgInput) imgInput.value = '';
+    if (hintInput) hintInput.value = '';
+
+    formateurTempOptions = ['Option 1', 'Option 2'];
+    formateurTempCorrectIndex = 0;
+    formateurTempPuzzleItems = ['Étape 1', 'Étape 2', 'Étape 3'];
+
+    if (typeSelect) {
+        typeSelect.value = 'qcm';
+        renderFormateurQuestionTypeFields('qcm');
+    }
+
+    // Loader temporaire pour la liste des questions
+    if (existingListEl) {
+        existingListEl.innerHTML = `
+            <div style="text-align:center; padding:16px; color:var(--clr-text-muted); font-size:0.85rem;">
+                <span class="es-spinner" style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-right:6px;"></span>
+                Chargement des questions existantes...
+            </div>
+        `;
+    }
+
+    openModal('overlayAddQuestionFormateur');
+
+    try {
+        const questions = await fetchModuleQuestions(moduleId);
+        if (countBadge) countBadge.textContent = `${questions.length} question${questions.length > 1 ? 's' : ''}`;
+
+        if (!questions || questions.length === 0) {
+            if (existingListEl) {
+                existingListEl.innerHTML = `
+                    <div style="text-align:center; padding:16px; color:var(--clr-text-muted); font-size:0.82rem; background:var(--clr-surface-2); border-radius:6px; border:1px dashed var(--clr-surface-3);">
+                        <i class="bi bi-info-circle"></i> Aucune question enregistrée dans ce module pour le moment.
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        if (existingListEl) {
+            existingListEl.innerHTML = questions.map((q, idx) => {
+                let typeBadge = '🔘 QCM';
+                let contentHtml = '';
+
+                if (q.type === 'boolean') {
+                    typeBadge = '⚖️ Vrai / Faux';
+                    const isTrue = q.correctAnswer === true || q.correctAnswer === 'true';
+                    contentHtml = `
+                        <div style="display:flex; gap:10px; margin-top:6px; font-size:0.82rem;">
+                            <span style="font-weight:700; color:${isTrue ? 'var(--clr-success)' : 'var(--clr-text-muted)'}; background:${isTrue ? 'rgba(39,174,96,0.12)' : 'var(--clr-surface-2)'}; padding:2px 8px; border-radius:4px; border:1px solid ${isTrue ? 'rgba(39,174,96,0.3)' : 'var(--clr-surface-3)'};">
+                                ${isTrue ? '✅ Vrai (Bonne réponse)' : 'Vrai'}
+                            </span>
+                            <span style="font-weight:700; color:${!isTrue ? 'var(--clr-success)' : 'var(--clr-text-muted)'}; background:${!isTrue ? 'rgba(39,174,96,0.12)' : 'var(--clr-surface-2)'}; padding:2px 8px; border-radius:4px; border:1px solid ${!isTrue ? 'rgba(39,174,96,0.3)' : 'var(--clr-surface-3)'};">
+                                ${!isTrue ? '✅ Faux (Bonne réponse)' : 'Faux'}
+                            </span>
+                        </div>
+                    `;
+                } else if (q.type === 'puzzle') {
+                    typeBadge = '🧩 Puzzle';
+                    const items = q.items || [];
+                    contentHtml = `
+                        <div style="margin-top:6px; font-size:0.8rem;">
+                            <div style="color:var(--clr-text-muted); font-size:0.75rem; margin-bottom:3px;">Ordre attendu :</div>
+                            <ol style="margin:0 0 0 18px; padding:0; line-height:1.4; color:var(--clr-text);">
+                                ${items.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
+                            </ol>
+                        </div>
+                    `;
+                } else if (q.type === 'range') {
+                    typeBadge = '📏 Curseur';
+                    const min = q.min !== undefined ? q.min : 0;
+                    const max = q.max !== undefined ? q.max : 10;
+                    const unit = q.unit ? ` ${escapeHtml(q.unit)}` : '';
+                    const hasTarget = q.correctValue !== undefined && q.correctValue !== '' && q.correctValue !== null;
+                    contentHtml = `
+                        <div style="margin-top:6px; font-size:0.8rem; display:flex; gap:12px; flex-wrap:wrap; color:var(--clr-text-muted);">
+                            <span>Échelle : <strong>${min} → ${max}${unit}</strong></span>
+                            ${hasTarget ? `<span style="color:var(--clr-success); font-weight:700;">Cible : ${q.correctValue}${unit} ${q.tolerance ? `(± ${q.tolerance})` : ''}</span>` : ''}
+                        </div>
+                    `;
+                } else if (q.type === 'pinpoint') {
+                    typeBadge = '📍 Repère';
+                    contentHtml = `
+                        <div style="margin-top:6px; font-size:0.8rem; color:var(--clr-text-muted);">
+                            Repère sur image (X: ${q.targetX || 50}%, Y: ${q.targetY || 50}%)
+                        </div>
+                    `;
+                } else if (q.type === 'text') {
+                    typeBadge = '📝 Rédaction';
+                    contentHtml = `
+                        <div style="margin-top:6px; font-size:0.8rem; color:var(--clr-text-muted);">
+                            ${q.hint ? `<span>Piste / Critères : <em>${escapeHtml(q.hint)}</em></span>` : 'Question à réponse libre'}
+                        </div>
+                    `;
+                } else {
+                    // QCM
+                    typeBadge = '🔘 QCM';
+                    const opts = q.options || [];
+                    const cIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+                    contentHtml = `
+                        <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
+                            ${opts.map((opt, oIdx) => {
+                                const isCorrect = (oIdx === cIdx);
+                                return `
+                                    <div style="font-size:0.82rem; display:flex; align-items:center; gap:6px; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-text)'}; font-weight:${isCorrect ? '700' : '400'};">
+                                        <i class="bi bi-${isCorrect ? 'check-circle-fill' : 'circle'}" style="font-size:0.85rem; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-text-muted)'};"></i>
+                                        <span>${escapeHtml(opt)}</span>
+                                        ${isCorrect ? '<span class="es-badge es-badge--approved" style="font-size:0.65rem; padding:1px 5px; margin-left:4px;">Bonne réponse</span>' : ''}
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div style="background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:8px; padding:12px 14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
+                            <div style="font-size:0.75rem; font-weight:800; color:var(--clr-primary); text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+                                <span>Question ${idx + 1}</span>
+                                <span class="es-badge" style="font-size:0.7rem; background:rgba(255,255,255,0.08); border:1px solid var(--clr-surface-3); color:var(--clr-text);">${typeBadge}</span>
+                            </div>
+                            <span style="font-size:0.7rem; color:var(--clr-text-muted);"><i class="bi bi-shield-lock"></i> Protégée</span>
+                        </div>
+                        <div style="font-weight:600; font-size:0.88rem; color:var(--clr-text); line-height:1.4;">
+                            ${escapeHtml(q.text || 'Sans énoncé')}
+                        </div>
+                        ${q.imageUrl ? `
+                            <div style="margin-top:6px;">
+                                <img src="${escapeHtml(q.imageUrl)}" alt="Illustration" style="max-height:60px; max-width:120px; border-radius:4px; object-fit:contain; border:1px solid var(--clr-surface-3);" onerror="this.style.display='none'">
+                            </div>
+                        ` : ''}
+                        ${contentHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+    } catch (err) {
+        console.error("Erreur chargement questions existantes formateur:", err);
+        if (existingListEl) {
+            existingListEl.innerHTML = `
+                <div style="color:var(--clr-danger); font-size:0.82rem; padding:8px;">
+                    Erreur lors de la récupération des questions existantes.
+                </div>
+            `;
+        }
+    }
+}
+
+function renderFormateurQuestionTypeFields(type) {
+    const container = document.getElementById('formateurAddQDynamicContainer');
+    if (!container) return;
+
+    if (type === 'qcm') {
+        container.innerHTML = `
+            <div style="background: var(--clr-surface-2); padding: 14px; border-radius: 8px; border: 1px solid var(--clr-surface-3);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div style="font-size:0.83rem; font-weight:700; color:var(--clr-primary);">
+                        <i class="bi bi-ui-checks"></i> Options du QCM (Cochez la bonne réponse) :
+                    </div>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnFormateurAddQcmOpt" style="font-size:0.75rem; padding:3px 8px;">
+                        <i class="bi bi-plus"></i> Ajouter une option
+                    </button>
+                </div>
+                <div id="formateurQcmOptionsList" style="display:flex; flex-direction:column; gap:8px;">
+                    ${formateurTempOptions.map((opt, idx) => `
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="radio" name="formateur_correct_opt" value="${idx}" ${idx === formateurTempCorrectIndex ? 'checked' : ''} style="width:18px; height:18px; accent-color:var(--clr-primary); cursor:pointer;">
+                            <input type="text" class="es-input formateur-opt-val" data-idx="${idx}" value="${escapeHtml(opt)}" placeholder="Option ${idx + 1}" required style="font-size:0.88rem; flex:1;">
+                            ${formateurTempOptions.length > 2 ? `
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-del-formateur-opt" data-idx="${idx}" style="color:var(--clr-danger); padding:4px 8px;">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('btnFormateurAddQcmOpt')?.addEventListener('click', () => {
+            formateurTempOptions.push(`Option ${formateurTempOptions.length + 1}`);
+            renderFormateurQuestionTypeFields('qcm');
+        });
+
+        container.querySelectorAll('.formateur-opt-val').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+                formateurTempOptions[idx] = e.target.value;
+            });
+        });
+
+        container.querySelectorAll('input[name="formateur_correct_opt"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                formateurTempCorrectIndex = parseInt(e.target.value, 10);
+            });
+        });
+
+        container.querySelectorAll('.btn-del-formateur-opt').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                if (formateurTempOptions.length > 2) {
+                    formateurTempOptions.splice(idx, 1);
+                    if (formateurTempCorrectIndex >= formateurTempOptions.length) {
+                        formateurTempCorrectIndex = 0;
+                    }
+                    renderFormateurQuestionTypeFields('qcm');
+                }
+            });
+        });
+
+    } else if (type === 'boolean') {
+        container.innerHTML = `
+            <div style="background: var(--clr-surface-2); padding: 14px; border-radius: 8px; border: 1px solid var(--clr-surface-3);">
+                <label class="es-field__label" style="font-size:0.83rem; font-weight:700; color:var(--clr-primary); margin-bottom:8px; display:block;">
+                    <i class="bi bi-check2-circle"></i> Réponse attendue :
+                </label>
+                <div style="display:flex; gap:20px; align-items:center;">
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer;">
+                        <input type="radio" name="formateur_bool_answer" value="true" checked style="width:18px; height:18px; accent-color:var(--clr-primary);">
+                        <span>✅ VRAI</span>
+                    </label>
+                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer;">
+                        <input type="radio" name="formateur_bool_answer" value="false" style="width:18px; height:18px; accent-color:var(--clr-danger);">
+                        <span>❌ FAUX</span>
+                    </label>
+                </div>
+            </div>
+        `;
+
+    } else if (type === 'puzzle') {
+        container.innerHTML = `
+            <div style="background: var(--clr-surface-2); padding: 14px; border-radius: 8px; border: 1px solid var(--clr-surface-3);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+                    <div>
+                        <div style="font-size:0.83rem; font-weight:700; color:var(--clr-primary); display:flex; align-items:center; gap:6px;">
+                            <i class="bi bi-puzzle"></i> Étapes du puzzle (Dans l'ordre chronologique exact) :
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted);">
+                            Saisissez les étapes dans l'<strong>ordre attendu</strong>. Elles seront automatiquement mélangées pour le stagiaire.
+                        </div>
+                    </div>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnFormateurAddPuzzleStep" style="font-size:0.75rem; padding:3px 8px;">
+                        <i class="bi bi-plus"></i> Ajouter une étape
+                    </button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+                    ${formateurTempPuzzleItems.map((itemText, itemIdx) => `
+                        <div class="es-puzzle-builder-row">
+                            <span class="es-puzzle-num" style="width:24px; height:24px; font-size:0.75rem;">${itemIdx + 1}</span>
+                            <input type="text" class="es-input formateur-puzzle-item" data-idx="${itemIdx}" value="${escapeHtml(itemText)}" placeholder="Étape ${itemIdx + 1}" required style="font-size:0.85rem; padding:5px 8px; flex:1;">
+                            <button type="button" class="es-puzzle-btn-move btn-formateur-puzzle-up" data-idx="${itemIdx}" ${itemIdx === 0 ? 'disabled' : ''} title="Monter">
+                                <i class="bi bi-chevron-up"></i>
+                            </button>
+                            <button type="button" class="es-puzzle-btn-move btn-formateur-puzzle-down" data-idx="${itemIdx}" ${itemIdx === formateurTempPuzzleItems.length - 1 ? 'disabled' : ''} title="Descendre">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
+                            ${formateurTempPuzzleItems.length > 2 ? `
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-del-formateur-puzzle" data-idx="${itemIdx}" style="color:var(--clr-danger); padding:2px 6px;" title="Supprimer cet élément">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        document.getElementById('btnFormateurAddPuzzleStep')?.addEventListener('click', () => {
+            formateurTempPuzzleItems.push(`Étape ${formateurTempPuzzleItems.length + 1}`);
+            renderFormateurQuestionTypeFields('puzzle');
+        });
+
+        container.querySelectorAll('.formateur-puzzle-item').forEach(input => {
+            input.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+                formateurTempPuzzleItems[idx] = e.target.value;
+            });
+        });
+
+        container.querySelectorAll('.btn-formateur-puzzle-up').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                if (idx > 0) {
+                    const tmp = formateurTempPuzzleItems[idx];
+                    formateurTempPuzzleItems[idx] = formateurTempPuzzleItems[idx - 1];
+                    formateurTempPuzzleItems[idx - 1] = tmp;
+                    renderFormateurQuestionTypeFields('puzzle');
+                }
+            });
+        });
+
+        container.querySelectorAll('.btn-formateur-puzzle-down').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                if (idx < formateurTempPuzzleItems.length - 1) {
+                    const tmp = formateurTempPuzzleItems[idx];
+                    formateurTempPuzzleItems[idx] = formateurTempPuzzleItems[idx + 1];
+                    formateurTempPuzzleItems[idx + 1] = tmp;
+                    renderFormateurQuestionTypeFields('puzzle');
+                }
+            });
+        });
+
+        container.querySelectorAll('.btn-del-formateur-puzzle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = parseInt(btn.getAttribute('data-idx'), 10);
+                if (formateurTempPuzzleItems.length > 2) {
+                    formateurTempPuzzleItems.splice(idx, 1);
+                    renderFormateurQuestionTypeFields('puzzle');
+                }
+            });
+        });
+
+    } else if (type === 'range') {
+        container.innerHTML = `
+            <div style="background: var(--clr-surface-2); padding: 14px; border-radius: 8px; border: 1px solid var(--clr-surface-3);">
+                <div style="font-size:0.83rem; font-weight:700; color:var(--clr-primary); margin-bottom:8px;">
+                    <i class="bi bi-sliders"></i> Configuration du curseur (Slider) :
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;">
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:600; color:var(--clr-text-muted);">Min</label>
+                        <input type="number" class="es-input" id="formateurRangeMin" value="0" style="font-size:0.85rem; padding:5px 8px;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:600; color:var(--clr-text-muted);">Max</label>
+                        <input type="number" class="es-input" id="formateurRangeMax" value="10" style="font-size:0.85rem; padding:5px 8px;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:600; color:var(--clr-text-muted);">Pas</label>
+                        <input type="number" class="es-input" id="formateurRangeStep" value="1" min="0.1" step="any" style="font-size:0.85rem; padding:5px 8px;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:600; color:var(--clr-text-muted);">Unité (ex: ans, %)</label>
+                        <input type="text" class="es-input" id="formateurRangeUnit" placeholder="ex: ans" style="font-size:0.85rem; padding:5px 8px;">
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:10px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:700; color:var(--clr-success);">Cible attendue (Auto-notation, optionnel)</label>
+                        <input type="number" class="es-input" id="formateurRangeTarget" placeholder="Laisser vide si pas de note automatique" style="font-size:0.85rem; padding:5px 8px;">
+                    </div>
+                    <div>
+                        <label style="font-size:0.75rem; font-weight:600; color:var(--clr-text-muted);">Tolérance autorisée (±)</label>
+                        <input type="number" class="es-input" id="formateurRangeTolerance" value="0" placeholder="0" style="font-size:0.85rem; padding:5px 8px;">
+                    </div>
+                </div>
+            </div>
+        `;
+
+    } else {
+        container.innerHTML = `
+            <div style="background: var(--clr-surface-2); padding: 12px 14px; border-radius: 8px; border: 1px solid var(--clr-surface-3); font-size: 0.82rem; color: var(--clr-text-muted); line-height: 1.45;">
+                <i class="bi bi-info-circle-fill" style="color:var(--clr-primary);"></i>
+                Le stagiaire aura une zone de texte pour rédiger sa réponse en toute liberté. Vous pourrez consulter sa réponse dans le suivi des résultats.
+            </div>
+        `;
+    }
+}
+
+function initFormateurAddQuestionEvents() {
+    if (formateurAddQEventsInitialized) return;
+    formateurAddQEventsInitialized = true;
+
+    const overlay = document.getElementById('overlayAddQuestionFormateur');
+    const btnClose = document.getElementById('btnCloseAddQFormateur');
+    const btnCancel = document.getElementById('btnCancelAddQFormateur');
+    const typeSelect = document.getElementById('formateurAddQType');
+    const btnSave = document.getElementById('btnSaveAddQFormateur');
+
+    btnClose?.addEventListener('click', () => closeModal('overlayAddQuestionFormateur'));
+    btnCancel?.addEventListener('click', () => closeModal('overlayAddQuestionFormateur'));
+
+    typeSelect?.addEventListener('change', (e) => {
+        renderFormateurQuestionTypeFields(e.target.value);
+    });
+
+    btnSave?.addEventListener('click', async () => {
+        const moduleId = document.getElementById('formateurAddQModuleId')?.value;
+        const text = document.getElementById('formateurAddQText')?.value?.trim();
+        const type = document.getElementById('formateurAddQType')?.value || 'qcm';
+        const imageUrl = document.getElementById('formateurAddQImageUrl')?.value?.trim() || '';
+        const hint = document.getElementById('formateurAddQHint')?.value?.trim() || '';
+
+        if (!moduleId) {
+            showToast("Module non trouvé.", "error");
+            return;
+        }
+
+        if (!text) {
+            showToast("Veuillez saisir l'énoncé de la question.", "warning");
+            document.getElementById('formateurAddQText')?.focus();
+            return;
+        }
+
+        const existingQuestions = await fetchModuleQuestions(moduleId);
+        const nextOrder = existingQuestions.length + 1;
+        const questionId = `q_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+
+        const qDoc = {
+            id: questionId,
+            moduleId: moduleId,
+            type: type,
+            text: text,
+            imageUrl: imageUrl,
+            hint: hint,
+            order: nextOrder,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        if (type === 'qcm') {
+            const validOptions = formateurTempOptions.map(o => o.trim()).filter(Boolean);
+            if (validOptions.length < 2) {
+                showToast("Veuillez saisir au moins 2 options pour le QCM.", "warning");
+                return;
+            }
+            qDoc.options = validOptions;
+            qDoc.correctIndex = (formateurTempCorrectIndex >= 0 && formateurTempCorrectIndex < validOptions.length) ? formateurTempCorrectIndex : 0;
+
+        } else if (type === 'boolean') {
+            const boolVal = document.querySelector('input[name="formateur_bool_answer"]:checked')?.value;
+            qDoc.correctAnswer = (boolVal === 'true');
+
+        } else if (type === 'puzzle') {
+            const validItems = formateurTempPuzzleItems.map(it => it.trim()).filter(Boolean);
+            if (validItems.length < 2) {
+                showToast("Veuillez saisir au moins 2 étapes pour le puzzle.", "warning");
+                return;
+            }
+            qDoc.items = validItems;
+
+        } else if (type === 'range') {
+            qDoc.min = parseFloat(document.getElementById('formateurRangeMin')?.value) || 0;
+            qDoc.max = parseFloat(document.getElementById('formateurRangeMax')?.value) || 10;
+            qDoc.step = parseFloat(document.getElementById('formateurRangeStep')?.value) || 1;
+            qDoc.unit = document.getElementById('formateurRangeUnit')?.value?.trim() || '';
+            const targetVal = document.getElementById('formateurRangeTarget')?.value;
+            if (targetVal !== '' && targetVal !== null && targetVal !== undefined) {
+                qDoc.correctValue = parseFloat(targetVal);
+                qDoc.tolerance = parseFloat(document.getElementById('formateurRangeTolerance')?.value) || 0;
+            }
+        }
+
+        try {
+            btnSave.disabled = true;
+            btnSave.innerHTML = `<span class="es-spinner" style="width:16px; height:16px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:6px;"></span> Enregistrement...`;
+
+            await db.collection('formation').doc(moduleId).collection('questions').doc(questionId).set(qDoc);
+
+            // Mettre à jour la liste locale
+            const mod = currentFormationModulesList.find(m => m.id === moduleId);
+            if (mod) {
+                if (!mod.questions) mod.questions = [];
+                mod.questions.push(qDoc);
+                mod.questionsCount = (mod.questionsCount || 0) + 1;
+                localStorage.setItem('offline_formation_modules', JSON.stringify(currentFormationModulesList));
+            }
+
+            showToast("Question ajoutée avec succès !", "success");
+            closeModal('overlayAddQuestionFormateur');
+            await loadFormationModules();
+
+        } catch (err) {
+            console.error("Erreur ajout question formateur:", err);
+            showToast("Erreur lors de l'enregistrement de la question : " + (err.message || err), "error");
+        } finally {
+            btnSave.disabled = false;
+            btnSave.innerHTML = `<i class="bi bi-plus-circle"></i> Ajouter la question`;
+        }
+    });
+
+    overlay?.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal('overlayAddQuestionFormateur');
+    });
+}
+

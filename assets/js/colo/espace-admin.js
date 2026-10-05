@@ -1686,8 +1686,8 @@ async function loadUsers() {
                             Banni
                         </span>
                     ` : `
-                        <span class="es-badge ${u.role === 'admin' ? 'es-badge--admin' : u.role === 'stagiaire' ? 'es-badge--stagiaire' : 'es-badge--anim'}">
-                            ${u.role === 'admin' ? 'Admin' : u.role === 'stagiaire' ? 'Stagiaire' : 'Anim'}
+                        <span class="es-badge ${u.role === 'admin' ? 'es-badge--admin' : u.role === 'formateur' ? 'es-badge--formateur' : u.role === 'stagiaire' ? 'es-badge--stagiaire' : 'es-badge--anim'}" ${u.role === 'formateur' ? 'style="background:rgba(142,68,173,0.15);color:#9b59b6;border:1px solid rgba(142,68,173,0.3);font-weight:700;"' : ''}>
+                            ${u.role === 'admin' ? 'Admin' : u.role === 'formateur' ? 'Formateur' : u.role === 'stagiaire' ? 'Stagiaire' : 'Anim'}
                         </span>
                     `}
                 </td>
@@ -2665,7 +2665,10 @@ document.getElementById('selectUserRightsRole')?.addEventListener('change', asyn
     if (!rightsUserId) return;
     const newRole = e.target.value;
     try {
-        const updates = { role: newRole };
+        const updates = { 
+            role: newRole,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
         if (newRole === 'stagiaire') {
             const fDoc = await db.collection('globalSettings').doc('formation').get();
             if (fDoc.exists && fDoc.data().activePromoId) {
@@ -2673,11 +2676,19 @@ document.getElementById('selectUserRightsRole')?.addEventListener('change', asyn
             }
         }
         await db.collection('users').doc(rightsUserId).update(updates);
-        showToast(`Rôle mis à jour : ${newRole === 'admin' ? 'Administrateur' : newRole === 'stagiaire' ? 'Stagiaire BAFA' : 'Animateur'}`, 'success');
+
+        // Mettre à jour le cache local si c'est l'utilisateur actuel
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.uid === rightsUserId) {
+            localStorage.setItem('offline_user_role_' + rightsUserId, newRole);
+            localStorage.setItem('offline_user_role', newRole);
+        }
+
+        const roleLabel = newRole === 'admin' ? 'Administrateur' : newRole === 'formateur' ? 'Anim Formateur' : newRole === 'stagiaire' ? 'Stagiaire BAFA' : 'Animateur';
+        showToast(`Rôle mis à jour : ${roleLabel}`, 'success');
         loadUsers();
     } catch (err) {
         console.error("Erreur mise à jour rôle:", err);
-        showToast("Erreur lors de la modification du rôle.", "error");
+        showToast("Erreur lors de la modification du rôle : " + (err.message || err), "error");
     }
 });
 
