@@ -55,7 +55,7 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('adminContent')?.classList.remove('hidden');
 
     initAdminTabs();
-    loadDemandes();
+    loadAdminFormationModules();
     loadPendingBadge(); // badge demandes en attente dès l'ouverture
 });
 
@@ -2972,7 +2972,7 @@ function renderAdminStagiairesTable() {
             `;
 
             if (adminGlobalActivePromoId && pId === adminGlobalActivePromoId) {
-                statusBadge = `<span class="es-badge es-badge--approved" style="font-size:0.75rem;"><i class="bi bi-check-circle-fill"></i> Accès actif</span>`;
+                statusBadge = `<span class="es-badge es-badge--approved" style="font-size:0.75rem;"><i class="bi bi-check-circle-fill"></i>Actif</span>`;
             } else if (!adminGlobalActivePromoId) {
                 statusBadge = `<span class="es-badge es-badge--pending" style="font-size:0.75rem; background: rgba(243,156,18,0.15); color: #f39c12; border: 1px solid rgba(243,156,18,0.3);"><i class="bi bi-pause-circle-fill"></i> Session inactive</span>`;
             } else {
@@ -3015,7 +3015,7 @@ function renderAdminStagiairesTable() {
                             data-name="${escapeHtml(fullName)}"
                             data-promoid="${pId}"
                             style="font-size:0.78rem; padding:5px 12px; gap:6px;">
-                        <i class="bi bi-pencil-square"></i> Modifier la promo
+                        <i class="bi bi-pencil-square"></i> Promo
                     </button>
                 </td>
             </tr>

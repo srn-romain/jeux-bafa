@@ -93,16 +93,16 @@
 
             <!-- Onglets principaux -->
             <div class="es-nav-tabs" id="adminTabs" role="tablist">
-                <button class="es-nav-tab active" data-tab="demandes" role="tab">
+                <button class="es-nav-tab active" data-tab="formation" role="tab">
+                    <i class="bi bi-mortarboard"></i> Formation
+                </button>
+                <button class="es-nav-tab" data-tab="demandes" role="tab">
                     <i class="bi bi-bell"></i> Demandes
                     <span class="es-badge es-badge--pending hidden" id="badgePending"
                         style="margin-left:4px;font-size:0.7rem;"></span>
                 </button>
                 <button class="es-nav-tab" data-tab="utilisateurs" role="tab">
                     <i class="bi bi-people"></i> Utilisateurs
-                </button>
-                <button class="es-nav-tab" data-tab="formation" role="tab">
-                    <i class="bi bi-mortarboard"></i> Formation
                 </button>
                 <button class="es-nav-tab" data-tab="recherche" role="tab">
                     <i class="bi bi-search"></i> Recherche
@@ -242,7 +242,7 @@
             <!-- ===================================================
          ONGLET DEMANDES D'ACCÈS
          =================================================== -->
-            <div id="tab-demandes">
+            <div id="tab-demandes" class="hidden">
                 <div class="es-loader" id="demandesLoader">
                     <div class="es-spinner"></div>
                     <span>Chargement…</span>
@@ -316,7 +316,7 @@
             <!-- ===================================================
                  ONGLET FORMATION BAFA (GESTION DES PROMOTIONS & ACCÈS STAGIAIRES)
                  =================================================== -->
-            <div id="tab-formation" class="hidden">
+            <div id="tab-formation">
 
                 <!-- 1. En-tête : Promotion active en cours sur la plateforme -->
                 <div class="es-card" style="margin-bottom: 24px; padding: 22px 24px; background: linear-gradient(135deg, var(--clr-surface-2), var(--clr-surface)); border: 1.5px solid var(--clr-surface-3);">
@@ -420,9 +420,9 @@
                             </select>
 
                             <!-- Recherche -->
-                            <div class="es-input-wrap" style="width: 220px;">
-                                <i class="bi bi-search es-input-icon"></i>
-                                <input type="text" id="searchStagiairesInput" class="es-input es-input--icon es-input--dark" placeholder="Filtrer un stagiaire..." style="padding: 7px 10px 7px 34px; font-size: 0.85rem;">
+                            <div class="es-input-wrap" style="width: 240px; position: relative;">
+                                <i class="bi bi-search es-input-icon" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--clr-text-muted); pointer-events: none; z-index: 1;"></i>
+                                <input type="text" id="searchStagiairesInput" class="es-input" placeholder="Filtrer un stagiaire..." style="padding: 7px 12px 7px 34px; font-size: 0.85rem; background: var(--clr-surface-2); border: 1.5px solid var(--clr-surface-3); color: var(--clr-text); border-radius: var(--radius-md);">
                             </div>
 
                             <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnRefreshStagiairesList" title="Actualiser">
