@@ -603,7 +603,7 @@ async function openFormationModuleEdit(moduleId = null) {
         }
         
         document.getElementById('editQuizTitle').value = '';
-        document.getElementById('editMaxAttempts').value = 0;
+        document.getElementById('editMaxAttempts').value = 1;
         document.getElementById('editQuizTimerMinutes').value = 0;
         document.getElementById('editQuizTimerSeconds').value = 0;
         document.getElementById('editShowResultsAtEnd').checked = false;
@@ -2202,11 +2202,63 @@ async function openFormationResultsModal(moduleId) {
                         </div>` : ''}
                     </div>`;
                 } else {
+                    const ev = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : { autoSuggested: null, isCorrect: null, status: 'auto_draft', gradedByUid: null };
+                    const isAdminUser = (actualRole === 'admin' || actualUserData?.role === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin) || (typeof isFormateurAdmin !== 'undefined' && isFormateurAdmin) || (typeof currentRole !== 'undefined' && currentRole === 'admin'));
+                    const isTranche = (ev.status === 'reviewed' && !!ev.gradedByUid);
+
+                    let autoDraftBadge = '';
+                    if (ev.autoSuggested === true) {
+                        autoDraftBadge = `<span class="es-badge" style="background:rgba(46, 204, 113, 0.14); color:#27ae60; font-size:0.75rem; padding:2px 8px; border-radius:12px;"><i class="bi bi-robot"></i> 1er jet algo : Vrai</span>`;
+                    } else if (ev.autoSuggested === false) {
+                        autoDraftBadge = `<span class="es-badge" style="background:rgba(231, 76, 60, 0.14); color:#e74c3c; font-size:0.75rem; padding:2px 8px; border-radius:12px;"><i class="bi bi-robot"></i> 1er jet algo : Faux</span>`;
+                    }
+
+                    let statusBadge = '';
+                    let metaChip = '';
+                    if (isTranche) {
+                        const isOk = (ev.isCorrect === true);
+                        statusBadge = `<span style="font-weight:700; color:${isOk ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.86rem;">${isOk ? '✅ Validé (Vrai)' : '❌ Invalidé (Faux)'}</span>`;
+                        metaChip = `
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3);">
+                            <i class="bi bi-shield-check" style="color:var(--clr-primary);"></i> Tranché par <strong>${escapeHtml(ev.gradedByName || 'Équipe pédagogique')}</strong> (${ev.gradedByRole || 'formateur'}) le ${formatFullDate(ev.gradedAt)}
+                        </div>`;
+                    } else {
+                        statusBadge = `<span style="font-size:0.78rem; font-weight:600; color:#e67e22; background:rgba(243,156,18,0.12); padding:2px 8px; border-radius:12px;"><i class="bi bi-hourglass-split"></i> En attente de validation</span>`;
+                    }
+
+                    let actionButtonsHtml = '';
+                    if (isAdminUser || !isTranche) {
+                        actionButtonsHtml = `
+                        <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+                            <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === true ? 'es-btn--primary' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${moduleId}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="true" style="padding:4px 10px; font-size:0.78rem;">
+                                <i class="bi bi-check-lg"></i> Vrai (Valider)
+                            </button>
+                            <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === false ? 'es-btn--danger' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${moduleId}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="false" style="padding:4px 10px; font-size:0.78rem;">
+                                <i class="bi bi-x-lg"></i> Faux (Invalider)
+                            </button>
+                            ${isAdminUser && isTranche ? `<span style="font-size:0.72rem; color:var(--clr-text-muted);">(Admin : modifiable)</span>` : ''}
+                        </div>`;
+                    } else {
+                        actionButtonsHtml = `
+                        <div style="margin-top:8px; font-size:0.74rem; color:var(--clr-text-muted); background:rgba(0,0,0,0.03); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3);">
+                            <i class="bi bi-lock-fill" style="color:var(--clr-warning);"></i> Décision tranchée et verrouillée (seul l'administrateur peut modifier).
+                        </div>`;
+                    }
+
                     ansDisplay = `
-                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:6px; font-size:0.88rem; line-height:1.5; white-space:pre-wrap; color:var(--clr-text);">
-                        ${escapeHtml(ans || 'Pas de texte rédigé.')}
-                    </div>
-                    ${q.hint ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;"><i class="bi bi-lightbulb"></i> Piste attendue : ${escapeHtml(q.hint)}</div>` : ''}`;
+                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:6px; font-size:0.88rem; line-height:1.5; color:var(--clr-text);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <strong>Réponse rédigée :</strong>
+                                ${autoDraftBadge}
+                            </div>
+                            <div>${statusBadge}</div>
+                        </div>
+                        <div style="white-space:pre-wrap; color:var(--clr-text); font-size:0.88rem;">${escapeHtml(ans || 'Pas de texte rédigé.')}</div>
+                        ${q.hint ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:6px;"><i class="bi bi-lightbulb"></i> Piste attendue : ${escapeHtml(q.hint)}</div>` : ''}
+                        ${metaChip}
+                        ${actionButtonsHtml}
+                    </div>`;
                 }
 
                 let typeLabel = 'QCM';
@@ -2247,12 +2299,129 @@ async function openFormationResultsModal(moduleId) {
             </div>`;
         }).join('');
 
-        if (list) list.classList.remove('hidden');
+        if (list) {
+            list.classList.remove('hidden');
+
+            list.querySelectorAll('.btn-grade-eval').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const modId = btn.getAttribute('data-module-id');
+                    const subId = btn.getAttribute('data-sub-id');
+                    const qId = btn.getAttribute('data-q-id');
+                    const decision = (btn.getAttribute('data-val') === 'true');
+                    await gradeOpenQuestionAnswer(modId, subId, qId, decision, btn);
+                });
+            });
+        }
 
     } catch (err) {
         if (loader) loader.classList.add('hidden');
         console.error("openFormationResultsModal error:", err);
         showToast("Erreur lors de la récupération des réponses.", "error");
+    }
+}
+
+async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decisionBool, targetBtn) {
+    if (targetBtn) btnLoading(targetBtn, true);
+    try {
+        const isAdminUser = (actualRole === 'admin' || actualUserData?.role === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin) || (typeof isFormateurAdmin !== 'undefined' && isFormateurAdmin) || (typeof currentRole !== 'undefined' && currentRole === 'admin'));
+        const subRef = db.collection('formation').doc(moduleId).collection('submissions').doc(submissionId);
+        const subDoc = await subRef.get();
+        if (!subDoc.exists) {
+            showToast("Soumission introuvable.", "error");
+            if (targetBtn) btnLoading(targetBtn, false);
+            return;
+        }
+
+        const subData = subDoc.data();
+        const prevEvals = subData.evaluations || {};
+        const curEval = prevEvals[questionId] || {};
+
+        if (!isAdminUser && curEval.status === 'reviewed' && curEval.gradedByUid) {
+            showToast("Cette décision a déjà été tranchée et est verrouillée pour les formateurs.", "warning");
+            if (targetBtn) btnLoading(targetBtn, false);
+            return;
+        }
+
+        const questions = await fetchModuleQuestions(moduleId);
+        const updatedEval = {
+            autoSuggested: (curEval.autoSuggested !== undefined) ? curEval.autoSuggested : null,
+            isCorrect: decisionBool,
+            status: 'reviewed',
+            gradedByUid: currentUser.uid,
+            gradedByName: actualUserData?.displayName || `${actualUserData?.firstName || ''} ${actualUserData?.lastName || ''}`.trim() || currentUser.email,
+            gradedByRole: isAdminUser ? 'admin' : 'formateur',
+            gradedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        const newEvals = { ...prevEvals, [questionId]: updatedEval };
+
+        let totalScore = 0;
+        let correctCount = 0;
+
+        questions.forEach(q => {
+            totalScore++;
+            const ans = subData.answers ? subData.answers[q.id] : null;
+            if (q.type === 'qcm') {
+                const ansNum = (ans !== null && ans !== undefined) ? parseInt(ans, 10) : null;
+                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+                if (ansNum === correctIdx) correctCount++;
+            } else if (q.type === 'boolean') {
+                const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+                const userBool = (ans === true || ans === 'true');
+                if (ans !== null && ans !== undefined && userBool === expectedBool) correctCount++;
+            } else if (q.type === 'pinpoint') {
+                const userCoords = (ans && typeof ans === 'object') ? ans : (ans ? (typeof ans === 'string' ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null) : null);
+                const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+                const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+                const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+                if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
+                    const dx = userCoords.x - targetX;
+                    const dy = userCoords.y - targetY;
+                    if (Math.sqrt(dx * dx + dy * dy) <= radius) correctCount++;
+                }
+            } else if (q.type === 'range') {
+                const val = (ans !== null && ans !== undefined) ? parseFloat(ans) : null;
+                if (val !== null && q.correctValue !== undefined) {
+                    const targetVal = parseFloat(q.correctValue);
+                    const tol = parseFloat(q.tolerance) || 0;
+                    if (Math.abs(val - targetVal) <= tol) correctCount++;
+                }
+            } else if (q.type === 'puzzle') {
+                const cOrder = Array.isArray(ans) ? ans : [];
+                const expOrder = q.items || [];
+                if (cOrder.length === expOrder.length && cOrder.length > 0 && cOrder.every((it, idx) => it === expOrder[idx])) {
+                    correctCount++;
+                }
+            } else {
+                const qEv = newEvals[q.id];
+                if (qEv && qEv.isCorrect === true) {
+                    correctCount++;
+                }
+            }
+        });
+
+        const percent = totalScore > 0 ? Math.round((correctCount / totalScore) * 100) : 100;
+        const newScore = { correct: correctCount, total: totalScore, percent: percent };
+
+        await subRef.update({
+            evaluations: newEvals,
+            score: newScore
+        });
+
+        showToast(decisionBool ? "Réponse validée (Vrai) !" : "Réponse invalidée (Faux) !", "success");
+
+        // Recharger les modales si ouvertes
+        const resultsOverlay = document.getElementById('overlayFormationResults');
+        const candBilanOverlay = document.getElementById('overlayAdminCandidateBilan');
+        if (resultsOverlay && !resultsOverlay.classList.contains('hidden')) {
+            await openFormationResultsModal(moduleId);
+        } else if (candBilanOverlay && !candBilanOverlay.classList.contains('hidden')) {
+            await openAdminCandidateBilanModal(subData.userId);
+        }
+    } catch (err) {
+        if (targetBtn) btnLoading(targetBtn, false);
+        console.error("gradeOpenQuestionAnswer error:", err);
+        showToast("Erreur lors de l'enregistrement de l'évaluation.", "error");
     }
 }
 
@@ -2558,6 +2727,117 @@ function renderStagiaireBilan() {
             await toggleBilanModuleAccordion(moduleId, btn);
         });
     });
+}
+
+async function toggleBilanModuleAccordion(moduleId, btn) {
+    const acc = document.getElementById(`bilanAccordion_${moduleId}`);
+    if (!acc) return;
+
+    const isHidden = acc.classList.contains('hidden');
+    const arrow = btn ? btn.querySelector('.accordion-arrow') : null;
+
+    if (!isHidden) {
+        acc.classList.add('hidden');
+        if (arrow) arrow.style.transform = 'rotate(0deg)';
+        return;
+    }
+
+    acc.classList.remove('hidden');
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+
+    const sub = (typeof stagiaireSubmissionsMap !== 'undefined') ? stagiaireSubmissionsMap[moduleId] : null;
+    if (!sub) {
+        acc.innerHTML = `<div style="padding:16px; color:var(--clr-text-muted); font-size:0.85rem;">Aucune copie transmise pour ce module.</div>`;
+        return;
+    }
+
+    try {
+        const questions = await fetchModuleQuestions(moduleId);
+        const answers = sub.answers || {};
+
+        acc.innerHTML = questions.map((q, qIdx) => {
+            const userAns = answers[q.id];
+            let ansDisplay = '';
+
+            if (q.type === 'qcm') {
+                const ansNum = (userAns !== null && userAns !== undefined) ? parseInt(userAns, 10) : null;
+                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+                const isCorrect = (ansNum === correctIdx);
+                const optText = (ansNum !== null && q.options && q.options[ansNum]) ? q.options[ansNum] : 'Pas de réponse';
+                ansDisplay = `
+                <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                    <strong>Votre choix :</strong> ${escapeHtml(optText)}
+                    <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}</span>
+                </div>`;
+            } else if (q.type === 'boolean') {
+                const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+                const userBool = (userAns === true || userAns === 'true');
+                const isCorrect = (userAns !== null && userAns !== undefined && userBool === expectedBool);
+                ansDisplay = `
+                <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                    <strong>Votre choix :</strong> ${userBool ? '👍 VRAI' : '👎 FAUX'}
+                    <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}</span>
+                </div>`;
+            } else if (q.type === 'pinpoint') {
+                const userCoords = userAns && typeof userAns === 'object' ? userAns : (userAns ? (typeof userAns === 'string' ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return null; } })() : null) : null);
+                const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+                const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+                const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+                let isCorrect = false;
+                if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
+                    const dist = Math.sqrt(Math.pow(userCoords.x - targetX, 2) + Math.pow(userCoords.y - targetY, 2));
+                    isCorrect = dist <= radius;
+                }
+                ansDisplay = `
+                <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                    <div><strong>Repère placé :</strong> ${userCoords ? `X: ${userCoords.x.toFixed(1)}%, Y: ${userCoords.y.toFixed(1)}%` : '<span style="color:var(--clr-danger)">Pas de repère</span>'} <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Dans la cible (+1 pt)' : '❌ Hors cible (0 pt)'}</span></div>
+                </div>`;
+            } else if (q.type === 'range') {
+                const val = (userAns !== null && userAns !== undefined) ? parseFloat(userAns) : null;
+                ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Valeur choisie :</strong> <span style="font-weight:700;">${val !== null ? `${val} ${escapeHtml(q.unit || '')}` : 'Non renseigné'}</span></div>`;
+            } else if (q.type === 'puzzle') {
+                const order = Array.isArray(userAns) ? userAns : [];
+                ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Ordre proposé :</strong> <ol style="margin:4px 0 0 16px; padding:0;">${order.map(it => `<li>${escapeHtml(it)}</li>`).join('')}</ol></div>`;
+            } else {
+                // Type text / open pour le stagiaire : AUCUNE métadonnée interne visible !
+                const qEv = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : null;
+                let evalBadge = '';
+                if (qEv && qEv.status === 'reviewed') {
+                    evalBadge = qEv.isCorrect ? `
+                        <span style="font-weight:700; color:var(--clr-success); margin-left:8px; font-size:0.82rem;">
+                            <i class="bi bi-check-circle-fill"></i> Validé (+1 pt)
+                        </span>` : `
+                        <span style="font-weight:700; color:var(--clr-danger); margin-left:8px; font-size:0.82rem;">
+                            <i class="bi bi-x-circle-fill"></i> Non validé (0 pt)
+                        </span>`;
+                } else {
+                    evalBadge = `
+                        <span style="font-size:0.74rem; font-weight:600; color:#e67e22; background:rgba(243,156,18,0.12); padding:2px 8px; border-radius:12px; margin-left:8px;">
+                            <i class="bi bi-hourglass-split"></i> En cours d'évaluation par l'équipe pédagogique
+                        </span>`;
+                }
+                ansDisplay = `
+                <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:4px;">
+                        <strong>Votre réponse rédigée :</strong>
+                        ${evalBadge}
+                    </div>
+                    <div style="white-space:pre-wrap; color:var(--clr-text);">${escapeHtml(userAns || 'Pas de texte rédigé.')}</div>
+                </div>`;
+            }
+
+            return `
+            <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
+                <div style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Question ${qIdx + 1} • ${q.type}</div>
+                <div style="font-size:0.88rem; font-weight:600; color:var(--clr-text); margin-top:2px;">${escapeHtml(q.text)}</div>
+                ${ansDisplay}
+            </div>`;
+        }).join('');
+
+    } catch (err) {
+        console.error("toggleBilanModuleAccordion error:", err);
+        acc.innerHTML = `<div style="padding:16px; color:var(--clr-danger); font-size:0.85rem;">Erreur lors du chargement de la copie.</div>`;
+    }
 }
 
 // ================================================================
@@ -3270,7 +3550,63 @@ async function openAdminCandidateBilanModal(userId) {
                         const order = Array.isArray(userAns) ? userAns : [];
                         ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Ordre proposé :</strong> <ol style="margin:4px 0 0 16px; padding:0;">${order.map(it => `<li>${escapeHtml(it)}</li>`).join('')}</ol></div>`;
                     } else {
-                        ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem; white-space:pre-wrap;">${escapeHtml(userAns || 'Pas de texte rédigé.')}</div>`;
+                        const ev = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : { autoSuggested: null, isCorrect: null, status: 'auto_draft', gradedByUid: null };
+                        const isAdminUser = (actualRole === 'admin' || actualUserData?.role === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin) || (typeof isFormateurAdmin !== 'undefined' && isFormateurAdmin) || (typeof currentRole !== 'undefined' && currentRole === 'admin'));
+                        const isTranche = (ev.status === 'reviewed' && !!ev.gradedByUid);
+
+                        let autoDraftBadge = '';
+                        if (ev.autoSuggested === true) {
+                            autoDraftBadge = `<span class="es-badge" style="background:rgba(46, 204, 113, 0.14); color:#27ae60; font-size:0.75rem; padding:2px 8px; border-radius:12px;"><i class="bi bi-robot"></i> 1er jet algo : Vrai</span>`;
+                        } else if (ev.autoSuggested === false) {
+                            autoDraftBadge = `<span class="es-badge" style="background:rgba(231, 76, 60, 0.14); color:#e74c3c; font-size:0.75rem; padding:2px 8px; border-radius:12px;"><i class="bi bi-robot"></i> 1er jet algo : Faux</span>`;
+                        }
+
+                        let statusBadge = '';
+                        let metaChip = '';
+                        if (isTranche) {
+                            const isOk = (ev.isCorrect === true);
+                            statusBadge = `<span style="font-weight:700; color:${isOk ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.86rem;">${isOk ? '✅ Validé (Vrai)' : '❌ Invalidé (Faux)'}</span>`;
+                            metaChip = `
+                            <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3);">
+                                <i class="bi bi-shield-check" style="color:var(--clr-primary);"></i> Tranché par <strong>${escapeHtml(ev.gradedByName || 'Équipe pédagogique')}</strong> (${ev.gradedByRole || 'formateur'}) le ${formatFullDate(ev.gradedAt)}
+                            </div>`;
+                        } else {
+                            statusBadge = `<span style="font-size:0.78rem; font-weight:600; color:#e67e22; background:rgba(243,156,18,0.12); padding:2px 8px; border-radius:12px;"><i class="bi bi-hourglass-split"></i> En attente de validation</span>`;
+                        }
+
+                        let actionButtonsHtml = '';
+                        if (isAdminUser || !isTranche) {
+                            actionButtonsHtml = `
+                            <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
+                                <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === true ? 'es-btn--primary' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${m.id}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="true" style="padding:4px 10px; font-size:0.78rem;">
+                                    <i class="bi bi-check-lg"></i> Vrai (Valider)
+                                </button>
+                                <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === false ? 'es-btn--danger' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${m.id}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="false" style="padding:4px 10px; font-size:0.78rem;">
+                                    <i class="bi bi-x-lg"></i> Faux (Invalider)
+                                </button>
+                                ${isAdminUser && isTranche ? `<span style="font-size:0.72rem; color:var(--clr-text-muted);">(Admin : modifiable)</span>` : ''}
+                            </div>`;
+                        } else {
+                            actionButtonsHtml = `
+                            <div style="margin-top:8px; font-size:0.74rem; color:var(--clr-text-muted); background:rgba(0,0,0,0.03); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3);">
+                                <i class="bi bi-lock-fill" style="color:var(--clr-warning);"></i> Décision tranchée et verrouillée (seul l'administrateur peut modifier).
+                            </div>`;
+                        }
+
+                        ansDisplay = `
+                        <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:6px; font-size:0.88rem; line-height:1.5; color:var(--clr-text);">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <strong>Réponse rédigée :</strong>
+                                    ${autoDraftBadge}
+                                </div>
+                                <div>${statusBadge}</div>
+                            </div>
+                            <div style="white-space:pre-wrap; color:var(--clr-text); font-size:0.88rem;">${escapeHtml(userAns || 'Pas de texte rédigé.')}</div>
+                            ${q.hint ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:6px;"><i class="bi bi-lightbulb"></i> Piste attendue : ${escapeHtml(q.hint)}</div>` : ''}
+                            ${metaChip}
+                            ${actionButtonsHtml}
+                        </div>`;
                     }
 
                     return `
@@ -3322,6 +3658,16 @@ async function openAdminCandidateBilanModal(userId) {
                     const modId = btn.getAttribute('data-mod');
                     const acc = document.getElementById(`candModalAcc_${modId}`);
                     acc?.classList.toggle('hidden');
+                });
+            });
+
+            list.querySelectorAll('.btn-grade-eval').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const modId = btn.getAttribute('data-module-id');
+                    const subId = btn.getAttribute('data-sub-id');
+                    const qId = btn.getAttribute('data-q-id');
+                    const decision = (btn.getAttribute('data-val') === 'true');
+                    await gradeOpenQuestionAnswer(modId, subId, qId, decision, btn);
                 });
             });
         }

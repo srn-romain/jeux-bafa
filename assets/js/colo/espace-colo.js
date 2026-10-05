@@ -2112,12 +2112,178 @@ document.getElementById('btnInfoDRAJES')?.addEventListener('click', () => {
     openModal('overlayInfoDRAJES');
 });
 
+let currentParticipantQuizBilan = null;
+let formationModulesCache = null;
+
+async function loadParticipantQuizBilan(p) {
+    const boxEl = document.getElementById('stagiaireQuizBilanBox');
+    const kpiEl = document.getElementById('stagiaireQuizBilanKpi');
+    const listEl = document.getElementById('stagiaireQuizBilanList');
+    if (!boxEl || !kpiEl || !listEl) return;
+
+    boxEl.classList.remove('hidden');
+    kpiEl.textContent = '';
+    listEl.innerHTML = `
+        <div style="display:flex; align-items:center; gap:8px; color:var(--clr-text-muted); font-size:0.75rem; padding:4px 0;">
+            <span class="es-btn__spinner" style="display:inline-block; width:12px; height:12px; border-width:2px; border-color:#e67e22 transparent #e67e22 transparent;"></span>
+            <span>Chargement des résultats aux quiz...</span>
+        </div>
+    `;
+
+    currentParticipantQuizBilan = null;
+
+    try {
+        // 1. Charger ou récupérer les modules de formation
+        if (!formationModulesCache) {
+            const snap = await db.collection('formation').orderBy('order', 'asc').get().catch(() => db.collection('formation').get());
+            formationModulesCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }
+
+        const activeModules = (formationModulesCache || []).filter(m => m.visible !== false);
+        const totalModules = activeModules.length;
+
+        if (totalModules === 0) {
+            kpiEl.textContent = 'Aucun module';
+            listEl.innerHTML = `<div style="color:var(--clr-text-muted); font-size:0.75rem; font-style:italic;">Aucun module de quiz actif dans la formation.</div>`;
+            return;
+        }
+
+        // 2. Normalisation du nom / prénom pour matching
+        const pPrenom = (p.prenom || '').trim().toLowerCase();
+        const pNom = (p.nom || '').trim().toLowerCase();
+        const pFullName = `${pPrenom} ${pNom}`.trim();
+        const pRevFullName = `${pNom} ${pPrenom}`.trim();
+        const targetUid = p.userId || p.uid || null;
+
+        // 3. Récupérer les soumissions pour chaque module
+        const moduleResults = [];
+        let completedCount = 0;
+        let totalPercentSum = 0;
+        let scoredCount = 0;
+
+        for (const m of activeModules) {
+            let matchedSub = null;
+            try {
+                const subSnap = await db.collection('formation').doc(m.id).collection('submissions').get();
+                const subs = subSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+                // Recherche par userId prioritaire
+                if (targetUid) {
+                    matchedSub = subs.find(s => s.userId === targetUid);
+                }
+
+                // Si non trouvé par userId, recherche par matching nom/prénom
+                if (!matchedSub && (pPrenom || pNom)) {
+                    matchedSub = subs.find(s => {
+                        const sName = (s.userName || '').trim().toLowerCase();
+                        const sEmail = (s.userEmail || '').trim().toLowerCase();
+                        if (sName && (sName === pFullName || sName === pRevFullName || (pPrenom && sName.includes(pPrenom) && pNom && sName.includes(pNom)))) {
+                            return true;
+                        }
+                        if (sEmail && pNom && sEmail.includes(pNom)) {
+                            return true;
+                        }
+                        return false;
+                    });
+                }
+            } catch (err) {
+                console.warn(`Erreur lecture submissions pour module ${m.id}:`, err);
+            }
+
+            if (matchedSub) {
+                completedCount++;
+                const score = matchedSub.score || {};
+                const percent = (score.percent !== undefined) ? Math.round(score.percent) : 100;
+                const correct = score.correct ?? 0;
+                const total = score.total ?? 0;
+                totalPercentSum += percent;
+                scoredCount++;
+
+                moduleResults.push({
+                    moduleId: m.id,
+                    title: m.title || m.titre || `Module ${m.order || ''}`,
+                    isCompleted: true,
+                    percent,
+                    correct,
+                    total,
+                    attemptsCount: matchedSub.attemptsCount || 1,
+                    submittedAt: matchedSub.submittedAt
+                });
+            } else {
+                moduleResults.push({
+                    moduleId: m.id,
+                    title: m.title || m.titre || `Module ${m.order || ''}`,
+                    isCompleted: false,
+                    percent: null
+                });
+            }
+        }
+
+        const avgScore = scoredCount > 0 ? Math.round(totalPercentSum / scoredCount) : null;
+
+        currentParticipantQuizBilan = {
+            participantId: p.id,
+            completedCount,
+            totalModules,
+            avgScore,
+            scoredCount,
+            moduleDetails: moduleResults.filter(r => r.isCompleted)
+        };
+
+        // 4. Rendu dans le DOM
+        if (completedCount === 0) {
+            kpiEl.textContent = `0/${totalModules} validé`;
+            listEl.innerHTML = `
+                <div style="color:var(--clr-text-muted); font-size:0.75rem; font-style:italic;">
+                    Aucun quiz complété ou compte stagiaire non encore associé.
+                </div>
+            `;
+        } else {
+            kpiEl.innerHTML = `<i class="bi bi-award-fill"></i> Moyenne : ${avgScore !== null ? avgScore + '%' : '--%'} (${completedCount}/${totalModules})`;
+            
+            listEl.innerHTML = moduleResults.map(r => {
+                if (r.isCompleted) {
+                    const color = r.percent >= 75 ? '#2ecc71' : (r.percent >= 50 ? '#f39c12' : '#e74c3c');
+                    return `
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); padding:4px 8px; border-radius:6px;">
+                            <span style="color:var(--clr-text); font-weight:500; font-size:0.75rem; display:flex; align-items:center; gap:5px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:75%;">
+                                <i class="bi bi-check-circle-fill" style="color:#2ecc71; font-size:0.8rem; flex-shrink:0;"></i>
+                                <span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${r.title}</span>
+                            </span>
+                            <span style="font-weight:700; font-size:0.75rem; color:${color}; flex-shrink:0;">
+                                ${r.percent}% ${r.total > 0 ? `<span style="font-weight:400; opacity:0.7; font-size:0.7rem;">(${r.correct}/${r.total})</span>` : ''}
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); padding:4px 8px; border-radius:6px; opacity:0.6;">
+                            <span style="color:var(--clr-text-muted); font-size:0.75rem; display:flex; align-items:center; gap:5px; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:75%;">
+                                <i class="bi bi-circle" style="font-size:0.75rem; flex-shrink:0;"></i>
+                                <span style="text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${r.title}</span>
+                            </span>
+                            <span style="font-size:0.7rem; color:var(--clr-text-muted); flex-shrink:0;">En attente</span>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+    } catch (err) {
+        console.error("Erreur loadParticipantQuizBilan:", err);
+        kpiEl.textContent = 'Erreur';
+        listEl.innerHTML = `<div style="color:var(--clr-danger); font-size:0.75rem;">Impossible de charger le bilan quiz.</div>`;
+    }
+}
+
 document.getElementById('btnAddParticipant')?.addEventListener('click', () => {
     if (!navigator.onLine) {
         showToast("Vous êtes hors ligne. L'ajout d'un participant nécessite une connexion internet.", "warning");
         return;
     }
     editingParticipantId = null;
+    currentParticipantQuizBilan = null;
+    document.getElementById('stagiaireQuizBilanBox')?.classList.add('hidden');
     document.getElementById('participantModalTitle').textContent = 'Ajouter un participant';
     document.getElementById('participantForm')?.reset();
 
@@ -2171,6 +2337,10 @@ function editParticipant(id) {
         // Visibilité du bouton IA selon les droits
         const canUseAI = (currentRole === 'admin') || isAIGeneratorEnabled;
         document.getElementById('btnOpenAIGenerator')?.classList.toggle('hidden', !canUseAI);
+        // Charger le bilan quiz du stagiaire
+        loadParticipantQuizBilan(p);
+    } else {
+        document.getElementById('stagiaireQuizBilanBox')?.classList.add('hidden');
     }
 
     const groupSelect = document.getElementById('pGroup');
@@ -2322,6 +2492,25 @@ document.getElementById('btnOpenAIGenerator')?.addEventListener('click', () => {
     if (isBase) document.querySelector('input[name="aiStageType"][value="base"]').checked = true;
     if (isAppro) document.querySelector('input[name="aiStageType"][value="approfondissement"]').checked = true;
 
+    // Contexte Bilan Quiz Formation
+    const quizToggleWrap = document.getElementById('aiQuizContextToggleWrap');
+    const checkQuizContext = document.getElementById('checkAIIncludeQuizContext');
+    const quizSummary = document.getElementById('aiQuizContextSummary');
+    if (quizToggleWrap && checkQuizContext) {
+        if (isColoFormation && currentParticipantQuizBilan && currentParticipantQuizBilan.completedCount > 0) {
+            quizToggleWrap.classList.remove('hidden');
+            checkQuizContext.checked = true;
+            if (quizSummary) {
+                const modCount = `${currentParticipantQuizBilan.completedCount}/${currentParticipantQuizBilan.totalModules} module${currentParticipantQuizBilan.completedCount > 1 ? 's' : ''} validé${currentParticipantQuizBilan.completedCount > 1 ? 's' : ''}`;
+                const avgText = currentParticipantQuizBilan.avgScore !== null ? `Moyenne : ${currentParticipantQuizBilan.avgScore}% · ` : '';
+                quizSummary.textContent = `${avgText}${modCount}`;
+            }
+        } else {
+            quizToggleWrap.classList.add('hidden');
+            checkQuizContext.checked = false;
+        }
+    }
+
     // Réinitialiser la zone de résultat
     document.getElementById('aiResultArea')?.classList.add('hidden');
     document.getElementById('btnApplyAI')?.classList.add('hidden');
@@ -2378,21 +2567,42 @@ document.getElementById('btnGenerateAI')?.addEventListener('click', async () => 
         const context = _getDRAJESContext();
         const pPrenom = document.getElementById('pPrenom')?.value || "Le stagiaire";
         const pGenre = document.getElementById('pGenre')?.value || "feminin";
+
+        // Contexte Bilan Quiz (optionnel selon le toggle)
+        let quizContextStr = "";
+        const isQuizContextChecked = document.getElementById('checkAIIncludeQuizContext')?.checked;
+        if (isQuizContextChecked && currentParticipantQuizBilan && currentParticipantQuizBilan.completedCount > 0) {
+            const detailsList = currentParticipantQuizBilan.moduleDetails
+                .map(m => `  * ${m.title} : acquis et notions validés (${m.percent}%)`)
+                .join('\n');
+
+            quizContextStr = `
+        BILAN DES ACQUIS THÉORIQUES DU STAGIAIRE (OBSERVATIONS DE FORMATION) :
+        - Niveau global d'assimilation : ${currentParticipantQuizBilan.avgScore !== null ? currentParticipantQuizBilan.avgScore + '%' : 'Validé'}
+        - Domaines et thématiques de formation validés :
+${detailsList}
+
+        CONSIGNES OBLIGATOIRES ET STRICTES SUR LE BILAN THÉORIQUE :
+        1. INTERDICTION FORMELLE ET ABSOLUE : Ne cite JAMAIS les mots "quiz", "QCM", "tests", "notes", "scores", "chiffres", "pourcentages", "bilan écrit" ou "évaluation" dans l'appréciation.
+        2. UTILISATION PÉDAGOGIQUE : Traduis ces réussites en aptitudes et compétences concrètes acquises par le stagiaire (ex: excellente assimilation du cadre réglementaire et des impératifs de sécurité physique et affective, solide compréhension des rythmes et besoins de l'enfant, maîtrise des démarches pédagogiques et de projet).
+        3. Appuie-toi sur ces forces théoriques pour enrichir l'appréciation finale en conformité avec les critères de la DRAJES.`;
+        }
         
         const prompt = `Tu es un formateur BAFA expert. Ta mission est de rédiger l'appréciation finale de stage BAFA pour ${pPrenom} (${pGenre === 'masculin' ? 'un homme' : 'une femme'}).
         
         CONTEXTE DU STAGE :
         - Type de session : ${stageType === 'base' ? 'Session de Formation Générale (Base)' : 'Session d\'Approfondissement'}
         - Remarques de l'équipe : ${notes}
+        ${quizContextStr}
         
-        CADRE RÉGLEMENTAIRE DRAJES (Contexte) :
+        CADRE RÉGLEMENTAIRE DRAJES (Critères officiels d'évaluation) :
         ${context}
         
         CONSIGNES DE RÉDACTION :
         1. Rédige l'appréciation à la 3ème personne exclusivement.
         2. Sois factuel : décris ce que le stagiaire a FAIT et ACQUIS, et dans quel CONTEXTE.
-        3. Longueur : environ 4 à 5 phrases (une par grand critère).
-        4. INTERDIT : Jugements de valeur (dynamique, sérieux, bienveillant...), conseils ("il devra veiller à..."), félicitations, ou mention de noms de jeux précis.
+        3. Longueur : environ 4 à 5 phrases (une par grand critère DRAJES).
+        4. INTERDIT : Jugements de valeur génériques (dynamique, sérieux, bienveillant...), conseils futurs ("il devra veiller à..."), félicitations, mention explicite de notes/quiz/scores, ou mention de noms de jeux précis.
         5. L'appréciation doit être parfaitement cohérente avec un AVIS FAVORABLE (aucune réserve).
         
         RÉPONSE ATTENDUE : Uniquement le texte de l'appréciation, sans introduction ni conclusion.`;

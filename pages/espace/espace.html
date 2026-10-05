@@ -1111,13 +1111,29 @@
               placeholder="Ex: Allergie au gluten, traitement asthme..."></textarea>
           </div>
           <div class="es-field hidden" id="fieldParticipantAppreciation">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
               <label class="es-field__label" for="pAppreciation" style="margin-bottom:0;"><i class="bi bi-star"
                   style="color:var(--clr-primary)"></i> Appréciation / Évaluation</label>
               <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnOpenAIGenerator" style="padding: 2px 8px; font-size: 0.75rem; color: var(--clr-primary);">
-                <i class="bi bi-magic"></i> Générer par IA
+                <i class="bi bi-magic"></i> Assistant IA
               </button>
             </div>
+
+            <!-- SECTION ORANGE : BILAN QUIZ FORMATION DU STAGIAIRE -->
+            <div id="stagiaireQuizBilanBox" class="hidden" style="background: rgba(243, 156, 18, 0.08); border: 1px solid rgba(243, 156, 18, 0.3); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px; flex-wrap:wrap; gap:6px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <i class="bi bi-mortarboard-fill" style="color: #e67e22; font-size: 0.95rem;"></i>
+                  <span style="font-weight: 700; font-size: 0.82rem; color: var(--clr-text);">Bilan Quiz Formation</span>
+                </div>
+                <div id="stagiaireQuizBilanKpi" style="font-size: 0.75rem; font-weight: 700; color: #e67e22; background: rgba(243, 156, 18, 0.15); padding: 2px 8px; border-radius: 12px;">
+                </div>
+              </div>
+              <div id="stagiaireQuizBilanList" style="display: flex; flex-direction: column; gap: 4px; font-size: 0.78rem;">
+                <div style="color:var(--clr-text-muted); font-size:0.75rem; font-style:italic;">Chargement des résultats...</div>
+              </div>
+            </div>
+
             <textarea class="es-textarea es-textarea--note" id="pAppreciation" rows="3"
               placeholder="Ex: Très bonne progression, participe activement..."></textarea>
           </div>
@@ -1698,6 +1714,23 @@
           <textarea class="es-textarea" id="aiNotes" rows="4" placeholder="Ex: Stagiaire ponctuel, a mené un grand jeu sur les pirates, écoute active lors des bilans, un peu réservé au début mais a bien progressé..."></textarea>
           <p style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:4px;">
             <i class="bi bi-info-circle"></i> Plus vous donnez de détails factuels, meilleure sera l'appréciation.
+          </p>
+        </div>
+
+        <!-- TOGGLE CONTEXTE BILAN QUIZ FORMATION -->
+        <div id="aiQuizContextToggleWrap" class="es-field hidden" style="background: rgba(243, 156, 18, 0.08); border: 1px solid rgba(243, 156, 18, 0.25); border-radius: 10px; padding: 10px 14px; margin-top: 12px; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <label for="checkAIIncludeQuizContext" style="margin: 0; font-size: 0.85rem; font-weight: 600; color: var(--clr-text); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <i class="bi bi-mortarboard-fill" style="color: #e67e22;"></i>
+              <span>Prendre en compte le bilan quiz du stagiaire</span>
+            </label>
+            <label class="switch" style="margin: 0; flex-shrink: 0;">
+              <input type="checkbox" id="checkAIIncludeQuizContext" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+          <p id="aiQuizContextSummary" style="font-size: 0.75rem; color: var(--clr-text-muted); margin: 6px 0 0 0; line-height: 1.4;">
+            Moyenne générale et compétences théoriques du stagiaire
           </p>
         </div>
 

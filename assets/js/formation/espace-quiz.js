@@ -708,6 +708,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
     const showResults = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
 
     const answers = {};
+    const evaluations = {};
     let hasMissing = false;
     let qcmTotal = 0;
     let qcmCorrect = 0;
@@ -794,11 +795,52 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 hasMissing = true;
             }
         } else {
+            qcmTotal++;
             const textarea = form ? form.querySelector(`textarea[name="question_${q.id}"]`) : null;
             const val = textarea ? textarea.value.trim() : '';
+            answers[q.id] = val;
             if (val.length >= 10) {
-                answers[q.id] = val;
+                // Algorithme de premier jet pour les réponses longues :
+                const words = val.split(/\s+/).filter(w => w.length > 2);
+                let isSuggestedValid = false;
+                
+                // Si la question comporte une piste (hint)
+                if (q.hint && q.hint.trim().length > 3) {
+                    const hintKeywords = q.hint.toLowerCase().split(/[\s,.;:!?()]+/).filter(w => w.length > 3);
+                    const valLower = val.toLowerCase();
+                    const matched = hintKeywords.filter(kw => valLower.includes(kw));
+                    isSuggestedValid = (words.length >= 5) && (matched.length > 0 || words.length >= 12);
+                } else {
+                    isSuggestedValid = (words.length >= 8);
+                }
+
+                if (!evaluations[q.id]) {
+                    evaluations[q.id] = {
+                        autoSuggested: isSuggestedValid,
+                        isCorrect: isSuggestedValid, // Premier jet algorithmique
+                        status: 'auto_draft', // en attente de validation formateur/admin
+                        suggestedReason: isSuggestedValid ? 'Premier jet algorithmique : Réponse développée et cohérente' : 'Premier jet algorithmique : Réponse trop courte ou incomplète',
+                        gradedByUid: null,
+                        gradedByName: null,
+                        gradedByRole: null,
+                        gradedAt: null
+                    };
+                }
+
+                if (isSuggestedValid) {
+                    qcmCorrect++;
+                }
             } else {
+                evaluations[q.id] = {
+                    autoSuggested: false,
+                    isCorrect: false,
+                    status: 'auto_draft',
+                    suggestedReason: 'Premier jet algorithmique : Réponse vide ou trop courte (< 10 caractères)',
+                    gradedByUid: null,
+                    gradedByName: null,
+                    gradedByRole: null,
+                    gradedAt: null
+                };
                 answers[q.id] = val;
                 hasMissing = true;
             }
@@ -832,6 +874,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             userEmail: currentUser.email,
             userName: actualUserData?.displayName || `${actualUserData?.firstName || ''} ${actualUserData?.lastName || ''}`.trim() || currentUser.email,
             answers: answers,
+            evaluations: evaluations,
             attemptNumber: nextAttemptCount,
             attemptsCount: nextAttemptCount,
             timeExpired: autoSubmitByTimer === true,
@@ -1091,9 +1134,29 @@ function renderResultsScreen(submission) {
                     ` : ''}
                 </div>`;
             } else {
+                const qEval = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : null;
+                let evalBadge = '';
+                if (qEval && qEval.status === 'reviewed') {
+                    evalBadge = qEval.isCorrect ? `
+                        <span style="font-weight:700; color:var(--clr-success); margin-left:8px; font-size:0.84rem;">
+                            <i class="bi bi-check-circle-fill"></i> Validé (+1 pt)
+                        </span>` : `
+                        <span style="font-weight:700; color:var(--clr-danger); margin-left:8px; font-size:0.84rem;">
+                            <i class="bi bi-x-circle-fill"></i> Non validé (0 pt)
+                        </span>`;
+                } else {
+                    evalBadge = `
+                        <span style="font-size:0.75rem; font-weight:600; color:#e67e22; background:rgba(243,156,18,0.12); padding:2px 8px; border-radius:12px; margin-left:8px;">
+                            <i class="bi bi-hourglass-split"></i> Transmis pour évaluation formateur
+                        </span>`;
+                }
+
                 ansDisplay = `
                 <div style="background:#ffffff; border:1.5px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:8px; font-size:0.88rem; line-height:1.5; color:var(--clr-text);">
-                    <strong style="color:var(--clr-primary);"><i class="bi bi-person-check"></i> Votre réponse :</strong>
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                        <strong style="color:var(--clr-primary);"><i class="bi bi-person-check"></i> Votre réponse :</strong>
+                        ${evalBadge}
+                    </div>
                     <div style="white-space:pre-wrap; margin-top:4px;">${escapeHtml(userAns || 'Pas de texte rédigé.')}</div>
                     ${q.hint ? `
                         <div style="margin-top:8px; padding-top:6px; border-top:1px dashed var(--clr-surface-3); font-size:0.8rem; color:#b7791f;">

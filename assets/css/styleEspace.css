@@ -6256,19 +6256,19 @@ body.modal-open .es-topbar {
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition: box-shadow var(--transition);
 }
 
 .es-bilan-card:hover {
-  border-color: var(--clr-primary-light);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
 }
 
 .es-bilan-card--completed {
-  border-left: 5px solid var(--clr-success);
+  border-color: var(--clr-surface-3);
 }
 
 .es-bilan-card--pending {
-  border-left: 5px solid var(--clr-surface-3);
+  border-color: var(--clr-surface-3);
 }
 
 .es-bilan-card__header {
