@@ -676,7 +676,7 @@ function updateProgress() {
             answeredCount++;
         } else {
             const txt = form.querySelector(`textarea[name="question_${q.id}"]`);
-            if (txt && txt.value.trim().length >= 10) answeredCount++;
+            if (txt && txt.value.trim().length > 0) answeredCount++;
         }
     });
 
@@ -799,8 +799,8 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             const textarea = form ? form.querySelector(`textarea[name="question_${q.id}"]`) : null;
             const val = textarea ? textarea.value.trim() : '';
             answers[q.id] = val;
-            if (val.length >= 10) {
-                // Algorithme de premier jet pour les réponses longues :
+            if (val.length > 0) {
+                // Algorithme de premier jet pour les réponses rédigées :
                 const words = val.split(/\s+/).filter(w => w.length > 2);
                 let isSuggestedValid = false;
                 
@@ -809,9 +809,9 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                     const hintKeywords = q.hint.toLowerCase().split(/[\s,.;:!?()]+/).filter(w => w.length > 3);
                     const valLower = val.toLowerCase();
                     const matched = hintKeywords.filter(kw => valLower.includes(kw));
-                    isSuggestedValid = (words.length >= 5) && (matched.length > 0 || words.length >= 12);
+                    isSuggestedValid = (words.length >= 3) && (matched.length > 0 || words.length >= 8);
                 } else {
-                    isSuggestedValid = (words.length >= 8);
+                    isSuggestedValid = (words.length >= 4);
                 }
 
                 if (!evaluations[q.id]) {
@@ -819,7 +819,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                         autoSuggested: isSuggestedValid,
                         isCorrect: isSuggestedValid, // Premier jet algorithmique
                         status: 'auto_draft', // en attente de validation formateur/admin
-                        suggestedReason: isSuggestedValid ? 'Premier jet algorithmique : Réponse développée et cohérente' : 'Premier jet algorithmique : Réponse trop courte ou incomplète',
+                        suggestedReason: isSuggestedValid ? 'Premier jet algorithmique : Réponse développée et cohérente' : 'Premier jet algorithmique : Réponse courte ou incomplète',
                         gradedByUid: null,
                         gradedByName: null,
                         gradedByRole: null,
@@ -835,13 +835,13 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                     autoSuggested: false,
                     isCorrect: false,
                     status: 'auto_draft',
-                    suggestedReason: 'Premier jet algorithmique : Réponse vide ou trop courte (< 10 caractères)',
+                    suggestedReason: 'Premier jet algorithmique : Réponse non renseignée',
                     gradedByUid: null,
                     gradedByName: null,
                     gradedByRole: null,
                     gradedAt: null
                 };
-                answers[q.id] = val;
+                answers[q.id] = '';
                 hasMissing = true;
             }
         }
@@ -850,7 +850,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
     // En mode soumission manuelle, on bloque si des questions sont incomplètes
     if (hasMissing && !autoSubmitByTimer) {
         if (errorAlert && errorMsg) {
-            errorMsg.textContent = "Merci de répondre à toutes les questions (les réponses rédigées doivent comporter au moins 10 caractères).";
+            errorMsg.textContent = "Merci de répondre à toutes les questions avant de valider l'épreuve.";
             errorAlert.classList.remove('hidden');
             errorAlert.scrollIntoView({ behavior: 'smooth' });
         }
@@ -921,7 +921,7 @@ document.getElementById('btnSubmitQuiz')?.addEventListener('click', () => {
 // ----------------------------------------------------------------
 // VUE 3 : ÉCRAN DE RÉSULTATS & CORRIGÉ DÉTAILLÉ
 // ----------------------------------------------------------------
-function renderResultsScreen(submission) {
+function renderResultsScreen(submission = {}) {
     const qConfig = currentModuleData.quizConfig || {};
     const showResults = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
     const score = submission?.score || { correct: 0, total: 0, percent: 100 };
@@ -935,9 +935,9 @@ function renderResultsScreen(submission) {
     const correctionSection = document.getElementById('resultCorrectionSection');
     const questionsList = document.getElementById('resultQuestionsList');
 
-    const timeExpiredBadge = submission.timeExpired ? ' • ⏰ Temps écoulé' : '';
+    const timeExpiredBadge = submission?.timeExpired ? ' • ⏰ Temps écoulé' : '';
     if (attemptBadge) {
-        attemptBadge.textContent = `Tentative #${submission.attemptNumber || 1}${timeExpiredBadge}`;
+        attemptBadge.textContent = `Tentative #${submission?.attemptNumber || 1}${timeExpiredBadge}`;
     }
 
     if (showResults) {
@@ -1134,7 +1134,7 @@ function renderResultsScreen(submission) {
                     ` : ''}
                 </div>`;
             } else {
-                const qEval = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : null;
+                const qEval = (submission?.evaluations && submission.evaluations[q.id]) ? submission.evaluations[q.id] : null;
                 let evalBadge = '';
                 if (qEval && qEval.status === 'reviewed') {
                     evalBadge = qEval.isCorrect ? `
