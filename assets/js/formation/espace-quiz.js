@@ -221,7 +221,7 @@ function renderBriefingScreen() {
             timerPillText.textContent = `⏱️ ${formatDurationText(totalDurationSecs)} max`;
             timerPill.className = 'es-quiz-pill es-quiz-pill--warning';
         } else {
-            timerPillText.textContent = `⏱️ Temps libre (sans chrono)`;
+            timerPillText.textContent = `Temps libre (sans chrono)`;
             timerPill.className = 'es-quiz-pill';
         }
     }
@@ -248,11 +248,11 @@ function renderBriefingScreen() {
     // Avertissement de début d'épreuve
     const warningTextEl = document.getElementById('briefingWarningText');
     if (warningTextEl) {
-        let warnContent = `Ce module ${maxAttempts > 0 ? `autorise un maximum de <strong>${maxAttempts} tentative(s)</strong>.` : `est disponible pour évaluation.`} <strong>Une fois le quiz démarré, vous vous engagez à répondre aux questions et à valider votre copie.</strong><br>`;
+        let warnContent = `Ce module ${maxAttempts > 0 ? `autorise un maximum de <strong>${maxAttempts} tentative(s)</strong>.` : `est disponible pour évaluation.`} <br>`;
         if (totalDurationSecs > 0) {
             warnContent += `⏱️ <strong>Épreuve minutée (${formatDurationText(totalDurationSecs)}) :</strong> Le chronomètre deviendra <strong>rouge à 10% du temps</strong> puis <strong>clignotant / animé à 5% du temps restant</strong>. Vos réponses seront automatiquement transmises à l'échéance.<br>`;
         }
-        warnContent += `Si vous quittez la page, fermez l'onglet ou rechargez votre navigateur en cours de route, cette tentative sera considérée comme <strong>consommée et abandonnée</strong>.`;
+        warnContent += `Ne tentez pas de recharger ou de fermer la page en cours de route, cette tentative sera considérée comme <strong>consommée</strong>.`;
         warningTextEl.innerHTML = warnContent;
     }
 
@@ -280,7 +280,7 @@ function renderBriefingScreen() {
         if (btnStart) {
             btnStart.disabled = false;
             btnStart.style.opacity = '1';
-            btnStart.innerHTML = `<i class="bi bi-rocket-takeoff-fill"></i> J'ai compris, commencer l'épreuve`;
+            btnStart.innerHTML = `<i class="bi bi-rocket-takeoff-fill"></i> Commencer l'épreuve`;
             btnStart.onclick = () => startActiveQuiz();
         }
         if (showResults && userPreviousSubmissions.length > 0 && btnViewResults) {
