@@ -2429,6 +2429,330 @@ document.getElementById('btnCloseResultsModal')?.addEventListener('click', () =>
 document.getElementById('btnCloseResultsModal2')?.addEventListener('click', () => closeModal('overlayFormationResults'));
 
 // ================================================================
+// EXPORTS PDF DU BILAN (STAGIAIRE & PROMOTION)
+// ================================================================
+function exportStagiaireBilanPDF({ candidateUser, modulesList, submissionsMap, promoName } = {}) {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        showToast("Erreur : Bibliothèque PDF non disponible. Veuillez recharger la page.", "error");
+        return;
+    }
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+
+        const user = candidateUser || (typeof actualUserData !== 'undefined' && actualUserData) || currentUser || {};
+        const displayName = user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Stagiaire';
+        const email = user.email || '';
+        const promo = promoName || document.getElementById('promoCurrentName')?.textContent.trim() || 'Session de formation BAFA';
+
+        const modules = (modulesList || currentFormationModulesList || []).filter(m => m.visible !== false);
+        const subMap = submissionsMap || stagiaireSubmissionsMap || {};
+
+        let completedCount = 0;
+        let totalAttempts = 0;
+        let scoredList = [];
+
+        modules.forEach(m => {
+            const sub = subMap[m.id];
+            if (sub) {
+                completedCount++;
+                totalAttempts += (sub.attemptsCount || sub.attemptNumber || 1);
+                if (sub.score && typeof sub.score.percent === 'number') {
+                    scoredList.push(sub.score.percent);
+                }
+            }
+        });
+
+        const completionPercent = modules.length > 0 ? Math.round((completedCount / modules.length) * 100) : 0;
+        const avgScore = scoredList.length > 0 ? Math.round(scoredList.reduce((a, b) => a + b, 0) / scoredList.length) : null;
+
+        // --- En-tête / Header ---
+        doc.setFillColor(30, 41, 59); // Slate-800
+        doc.rect(0, 0, 210, 36, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(15);
+        doc.text("BILAN DE FORMATION BAFA", 14, 16);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.setTextColor(166, 216, 102); // Primary Green
+        doc.text("Contrôle des connaissances & Épreuves individuelles", 14, 24);
+
+        doc.setFontSize(8);
+        doc.setTextColor(203, 213, 225);
+        const genDate = `Édité le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+        doc.text(genDate, 196, 24, { align: 'right' });
+
+        // --- Bloc Informations Stagiaire & Session ---
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, 42, 182, 26, 2, 2, 'FD');
+
+        doc.setTextColor(30, 41, 59);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10.5);
+        doc.text(displayName, 20, 50);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text(`Email : ${email || 'Non renseigné'}`, 20, 56);
+        doc.text(`Promotion : ${promo}`, 20, 62);
+
+        // KPIs dans le bloc
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.setTextColor(30, 41, 59);
+        doc.text(`Progression : ${completedCount}/${modules.length} (${completionPercent}%)`, 115, 50);
+        doc.text(`Score Moyen : ${avgScore !== null ? `${avgScore}%` : (completedCount > 0 ? 'Transmis' : '—')}`, 115, 56);
+        doc.text(`Épreuves passées : ${totalAttempts}`, 115, 62);
+
+        // --- Tableau Récapitulatif par Module (Simple, sans détail des questions) ---
+        const tableBody = modules.map(m => {
+            const sub = subMap[m.id];
+            const isCompleted = !!sub;
+            const qConfig = m.quizConfig || {};
+            const showResultsAtEnd = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+
+            let statusText = 'Non commencé';
+            let resultText = '—';
+            let attemptsText = '—';
+            let dateText = '—';
+
+            if (isCompleted) {
+                statusText = 'Validé';
+                if (showResultsAtEnd && sub.score) {
+                    resultText = `${sub.score.percent}% (${sub.score.correct || 0}/${sub.score.total || 0} QCM)`;
+                } else {
+                    resultText = 'Transmis au formateur';
+                }
+                attemptsText = `Tentative #${sub.attemptNumber || 1}${sub.timeExpired ? ' (Temps écoulé)' : ''}`;
+                dateText = formatFullDate(sub.submittedAt);
+            }
+
+            const modNum = `Module ${m.num < 10 ? '0' + m.num : m.num}`;
+            return [
+                modNum,
+                m.title || 'Sans titre',
+                statusText,
+                resultText,
+                attemptsText,
+                dateText
+            ];
+        });
+
+        doc.autoTable({
+            startY: 74,
+            head: [['N°', 'Module de formation', 'Statut', 'Résultat / Score', 'Tentative', 'Date & Heure']],
+            body: tableBody,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [30, 41, 59],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                fontSize: 8.5
+            },
+            styles: {
+                fontSize: 8,
+                cellPadding: 3.5,
+                valign: 'middle'
+            },
+            columnStyles: {
+                0: { cellWidth: 22, fontStyle: 'bold' },
+                1: { cellWidth: 56 },
+                2: { cellWidth: 24 },
+                3: { cellWidth: 32 },
+                4: { cellWidth: 24 },
+                5: { cellWidth: 24 }
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            didDrawPage: function () {
+                const pageHeight = doc.internal.pageSize.height || 297;
+                doc.setFontSize(7.5);
+                doc.setTextColor(148, 163, 184);
+                doc.text("Plateforme Jeux-BAFA • Bilan pédagogique individuel", 14, pageHeight - 8);
+                doc.text(`Page ${doc.internal.getNumberOfPages()}`, 196, pageHeight - 8, { align: 'right' });
+            }
+        });
+
+        const safeName = displayName.replace(/[^a-zA-Z0-9_-]/g, '_');
+        doc.save(`Bilan_BAFA_${safeName}.pdf`);
+        showToast("📄 Bilan PDF téléchargé avec succès !", "success");
+
+    } catch (err) {
+        console.error("exportStagiaireBilanPDF error:", err);
+        showToast("Erreur lors de la génération du PDF.", "error");
+    }
+}
+
+function exportPromoBilanPDF({ promoName, candidatesList, submissionsByUser, modulesList } = {}) {
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+        showToast("Erreur : Bibliothèque PDF non disponible. Veuillez recharger la page.", "error");
+        return;
+    }
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+
+        const promo = promoName || document.getElementById('promoCurrentName')?.textContent.trim() || 'Toutes les promotions';
+        const candidates = candidatesList || adminAllCandidatesList || [];
+        const modules = modulesList || currentFormationModulesList || [];
+        const subByUser = submissionsByUser || adminAllSubmissionsByUser || {};
+
+        const totalCandidates = candidates.length;
+        const totalModules = modules.length;
+
+        let activeCount = 0;
+        let totalAttempts = 0;
+        let totalCompletionSum = 0;
+        let allScores = [];
+
+        candidates.forEach(cand => {
+            const userData = subByUser[cand.uid];
+            const candModulesMap = userData?.modulesMap || {};
+            const completedCount = Object.keys(candModulesMap).length;
+            const subsList = userData?.allSubs || [];
+
+            if (completedCount > 0) {
+                activeCount++;
+                totalAttempts += subsList.length;
+            }
+
+            const compPct = totalModules > 0 ? (completedCount / totalModules) * 100 : 0;
+            totalCompletionSum += compPct;
+
+            Object.values(candModulesMap).forEach(sub => {
+                if (sub.score && typeof sub.score.percent === 'number') {
+                    allScores.push(sub.score.percent);
+                }
+            });
+        });
+
+        const avgCompletion = totalCandidates > 0 ? Math.round(totalCompletionSum / totalCandidates) : 0;
+        const avgScore = allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : null;
+
+        // --- En-tête / Header ---
+        doc.setFillColor(30, 41, 59); // Slate-800
+        doc.rect(0, 0, 210, 36, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(15);
+        doc.text("BILAN GLOBAL DE PROMOTION BAFA", 14, 16);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.setTextColor(166, 216, 102); // Primary Green
+        doc.text(`Session : ${promo}`, 14, 24);
+
+        doc.setFontSize(8);
+        doc.setTextColor(203, 213, 225);
+        const genDate = `Édité le ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+        doc.text(genDate, 196, 24, { align: 'right' });
+
+        // --- Bloc Synthèse KPIs Promotion ---
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, 42, 182, 24, 2, 2, 'FD');
+
+        doc.setTextColor(30, 41, 59);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.5);
+        doc.text(`Stagiaires inscrits : ${totalCandidates}`, 20, 51);
+        doc.text(`Stagiaires actifs : ${activeCount}`, 20, 58);
+
+        doc.text(`Complétion moyenne : ${avgCompletion}%`, 110, 51);
+        doc.text(`Moyenne promo : ${avgScore !== null ? `${avgScore}%` : '—'} (${allScores.length} quiz notés)`, 110, 58);
+
+        // --- Tableau des Candidats ---
+        const tableBody = candidates.map(cand => {
+            const candData = subByUser[cand.uid];
+            const candModulesMap = candData?.modulesMap || {};
+            const allSubs = candData?.allSubs || [];
+            const completedCount = Object.keys(candModulesMap).length;
+            const completionPct = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
+
+            const candScores = [];
+            Object.values(candModulesMap).forEach(sub => {
+                if (sub.score && typeof sub.score.percent === 'number') candScores.push(sub.score.percent);
+            });
+            const candAvg = candScores.length > 0 ? Math.round(candScores.reduce((a, b) => a + b, 0) / candScores.length) : null;
+
+            let lastDate = 'Jamais';
+            if (allSubs.length > 0) {
+                allSubs.sort((a, b) => {
+                    const ta = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : (a.submittedAt?.seconds ? a.submittedAt.seconds * 1000 : 0);
+                    const tb = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : (b.submittedAt?.seconds ? b.submittedAt.seconds * 1000 : 0);
+                    return tb - ta;
+                });
+                lastDate = formatFullDate(allSubs[0].submittedAt);
+            }
+
+            const displayName = cand.displayName || `${cand.firstName || ''} ${cand.lastName || ''}`.trim() || cand.email || 'Candidat';
+
+            return [
+                displayName,
+                cand.email || '—',
+                `${completedCount} / ${totalModules} (${completionPct}%)`,
+                candAvg !== null ? `${candAvg}%` : (completedCount > 0 ? 'Transmis' : '—'),
+                `${allSubs.length}`,
+                lastDate
+            ];
+        });
+
+        doc.autoTable({
+            startY: 72,
+            head: [['Stagiaire / Candidat', 'Email', 'Progression', 'Score Moyen', 'Épreuves', 'Dernière Activité']],
+            body: tableBody,
+            theme: 'grid',
+            headStyles: {
+                fillColor: [30, 41, 59],
+                textColor: [255, 255, 255],
+                fontStyle: 'bold',
+                fontSize: 8.5
+            },
+            styles: {
+                fontSize: 8,
+                cellPadding: 3.5,
+                valign: 'middle'
+            },
+            columnStyles: {
+                0: { cellWidth: 44, fontStyle: 'bold' },
+                1: { cellWidth: 44 },
+                2: { cellWidth: 26 },
+                3: { cellWidth: 22 },
+                4: { cellWidth: 20 },
+                5: { cellWidth: 26 }
+            },
+            alternateRowStyles: {
+                fillColor: [248, 250, 252]
+            },
+            didDrawPage: function () {
+                const pageHeight = doc.internal.pageSize.height || 297;
+                doc.setFontSize(7.5);
+                doc.setTextColor(148, 163, 184);
+                doc.text("Plateforme Jeux-BAFA • Récapitulatif de promotion", 14, pageHeight - 8);
+                doc.text(`Page ${doc.internal.getNumberOfPages()}`, 196, pageHeight - 8, { align: 'right' });
+            }
+        });
+
+        const safePromo = promo.replace(/[^a-zA-Z0-9_-]/g, '_');
+        doc.save(`Bilan_Promo_${safePromo}.pdf`);
+        showToast("📄 Bilan de promotion PDF téléchargé avec succès !", "success");
+
+    } catch (err) {
+        console.error("exportPromoBilanPDF error:", err);
+        showToast("Erreur lors de la génération du PDF de la promo.", "error");
+    }
+}
+
+// ================================================================
 // GESTION DU BILAN STAGIAIRE / CANDIDAT
 // ================================================================
 let currentFormationTab = 'modules'; // 'modules' | 'bilan'
@@ -2438,10 +2762,20 @@ function initBilanTabs() {
     const tabModules = document.getElementById('tabFormationModules');
     const tabBilan = document.getElementById('tabFormationBilan');
     const btnRefresh = document.getElementById('btnRefreshBilan');
+    const btnExportStagiaire = document.getElementById('btnExportStagiaireBilanPdf');
     const filterBtns = document.querySelectorAll('#bilanFilterButtons .es-bilan-filter-btn');
 
     tabModules?.addEventListener('click', () => switchFormationTab('modules'));
     tabBilan?.addEventListener('click', () => switchFormationTab('bilan'));
+
+    btnExportStagiaire?.addEventListener('click', () => {
+        exportStagiaireBilanPDF({
+            candidateUser: (typeof actualUserData !== 'undefined' && actualUserData) ? actualUserData : (currentUser || {}),
+            modulesList: currentFormationModulesList,
+            submissionsMap: stagiaireSubmissionsMap,
+            promoName: document.getElementById('promoCurrentName')?.textContent.trim()
+        });
+    });
 
     btnRefresh?.addEventListener('click', async () => {
         showToast("Actualisation du bilan...", "info", 1500);
@@ -2864,7 +3198,17 @@ function initAdminBilanControls() {
     const searchInput = document.getElementById('adminCandidateSearch');
     const filterBtns = document.querySelectorAll('[data-admin-candidate-filter]');
     const btnRefresh = document.getElementById('btnAdminRefreshCandidates');
+    const btnExportPromo = document.getElementById('btnExportPromoPdf');
     const moduleSelect = document.getElementById('adminAnalyticsModuleSelect');
+
+    btnExportPromo?.addEventListener('click', () => {
+        exportPromoBilanPDF({
+            promoName: document.getElementById('promoCurrentName')?.textContent.trim(),
+            candidatesList: adminAllCandidatesList,
+            submissionsByUser: adminAllSubmissionsByUser,
+            modulesList: currentFormationModulesList
+        });
+    });
 
     btnCandidates?.addEventListener('click', () => {
         adminBilanSubtab = 'candidates';
@@ -3141,9 +3485,14 @@ function renderAdminCandidatesTable() {
             </td>
             <td>${lastDateText}</td>
             <td style="text-align:right;">
-                <button type="button" class="es-btn es-btn--primary es-btn--sm btn-open-candidate-sheet" data-user-id="${cand.uid}" style="padding:6px 12px; font-size:0.8rem; font-weight:700;">
-                    <i class="bi bi-person-lines-fill"></i> Voir le bilan
-                </button>
+                <div style="display:inline-flex; gap:6px; align-items:center;">
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-download-candidate-pdf" data-user-id="${cand.uid}" title="Télécharger le bilan PDF de ce candidat" style="padding:6px 10px; font-size:0.8rem; border-color:rgba(231,76,60,0.3); color:#e74c3c;">
+                        <i class="bi bi-file-earmark-pdf-fill"></i> PDF
+                    </button>
+                    <button type="button" class="es-btn es-btn--primary es-btn--sm btn-open-candidate-sheet" data-user-id="${cand.uid}" style="padding:6px 12px; font-size:0.8rem; font-weight:700;">
+                        <i class="bi bi-person-lines-fill"></i> Voir le bilan
+                    </button>
+                </div>
             </td>
         </tr>`;
     }).join('');
@@ -3153,6 +3502,24 @@ function renderAdminCandidatesTable() {
         btn.addEventListener('click', () => {
             const uid = btn.getAttribute('data-user-id');
             openAdminCandidateBilanModal(uid);
+        });
+    });
+
+    // Listeners pour télécharger directement le PDF du candidat
+    tbody.querySelectorAll('.btn-download-candidate-pdf').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const uid = btn.getAttribute('data-user-id');
+            const cand = adminAllCandidatesList.find(u => u.uid === uid);
+            if (!cand) return;
+            const candData = adminAllSubmissionsByUser[uid];
+            const candModulesMap = candData?.modulesMap || {};
+            exportStagiaireBilanPDF({
+                candidateUser: cand,
+                modulesList: currentFormationModulesList,
+                submissionsMap: candModulesMap,
+                promoName: document.getElementById('promoCurrentName')?.textContent.trim()
+            });
         });
     });
 }
@@ -3478,6 +3845,19 @@ async function openAdminCandidateBilanModal(userId) {
     if (modalProg) modalProg.textContent = `${completedCount} / ${totalModules} (${completionPct}%)`;
     if (modalScore) modalScore.textContent = avgScore !== null ? `${avgScore}%` : (completedCount > 0 ? 'Transmis' : '--%');
     if (modalAttempts) modalAttempts.textContent = `${allSubs.length} épreuve(s)`;
+
+    // Bouton de téléchargement du PDF de ce candidat
+    const btnExportModalPdf = document.getElementById('btnExportAdminCandidatePdf');
+    if (btnExportModalPdf) {
+        btnExportModalPdf.onclick = () => {
+            exportStagiaireBilanPDF({
+                candidateUser: cand,
+                modulesList: currentFormationModulesList,
+                submissionsMap: candModulesMap,
+                promoName: document.getElementById('promoCurrentName')?.textContent.trim()
+            });
+        };
+    }
 
     if (loader) loader.classList.remove('hidden');
     if (list) { list.classList.add('hidden'); list.innerHTML = ''; }

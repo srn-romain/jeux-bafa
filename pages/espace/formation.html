@@ -283,9 +283,14 @@
                                 <button type="button" class="es-bilan-filter-btn" data-filter="completed">Complétés (<span id="bilanFilterCountCompleted">0</span>)</button>
                                 <button type="button" class="es-bilan-filter-btn" data-filter="pending">À réaliser (<span id="bilanFilterCountPending">0</span>)</button>
                             </div>
-                            <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnRefreshBilan" title="Actualiser mon bilan" style="background: var(--clr-surface-2); color: var(--clr-text); border-color: var(--clr-surface-3); font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="bi bi-arrow-clockwise" style="color: var(--clr-primary);"></i> Actualiser
-                            </button>
+                            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                                <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportStagiaireBilanPdf" title="Télécharger mon bilan en PDF" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                                    <i class="bi bi-file-earmark-pdf-fill"></i> Télécharger mon Bilan (PDF)
+                                </button>
+                                <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnRefreshBilan" title="Actualiser mon bilan" style="background: var(--clr-surface-2); color: var(--clr-text); border-color: var(--clr-surface-3); font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                    <i class="bi bi-arrow-clockwise" style="color: var(--clr-primary);"></i> Actualiser
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Loader Bilan -->
@@ -362,6 +367,9 @@
                                     <button type="button" class="es-bilan-filter-btn active" data-admin-candidate-filter="all">Tous (<span id="adminCandidateCountAll">0</span>)</button>
                                     <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="active">Actifs (<span id="adminCandidateCountActive">0</span>)</button>
                                     <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="inactive">Non commencés (<span id="adminCandidateCountInactive">0</span>)</button>
+                                    <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportPromoPdf" title="Télécharger les résultats de toute la promotion" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                                        <i class="bi bi-file-earmark-pdf-fill"></i> Télécharger Promo (PDF)
+                                    </button>
                                     <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnAdminRefreshCandidates" title="Actualiser la liste des candidats" style="background: var(--clr-surface-2); color: var(--clr-text); border-color: var(--clr-surface-3); font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
                                         <i class="bi bi-arrow-clockwise" style="color: var(--clr-primary);"></i> Actualiser
                                     </button>
@@ -747,7 +755,10 @@
                     <!-- Injecté par JS -->
                 </div>
             </div>
-            <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3);">
+            <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportAdminCandidatePdf" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                    <i class="bi bi-file-earmark-pdf-fill"></i> Télécharger ce bilan (PDF)
+                </button>
                 <button class="es-btn es-btn--ghost" id="btnCloseAdminCandidateModal2">Fermer</button>
             </div>
         </div>
@@ -958,6 +969,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="../../assets/js/firebase-config.js"></script>
+    <!-- jsPDF & AutoTable pour l'export PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="../../assets/js/colo/espace-auth.js?v=3.6"></script>
     <script src="../../assets/js/formation/espace-formation.js?v=1.8"></script>
 </body>
