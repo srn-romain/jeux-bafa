@@ -105,6 +105,41 @@ function getQueryParam(name) {
     return params.get(name) || null;
 }
 
+async function compressImageToBase64(file, maxWidth = 1200, maxHeight = 900, quality = 0.82) {
+    return new Promise((resolve, reject) => {
+        if (!file) return reject(new Error("Aucun fichier fourni."));
+        if (!file.type.startsWith('image/')) return reject(new Error("Le fichier doit être une image."));
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth || height > maxHeight) {
+                    const ratio = Math.min(maxWidth / width, maxHeight / height);
+                    width = Math.round(width * ratio);
+                    height = Math.round(height * ratio);
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const base64 = canvas.toDataURL('image/jpeg', quality);
+                resolve(base64);
+            };
+            img.onerror = () => reject(new Error("Impossible de charger l'image."));
+            img.src = e.target.result;
+        };
+        reader.onerror = () => reject(new Error("Erreur lors de la lecture du fichier."));
+        reader.readAsDataURL(file);
+    });
+}
+
 // ----------------------------------------------------------------
 // GESTION DU TOPBAR BRAND DROPDOWN & ÉPINGLES (PINNED MODULES BDD)
 // ----------------------------------------------------------------
@@ -858,15 +893,117 @@ function renderInspectionQuestions(questions, sub) {
                     ${seqHtml || '<div style="font-size:0.82rem; color:var(--clr-text-muted);">Aucun ordre renseigné.</div>'}
                 </div>
             `;
+        } else if (type === 'boolean') {
+            const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+            const userBool = (ans === true || ans === 'true' || ans === 1);
+            const hasAnswered = (ans !== null && ans !== undefined && ans !== '');
+            const isCorrect = (hasAnswered && userBool === expectedBool);
+
+            contentHtml = `
+                <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+                    <div style="display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:var(--radius-sm); font-size:0.88rem; font-weight:700; ${isCorrect ? 'background:rgba(39,174,96,0.12); border:1.5px solid var(--clr-success); color:var(--clr-success);' : 'background:rgba(231,76,60,0.12); border:1.5px solid var(--clr-danger); color:var(--clr-danger);'}">
+                        ${isCorrect ? '<i class="bi bi-check-circle-fill"></i>' : '<i class="bi bi-x-circle-fill"></i>'}
+                        <span>Réponse choisie : ${hasAnswered ? (userBool ? '👍 VRAI' : '👎 FAUX') : '— (Non répondu)'}</span>
+                        ${!isCorrect ? `<span style="font-size:0.75rem; opacity:0.85; margin-left:6px;">(Attendu : ${expectedBool ? 'VRAI' : 'FAUX'})</span>` : ''}
+                    </div>
+                </div>
+            `;
+        } else if (type === 'pinpoint') {
+            const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+            const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+            const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+            const userCoords = ans && typeof ans === 'object' ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null);
+
+            let isCorrect = false;
+            if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
+                const dx = userCoords.x - targetX;
+                const dy = userCoords.y - targetY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                isCorrect = (dist <= radius);
+            }
+
+            contentHtml = `
+                <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; font-weight:700;">
+                        <span>${isCorrect ? '<span style="color:var(--clr-success);"><i class="bi bi-check-circle-fill"></i> Repère dans la zone tolérée</span>' : '<span style="color:var(--clr-danger);"><i class="bi bi-x-circle-fill"></i> Repère hors zone</span>'}</span>
+                        <span style="color:var(--clr-text-muted);">Cible : (${targetX}%, ${targetY}%) ± ${radius}%</span>
+                    </div>
+                    ${q.pinImage ? `
+                        <div class="es-pinpoint-result-zone" style="max-width:440px; margin:0 auto; position:relative; border-radius:6px; overflow:hidden; border:1px solid var(--clr-surface-3);">
+                            <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" style="width:100%; display:block;">
+                            <div class="es-pinpoint-target-zone" style="position:absolute; left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%; transform:translate(-50%, -50%); border-radius:50%; border:2px dashed #2ecc71; background:rgba(46, 204, 113, 0.25); pointer-events:none;"></div>
+                            <div style="position:absolute; left:${targetX}%; top:${targetY}%; transform:translate(-50%, -50%); color:#27ae60; font-size:1.2rem; pointer-events:none;" title="Cible attendue"><i class="bi bi-bullseye"></i></div>
+                            ${userCoords ? `
+                                <div style="position:absolute; left:${userCoords.x}%; top:${userCoords.y}%; transform:translate(-50%, -50%); color:${isCorrect ? '#27ae60' : '#e74c3c'}; font-size:1.4rem; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));" title="Position stagiaire"><i class="bi bi-geo-alt-fill"></i></div>
+                            ` : ''}
+                        </div>
+                    ` : '<div style="font-size:0.8rem; color:var(--clr-text-muted);">Aucune image configurée.</div>'}
+                </div>
+            `;
+        } else if (type === 'range') {
+            const val = (ans !== undefined && ans !== null) ? parseFloat(ans) : null;
+            const targetVal = (q.correctValue !== undefined && q.correctValue !== '' && q.correctValue !== null) ? parseFloat(q.correctValue) : null;
+            const tol = parseFloat(q.tolerance) || 0;
+            const unit = q.unit || '';
+            let isCorrect = false;
+
+            if (val !== null && targetVal !== null) {
+                isCorrect = Math.abs(val - targetVal) <= tol;
+            }
+
+            contentHtml = `
+                <div style="margin-top:10px; background:var(--clr-surface); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid ${targetVal !== null ? (isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)') : 'var(--clr-surface-3)'};">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem;">
+                        <span style="font-weight:700;">Curseur positionné à : <strong style="color:var(--clr-primary-dark); font-size:0.95rem;">${val !== null ? `${val} ${escapeHtml(unit)}` : '—'}</strong></span>
+                        ${targetVal !== null ? `
+                            <span style="font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.8rem;">
+                                ${isCorrect ? '<i class="bi bi-check-circle-fill"></i> Conforme' : `<i class="bi bi-x-circle-fill"></i> Attendu : ${targetVal} ${escapeHtml(unit)} (±${tol})`}
+                            </span>
+                        ` : '<span style="font-size:0.75rem; color:var(--clr-text-muted);">Pas de correction auto</span>'}
+                    </div>
+                </div>
+            `;
+        } else if (type === 'matching') {
+            const pairs = q.pairs || [];
+            const userMatches = (ans && typeof ans === 'object') ? ans : {};
+
+            const matchesHtml = pairs.map((pair, pIdx) => {
+                const userRight = userMatches[pair.left] || userMatches[(pair.left || '').trim()];
+                const isMatchedCorrectly = userRight && (userRight.trim().toLowerCase() === (pair.right || '').trim().toLowerCase());
+
+                return `
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:8px 12px; border-radius:var(--radius-sm); font-size:0.85rem; background:var(--clr-surface); border:1px solid ${isMatchedCorrectly ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:200px;">
+                            <span style="font-weight:700; color:var(--clr-primary-dark);">${escapeHtml(pair.left)}</span>
+                            <i class="bi bi-arrow-right" style="color:var(--clr-text-muted);"></i>
+                            <span style="font-weight:600; color:${userRight ? 'var(--clr-text)' : 'var(--clr-danger)'};">${escapeHtml(userRight || '— (Non relié)')}</span>
+                        </div>
+                        ${isMatchedCorrectly ?
+                            '<span style="color:var(--clr-success); font-weight:700; font-size:0.8rem;"><i class="bi bi-check-circle-fill"></i> Correct</span>' :
+                            `<span style="color:var(--clr-danger); font-size:0.75rem; font-weight:600;"><i class="bi bi-x-circle-fill"></i> Attendu : <strong>${escapeHtml(pair.right)}</strong></span>`
+                        }
+                    </div>
+                `;
+            }).join('');
+
+            contentHtml = `
+                <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
+                    ${matchesHtml || '<div style="font-size:0.82rem; color:var(--clr-text-muted);">Aucune association définie.</div>'}
+                </div>
+            `;
         } else if (type === 'text') {
-            const userText = typeof ans === 'string' ? ans : '';
+            const rawUserText = typeof ans === 'string' ? ans : '';
+            const userText = rawUserText.trim();
             const evalObj = evaluations[q.id] || {};
             const isAwarded = (evalObj.isCorrect === true);
 
             contentHtml = `
                 <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
-                    <div style="padding:12px 14px; background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); font-size:0.88rem; color:var(--clr-text); line-height:1.6; white-space:pre-wrap;">
-                        ${escapeHtml(userText || 'Aucune réponse rédigée.')}
+                    <div>
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--clr-text-muted); text-transform:uppercase; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                            <i class="bi bi-chat-square-text-fill" style="color:var(--clr-primary);"></i> Réponse rédigée du candidat :
+                        </div>
+                        ${userText ? `<div style="padding:12px 14px; background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); font-size:0.88rem; color:var(--clr-text); line-height:1.6; white-space:pre-wrap; word-break:break-word;">${escapeHtml(userText)}</div>` : `<div style="padding:12px 14px; background:var(--clr-surface); border:1.5px dashed var(--clr-surface-3); border-radius:var(--radius-sm); font-size:0.85rem; color:var(--clr-text-muted); font-style:italic; text-align:center;">Aucune réponse rédigée.</div>`}
                     </div>
 
                     ${q.hint ? `
@@ -1100,6 +1237,35 @@ function syncQuestionsFromDOM() {
             if (checkedRadio) {
                 q.correctIndex = parseInt(checkedRadio.value, 10);
             }
+        } else if (q.type === 'boolean') {
+            const checkedBoolRadio = card.querySelector('.q-boolean-radio:checked');
+            if (checkedBoolRadio) {
+                q.correctAnswer = (checkedBoolRadio.value === 'true');
+            }
+        } else if (q.type === 'pinpoint') {
+            const radiusInput = card.querySelector('.q-pinpoint-radius-slider');
+            if (radiusInput) q.radius = parseFloat(radiusInput.value) || 12;
+
+            const targetLabelInput = card.querySelector('.q-pinpoint-target-label');
+            if (targetLabelInput) q.targetLabel = targetLabelInput.value.trim();
+        } else if (q.type === 'range') {
+            const minInp = card.querySelector('.q-range-min');
+            const maxInp = card.querySelector('.q-range-max');
+            const stepInp = card.querySelector('.q-range-step');
+            const unitInp = card.querySelector('.q-range-unit');
+            const minLblInp = card.querySelector('.q-range-min-label');
+            const maxLblInp = card.querySelector('.q-range-max-label');
+            const targetValInp = card.querySelector('.q-range-target-val');
+            const tolInp = card.querySelector('.q-range-tolerance');
+
+            if (minInp && minInp.value !== '') q.min = parseFloat(minInp.value);
+            if (maxInp && maxInp.value !== '') q.max = parseFloat(maxInp.value);
+            if (stepInp && stepInp.value !== '') q.step = parseFloat(stepInp.value);
+            if (unitInp) q.unit = unitInp.value;
+            if (minLblInp) q.minLabel = minLblInp.value;
+            if (maxLblInp) q.maxLabel = maxLblInp.value;
+            if (targetValInp) q.correctValue = targetValInp.value !== '' ? parseFloat(targetValInp.value) : '';
+            if (tolInp && tolInp.value !== '') q.tolerance = parseFloat(tolInp.value);
         } else if (q.type === 'cloze') {
             const clozeInput = card.querySelector('.q-cloze-text-input');
             if (clozeInput) q.clozeText = clozeInput.value;
@@ -1113,6 +1279,20 @@ function syncQuestionsFromDOM() {
                 items.push(pInput.value);
             });
             if (items.length > 0) q.items = items;
+        } else if (q.type === 'matching') {
+            const pairRows = card.querySelectorAll('.matching-pair-row');
+            const pairs = [];
+            pairRows.forEach(row => {
+                const leftInp = row.querySelector('.matching-left-input');
+                const rightInp = row.querySelector('.matching-right-input');
+                if (leftInp && rightInp) {
+                    pairs.push({
+                        left: leftInp.value,
+                        right: rightInp.value
+                    });
+                }
+            });
+            if (pairs.length > 0) q.pairs = pairs;
         }
     });
 }
@@ -1184,6 +1364,148 @@ function renderQuestionsEditor() {
                             <i class="bi bi-plus"></i> Ajouter une option
                         </button>
                     ` : ''}
+                </div>
+            `;
+        } else if (type === 'boolean') {
+            const isTrue = (q.correctAnswer === true || q.correctAnswer === 'true');
+            specificFields = `
+                <div style="margin-top:12px; background:var(--clr-surface); padding:12px 14px; border-radius:var(--radius-sm); border:1px solid var(--clr-surface-3);">
+                    <label class="es-field__label" style="margin-bottom:8px;">Bonne réponse attendue pour ce Vrai/Faux :</label>
+                    <div style="display:flex; gap:20px; align-items:center;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.92rem; font-weight:700; color:var(--clr-success);">
+                            <input type="radio" class="q-boolean-radio" name="bool_correct_${idx}" data-qidx="${idx}" value="true" ${isTrue ? 'checked' : ''} style="width:18px; height:18px; accent-color:var(--clr-success); cursor:pointer;">
+                            <span>👍 VRAI</span>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.92rem; font-weight:700; color:var(--clr-danger);">
+                            <input type="radio" class="q-boolean-radio" name="bool_correct_${idx}" data-qidx="${idx}" value="false" ${!isTrue ? 'checked' : ''} style="width:18px; height:18px; accent-color:var(--clr-danger); cursor:pointer;">
+                            <span>👎 FAUX</span>
+                        </label>
+                    </div>
+                </div>
+            `;
+        } else if (type === 'pinpoint') {
+            const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+            const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+            const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+            const sizeKB = q.pinImage ? Math.round((q.pinImage.length * 3 / 4) / 1024) : 0;
+
+            if (q.pinImage) {
+                specificFields = `
+                    <div style="margin-top:12px; background:var(--clr-surface); border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); padding:14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span class="es-badge es-badge--stagiaire" style="font-size:0.75rem; padding:3px 8px;">
+                                    <i class="bi bi-check-circle-fill" style="color:var(--clr-success);"></i> Image ${sizeKB} Ko
+                                </span>
+                                <span class="pinpoint-coords-display" style="font-size:0.78rem; font-weight:700; color:var(--clr-primary-dark);">
+                                    Cible : X: ${targetX.toFixed(1)}%, Y: ${targetY.toFixed(1)}%
+                                </span>
+                            </div>
+                            <div style="display:flex; gap:6px;">
+                                <label class="es-btn es-btn--ghost es-btn--sm" style="cursor:pointer; padding:4px 8px; font-size:0.78rem;">
+                                    <i class="bi bi-arrow-repeat"></i> Remplacer l'image
+                                    <input type="file" class="q-pinpoint-file-input hidden" data-qidx="${idx}" accept="image/*">
+                                </label>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-remove-pinpoint-img" data-qidx="${idx}" style="color:var(--clr-danger); padding:4px 8px; font-size:0.78rem;">
+                                    <i class="bi bi-trash"></i> Supprimer
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="text-align:center;">
+                            <div class="es-pinpoint-setter" data-qidx="${idx}" style="position:relative; display:inline-block; max-width:100%; cursor:crosshair; border-radius:6px; overflow:hidden; border:1.5px solid var(--clr-surface-3);">
+                                <img src="${escapeHtml(q.pinImage)}" alt="Image repère" style="display:block; max-width:100%; max-height:420px; user-select:none; pointer-events:none;">
+                                <div id="pin_target_zone_${idx}" class="es-pinpoint-target-zone" style="position:absolute; left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%; transform:translate(-50%, -50%); border-radius:50%; border:2px dashed #2ecc71; background:rgba(46,204,113,0.25); pointer-events:none;"></div>
+                                <div id="pin_marker_${idx}" class="es-pinpoint-target-marker" style="position:absolute; left:${targetX}%; top:${targetY}%; transform:translate(-50%, -50%); color:#27ae60; font-size:1.6rem; pointer-events:none; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                </div>
+                            </div>
+                            <p style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:6px;">
+                                👆 <strong>Cliquez sur l'image</strong> pour positionner le repère de la réponse attendue.
+                            </p>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:12px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <label class="es-field__label">Rayon de tolérance :</label>
+                                    <span class="pinpoint-radius-val" style="font-size:0.8rem; font-weight:800; color:var(--clr-primary-dark);" id="pin_radius_val_${idx}">±${radius}%</span>
+                                </div>
+                                <input type="range" class="es-input q-pinpoint-radius-slider" data-qidx="${idx}" min="3" max="30" step="1" value="${radius}" style="padding:0;">
+                                <div style="font-size:0.72rem; color:var(--clr-text-muted); margin-top:2px;">Marge acceptée autour du repère (zone verte).</div>
+                            </div>
+                            <div>
+                                <label class="es-field__label">Description de la zone cible (optionnel) :</label>
+                                <input type="text" class="es-input q-pinpoint-target-label" data-qidx="${idx}" value="${escapeHtml(q.targetLabel || '')}" placeholder="Ex: Sortie de secours, extincteur..." style="font-size:0.85rem; padding:6px 10px;">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                specificFields = `
+                    <div style="margin-top:12px;">
+                        <label class="es-pinpoint-dropzone" data-qidx="${idx}" tabindex="0" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 16px; background:var(--clr-surface); border:2px dashed var(--clr-primary); border-radius:var(--radius-sm); cursor:pointer; text-align:center; transition:var(--transition); outline:none;">
+                            <input type="file" class="q-pinpoint-file-input hidden" data-qidx="${idx}" accept="image/*">
+                            <i class="bi bi-cloud-arrow-up-fill" style="font-size:2.4rem; color:var(--clr-primary); margin-bottom:8px;"></i>
+                            <div style="font-weight:700; font-size:0.95rem; color:var(--clr-text);">Cliquez, glissez-déposez ou collez (Ctrl+V) une image ici</div>
+                            <div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">Compression automatique & encodage direct (JPG, PNG, WebP)</div>
+                        </label>
+                    </div>
+                `;
+            }
+        } else if (type === 'range') {
+            const minVal = (q.min !== undefined && q.min !== null) ? q.min : 0;
+            const maxVal = (q.max !== undefined && q.max !== null) ? q.max : 10;
+            const stepVal = (q.step !== undefined && q.step !== null) ? q.step : 1;
+            const unit = q.unit || '';
+            const minLabel = q.minLabel || '';
+            const maxLabel = q.maxLabel || '';
+            const targetVal = (q.correctValue !== undefined && q.correctValue !== null) ? q.correctValue : '';
+            const tolVal = (q.tolerance !== undefined && q.tolerance !== null) ? q.tolerance : 0;
+
+            specificFields = `
+                <div style="margin-top:12px; background:var(--clr-surface); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--clr-surface-3);">
+                    <div style="font-size:0.82rem; font-weight:700; color:var(--clr-primary-dark); margin-bottom:10px; display:flex; align-items:center; gap:6px;">
+                        <i class="bi bi-sliders"></i> Configuration du curseur horizontal (Slider)
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px;">
+                        <div>
+                            <label class="es-field__label" style="font-size:0.75rem;">Valeur Min</label>
+                            <input type="number" class="es-input q-range-min" data-qidx="${idx}" value="${minVal}" style="font-size:0.85rem; padding:6px 8px;">
+                        </div>
+                        <div>
+                            <label class="es-field__label" style="font-size:0.75rem;">Valeur Max</label>
+                            <input type="number" class="es-input q-range-max" data-qidx="${idx}" value="${maxVal}" style="font-size:0.85rem; padding:6px 8px;">
+                        </div>
+                        <div>
+                            <label class="es-field__label" style="font-size:0.75rem;">Pas (Step)</label>
+                            <input type="number" class="es-input q-range-step" data-qidx="${idx}" value="${stepVal}" step="any" style="font-size:0.85rem; padding:6px 8px;">
+                        </div>
+                        <div>
+                            <label class="es-field__label" style="font-size:0.75rem;">Unité (ex: ans, %, h)</label>
+                            <input type="text" class="es-input q-range-unit" data-qidx="${idx}" value="${escapeHtml(unit)}" placeholder="ex: enfants" style="font-size:0.85rem; padding:6px 8px;">
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                        <div>
+                            <label class="es-field__label" style="font-size:0.75rem;">Libellé côté gauche (Min)</label>
+                            <input type="text" class="es-input q-range-min-label" data-qidx="${idx}" value="${escapeHtml(minLabel)}" placeholder="ex: Pas du tout" style="font-size:0.85rem; padding:6px 8px;">
+                        </div>
+                        <div>
+                            <label class="es-field__label" style="font-size:0.75rem;">Libellé côté droit (Max)</label>
+                            <input type="text" class="es-input q-range-max-label" data-qidx="${idx}" value="${escapeHtml(maxLabel)}" placeholder="ex: Absolument" style="font-size:0.85rem; padding:6px 8px;">
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:10px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
+                        <div>
+                            <label class="es-field__label" style="font-size:0.75rem; color:var(--clr-success);">Cible attendue (Auto-notation, optionnel)</label>
+                            <input type="number" class="es-input q-range-target-val" data-qidx="${idx}" value="${targetVal}" placeholder="Laisser vide si pas de note" style="font-size:0.85rem; padding:6px 8px;">
+                        </div>
+                        <div>
+                            <label class="es-field__label" style="font-size:0.75rem;">Tolérance autorisée (±)</label>
+                            <input type="number" class="es-input q-range-tolerance" data-qidx="${idx}" value="${tolVal}" placeholder="0" style="font-size:0.85rem; padding:6px 8px;">
+                        </div>
+                    </div>
                 </div>
             `;
         } else if (type === 'text') {
@@ -1270,6 +1592,42 @@ function renderQuestionsEditor() {
                     ` : ''}
                 </div>
             `;
+        } else if (type === 'matching') {
+            const pairs = q.pairs || [
+                { left: 'Élément A', right: 'Correspondance A' },
+                { left: 'Élément B', right: 'Correspondance B' },
+                { left: 'Élément C', right: 'Correspondance C' }
+            ];
+            const pairsHtml = pairs.map((p, pIdx) => `
+                <div class="matching-pair-row" style="display:flex; align-items:center; gap:8px; margin-bottom:8px; background:var(--clr-surface); padding:8px 10px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm);">
+                    <span style="width:24px; height:24px; border-radius:50%; background:var(--clr-surface-3); font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; color:var(--clr-text); flex-shrink:0;">${pIdx + 1}</span>
+                    <input class="es-input matching-left-input" type="text" data-qidx="${idx}" data-pidx="${pIdx}" value="${escapeHtml(p.left || '')}" placeholder="Élément gauche (ex: Sigle A)" required style="flex:1; font-size:0.88rem; padding:8px 12px;">
+                    <div style="color:var(--clr-primary-dark); font-weight:800; font-size:1.1rem; flex-shrink:0;" title="Relié à">
+                        <i class="bi bi-arrow-left-right"></i>
+                    </div>
+                    <input class="es-input matching-right-input" type="text" data-qidx="${idx}" data-pidx="${pIdx}" value="${escapeHtml(p.right || '')}" placeholder="Élément droite (ex: Définition A)" required style="flex:1; font-size:0.88rem; padding:8px 12px;">
+                    ${pairs.length > 2 ? `
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-remove-matching-pair" data-qidx="${idx}" data-pidx="${pIdx}" style="padding:6px 10px; color:var(--clr-danger);" title="Supprimer cette paire">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            specificFields = `
+                <div style="margin-top:12px;">
+                    <label class="es-field__label">Paires à relier (Colonne de gauche ↔ Colonne de droite) :</label>
+                    <div style="font-size:0.78rem; color:var(--clr-text-muted); margin-bottom:8px;">
+                        💡 Les éléments de la colonne de droite seront automatiquement mélangés lors du passage du quiz par le stagiaire.
+                    </div>
+                    <div class="matching-pairs-wrap">${pairsHtml}</div>
+                    ${pairs.length < 10 ? `
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-matching-pair" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
+                            <i class="bi bi-plus"></i> Ajouter une paire
+                        </button>
+                    ` : ''}
+                </div>
+            `;
         }
 
         const isFirst = (idx === 0);
@@ -1281,10 +1639,14 @@ function renderQuestionsEditor() {
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span class="es-qcard__num">${idx + 1}</span>
                         <select class="es-select q-type-select" data-qidx="${idx}" style="font-weight:700; font-size:0.85rem; padding:6px 12px; width:auto;">
-                            <option value="qcm" ${type === 'qcm' ? 'selected' : ''}>🔘 QCM (Choix unique)</option>
-                            <option value="text" ${type === 'text' ? 'selected' : ''}>✍️ Rédaction libre</option>
-                            <option value="puzzle" ${type === 'puzzle' ? 'selected' : ''}>🧩 Puzzle chronologique</option>
-                            <option value="cloze" ${type === 'cloze' ? 'selected' : ''}>📝 Texte à trous (Glisser-déposer)</option>
+                            <option value="qcm" ${type === 'qcm' ? 'selected' : ''}>1- 🔘 QCM (Choix unique)</option>
+                            <option value="boolean" ${type === 'boolean' ? 'selected' : ''}>2- ⚖️ Vrai / Faux</option>
+                            <option value="pinpoint" ${type === 'pinpoint' ? 'selected' : ''}>3- 📍 Repère sur image (Pin)</option>
+                            <option value="range" ${type === 'range' ? 'selected' : ''}>4- 📏 Curseur horizontal (Slider)</option>
+                            <option value="matching" ${type === 'matching' ? 'selected' : ''}>5- 🔗 Relier les colonnes (Association)</option>
+                            <option value="puzzle" ${type === 'puzzle' ? 'selected' : ''}>6- 🧩 Puzzle chronologique</option>
+                            <option value="cloze" ${type === 'cloze' ? 'selected' : ''}>7- 📝 Texte à trous (Glisser-déposer)</option>
+                            <option value="text" ${type === 'text' ? 'selected' : ''}>8- ✍️ Rédaction libre</option>
                         </select>
                     </div>
                     <div style="display:flex; align-items:center; gap:4px;">
@@ -1321,6 +1683,28 @@ function renderQuestionsEditor() {
     bindQuestionsEvents();
 }
 
+async function processAndSetPinpointImage(qidx, file) {
+    if (!file) return;
+    if (!file.type || !file.type.startsWith('image/')) {
+        showToast("Veuillez déposer ou coller un fichier image valide.", "warning");
+        return;
+    }
+    syncQuestionsFromDOM();
+    if (!currentEditingQuestions[qidx]) return;
+    try {
+        const base64 = await compressImageToBase64(file, 1200, 900, 0.82);
+        currentEditingQuestions[qidx].pinImage = base64;
+        if (currentEditingQuestions[qidx].targetX === undefined) currentEditingQuestions[qidx].targetX = 50;
+        if (currentEditingQuestions[qidx].targetY === undefined) currentEditingQuestions[qidx].targetY = 50;
+        if (currentEditingQuestions[qidx].radius === undefined) currentEditingQuestions[qidx].radius = 12;
+        renderQuestionsEditor();
+        showToast("Image repère chargée avec succès !", "success");
+    } catch (err) {
+        console.error("Erreur compression image pinpoint:", err);
+        showToast("Erreur lors du traitement de l'image.", "error");
+    }
+}
+
 function bindQuestionsEvents() {
     const container = document.getElementById('questionsContainer');
     if (!container) return;
@@ -1334,11 +1718,31 @@ function bindQuestionsEvents() {
             if (newType === 'qcm' && !currentEditingQuestions[idx].options) {
                 currentEditingQuestions[idx].options = ['Option 1', 'Option 2'];
                 currentEditingQuestions[idx].correctIndex = 0;
+            } else if (newType === 'boolean' && currentEditingQuestions[idx].correctAnswer === undefined) {
+                currentEditingQuestions[idx].correctAnswer = true;
+            } else if (newType === 'pinpoint') {
+                if (currentEditingQuestions[idx].targetX === undefined) currentEditingQuestions[idx].targetX = 50;
+                if (currentEditingQuestions[idx].targetY === undefined) currentEditingQuestions[idx].targetY = 50;
+                if (currentEditingQuestions[idx].radius === undefined) currentEditingQuestions[idx].radius = 12;
+                if (currentEditingQuestions[idx].targetLabel === undefined) currentEditingQuestions[idx].targetLabel = 'Cible';
+            } else if (newType === 'range') {
+                if (currentEditingQuestions[idx].min === undefined) currentEditingQuestions[idx].min = 0;
+                if (currentEditingQuestions[idx].max === undefined) currentEditingQuestions[idx].max = 100;
+                if (currentEditingQuestions[idx].step === undefined) currentEditingQuestions[idx].step = 1;
+                if (currentEditingQuestions[idx].unit === undefined) currentEditingQuestions[idx].unit = '';
+                if (currentEditingQuestions[idx].tolerance === undefined) currentEditingQuestions[idx].tolerance = 0;
+                if (currentEditingQuestions[idx].correctValue === undefined) currentEditingQuestions[idx].correctValue = 50;
             } else if (newType === 'puzzle' && !currentEditingQuestions[idx].items) {
                 currentEditingQuestions[idx].items = ['Étape 1', 'Étape 2', 'Étape 3'];
             } else if (newType === 'cloze' && !currentEditingQuestions[idx].clozeText) {
                 currentEditingQuestions[idx].clozeText = currentEditingQuestions[idx].text || 'Texte avec un [mot-clé] à compléter.';
                 currentEditingQuestions[idx].distractors = '';
+            } else if (newType === 'matching' && (!currentEditingQuestions[idx].pairs || currentEditingQuestions[idx].pairs.length === 0)) {
+                currentEditingQuestions[idx].pairs = [
+                    { left: 'Élément A', right: 'Correspondance A' },
+                    { left: 'Élément B', right: 'Correspondance B' },
+                    { left: 'Élément C', right: 'Correspondance C' }
+                ];
             }
             renderQuestionsEditor();
         });
@@ -1371,6 +1775,221 @@ function bindQuestionsEvents() {
         });
     });
 
+    // Boolean radio
+    container.querySelectorAll('.q-boolean-radio').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].correctAnswer = (e.target.value === 'true');
+            }
+        });
+    });
+
+    // Pinpoint interactions
+    container.querySelectorAll('.es-pinpoint-setter').forEach(setter => {
+        setter.addEventListener('click', (e) => {
+            const qidx = parseInt(setter.getAttribute('data-qidx'), 10);
+            if (!currentEditingQuestions[qidx]) return;
+            const rect = setter.getBoundingClientRect();
+            const x = Math.round(Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100)) * 10) / 10;
+            const y = Math.round(Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100)) * 10) / 10;
+            currentEditingQuestions[qidx].targetX = x;
+            currentEditingQuestions[qidx].targetY = y;
+            
+            const marker = setter.querySelector('.es-pinpoint-target-marker');
+            if (marker) {
+                marker.style.left = `${x}%`;
+                marker.style.top = `${y}%`;
+            }
+            const zone = setter.querySelector('.es-pinpoint-target-zone');
+            if (zone) {
+                zone.style.left = `${x}%`;
+                zone.style.top = `${y}%`;
+            }
+            const card = setter.closest('.es-qcard');
+            const infoCoords = card?.querySelector('.pinpoint-coords-display');
+            if (infoCoords) {
+                infoCoords.textContent = `Cible : X: ${x.toFixed(1)}%, Y: ${y.toFixed(1)}%`;
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-pinpoint-radius-slider').forEach(slider => {
+        slider.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            const val = parseFloat(e.target.value);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].radius = val;
+            }
+            const card = slider.closest('.es-qcard');
+            const radValDisplay = card?.querySelector('.pinpoint-radius-val');
+            if (radValDisplay) radValDisplay.textContent = `±${val}%`;
+            const zone = card?.querySelector('.es-pinpoint-target-zone');
+            if (zone) {
+                zone.style.width = `${val * 2}%`;
+                zone.style.height = `${val * 2}%`;
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-pinpoint-target-label').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].targetLabel = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-pinpoint-file-input').forEach(input => {
+        input.addEventListener('change', async (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            const file = e.target.files[0];
+            if (file) await processAndSetPinpointImage(qidx, file);
+        });
+    });
+
+    // Drag & drop on dropzone
+    container.querySelectorAll('.es-pinpoint-dropzone').forEach(dropzone => {
+        const qidx = parseInt(dropzone.getAttribute('data-qidx'), 10);
+
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.style.borderColor = 'var(--clr-success)';
+            dropzone.style.backgroundColor = 'rgba(46, 204, 113, 0.1)';
+        });
+        dropzone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.style.borderColor = '';
+            dropzone.style.backgroundColor = '';
+        });
+        dropzone.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.style.borderColor = '';
+            dropzone.style.backgroundColor = '';
+            const file = e.dataTransfer?.files?.[0];
+            if (file) await processAndSetPinpointImage(qidx, file);
+        });
+
+        // Paste (Ctrl + V) when dropzone is focused
+        dropzone.addEventListener('paste', async (e) => {
+            const items = (e.clipboardData || window.clipboardData)?.items;
+            if (!items) return;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type && items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    if (file) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        await processAndSetPinpointImage(qidx, file);
+                        break;
+                    }
+                }
+            }
+        });
+    });
+
+    // Drag & Drop / Paste on the whole pinpoint question card
+    container.querySelectorAll('.es-qcard').forEach(card => {
+        const qidx = parseInt(card.getAttribute('data-qidx'), 10);
+        const q = currentEditingQuestions[qidx];
+        if (q && q.type === 'pinpoint') {
+            card.addEventListener('dragover', (e) => {
+                if (e.dataTransfer?.types?.includes('Files')) {
+                    e.preventDefault();
+                }
+            });
+            card.addEventListener('drop', async (e) => {
+                const file = e.dataTransfer?.files?.[0];
+                if (file && file.type?.startsWith('image/')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await processAndSetPinpointImage(qidx, file);
+                }
+            });
+            card.addEventListener('paste', async (e) => {
+                // If user is pasting in a text input (like question title), do not hijack text paste
+                const targetTag = e.target?.tagName?.toLowerCase();
+                const items = (e.clipboardData || window.clipboardData)?.items;
+                if (!items) return;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type && items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        if (file) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            await processAndSetPinpointImage(qidx, file);
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+    });
+
+    container.querySelectorAll('.btn-remove-pinpoint-img').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                delete currentEditingQuestions[qidx].pinImage;
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    // Range interactions
+    container.querySelectorAll('.q-range-min').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) currentEditingQuestions[qidx].min = parseFloat(e.target.value) || 0;
+        });
+    });
+    container.querySelectorAll('.q-range-max').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) currentEditingQuestions[qidx].max = parseFloat(e.target.value) || 100;
+        });
+    });
+    container.querySelectorAll('.q-range-step').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) currentEditingQuestions[qidx].step = parseFloat(e.target.value) || 1;
+        });
+    });
+    container.querySelectorAll('.q-range-unit').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) currentEditingQuestions[qidx].unit = e.target.value;
+        });
+    });
+    container.querySelectorAll('.q-range-min-label').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) currentEditingQuestions[qidx].minLabel = e.target.value;
+        });
+    });
+    container.querySelectorAll('.q-range-max-label').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) currentEditingQuestions[qidx].maxLabel = e.target.value;
+        });
+    });
+    container.querySelectorAll('.q-range-target-val').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) currentEditingQuestions[qidx].correctValue = e.target.value !== '' ? parseFloat(e.target.value) : '';
+        });
+    });
+    container.querySelectorAll('.q-range-tolerance').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) currentEditingQuestions[qidx].tolerance = parseFloat(e.target.value) || 0;
+        });
+    });
+
     container.querySelectorAll('.q-cloze-text-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
@@ -1397,7 +2016,7 @@ function bindQuestionsEvents() {
         });
     });
 
-    container.querySelectorAll('input[type="radio"]').forEach(radio => {
+    container.querySelectorAll('input[name^="q_correct_"]').forEach(radio => {
         radio.addEventListener('change', (e) => {
             const name = e.target.name;
             const qidx = parseInt(name.replace('q_correct_', ''), 10);
@@ -1471,6 +2090,54 @@ function bindQuestionsEvents() {
             const pidx = parseInt(btn.getAttribute('data-pidx'), 10);
             if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].items) {
                 currentEditingQuestions[qidx].items.splice(pidx, 1);
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.matching-left-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            const pidx = parseInt(e.target.getAttribute('data-pidx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].pairs && currentEditingQuestions[qidx].pairs[pidx]) {
+                currentEditingQuestions[qidx].pairs[pidx].left = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.matching-right-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            const pidx = parseInt(e.target.getAttribute('data-pidx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].pairs && currentEditingQuestions[qidx].pairs[pidx]) {
+                currentEditingQuestions[qidx].pairs[pidx].right = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-add-matching-pair').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                if (!currentEditingQuestions[qidx].pairs) currentEditingQuestions[qidx].pairs = [];
+                const pNum = currentEditingQuestions[qidx].pairs.length + 1;
+                currentEditingQuestions[qidx].pairs.push({
+                    left: `Élément ${pNum}`,
+                    right: `Correspondance ${pNum}`
+                });
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-remove-matching-pair').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            const pidx = parseInt(btn.getAttribute('data-pidx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].pairs) {
+                currentEditingQuestions[qidx].pairs.splice(pidx, 1);
                 renderQuestionsEditor();
             }
         });
@@ -1557,9 +2224,24 @@ document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e
                     text: q.text || '',
                     options: q.options || (q.type === 'qcm' ? ['Option 1', 'Option 2'] : undefined),
                     correctIndex: q.correctIndex !== undefined ? q.correctIndex : 0,
+                    correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : true,
+                    pinImage: q.pinImage || '',
+                    targetX: q.targetX !== undefined ? q.targetX : 50,
+                    targetY: q.targetY !== undefined ? q.targetY : 50,
+                    radius: q.radius !== undefined ? q.radius : 10,
+                    targetLabel: q.targetLabel || '',
+                    min: q.min !== undefined ? q.min : 0,
+                    max: q.max !== undefined ? q.max : 100,
+                    step: q.step !== undefined ? q.step : 1,
+                    unit: q.unit || '',
+                    minLabel: q.minLabel || '',
+                    maxLabel: q.maxLabel || '',
+                    correctValue: q.correctValue !== undefined ? q.correctValue : 50,
+                    tolerance: q.tolerance !== undefined ? q.tolerance : 0,
                     clozeText: q.clozeText || '',
                     distractors: q.distractors || '',
                     items: q.items || (q.type === 'puzzle' ? ['Étape 1', 'Étape 2'] : undefined),
+                    pairs: q.pairs || (q.type === 'matching' ? [{ left: 'A', right: '1' }, { left: 'B', right: '2' }] : undefined),
                     hint: q.hint || '',
                     imageUrl: q.imageUrl || ''
                 }));
@@ -1657,6 +2339,24 @@ async function saveModuleData(btnEl) {
                     return;
                 }
             }
+        } else if (q.type === 'pinpoint') {
+            if (!q.pinImage) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `La question ${i + 1} (Repère sur image) nécessite une image support.`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
+        } else if (q.type === 'range') {
+            const min = parseFloat(q.min) || 0;
+            const max = parseFloat(q.max) || 100;
+            if (min >= max) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `La question ${i + 1} (Curseur) a une valeur minimale supérieure ou égale au maximum.`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
         } else if (q.type === 'cloze') {
             if (!q.clozeText || !q.clozeText.trim()) {
                 if (errorAlert && errorMsg) {
@@ -1685,6 +2385,24 @@ async function saveModuleData(btnEl) {
                 if (!q.items[j] || !q.items[j].trim()) {
                     if (errorAlert && errorMsg) {
                         errorMsg.textContent = `L'élément ${j + 1} de la question ${i + 1} (Puzzle) est vide.`;
+                        errorAlert.classList.remove('hidden');
+                    }
+                    return;
+                }
+            }
+        } else if (q.type === 'matching') {
+            if (!q.pairs || q.pairs.length < 2) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `La question ${i + 1} (Relier les colonnes) doit comporter au moins 2 paires.`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
+            for (let j = 0; j < q.pairs.length; j++) {
+                const pair = q.pairs[j];
+                if (!pair || !pair.left || !pair.left.trim() || !pair.right || !pair.right.trim()) {
+                    if (errorAlert && errorMsg) {
+                        errorMsg.textContent = `La paire ${j + 1} de la question ${i + 1} (Relier les colonnes) est incomplète.`;
                         errorAlert.classList.remove('hidden');
                     }
                     return;
@@ -1755,11 +2473,30 @@ async function saveModuleData(btnEl) {
             if (q.type === 'qcm') {
                 qData.options = q.options || ['Option 1', 'Option 2'];
                 qData.correctIndex = q.correctIndex !== undefined ? q.correctIndex : 0;
+            } else if (q.type === 'boolean') {
+                qData.correctAnswer = q.correctAnswer !== undefined ? (q.correctAnswer === true || q.correctAnswer === 'true') : true;
+            } else if (q.type === 'pinpoint') {
+                qData.pinImage = q.pinImage || '';
+                qData.targetX = q.targetX !== undefined ? parseFloat(q.targetX) : 50;
+                qData.targetY = q.targetY !== undefined ? parseFloat(q.targetY) : 50;
+                qData.radius = q.radius !== undefined ? parseFloat(q.radius) : 10;
+                qData.targetLabel = q.targetLabel || '';
+            } else if (q.type === 'range') {
+                qData.min = q.min !== undefined ? parseFloat(q.min) : 0;
+                qData.max = q.max !== undefined ? parseFloat(q.max) : 100;
+                qData.step = q.step !== undefined ? parseFloat(q.step) : 1;
+                qData.unit = q.unit || '';
+                qData.minLabel = q.minLabel || '';
+                qData.maxLabel = q.maxLabel || '';
+                qData.correctValue = q.correctValue !== undefined && q.correctValue !== '' ? parseFloat(q.correctValue) : '';
+                qData.tolerance = q.tolerance !== undefined ? parseFloat(q.tolerance) : 0;
             } else if (q.type === 'cloze') {
                 qData.clozeText = q.clozeText || '';
                 qData.distractors = distractorArray;
             } else if (q.type === 'puzzle') {
                 qData.items = q.items || [];
+            } else if (q.type === 'matching') {
+                qData.pairs = q.pairs || [];
             }
 
             batch.set(qRef, qData);

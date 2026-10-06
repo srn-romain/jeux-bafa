@@ -594,7 +594,7 @@ function renderQuizQuestions() {
             <div class="es-quiz-options">
                 ${(q.options || []).map((opt, optIdx) => `
                     <label class="es-quiz-option-label">
-                        <input type="radio" name="question_${q.id}" value="${optIdx}" class="quiz-track-input" required>
+                        <input type="radio" name="question_${q.id}" value="${optIdx}" class="quiz-track-input">
                         <span>${escapeHtml(opt)}</span>
                     </label>
                 `).join('')}
@@ -613,7 +613,7 @@ function renderQuizQuestions() {
 
             inputHtml = `
             <div class="es-cloze-wrap" id="cloze_wrap_${q.id}" data-q-id="${q.id}">
-                <input type="hidden" name="question_${q.id}" id="cloze_input_${q.id}" class="quiz-track-input" data-blanks-count="${blanks.length}" required>
+                <input type="hidden" name="question_${q.id}" id="cloze_input_${q.id}" class="quiz-track-input" data-blanks-count="${blanks.length}">
                 
                 <!-- BANQUE D'ÉTIQUETTES / TAGS EN HAUT -->
                 <div class="es-cloze-bank-container" id="cloze_bank_box_${q.id}" data-q-id="${q.id}">
@@ -662,18 +662,18 @@ function renderQuizQuestions() {
             inputHtml = `
             <div class="es-boolean-grid">
                 <label class="es-boolean-btn-label">
-                    <input type="radio" name="question_${q.id}" value="true" class="quiz-track-input" required>
+                    <input type="radio" name="question_${q.id}" value="true" class="quiz-track-input">
                     <span>👍 VRAI</span>
                 </label>
                 <label class="es-boolean-btn-label">
-                    <input type="radio" name="question_${q.id}" value="false" class="quiz-track-input" required>
+                    <input type="radio" name="question_${q.id}" value="false" class="quiz-track-input">
                     <span>👎 FAUX</span>
                 </label>
             </div>`;
         } else if (q.type === 'pinpoint') {
             inputHtml = `
             <div class="es-pinpoint-candidate-wrap" style="text-align:center; margin-top:8px;">
-                <input type="hidden" name="question_${q.id}" id="pinpoint_input_${q.id}" class="quiz-track-input" required>
+                <input type="hidden" name="question_${q.id}" id="pinpoint_input_${q.id}" class="quiz-track-input">
                 <div class="es-pinpoint-candidate-zone" id="pinpoint_zone_${q.id}" data-q-id="${q.id}">
                     <img src="${escapeHtml(q.pinImage || '')}" alt="Schéma à pointer" class="es-pinpoint-candidate-img" draggable="false">
                     <div class="es-pinpoint-pin es-pinpoint-pin--candidate hidden" id="pinpoint_pin_${q.id}">
@@ -741,11 +741,74 @@ function renderQuizQuestions() {
                     `).join('')}
                 </div>
             </div>`;
+        } else if (q.type === 'matching') {
+            const rawPairs = q.pairs || [];
+            const leftItems = rawPairs.map((p, idx) => ({ id: `l_${q.id}_${idx}`, text: p.left, originalIndex: idx }));
+            const rightItems = shuffleArray(rawPairs.map((p, idx) => ({ id: `r_${q.id}_${idx}`, text: p.right, originalIndex: idx })));
+
+            inputHtml = `
+            <div class="es-matching-wrap" id="matching_wrap_${q.id}" data-q-id="${q.id}">
+                <input type="hidden" name="question_${q.id}" id="matching_input_${q.id}" class="quiz-track-input" data-pairs-count="${rawPairs.length}">
+                
+                <div class="es-matching-instructions">
+                    <i class="bi bi-info-circle-fill" style="color:var(--clr-primary);"></i>
+                    <span>Cliquez sur un élément à gauche, puis cliquez sur son correspondant à droite pour les relier.</span>
+                </div>
+
+                <div class="es-matching-grid">
+                    <!-- COLONNE GAUCHE -->
+                    <div class="es-matching-col es-matching-col--left">
+                        <div class="es-matching-col-header">
+                            <i class="bi bi-list-columns-reverse"></i> Colonne de gauche
+                        </div>
+                        <div class="es-matching-list es-matching-list--left" data-q-id="${q.id}">
+                            ${leftItems.map(item => `
+                                <div class="es-matching-item es-matching-item--left" 
+                                     id="${item.id}" 
+                                     data-q-id="${q.id}" 
+                                     data-side="left" 
+                                     data-item-text="${escapeHtml(item.text)}">
+                                    <span class="es-matching-item-num"><i class="bi bi-circle"></i></span>
+                                    <span class="es-matching-item-text">${escapeHtml(item.text)}</span>
+                                    <span class="es-matching-link-badge hidden" title="Relié"></span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- COLONNE DROITE -->
+                    <div class="es-matching-col es-matching-col--right">
+                        <div class="es-matching-col-header">
+                            <i class="bi bi-list-columns"></i> Colonne de droite
+                        </div>
+                        <div class="es-matching-list es-matching-list--right" data-q-id="${q.id}">
+                            ${rightItems.map(item => `
+                                <div class="es-matching-item es-matching-item--right" 
+                                     id="${item.id}" 
+                                     data-q-id="${q.id}" 
+                                     data-side="right" 
+                                     data-item-text="${escapeHtml(item.text)}">
+                                    <span class="es-matching-item-num"><i class="bi bi-circle"></i></span>
+                                    <span class="es-matching-item-text">${escapeHtml(item.text)}</span>
+                                    <span class="es-matching-link-badge hidden" title="Relié"></span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="es-matching-status-bar" id="matching_status_bar_${q.id}">
+                    <span class="es-matching-count-badge" id="matching_count_${q.id}">0 / ${rawPairs.length} paires reliées</span>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-reset-matching" data-q-id="${q.id}" style="font-size:0.76rem; padding:3px 8px;">
+                        <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser les liaisons
+                    </button>
+                </div>
+            </div>`;
         } else {
             inputHtml = `
             <div class="es-quiz-textarea-wrap">
                 ${q.hint ? `<div class="es-quiz-hint"><i class="bi bi-lightbulb"></i> <strong>Piste :</strong> ${escapeHtml(q.hint)}</div>` : ''}
-                <textarea class="es-quiz-textarea quiz-track-input" name="question_${q.id}" placeholder="Rédigez votre réponse détaillée ici..." required></textarea>
+                <textarea class="es-quiz-textarea quiz-track-input" name="question_${q.id}" placeholder="Rédigez votre réponse détaillée ici..."></textarea>
             </div>`;
         }
 
@@ -755,6 +818,7 @@ function renderQuizQuestions() {
         else if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
         else if (q.type === 'boolean') typeBadgeLabel = 'Vrai / Faux';
         else if (q.type === 'puzzle') typeBadgeLabel = 'Puzzle / Ordonnancement';
+        else if (q.type === 'matching') typeBadgeLabel = '🔗 Relier les colonnes';
         else if (q.type === 'text') typeBadgeLabel = 'Réponse rédigée';
 
         return `
@@ -1098,6 +1162,156 @@ function attachQuizInteractions(container) {
         });
     });
 
+    // Interaction du type Matching (Relier les colonnes)
+    container.querySelectorAll('.es-matching-wrap').forEach(wrap => {
+        const qId = wrap.getAttribute('data-q-id');
+        const input = document.getElementById(`matching_input_${qId}`);
+        const countBadge = document.getElementById(`matching_count_${qId}`);
+        const resetBtn = wrap.querySelector('.btn-reset-matching');
+        
+        let selectedLeftEl = null;
+        let userMatches = {}; // { leftText: rightText }
+
+        const MATCHING_PALETTE = [
+            { bg: 'rgba(52, 152, 219, 0.12)', border: '#3498db', text: '#2980b9' },
+            { bg: 'rgba(155, 89, 182, 0.12)', border: '#9b59b6', text: '#8e44ad' },
+            { bg: 'rgba(230, 126, 34, 0.12)', border: '#e67e22', text: '#d35400' },
+            { bg: 'rgba(39, 174, 96, 0.12)', border: '#27ae60', text: '#229954' },
+            { bg: 'rgba(26, 188, 156, 0.12)', border: '#1abc9c', text: '#16a085' },
+            { bg: 'rgba(231, 76, 60, 0.12)', border: '#e74c3c', text: '#c0392b' },
+            { bg: 'rgba(241, 196, 15, 0.14)', border: '#f39c12', text: '#b7791f' },
+            { bg: 'rgba(52, 73, 94, 0.12)', border: '#34495e', text: '#2c3e50' },
+        ];
+
+        function syncMatchingUI() {
+            const leftItems = wrap.querySelectorAll('.es-matching-item--left');
+            const rightItems = wrap.querySelectorAll('.es-matching-item--right');
+            const leftEntries = Object.entries(userMatches);
+
+            // Mise à jour de la colonne de gauche
+            leftItems.forEach(item => {
+                const lText = item.getAttribute('data-item-text');
+                const matchedRight = userMatches[lText];
+                const badge = item.querySelector('.es-matching-link-badge');
+                const icon = item.querySelector('.es-matching-item-num i');
+
+                if (matchedRight) {
+                    const matchIdx = leftEntries.findIndex(([k]) => k === lText);
+                    const color = MATCHING_PALETTE[matchIdx % MATCHING_PALETTE.length];
+                    item.classList.add('es-matching-item--connected');
+                    item.style.backgroundColor = color.bg;
+                    item.style.borderColor = color.border;
+                    if (badge) {
+                        badge.classList.remove('hidden');
+                        badge.textContent = `🔗 Lien ${matchIdx + 1}`;
+                        badge.style.backgroundColor = color.border;
+                        badge.style.color = '#ffffff';
+                    }
+                    if (icon) icon.className = 'bi bi-check-circle-fill';
+                } else {
+                    item.classList.remove('es-matching-item--connected');
+                    item.style.backgroundColor = '';
+                    item.style.borderColor = '';
+                    if (badge) badge.classList.add('hidden');
+                    if (icon) icon.className = 'bi bi-circle';
+                }
+            });
+
+            // Mise à jour de la colonne de droite
+            rightItems.forEach(item => {
+                const rText = item.getAttribute('data-item-text');
+                const matchingLeftEntry = leftEntries.find(([, v]) => v === rText);
+                const badge = item.querySelector('.es-matching-link-badge');
+                const icon = item.querySelector('.es-matching-item-num i');
+
+                if (matchingLeftEntry) {
+                    const matchIdx = leftEntries.indexOf(matchingLeftEntry);
+                    const color = MATCHING_PALETTE[matchIdx % MATCHING_PALETTE.length];
+                    item.classList.add('es-matching-item--connected');
+                    item.style.backgroundColor = color.bg;
+                    item.style.borderColor = color.border;
+                    if (badge) {
+                        badge.classList.remove('hidden');
+                        badge.textContent = `🔗 Lien ${matchIdx + 1}`;
+                        badge.style.backgroundColor = color.border;
+                        badge.style.color = '#ffffff';
+                    }
+                    if (icon) icon.className = 'bi bi-check-circle-fill';
+                } else {
+                    item.classList.remove('es-matching-item--connected');
+                    item.style.backgroundColor = '';
+                    item.style.borderColor = '';
+                    if (badge) badge.classList.add('hidden');
+                    if (icon) icon.className = 'bi bi-circle';
+                }
+            });
+
+            const totalPairs = parseInt(input.getAttribute('data-pairs-count'), 10) || leftItems.length;
+            const connectedCount = Object.keys(userMatches).length;
+            if (countBadge) {
+                countBadge.textContent = `${connectedCount} / ${totalPairs} paire${totalPairs > 1 ? 's' : ''} reliée${connectedCount > 1 ? 's' : ''}`;
+            }
+
+            input.value = connectedCount > 0 ? JSON.stringify(userMatches) : '';
+            updateProgress();
+        }
+
+        wrap.querySelectorAll('.es-matching-item--left').forEach(item => {
+            item.addEventListener('click', () => {
+                if (selectedLeftEl === item) {
+                    item.classList.remove('es-matching-item--selected');
+                    selectedLeftEl = null;
+                } else {
+                    wrap.querySelectorAll('.es-matching-item--left').forEach(el => el.classList.remove('es-matching-item--selected'));
+                    item.classList.add('es-matching-item--selected');
+                    selectedLeftEl = item;
+                }
+            });
+        });
+
+        wrap.querySelectorAll('.es-matching-item--right').forEach(item => {
+            item.addEventListener('click', () => {
+                const rText = item.getAttribute('data-item-text');
+                if (selectedLeftEl) {
+                    const lText = selectedLeftEl.getAttribute('data-item-text');
+                    // Supprimer toute ancienne liaison pour cet élément droit
+                    for (const k in userMatches) {
+                        if (userMatches[k] === rText) {
+                            delete userMatches[k];
+                        }
+                    }
+                    userMatches[lText] = rText;
+                    selectedLeftEl.classList.remove('es-matching-item--selected');
+                    selectedLeftEl = null;
+                    syncMatchingUI();
+                } else {
+                    // Si aucun élément gauche n'est sélectionné et qu'on clique sur un élément droit connecté, le délier
+                    let unlinked = false;
+                    for (const k in userMatches) {
+                        if (userMatches[k] === rText) {
+                            delete userMatches[k];
+                            unlinked = true;
+                        }
+                    }
+                    if (unlinked) {
+                        syncMatchingUI();
+                    }
+                }
+            });
+        });
+
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                userMatches = {};
+                if (selectedLeftEl) {
+                    selectedLeftEl.classList.remove('es-matching-item--selected');
+                    selectedLeftEl = null;
+                }
+                syncMatchingUI();
+            });
+        }
+    });
+
     // Track text & radio changes
     container.querySelectorAll('.quiz-track-input').forEach(inp => {
         inp.addEventListener('input', () => updateProgress());
@@ -1144,6 +1358,18 @@ function updateProgress() {
                     const totalBlanks = parseInt(clozeInp.getAttribute('data-blanks-count'), 10) || 1;
                     const filledBlanks = Object.values(parsed).filter(v => v !== null && v !== undefined && String(v).trim().length > 0).length;
                     if (filledBlanks === totalBlanks) {
+                        answeredCount++;
+                    }
+                } catch(e) {}
+            }
+        } else if (q.type === 'matching') {
+            const matchInp = form.querySelector(`input[name="question_${q.id}"]`);
+            if (matchInp && matchInp.value) {
+                try {
+                    const parsed = JSON.parse(matchInp.value);
+                    const totalPairs = parseInt(matchInp.getAttribute('data-pairs-count'), 10) || 1;
+                    const filledPairs = Object.keys(parsed).filter(k => parsed[k] && String(parsed[k]).trim().length > 0).length;
+                    if (filledPairs === totalPairs) {
                         answeredCount++;
                     }
                 } catch(e) {}
@@ -1309,6 +1535,39 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             } else {
                 answers[q.id] = [];
                 missingCount++;
+            }
+        } else if (q.type === 'matching') {
+            qcmTotal++;
+            const matchInp = form ? form.querySelector(`input[name="question_${q.id}"]`) : null;
+            const rawPairs = q.pairs || [];
+            let userMatchesObj = {};
+
+            if (matchInp && matchInp.value) {
+                try {
+                    userMatchesObj = typeof matchInp.value === 'object' ? matchInp.value : JSON.parse(matchInp.value);
+                } catch(e) {
+                    userMatchesObj = {};
+                }
+            }
+
+            answers[q.id] = userMatchesObj;
+
+            const filledCount = Object.keys(userMatchesObj).filter(k => userMatchesObj[k] && String(userMatchesObj[k]).trim().length > 0).length;
+            if (filledCount < rawPairs.length) {
+                missingCount++;
+            }
+
+            // Vérification de chaque paire
+            let allCorrect = (rawPairs.length > 0);
+            rawPairs.forEach(pair => {
+                const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
+                if (!uRight || String(uRight).trim().toLowerCase() !== String(pair.right).trim().toLowerCase()) {
+                    allCorrect = false;
+                }
+            });
+
+            if (allCorrect) {
+                qcmCorrect++;
             }
         } else {
             qcmTotal++;
@@ -1709,6 +1968,54 @@ function renderResultsScreen(submission = {}) {
                         </div>
                     ` : ''}
                 </div>`;
+            } else if (q.type === 'matching') {
+                const rawPairs = q.pairs || [];
+                const userMatchesObj = userAns && typeof userAns === 'object' ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
+                
+                let correctCount = 0;
+                rawPairs.forEach(pair => {
+                    const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
+                    if (uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase()) {
+                        correctCount++;
+                    }
+                });
+
+                const isAllCorrect = (rawPairs.length > 0) && (correctCount === rawPairs.length);
+
+                ansDisplay = `
+                <div style="background:#ffffff; border:1.5px solid ${isAllCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:14px 16px; margin-top:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                        <div style="font-size:0.85rem; font-weight:700; color:var(--clr-text);">
+                            Résultat : <span style="color:var(--clr-primary-dark); font-weight:800;">${correctCount} / ${rawPairs.length} association${rawPairs.length > 1 ? 's' : ''} correcte${rawPairs.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <span style="font-weight:700; color:${isAllCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.88rem;">
+                            ${isAllCorrect ? '✅ Toutes les liaisons sont exactes (+1 pt)' : '❌ Liaisons incomplètes ou erronées'}
+                        </span>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:6px;">
+                        ${rawPairs.map(pair => {
+                            const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
+                            const isPairCorrect = uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
+                            
+                            return `
+                                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:8px 12px; border-radius:6px; font-size:0.85rem; background:var(--clr-surface-2); border:1px solid ${isPairCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-weight:700; color:var(--clr-text);">${escapeHtml(pair.left)}</span>
+                                        <i class="bi bi-arrow-right" style="color:var(--clr-text-muted);"></i>
+                                        <span style="font-weight:600; color:${uRight ? (isPairCorrect ? 'var(--clr-success)' : 'var(--clr-danger)') : 'var(--clr-text-muted)'};">
+                                            ${escapeHtml(uRight || '— (Non relié)')}
+                                        </span>
+                                    </div>
+                                    ${isPairCorrect ? 
+                                        '<span style="color:var(--clr-success); font-weight:700; font-size:0.8rem;"><i class="bi bi-check-circle-fill"></i> Correct</span>' : 
+                                        `<span style="color:var(--clr-danger); font-size:0.75rem; font-weight:600;"><i class="bi bi-x-circle-fill"></i> Attendu : ${escapeHtml(pair.right)}</span>`
+                                    }
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>`;
             } else {
                 const qEval = (submission?.evaluations && submission.evaluations[q.id]) ? submission.evaluations[q.id] : null;
                 let evalBadge = '';
@@ -1733,7 +2040,11 @@ function renderResultsScreen(submission = {}) {
                         <strong style="color:var(--clr-primary);"><i class="bi bi-person-check"></i> Votre réponse :</strong>
                         ${evalBadge}
                     </div>
-                    <div style="white-space:pre-wrap; margin-top:4px;">${escapeHtml(userAns || 'Pas de texte rédigé.')}</div>
+                    ${(userAns && userAns.trim()) ? `
+                        <div style="white-space:pre-wrap; word-break:break-word; margin-top:4px;">${escapeHtml(userAns.trim())}</div>
+                    ` : `
+                        <div style="margin-top:4px; font-style:italic; color:var(--clr-text-muted); text-align:center; padding:6px 0;">Aucune réponse rédigée.</div>
+                    `}
                     ${q.hint ? `
                         <div style="margin-top:8px; padding-top:6px; border-top:1px dashed var(--clr-surface-3); font-size:0.8rem; color:#b7791f;">
                             <i class="bi bi-lightbulb-fill"></i> Piste du formateur : ${escapeHtml(q.hint)}
@@ -1747,6 +2058,7 @@ function renderResultsScreen(submission = {}) {
             else if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
             else if (q.type === 'boolean') typeBadgeLabel = 'Vrai / Faux';
             else if (q.type === 'puzzle') typeBadgeLabel = 'Puzzle / Ordonnancement';
+            else if (q.type === 'matching') typeBadgeLabel = '🔗 Relier les colonnes';
             else if (q.type === 'text') typeBadgeLabel = 'Rédaction';
 
             return `

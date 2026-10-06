@@ -511,15 +511,117 @@ function renderInspectionQuestions(questions, sub) {
                     ${seqHtml || '<div style="font-size:0.82rem; color:var(--clr-text-muted);">Aucun ordre renseigné.</div>'}
                 </div>
             `;
+        } else if (type === 'boolean') {
+            const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+            const userBool = (ans === true || ans === 'true' || ans === 1);
+            const hasAnswered = (ans !== null && ans !== undefined && ans !== '');
+            const isCorrect = (hasAnswered && userBool === expectedBool);
+
+            contentHtml = `
+                <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+                    <div style="display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:var(--radius-sm); font-size:0.88rem; font-weight:700; ${isCorrect ? 'background:rgba(39,174,96,0.12); border:1.5px solid var(--clr-success); color:var(--clr-success);' : 'background:rgba(231,76,60,0.12); border:1.5px solid var(--clr-danger); color:var(--clr-danger);'}">
+                        ${isCorrect ? '<i class="bi bi-check-circle-fill"></i>' : '<i class="bi bi-x-circle-fill"></i>'}
+                        <span>Réponse choisie : ${hasAnswered ? (userBool ? '👍 VRAI' : '👎 FAUX') : '— (Non répondu)'}</span>
+                        ${!isCorrect ? `<span style="font-size:0.75rem; opacity:0.85; margin-left:6px;">(Attendu : ${expectedBool ? 'VRAI' : 'FAUX'})</span>` : ''}
+                    </div>
+                </div>
+            `;
+        } else if (type === 'pinpoint') {
+            const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+            const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+            const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+            const userCoords = ans && typeof ans === 'object' ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null);
+
+            let isCorrect = false;
+            if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
+                const dx = userCoords.x - targetX;
+                const dy = userCoords.y - targetY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                isCorrect = (dist <= radius);
+            }
+
+            contentHtml = `
+                <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.82rem; font-weight:700;">
+                        <span>${isCorrect ? '<span style="color:var(--clr-success);"><i class="bi bi-check-circle-fill"></i> Repère dans la zone tolérée</span>' : '<span style="color:var(--clr-danger);"><i class="bi bi-x-circle-fill"></i> Repère hors zone</span>'}</span>
+                        <span style="color:var(--clr-text-muted);">Cible : (${targetX}%, ${targetY}%) ± ${radius}%</span>
+                    </div>
+                    ${q.pinImage ? `
+                        <div class="es-pinpoint-result-zone" style="max-width:440px; margin:0 auto; position:relative; border-radius:6px; overflow:hidden; border:1px solid var(--clr-surface-3);">
+                            <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" style="width:100%; display:block;">
+                            <div class="es-pinpoint-target-zone" style="position:absolute; left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%; transform:translate(-50%, -50%); border-radius:50%; border:2px dashed #2ecc71; background:rgba(46, 204, 113, 0.25); pointer-events:none;"></div>
+                            <div style="position:absolute; left:${targetX}%; top:${targetY}%; transform:translate(-50%, -50%); color:#27ae60; font-size:1.2rem; pointer-events:none;" title="Cible attendue"><i class="bi bi-bullseye"></i></div>
+                            ${userCoords ? `
+                                <div style="position:absolute; left:${userCoords.x}%; top:${userCoords.y}%; transform:translate(-50%, -50%); color:${isCorrect ? '#27ae60' : '#e74c3c'}; font-size:1.4rem; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));" title="Position stagiaire"><i class="bi bi-geo-alt-fill"></i></div>
+                            ` : ''}
+                        </div>
+                    ` : '<div style="font-size:0.8rem; color:var(--clr-text-muted);">Aucune image configurée.</div>'}
+                </div>
+            `;
+        } else if (type === 'range') {
+            const val = (ans !== undefined && ans !== null) ? parseFloat(ans) : null;
+            const targetVal = (q.correctValue !== undefined && q.correctValue !== '' && q.correctValue !== null) ? parseFloat(q.correctValue) : null;
+            const tol = parseFloat(q.tolerance) || 0;
+            const unit = q.unit || '';
+            let isCorrect = false;
+
+            if (val !== null && targetVal !== null) {
+                isCorrect = Math.abs(val - targetVal) <= tol;
+            }
+
+            contentHtml = `
+                <div style="margin-top:10px; background:var(--clr-surface); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid ${targetVal !== null ? (isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)') : 'var(--clr-surface-3)'};">
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem;">
+                        <span style="font-weight:700;">Curseur positionné à : <strong style="color:var(--clr-primary-dark); font-size:0.95rem;">${val !== null ? `${val} ${escapeHtml(unit)}` : '—'}</strong></span>
+                        ${targetVal !== null ? `
+                            <span style="font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.8rem;">
+                                ${isCorrect ? '<i class="bi bi-check-circle-fill"></i> Conforme' : `<i class="bi bi-x-circle-fill"></i> Attendu : ${targetVal} ${escapeHtml(unit)} (±${tol})`}
+                            </span>
+                        ` : '<span style="font-size:0.75rem; color:var(--clr-text-muted);">Pas de correction auto</span>'}
+                    </div>
+                </div>
+            `;
+        } else if (type === 'matching') {
+            const pairs = q.pairs || [];
+            const userMatches = (ans && typeof ans === 'object') ? ans : {};
+
+            const matchesHtml = pairs.map((pair, pIdx) => {
+                const userRight = userMatches[pair.left] || userMatches[(pair.left || '').trim()];
+                const isMatchedCorrectly = userRight && (userRight.trim().toLowerCase() === (pair.right || '').trim().toLowerCase());
+
+                return `
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:8px 12px; border-radius:var(--radius-sm); font-size:0.85rem; background:var(--clr-surface); border:1px solid ${isMatchedCorrectly ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:200px;">
+                            <span style="font-weight:700; color:var(--clr-primary-dark);">${escapeHtml(pair.left)}</span>
+                            <i class="bi bi-arrow-right" style="color:var(--clr-text-muted);"></i>
+                            <span style="font-weight:600; color:${userRight ? 'var(--clr-text)' : 'var(--clr-danger)'};">${escapeHtml(userRight || '— (Non relié)')}</span>
+                        </div>
+                        ${isMatchedCorrectly ?
+                            '<span style="color:var(--clr-success); font-weight:700; font-size:0.8rem;"><i class="bi bi-check-circle-fill"></i> Correct</span>' :
+                            `<span style="color:var(--clr-danger); font-size:0.75rem; font-weight:600;"><i class="bi bi-x-circle-fill"></i> Attendu : <strong>${escapeHtml(pair.right)}</strong></span>`
+                        }
+                    </div>
+                `;
+            }).join('');
+
+            contentHtml = `
+                <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
+                    ${matchesHtml || '<div style="font-size:0.82rem; color:var(--clr-text-muted);">Aucune association définie.</div>'}
+                </div>
+            `;
         } else if (type === 'text') {
-            const userText = typeof ans === 'string' ? ans : '';
+            const rawUserText = typeof ans === 'string' ? ans : '';
+            const userText = rawUserText.trim();
             const evalObj = evaluations[q.id] || {};
             const isAwarded = (evalObj.isCorrect === true);
 
             contentHtml = `
                 <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
-                    <div style="padding:12px 14px; background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); font-size:0.88rem; color:var(--clr-text); line-height:1.6; white-space:pre-wrap;">
-                        ${escapeHtml(userText || 'Aucune réponse rédigée.')}
+                    <div>
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--clr-text-muted); text-transform:uppercase; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+                            <i class="bi bi-chat-square-text-fill" style="color:var(--clr-primary);"></i> Réponse rédigée du candidat :
+                        </div>
+                        ${userText ? `<div style="padding:12px 14px; background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); font-size:0.88rem; color:var(--clr-text); line-height:1.6; white-space:pre-wrap; word-break:break-word;">${escapeHtml(userText)}</div>` : `<div style="padding:12px 14px; background:var(--clr-surface); border:1.5px dashed var(--clr-surface-3); border-radius:var(--radius-sm); font-size:0.85rem; color:var(--clr-text-muted); font-style:italic; text-align:center;">Aucune réponse rédigée.</div>`}
                     </div>
 
                     ${q.hint ? `
