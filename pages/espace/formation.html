@@ -167,7 +167,7 @@
                 </div>
 
                 <!-- Onglets Navigation Stagiaire (Modules vs Mon Bilan) -->
-                <div class="es-nav-tabs" role="tablist" style="max-width: 440px; margin-bottom: 24px;">
+                <div class="es-nav-tabs es-nav-tabs--formation" role="tablist">
                     <button class="es-nav-tab active" id="tabFormationModules" role="tab" aria-selected="true">
                         <i class="bi bi-grid-fill"></i> Modules &amp; Quiz
                     </button>
@@ -181,7 +181,7 @@
                 <div id="viewFormationModules">
                     <!-- Barre Formateur Admin (si connecté en admin) -->
                     <div id="formationAdminControls" class="es-formation-admin-banner hidden">
-                        <div>
+                        <div class="es-formation-admin-banner__info">
                             <div class="banner-title" style="font-weight: 700; font-size: 0.95rem; color: #ffffff; display:flex; align-items:center; gap:8px;">
                                 <i class="bi bi-shield-check"></i> Espace Formateur / Administration
                             </div>
@@ -189,8 +189,8 @@
                                 Gérez les modules, configurez les quiz et consultez les résultats des stagiaires.
                             </div>
                         </div>
-                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                            <div class="es-admin-panel__toggles-list" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <div class="es-formation-admin-banner__right">
+                            <div class="es-formation-admin-banner__toggles es-admin-panel__toggles-list">
                                 <!-- Switch Rôle Admin / Vue Stagiaire -->
                                 <div id="formationRoleSwitchBar" class="es-stats-toggle" style="background: rgba(166, 216, 102, 0.12); border-color: rgba(166, 216, 102, 0.25);">
                                     <span class="es-stats-toggle__label" style="color: #a6d866; font-weight: 700; display: flex; align-items: center; gap: 6px;">
@@ -212,7 +212,7 @@
                                 </div>
                             </div>
 
-                            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <div class="es-formation-admin-banner__actions">
                                 <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnOpenAIAuditFormation" style="background:var(--clr-surface-2); color:var(--clr-text); border:1.5px solid var(--clr-surface-3); font-weight:700; display:inline-flex; align-items:center; gap:6px;" title="Vérifier l'orthographe et la cohérence des quiz avec l'IA">
                                     <i class="bi bi-robot" style="color:var(--clr-primary);"></i> <span class="brand-label">Audit IA Quiz</span>
                                 </button>

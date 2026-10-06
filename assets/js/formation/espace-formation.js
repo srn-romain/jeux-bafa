@@ -5714,8 +5714,9 @@ async function callGeminiForAudit(apiKey, prompt) {
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
-                        temperature: 0.2,
-                        maxOutputTokens: 3500
+                        responseMimeType: "application/json",
+                        temperature: 0.1,
+                        maxOutputTokens: 8192
                     }
                 })
             });
@@ -5818,7 +5819,7 @@ async function executeAIAudit() {
     if (btnCopy) btnCopy.classList.add('hidden');
 
     try {
-        // 1. Préparer les données de tous les modules cibles
+        // 1. Préparer les données de tous les modules cibles (allégé et propre)
         const modulesPayload = [];
         for (const mod of targetModules) {
             const questions = await fetchModuleQuestions(mod.id);
@@ -5826,7 +5827,6 @@ async function executeAIAudit() {
                 moduleId: mod.id,
                 moduleNum: mod.num,
                 moduleTitle: mod.title || '',
-                moduleDescription: mod.description || '',
                 questions: questions.map((q, idx) => ({
                     questionId: q.id,
                     order: idx + 1,
@@ -5835,9 +5835,6 @@ async function executeAIAudit() {
                     options: q.options || [],
                     correctIndex: q.correctIndex !== undefined ? q.correctIndex : null,
                     correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : null,
-                    correctValue: q.correctValue !== undefined ? q.correctValue : null,
-                    tolerance: q.tolerance !== undefined ? q.tolerance : null,
-                    puzzleItems: q.items || [],
                     hint: q.hint || ''
                 }))
             });
@@ -5847,23 +5844,21 @@ async function executeAIAudit() {
         const prompt = `Tu es un expert pédagogique national BAFA/BAFD et un correcteur d'édition professionnel de langue française.
 Mission : Effectuer un audit qualité complet sur les modules et questions de quiz suivants :
 
-${JSON.stringify(modulesPayload, null, 2)}
+${JSON.stringify(modulesPayload)}
 
 Critères stricts d'évaluation :
 1. "orthographe" : Fautes d'orthographe, coquilles, grammaire, accords, ponctuation, majuscules nécessaires ou manquantes (énoncés, options de réponse, pistes).
 2. "coherence" : 
    - Pour les QCM : est-ce que la réponse déclarée correcte (correctIndex) est incontestable et exacte selon la réglementation BAFA ? Y a-t-il 2 options plausibles ou aucune bonne option ?
    - Pour les Vrai/Faux : l'affirmation est-elle claire, sans double négation trompeuse ?
-   - Pour les curseurs / nombres / tolérances : la valeur cible et la tolérance sont-elles cohérentes ?
    - Les options de réponses sont-elles claires et non ambiguës ?
 3. "pedagogie" : Qualité pédagogique pour des candidats BAFA (niveau de difficulté adapté, consigne claire, absence de piège injustifié, indice pertinent).
 
 INSTRUCTIONS DE RÉPONSE :
-Tu dois répondre UNIQUEMENT par un objet JSON valide (aucun commentaire hors JSON).
-Format JSON strict attendu :
+Réponds UNIQUEMENT par un objet JSON valide au format strict suivant :
 {
   "globalScore": 92,
-  "summary": "Court résumé de la qualité globale en 2 phrases...",
+  "summary": "Court résumé de la qualité globale...",
   "stats": {
     "orthographeCount": 2,
     "coherenceCount": 1,
@@ -5871,13 +5866,13 @@ Format JSON strict attendu :
   },
   "issues": [
     {
-      "type": "orthographe" | "coherence" | "pedagogie",
-      "severity": "high" | "medium" | "low",
+      "type": "orthographe",
+      "severity": "medium",
       "moduleId": "identifiant_module",
       "moduleTitle": "Titre du module",
       "questionNum": 1,
-      "questionText": "Énoncé court de la question",
-      "problem": "Explication claire du défaut constaté",
+      "questionText": "Énoncé court",
+      "problem": "Explication claire de l'erreur constatée",
       "suggestion": "Texte ou consigne corrigée recommandée"
     }
   ]
@@ -5887,7 +5882,7 @@ Format JSON strict attendu :
         const rawAiResponse = await callGeminiForAudit(apiKey, prompt);
         _lastAIAuditRawReport = rawAiResponse;
 
-        // 4. Parser le JSON
+        // 4. Parser le JSON avec extraction et tolérance robuste
         let cleanJsonStr = rawAiResponse.trim();
         if (cleanJsonStr.startsWith('```json')) {
             cleanJsonStr = cleanJsonStr.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
@@ -5900,11 +5895,13 @@ Format JSON strict attendu :
             auditData = JSON.parse(cleanJsonStr);
         } catch (jsonErr) {
             console.warn("JSON parse direct failed, attempting extraction:", jsonErr);
-            const match = cleanJsonStr.match(/\{[\s\S]*\}/);
-            if (match) {
-                auditData = JSON.parse(match[0]);
+            const firstBrace = cleanJsonStr.indexOf('{');
+            const lastBrace = cleanJsonStr.lastIndexOf('}');
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                const extracted = cleanJsonStr.substring(firstBrace, lastBrace + 1);
+                auditData = JSON.parse(extracted);
             } else {
-                throw new Error("Format de réponse IA non structuré.");
+                throw new Error("Format JSON non structuré reçu de l'IA.");
             }
         }
 
