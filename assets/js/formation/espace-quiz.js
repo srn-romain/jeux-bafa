@@ -1341,33 +1341,6 @@ function renderResultsScreen(submission = {}) {
         correctionSection.classList.add('hidden');
     }
 
-    // Configuration du bouton de partage WhatsApp
-    const btnShareWA = document.getElementById('btnShareWhatsAppQuiz');
-    if (btnShareWA) {
-        const siteUrl = 'https://srn-romain.github.io/jeux-bafa/index.html';
-        const modTitle = currentModuleData?.title || `Module ${currentModuleData?.num || ''}`;
-        
-        let shareText = '';
-        if (showResults && score.total > 0) {
-            const percent = score.percent !== undefined ? score.percent : Math.round((score.correct / score.total) * 100);
-            let emoji = percent >= 80 ? '🏆' : (percent >= 50 ? '🎉' : '🎯');
-            shareText = `${emoji} *Mon résultat Quiz Formation BAFA*\n\n` +
-                `📖 *Module :* ${modTitle}\n` +
-                `✨ *Score :* ${score.correct} / ${score.total} (${percent}%)\n\n` +
-                `🎓 Je prépare mon BAFA et je m'entraîne sur *Jeux BAFA* !\n` +
-                `Découvre la boîte à outils et les jeux pour l'animation ici : ${siteUrl}`;
-        } else {
-            shareText = `🎉 *Quiz Formation BAFA validé !*\n\n` +
-                `📖 *Module :* ${modTitle}\n` +
-                `📝 Mes réponses ont été transmises à l'équipe de formation !\n\n` +
-                `🎓 Je prépare mon BAFA et je m'entraîne sur *Jeux BAFA* !\n` +
-                `Découvre la boîte à outils et les jeux pour l'animation ici : ${siteUrl}`;
-        }
-
-        btnShareWA.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-        btnShareWA.classList.remove('hidden');
-    }
-
     document.getElementById('quizBriefingView').classList.add('hidden');
     document.getElementById('quizActiveView').classList.add('hidden');
     document.getElementById('quizResultsView').classList.remove('hidden');

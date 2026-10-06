@@ -2701,14 +2701,44 @@ function _getDRAJESContext() {
     return content;
 }
 
+let _cachedColoGeminiModels = null;
+
+async function _getAvailableGeminiModels(apiKey) {
+    if (_cachedColoGeminiModels && _cachedColoGeminiModels.length > 0) {
+        return _cachedColoGeminiModels;
+    }
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+        const res = await fetch(url);
+        if (res.ok) {
+            const data = await res.json();
+            const rawModels = data.models || [];
+            const usableModels = rawModels
+                .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                .map(m => m.name.replace(/^models\//, ''))
+                .filter(name => !name.includes('vision') && !name.includes('embedding') && !name.includes('aqa') && !name.includes('learnlm') && !name.includes('pro'));
+
+            const flashModels = usableModels.filter(m => m.includes('flash'));
+            const otherModels = usableModels.filter(m => !m.includes('flash'));
+            const ordered = [...flashModels, ...otherModels];
+            if (ordered.length > 0) {
+                _cachedColoGeminiModels = ordered;
+                return ordered;
+            }
+        }
+    } catch (e) {
+        console.warn("Échec découverte dynamique modèles Gemini colo:", e);
+    }
+    return ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-8b'];
+}
+
 async function _callGemini(apiKey, prompt) {
-    // Liste des modèles mis à jour selon les disponibilités réelles de votre clé (2026)
-    const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest', 'gemini-pro-latest'];
+    // Découverte dynamique des modèles supportés sur votre clé API
+    const models = await _getAvailableGeminiModels(apiKey);
     let lastError = "";
 
     for (const model of models) {
         try {
-            // Utilisation de v1beta pour ces modèles récents
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
             
             const response = await fetch(url, {
@@ -2727,17 +2757,20 @@ async function _callGemini(apiKey, prompt) {
             } else {
                 const errData = await response.json();
                 lastError = errData.error?.message || "Erreur inconnue";
-                // Si c'est une erreur de clé API, on s'arrête tout de suite
                 if (lastError.includes('API key not valid')) {
                     throw new Error("Clé API non valide.");
                 }
-                // Sinon on continue la boucle pour essayer le modèle suivant
-                console.warn(`Modèle ${model} non trouvé ou non supporté, essai suivant...`);
+                console.warn(`Modèle ${model} non supporté (${response.status}):`, lastError);
             }
         } catch (e) {
             lastError = e.message;
-            console.error(`Erreur avec le modèle ${model}:`, e);
+            if (e.message?.includes('non valide')) throw e;
+            console.warn(`Erreur avec le modèle ${model}:`, e);
         }
+    }
+
+    if (lastError.includes('quota') || lastError.includes('RESOURCE_EXHAUSTED')) {
+        throw new Error("Quota gratuit Google Gemini temporairement atteint. Réessayez dans quelques instants.");
     }
 
     throw new Error(lastError || "Impossible de trouver un modèle compatible sur votre compte Google AI.");

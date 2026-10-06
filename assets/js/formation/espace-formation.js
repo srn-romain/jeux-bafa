@@ -43,32 +43,6 @@ function invalidateFormationCache() {
 window.invalidateFormationCache = invalidateFormationCache;
 
 // ----------------------------------------------------------------
-// HELPER PARTAGE WHATSAPP (Résultats quiz stagiaire)
-// ----------------------------------------------------------------
-function generateWhatsAppShareUrl(moduleTitle, score) {
-    const siteUrl = 'https://srn-romain.github.io/jeux-bafa/index.html';
-    let shareText = '';
-    
-    if (score && score.total > 0) {
-        const percent = score.percent !== undefined ? score.percent : Math.round((score.correct / score.total) * 100);
-        let emoji = percent >= 80 ? '🏆' : (percent >= 50 ? '🎉' : '🎯');
-        shareText = `${emoji} *Mon score au Quiz Formation BAFA*\n\n` +
-            `📖 *Module :* ${moduleTitle}\n` +
-            `✨ *Score :* ${score.correct} / ${score.total} (${percent}%)\n\n` +
-            `🎓 Je prépare mon BAFA et je m'entraîne sur *Jeux BAFA* !\n` +
-            `Découvre la boîte à outils et les jeux pour l'animation ici : ${siteUrl}`;
-    } else {
-        shareText = `🎉 *Quiz Formation BAFA complété !*\n\n` +
-            `📖 *Module :* ${moduleTitle}\n` +
-            `📝 J'ai validé mon épreuve de formation !\n\n` +
-            `🎓 Je prépare mon BAFA et je m'entraîne sur *Jeux BAFA* !\n` +
-            `Découvre la boîte à outils et les jeux pour l'animation ici : ${siteUrl}`;
-    }
-
-    return `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
-}
-
-// ----------------------------------------------------------------
 // BANDEAU COMPTE À REBOURS SYNCHRONISATION FIRESTORE (30s)
 // ----------------------------------------------------------------
 let _syncCountdownTimer = null;
@@ -600,26 +574,14 @@ async function loadFormationModules(forceRefresh = false) {
                 if (isEnabled) {
                     if (isAttemptsExceeded) {
                         actionBtn = `
-                        <div style="display:flex; gap:8px; width:100%; align-items:center;">
-                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-open-quiz" data-module-id="${m.id}" style="flex:1;">
-                                <i class="bi bi-check2-circle"></i> ${showResultsAtEnd ? 'Résultats & corrigé' : 'Quiz complété'}
-                            </button>
-                            ${hasSubmitted ? `
-                            <a href="${generateWhatsAppShareUrl(m.title || ('Module ' + m.num), existingSub.score)}" target="_blank" rel="noopener noreferrer" class="es-btn es-btn--sm" title="Partager mon score sur WhatsApp" style="background:#25D366; color:#ffffff; border:none; padding:0 12px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius-sm); font-weight:700; box-shadow:0 2px 6px rgba(37,211,102,0.25); text-decoration:none; flex-shrink:0;">
-                                <i class="bi bi-whatsapp" style="font-size:1.05rem;"></i>
-                            </a>` : ''}
-                        </div>`;
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm es-btn--full btn-open-quiz" data-module-id="${m.id}">
+                            <i class="bi bi-check2-circle"></i> ${showResultsAtEnd ? 'Résultats & corrigé' : 'Quiz complété'}
+                        </button>`;
                     } else {
                         actionBtn = `
-                        <div style="display:flex; gap:8px; width:100%; align-items:center;">
-                            <button type="button" class="es-btn es-btn--primary es-btn--sm btn-open-quiz" data-module-id="${m.id}" style="flex:1;">
-                                <i class="bi bi-pencil-square"></i> ${hasSubmitted ? (showResultsAtEnd ? 'Corrigé / Repasser' : 'Repasser le quiz') : 'Faire le quiz'}
-                            </button>
-                            ${hasSubmitted ? `
-                            <a href="${generateWhatsAppShareUrl(m.title || ('Module ' + m.num), existingSub.score)}" target="_blank" rel="noopener noreferrer" class="es-btn es-btn--sm" title="Partager mon score sur WhatsApp" style="background:#25D366; color:#ffffff; border:none; padding:0 12px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius-sm); font-weight:700; box-shadow:0 2px 6px rgba(37,211,102,0.25); text-decoration:none; flex-shrink:0;">
-                                <i class="bi bi-whatsapp" style="font-size:1.05rem;"></i>
-                            </a>` : ''}
-                        </div>`;
+                        <button type="button" class="es-btn es-btn--primary es-btn--sm es-btn--full btn-open-quiz" data-module-id="${m.id}">
+                            <i class="bi bi-pencil-square"></i> ${hasSubmitted ? (showResultsAtEnd ? 'Corrigé / Repasser' : 'Repasser le quiz') : 'Faire le quiz'}
+                        </button>`;
                     }
                 } else {
                     actionBtn = `
@@ -2576,9 +2538,6 @@ async function openFormationResultsModal(moduleId) {
                     <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
                         ${attemptBadge}
                         ${scoreBadge}
-                        <div style="font-size:0.75rem; font-weight:600; color:var(--clr-text-light); background:var(--clr-surface); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3);">
-                            🕒 ${formatFullDate(sub.submittedAt)}
-                        </div>
                         ${(actualRole === 'admin') ? `
                         <button type="button" class="es-btn es-btn--danger es-btn--sm btn-delete-single-submission" data-sub-id="${sub.id}" data-user-id="${sub.userId || ''}" data-module-id="${moduleId}" data-user-name="${escapeHtml(sub.userName || sub.userEmail)}" data-module-title="${escapeHtml(moduleData.title)}" style="padding:4px 8px; font-size:0.75rem;" title="Supprimer cette copie">
                             <i class="bi bi-trash3"></i>
@@ -5650,4 +5609,472 @@ function initFormateurAddQuestionEvents() {
         if (e.target === overlay) closeModal('overlayAddQuestionFormateur');
     });
 }
+
+// ================================================================
+// MODULE IA : AUDIT QUALITÉ, ORTHOGRAPHE & COHÉRENCE DES QUIZ (ADMIN)
+// ================================================================
+
+let _lastAIAuditRawReport = "";
+let _aiAuditEventsInitialized = false;
+
+async function getGeminiApiKey() {
+    let key = '';
+
+    // 1. Lire depuis globalSettings/dashboard (enregistré par l'onglet Configuration de l'administration)
+    try {
+        const globalDoc = await db.collection('globalSettings').doc('dashboard').get();
+        if (globalDoc.exists && globalDoc.data().geminiKey) {
+            key = globalDoc.data().geminiKey.trim();
+        }
+    } catch (e) {}
+
+    // 2. Lire depuis le profil de l'utilisateur admin connecté
+    if (!key && currentUser) {
+        try {
+            const uDoc = await db.collection('users').doc(currentUser.uid).get();
+            if (uDoc.exists && uDoc.data().geminiKey) {
+                key = uDoc.data().geminiKey.trim();
+            }
+        } catch (e) {}
+    }
+
+    // 3. Fallback : parcourir les comptes administrateurs pour récupérer la clé configurée
+    if (!key) {
+        try {
+            const adminSnap = await db.collection('users').where('role', '==', 'admin').get();
+            for (const d of adminSnap.docs) {
+                if (d.data().geminiKey) {
+                    key = d.data().geminiKey.trim();
+                    break;
+                }
+            }
+        } catch (e) {}
+    }
+
+    // 4. Fallback localStorage
+    if (!key) {
+        try {
+            const localSaved = localStorage.getItem('gemini_api_key') || localStorage.getItem('GEMINI_API_KEY');
+            if (localSaved) key = localSaved.trim();
+        } catch (e) {}
+    }
+
+    return key;
+}
+
+let _cachedGeminiModelsList = null;
+
+async function getAvailableGeminiModels(apiKey) {
+    if (_cachedGeminiModelsList && _cachedGeminiModelsList.length > 0) {
+        return _cachedGeminiModelsList;
+    }
+
+    try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+        const res = await fetch(url);
+        if (res.ok) {
+            const data = await res.json();
+            const rawModels = data.models || [];
+            
+            // Filtrer les modèles supportant generateContent
+            const usableModels = rawModels
+                .filter(m => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+                .map(m => m.name.replace(/^models\//, ''))
+                .filter(name => !name.includes('vision') && !name.includes('embedding') && !name.includes('aqa') && !name.includes('learnlm') && !name.includes('pro'));
+
+            // Prioriser les modèles Flash (forfait 100% gratuit)
+            const flashModels = usableModels.filter(m => m.includes('flash'));
+            const otherModels = usableModels.filter(m => !m.includes('flash'));
+
+            const ordered = [...flashModels, ...otherModels];
+            if (ordered.length > 0) {
+                _cachedGeminiModelsList = ordered;
+                return ordered;
+            }
+        }
+    } catch (e) {
+        console.warn("Échec découverte dynamique des modèles Gemini:", e);
+    }
+
+    // Fallback si la liste ne peut être requêtée
+    return ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-8b'];
+}
+
+async function callGeminiForAudit(apiKey, prompt) {
+    // Résolution dynamique des modèles actifs et autorisés sur votre clé API
+    const models = await getAvailableGeminiModels(apiKey);
+    let lastError = "";
+
+    for (const model of models) {
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }],
+                    generationConfig: {
+                        temperature: 0.2,
+                        maxOutputTokens: 3500
+                    }
+                })
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+                    return data.candidates[0].content.parts[0].text;
+                }
+            } else {
+                const errData = await response.json();
+                lastError = errData.error?.message || "Erreur inconnue";
+                if (lastError.includes('API key not valid')) {
+                    throw new Error("Clé API Gemini non valide.");
+                }
+                console.warn(`Modèle ${model} erreur (${response.status}):`, lastError);
+            }
+        } catch (e) {
+            lastError = e.message;
+            if (e.message?.includes('non valide')) throw e;
+            console.warn(`Modèle ${model} exception:`, e);
+        }
+    }
+
+    if (lastError.includes('quota') || lastError.includes('RESOURCE_EXHAUSTED')) {
+        throw new Error("Quota gratuit Google Gemini temporairement atteint (Rate limit). Réessayez dans quelques instants.");
+    }
+
+    throw new Error(lastError || "Impossible de joindre l'API Google Gemini.");
+}
+
+async function openAIAuditModal() {
+    const select = document.getElementById('selectAIAuditScope');
+    const noKeyAlert = document.getElementById('aiAuditNoKeyAlert');
+    const resultsContainer = document.getElementById('aiAuditResultsContainer');
+    const initialState = document.getElementById('aiAuditInitialState');
+    const loadingState = document.getElementById('aiAuditLoadingState');
+    const btnCopy = document.getElementById('btnCopyAIAuditReport');
+
+    if (resultsContainer) resultsContainer.classList.add('hidden');
+    if (loadingState) loadingState.classList.add('hidden');
+    if (initialState) initialState.classList.remove('hidden');
+    if (btnCopy) btnCopy.classList.add('hidden');
+
+    // Vérifier clé API
+    const key = await getGeminiApiKey();
+    if (noKeyAlert) {
+        noKeyAlert.classList.toggle('hidden', Boolean(key));
+    }
+
+    // Peupler le sélecteur avec les modules existants
+    if (select) {
+        const modules = currentFormationModulesList || [];
+        select.innerHTML = `
+            <option value="all">📚 Tous les modules (${modules.length} modules)</option>
+            ${modules.map(m => `
+                <option value="${m.id}">Module ${m.num < 10 ? '0' + m.num : m.num} : ${escapeHtml(m.title || 'Sans titre')} (${m.questionsCount || (m.questions ? m.questions.length : 0)} question(s))</option>
+            `).join('')}
+        `;
+    }
+
+    openModal('overlayAIAuditFormation');
+}
+
+async function executeAIAudit() {
+    const btn = document.getElementById('btnLaunchAIAudit');
+    const select = document.getElementById('selectAIAuditScope');
+    const noKeyAlert = document.getElementById('aiAuditNoKeyAlert');
+    const resultsContainer = document.getElementById('aiAuditResultsContainer');
+    const initialState = document.getElementById('aiAuditInitialState');
+    const loadingState = document.getElementById('aiAuditLoadingState');
+    const btnCopy = document.getElementById('btnCopyAIAuditReport');
+
+    const apiKey = await getGeminiApiKey();
+    if (!apiKey) {
+        if (noKeyAlert) noKeyAlert.classList.remove('hidden');
+        showToast("Clé API Gemini introuvable. Veuillez l'ajouter dans l'Admin.", "warning");
+        return;
+    }
+    if (noKeyAlert) noKeyAlert.classList.add('hidden');
+
+    const scope = select ? select.value : 'all';
+    let targetModules = [];
+    if (scope === 'all') {
+        targetModules = currentFormationModulesList || [];
+    } else {
+        const found = (currentFormationModulesList || []).find(m => m.id === scope);
+        if (found) targetModules = [found];
+    }
+
+    if (targetModules.length === 0) {
+        showToast("Aucun module à analyser.", "warning");
+        return;
+    }
+
+    btnLoading(btn, true);
+    if (initialState) initialState.classList.add('hidden');
+    if (resultsContainer) resultsContainer.classList.add('hidden');
+    if (loadingState) loadingState.classList.remove('hidden');
+    if (btnCopy) btnCopy.classList.add('hidden');
+
+    try {
+        // 1. Préparer les données de tous les modules cibles
+        const modulesPayload = [];
+        for (const mod of targetModules) {
+            const questions = await fetchModuleQuestions(mod.id);
+            modulesPayload.push({
+                moduleId: mod.id,
+                moduleNum: mod.num,
+                moduleTitle: mod.title || '',
+                moduleDescription: mod.description || '',
+                questions: questions.map((q, idx) => ({
+                    questionId: q.id,
+                    order: idx + 1,
+                    type: q.type || 'qcm',
+                    text: q.text || '',
+                    options: q.options || [],
+                    correctIndex: q.correctIndex !== undefined ? q.correctIndex : null,
+                    correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : null,
+                    correctValue: q.correctValue !== undefined ? q.correctValue : null,
+                    tolerance: q.tolerance !== undefined ? q.tolerance : null,
+                    puzzleItems: q.items || [],
+                    hint: q.hint || ''
+                }))
+            });
+        }
+
+        // 2. Construire le prompt d'analyse
+        const prompt = `Tu es un expert pédagogique national BAFA/BAFD et un correcteur d'édition professionnel de langue française.
+Mission : Effectuer un audit qualité complet sur les modules et questions de quiz suivants :
+
+${JSON.stringify(modulesPayload, null, 2)}
+
+Critères stricts d'évaluation :
+1. "orthographe" : Fautes d'orthographe, coquilles, grammaire, accords, ponctuation, majuscules nécessaires ou manquantes (énoncés, options de réponse, pistes).
+2. "coherence" : 
+   - Pour les QCM : est-ce que la réponse déclarée correcte (correctIndex) est incontestable et exacte selon la réglementation BAFA ? Y a-t-il 2 options plausibles ou aucune bonne option ?
+   - Pour les Vrai/Faux : l'affirmation est-elle claire, sans double négation trompeuse ?
+   - Pour les curseurs / nombres / tolérances : la valeur cible et la tolérance sont-elles cohérentes ?
+   - Les options de réponses sont-elles claires et non ambiguës ?
+3. "pedagogie" : Qualité pédagogique pour des candidats BAFA (niveau de difficulté adapté, consigne claire, absence de piège injustifié, indice pertinent).
+
+INSTRUCTIONS DE RÉPONSE :
+Tu dois répondre UNIQUEMENT par un objet JSON valide (aucun commentaire hors JSON).
+Format JSON strict attendu :
+{
+  "globalScore": 92,
+  "summary": "Court résumé de la qualité globale en 2 phrases...",
+  "stats": {
+    "orthographeCount": 2,
+    "coherenceCount": 1,
+    "pedagogieCount": 1
+  },
+  "issues": [
+    {
+      "type": "orthographe" | "coherence" | "pedagogie",
+      "severity": "high" | "medium" | "low",
+      "moduleId": "identifiant_module",
+      "moduleTitle": "Titre du module",
+      "questionNum": 1,
+      "questionText": "Énoncé court de la question",
+      "problem": "Explication claire du défaut constaté",
+      "suggestion": "Texte ou consigne corrigée recommandée"
+    }
+  ]
+}`;
+
+        // 3. Appel Gemini
+        const rawAiResponse = await callGeminiForAudit(apiKey, prompt);
+        _lastAIAuditRawReport = rawAiResponse;
+
+        // 4. Parser le JSON
+        let cleanJsonStr = rawAiResponse.trim();
+        if (cleanJsonStr.startsWith('```json')) {
+            cleanJsonStr = cleanJsonStr.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
+        } else if (cleanJsonStr.startsWith('```')) {
+            cleanJsonStr = cleanJsonStr.replace(/^```\s*/, '').replace(/\s*```$/, '');
+        }
+
+        let auditData = null;
+        try {
+            auditData = JSON.parse(cleanJsonStr);
+        } catch (jsonErr) {
+            console.warn("JSON parse direct failed, attempting extraction:", jsonErr);
+            const match = cleanJsonStr.match(/\{[\s\S]*\}/);
+            if (match) {
+                auditData = JSON.parse(match[0]);
+            } else {
+                throw new Error("Format de réponse IA non structuré.");
+            }
+        }
+
+        // 5. Afficher les résultats
+        renderAIAuditResults(auditData);
+
+        if (loadingState) loadingState.classList.add('hidden');
+        if (resultsContainer) resultsContainer.classList.remove('hidden');
+        if (btnCopy) btnCopy.classList.remove('hidden');
+        showToast("Audit IA terminé avec succès !", "success");
+
+    } catch (err) {
+        console.error("AI Audit error:", err);
+        if (loadingState) loadingState.classList.add('hidden');
+        if (initialState) initialState.classList.remove('hidden');
+        showToast("Erreur lors de l'analyse IA : " + (err.message || err), "error", 6000);
+    } finally {
+        btnLoading(btn, false);
+    }
+}
+
+function renderAIAuditResults(data) {
+    const summaryCard = document.getElementById('aiAuditSummaryCard');
+    const detailsList = document.getElementById('aiAuditDetailsList');
+    if (!summaryCard || !detailsList) return;
+
+    const score = parseInt(data.globalScore, 10) || 100;
+    const issues = data.issues || [];
+    const stats = data.stats || {
+        orthographeCount: issues.filter(i => i.type === 'orthographe').length,
+        coherenceCount: issues.filter(i => i.type === 'coherence').length,
+        pedagogieCount: issues.filter(i => i.type === 'pedagogie').length
+    };
+
+    let scoreColor = 'var(--clr-success)';
+    let scoreBg = 'var(--clr-success-soft)';
+    let scoreText = 'Excellente qualité pédagogique';
+    if (score < 70) {
+        scoreColor = 'var(--clr-danger)';
+        scoreBg = 'var(--clr-danger-soft)';
+        scoreText = 'Corrections recommandées';
+    } else if (score < 85) {
+        scoreColor = 'var(--clr-accent)';
+        scoreBg = 'var(--clr-warning-soft)';
+        scoreText = 'Bonne qualité globale (quelques retouches suggérées)';
+    }
+
+    summaryCard.innerHTML = `
+        <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:18px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+            <div style="display:flex; align-items:center; gap:14px;">
+                <div style="width:58px; height:58px; border-radius:50%; background:${scoreBg}; border:3px solid ${scoreColor}; display:flex; flex-direction:column; align-items:center; justify-content:center; color:${scoreColor}; font-weight:800; font-size:1.15rem; line-height:1; flex-shrink:0;">
+                    <span>${score}</span>
+                    <span style="font-size:0.6rem; opacity:0.8;">/ 100</span>
+                </div>
+                <div>
+                    <div style="font-size:1rem; font-weight:800; color:var(--clr-text);">${scoreText}</div>
+                    <div style="font-size:0.82rem; color:var(--clr-text-muted); margin-top:2px; max-width:480px; line-height:1.4;">
+                        ${escapeHtml(data.summary || 'Analyse terminée avec succès.')}
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                <span class="es-badge es-badge--danger" style="font-weight:700;">
+                    <i class="bi bi-spellcheck"></i> ${stats.orthographeCount || 0} orthographe
+                </span>
+                <span class="es-badge es-badge--pending" style="font-weight:700;">
+                    <i class="bi bi-question-diamond"></i> ${stats.coherenceCount || 0} cohérence
+                </span>
+                <span class="es-badge" style="background:var(--clr-info-soft); color:var(--clr-info); font-weight:700;">
+                    <i class="bi bi-lightbulb"></i> ${stats.pedagogieCount || 0} conseil(s)
+                </span>
+            </div>
+        </div>
+    `;
+
+    if (issues.length === 0) {
+        detailsList.innerHTML = `
+            <div style="text-align:center; padding:32px 20px; background:var(--clr-success-soft); border:1.5px solid rgba(39, 174, 96, 0.25); border-radius:var(--radius-md);">
+                <div style="font-size:2rem; margin-bottom:8px;">🎉</div>
+                <div style="font-weight:700; color:var(--clr-success); font-size:1rem;">Aucune anomalie détectée !</div>
+                <p style="font-size:0.82rem; color:var(--clr-text-muted); margin:4px 0 0 0;">Vos modules et questions sont impeccables, sans faute d'orthographe et parfaitement cohérents.</p>
+            </div>
+        `;
+        return;
+    }
+
+    detailsList.innerHTML = issues.map((iss, idx) => {
+        let typeBadge = '';
+        let typeBorderCol = 'var(--clr-surface-3)';
+        if (iss.type === 'orthographe') {
+            typeBadge = `<span class="es-badge es-badge--danger"><i class="bi bi-spellcheck"></i> Orthographe</span>`;
+            typeBorderCol = 'rgba(231, 76, 60, 0.25)';
+        } else if (iss.type === 'coherence') {
+            typeBadge = `<span class="es-badge es-badge--pending"><i class="bi bi-question-diamond"></i> Cohérence Quiz</span>`;
+            typeBorderCol = 'rgba(243, 156, 18, 0.25)';
+        } else {
+            typeBadge = `<span class="es-badge" style="background:var(--clr-info-soft); color:var(--clr-info);"><i class="bi bi-lightbulb"></i> Pédagogie</span>`;
+            typeBorderCol = 'rgba(41, 128, 185, 0.25)';
+        }
+
+        return `
+            <div style="background:var(--clr-surface); border:1.5px solid ${typeBorderCol}; border-radius:var(--radius-md); padding:16px; box-shadow:var(--shadow-sm);">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        ${typeBadge}
+                        <span style="font-weight:700; font-size:0.86rem; color:var(--clr-text);">
+                            ${escapeHtml(iss.moduleTitle || 'Module')} ${iss.questionNum ? `• Question ${iss.questionNum}` : ''}
+                        </span>
+                    </div>
+                    ${iss.moduleId ? `
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-ai-audit-edit-module" data-module-id="${iss.moduleId}" style="padding:4px 10px; font-size:0.75rem;">
+                            <i class="bi bi-pencil"></i> Modifier le module
+                        </button>
+                    ` : ''}
+                </div>
+
+                ${iss.questionText ? `
+                    <div style="font-size:0.84rem; color:var(--clr-text-muted); font-style:italic; margin-bottom:8px; padding:8px 12px; background:var(--clr-surface-2); border-left:3px solid var(--clr-primary); border-radius:4px;">
+                        « ${escapeHtml(iss.questionText)} »
+                    </div>
+                ` : ''}
+
+                <div style="font-size:0.88rem; color:var(--clr-text); line-height:1.45; margin-bottom:8px;">
+                    <strong style="color:var(--clr-danger);">Anomalie constatée :</strong> ${escapeHtml(iss.problem || '')}
+                </div>
+
+                <div style="font-size:0.86rem; background:var(--clr-success-soft); border:1px solid rgba(39, 174, 96, 0.25); border-radius:6px; padding:10px 12px; color:var(--clr-text); line-height:1.45;">
+                    <strong style="color:var(--clr-success);"><i class="bi bi-check-circle-fill"></i> Proposition corrigée :</strong> ${escapeHtml(iss.suggestion || '')}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // Listener "Modifier le module"
+    detailsList.querySelectorAll('.btn-ai-audit-edit-module').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const mId = btn.getAttribute('data-module-id');
+            closeModal('overlayAIAuditFormation');
+            if (mId) {
+                await openFormationModuleEdit(mId);
+            }
+        });
+    });
+}
+
+function initAIAuditEvents() {
+    if (_aiAuditEventsInitialized) return;
+    _aiAuditEventsInitialized = true;
+
+    document.getElementById('btnOpenAIAuditFormation')?.addEventListener('click', openAIAuditModal);
+    document.getElementById('btnCloseAIAuditModal')?.addEventListener('click', () => closeModal('overlayAIAuditFormation'));
+    document.getElementById('btnCloseAIAuditFooter')?.addEventListener('click', () => closeModal('overlayAIAuditFormation'));
+    document.getElementById('btnLaunchAIAudit')?.addEventListener('click', executeAIAudit);
+
+    document.getElementById('btnCopyAIAuditReport')?.addEventListener('click', () => {
+        if (!_lastAIAuditRawReport) return;
+        navigator.clipboard.writeText(_lastAIAuditRawReport).then(() => {
+            showToast("Rapport d'audit IA copié dans le presse-papier !", "success");
+        }).catch(() => {
+            showToast("Impossible de copier le rapport.", "error");
+        });
+    });
+}
+
+// Initialisation au chargement
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAIAuditEvents);
+} else {
+    initAIAuditEvents();
+}
+
 
