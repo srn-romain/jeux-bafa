@@ -552,38 +552,9 @@ async function loadFormationModules(forceRefresh = false) {
                 statusInfoHtml = `<span class="es-badge es-badge--pending" style="font-size:0.75rem;"><i class="bi bi-lock"></i> Verrouillé</span>`;
             }
 
+            const isManageable = (effectiveRole === 'admin' || effectiveRole === 'formateur');
             let actionBtn = '';
-            if (effectiveRole === 'admin') {
-                actionBtn = `
-                <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
-                    <a href="formation-edit.html?id=${encodeURIComponent(m.id)}" class="es-btn es-btn--primary es-btn--sm es-btn--full" style="text-align:center; display:flex; align-items:center; justify-content:center; gap:6px;">
-                        <i class="bi bi-gear-wide-connected"></i> Gérer le module
-                    </a>
-                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:8px;">
-                        <a href="formation-edit.html?id=${encodeURIComponent(m.id)}&tab=editor" class="es-btn es-btn--ghost es-btn--sm" style="flex:1; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Modifier le questionnaire et la configuration">
-                            <i class="bi bi-pencil"></i> Modifier
-                        </a>
-                        <a href="formation-edit.html?id=${encodeURIComponent(m.id)}&tab=results" class="es-btn es-btn--ghost es-btn--sm" style="flex:1; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Consulter les copies et réponses des stagiaires">
-                            <i class="bi bi-eye"></i> Réponses (${adminStats.totalAttempts})
-                        </a>
-                    </div>
-                </div>`;
-            } else if (effectiveRole === 'formateur') {
-                actionBtn = `
-                <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
-                    <a href="formation-edit.html?id=${encodeURIComponent(m.id)}" class="es-btn es-btn--primary es-btn--sm es-btn--full" style="text-align:center; display:flex; align-items:center; justify-content:center; gap:6px;">
-                        <i class="bi bi-list-check"></i> Questions (${questionsCount})
-                    </a>
-                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:8px;">
-                        <a href="formation-edit.html?id=${encodeURIComponent(m.id)}&tab=editor" class="es-btn es-btn--ghost es-btn--sm" style="flex:1; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Gérer les questions">
-                            <i class="bi bi-pencil"></i> Éditer
-                        </a>
-                        <a href="formation-edit.html?id=${encodeURIComponent(m.id)}&tab=results" class="es-btn es-btn--ghost es-btn--sm" style="flex:1; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Consulter les copies et réponses des stagiaires">
-                            <i class="bi bi-eye"></i> Réponses (${adminStats.totalAttempts})
-                        </a>
-                    </div>
-                </div>`;
-            } else {
+            if (!isManageable) {
                 if (isEnabled) {
                     if (isAttemptsExceeded) {
                         actionBtn = `
@@ -605,7 +576,7 @@ async function loadFormationModules(forceRefresh = false) {
             }
 
             return `
-            <div class="${cardClass}" ${bgStyle}>
+            <div class="${cardClass}" ${bgStyle} data-module-id="${m.id}" data-is-manageable="${isManageable ? 'true' : 'false'}" ${isManageable ? 'title="Cliquer pour gérer ce module"' : ''}>
                 <div>
                     <div class="es-formation-header">
                         <div class="es-formation-icon-wrap">
@@ -626,7 +597,7 @@ async function loadFormationModules(forceRefresh = false) {
                             ` : ''}
                         </div>
                     </div>
-                    <div class="es-formation-num">M.${m.num < 10 ? '0' + m.num : m.num}</div>
+                    <div class="es-formation-num">Module ${m.num < 10 ? '0' + m.num : m.num}</div>
                     <h3 class="es-formation-title" style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:4px;">
                         <span>${escapeHtml(m.title)}</span>
                         ${hiddenTagHtml}
@@ -636,15 +607,28 @@ async function loadFormationModules(forceRefresh = false) {
                     </h3>
                     <p class="es-formation-desc">${escapeHtml(m.subtitle || m.description || '')}</p>
                 </div>
+                ${actionBtn ? `
                 <div class="es-formation-footer">
                     ${actionBtn}
-                </div>
+                </div>` : ''}
             </div>`;
         }).join('');
 
         if (grid) grid.classList.remove('hidden');
 
         // Listeners cartes
+        grid.querySelectorAll('.es-formation-card[data-is-manageable="true"]').forEach(card => {
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.es-switch') || e.target.closest('.btn-admin-toggle-module-visibility') || e.target.closest('button') || e.target.closest('input')) {
+                    return;
+                }
+                const moduleId = card.getAttribute('data-module-id');
+                if (moduleId) {
+                    openFormationModuleEdit(moduleId);
+                }
+            });
+        });
+
         grid.querySelectorAll('.btn-open-quiz').forEach(btn => {
             btn.addEventListener('click', async () => {
                 const moduleId = btn.getAttribute('data-module-id');
@@ -737,135 +721,14 @@ function openFormationQuiz(moduleId) {
 }
 
 // ----------------------------------------------------------------
-// MODAL : CRÉER / MODIFIER UN MODULE & QUIZ (ADMIN)
+// REDIRECTION : CRÉER / MODIFIER UN MODULE & QUIZ (ADMIN)
 // ----------------------------------------------------------------
-async function openFormationModuleEdit(moduleId = null) {
+function openFormationModuleEdit(moduleId = null) {
     if (moduleId) {
         window.location.href = `formation-edit.html?id=${encodeURIComponent(moduleId)}`;
     } else {
         window.location.href = 'formation-edit.html';
     }
-    return;
-
-    let moduleData = null;
-    if (moduleId) {
-        moduleData = (currentFormationModulesList || []).find(m => m.id === moduleId);
-    }
-
-    if (moduleData) {
-        // Récupérer les questions de la sous-collection
-        const questions = await fetchModuleQuestions(moduleData.id);
-        moduleData.questions = questions;
-
-        document.getElementById('editModuleId').value = moduleData.id;
-        document.getElementById('editModuleNum').value = moduleData.num || 1;
-        document.getElementById('editModuleTitle').value = moduleData.title || '';
-        document.getElementById('editModuleSubtitle').value = moduleData.subtitle || '';
-        document.getElementById('editModuleIcon').value = moduleData.icon || 'bi-journal-bookmark';
-        document.getElementById('editModuleDesc').value = moduleData.description || '';
-        document.getElementById('editModuleBgImage').value = moduleData.bgImage || '';
-        updateModuleBgPreview(moduleData.bgImage || '');
-        if (document.getElementById('editModuleVisible')) {
-            document.getElementById('editModuleVisible').checked = (moduleData.visible !== false);
-        }
-        
-        const qConfig = moduleData.quizConfig || {};
-        document.getElementById('editQuizTitle').value = qConfig.quizTitle || moduleData.title || '';
-        document.getElementById('editMaxAttempts').value = (qConfig.maxAttempts !== undefined) ? qConfig.maxAttempts : 0;
-        
-        let initialMins = 0;
-        let initialSecs = 0;
-        if (qConfig.timerTotalSeconds !== undefined && qConfig.timerTotalSeconds !== null) {
-            const tot = parseInt(qConfig.timerTotalSeconds, 10) || 0;
-            initialMins = Math.floor(tot / 60);
-            initialSecs = tot % 60;
-        } else {
-            initialMins = parseInt(qConfig.timerMinutes, 10) || 0;
-            initialSecs = parseInt(qConfig.timerSeconds, 10) || 0;
-        }
-        document.getElementById('editQuizTimerMinutes').value = initialMins;
-        document.getElementById('editQuizTimerSeconds').value = initialSecs;
-        document.getElementById('editShowResultsAtEnd').checked = qConfig.showResultsAtEnd === true;
-
-        const hasPwd = Boolean(qConfig.requirePassword === true || (qConfig.password && String(qConfig.password).trim() !== ''));
-        const pwdVal = qConfig.password || '';
-        const chkRequirePassword = document.getElementById('editQuizRequirePassword');
-        const inputPassword = document.getElementById('editQuizPassword');
-        const wrapPassword = document.getElementById('quizPasswordInputWrap');
-        if (chkRequirePassword) chkRequirePassword.checked = hasPwd;
-        if (inputPassword) inputPassword.value = pwdVal;
-        if (wrapPassword) {
-            if (hasPwd) wrapPassword.classList.remove('hidden');
-            else wrapPassword.classList.add('hidden');
-        }
-
-        currentEditingQuestions = JSON.parse(JSON.stringify(questions || []));
-
-        modalTitle.textContent = `Modifier : ${moduleData.title}`;
-        badge.textContent = `Module ${moduleData.num}`;
-        btnDelete?.classList.remove('hidden');
-
-        const btnOpenPage = document.getElementById('btnOpenModuleDedicatedPage');
-        if (btnOpenPage) {
-            btnOpenPage.href = `quiz.html?module=${encodeURIComponent(moduleData.id)}`;
-            btnOpenPage.classList.remove('hidden');
-        }
-    } else {
-        const nextNum = (currentFormationModulesList.length > 0) 
-            ? Math.max(...currentFormationModulesList.map(m => parseInt(m.num, 10) || 0)) + 1 
-            : 1;
-
-        document.getElementById('editModuleId').value = '';
-        document.getElementById('editModuleNum').value = nextNum;
-        document.getElementById('editModuleTitle').value = '';
-        document.getElementById('editModuleSubtitle').value = '';
-        document.getElementById('editModuleIcon').value = 'bi-journal-bookmark';
-        document.getElementById('editModuleDesc').value = '';
-        document.getElementById('editModuleBgImage').value = '';
-        updateModuleBgPreview('');
-        if (document.getElementById('editModuleVisible')) {
-            document.getElementById('editModuleVisible').checked = true;
-        }
-        
-        document.getElementById('editQuizTitle').value = '';
-        document.getElementById('editMaxAttempts').value = 1;
-        document.getElementById('editQuizTimerMinutes').value = 0;
-        document.getElementById('editQuizTimerSeconds').value = 0;
-        document.getElementById('editShowResultsAtEnd').checked = false;
-
-        const chkRequirePassword = document.getElementById('editQuizRequirePassword');
-        const inputPassword = document.getElementById('editQuizPassword');
-        const wrapPassword = document.getElementById('quizPasswordInputWrap');
-        if (chkRequirePassword) chkRequirePassword.checked = false;
-        if (inputPassword) inputPassword.value = '';
-        if (wrapPassword) wrapPassword.classList.add('hidden');
-
-        currentEditingQuestions = [
-            {
-                id: 'q_' + Date.now() + '_1',
-                type: 'qcm',
-                text: '',
-                options: ['Option 1', 'Option 2'],
-                correctIndex: 0,
-                hint: ''
-            }
-        ];
-
-        modalTitle.textContent = 'Nouveau module de formation & Quiz';
-        badge.textContent = 'Nouveau';
-        btnDelete?.classList.add('hidden');
-
-        const btnOpenPage = document.getElementById('btnOpenModuleDedicatedPage');
-        if (btnOpenPage) {
-            btnOpenPage.classList.add('hidden');
-        }
-    }
-
-    const chosenIcon = document.getElementById('editModuleIcon').value || 'bi-journal-bookmark';
-    renderIconPicker(chosenIcon);
-    updateIconPreview(chosenIcon);
-    renderQuestionsEditor();
-    openModal('overlayModuleEdit');
 }
 
 const AVAILABLE_FORMATION_ICONS = [
@@ -2019,168 +1882,6 @@ document.getElementById('btnApplyJsonImport')?.addEventListener('click', () => {
 
 document.getElementById('btnAdminNewModule')?.addEventListener('click', () => {
     openFormationModuleEdit(null);
-});
-
-document.getElementById('btnSaveModule')?.addEventListener('click', async () => {
-    const errorAlert = document.getElementById('moduleEditErrorAlert');
-    const errorMsg = document.getElementById('moduleEditErrorMsg');
-    const btn = document.getElementById('btnSaveModule');
-
-    const id = document.getElementById('editModuleId').value.trim() || ('module_' + Date.now());
-    const num = parseInt(document.getElementById('editModuleNum').value, 10) || 1;
-    const title = document.getElementById('editModuleTitle').value.trim();
-    const subtitle = document.getElementById('editModuleSubtitle').value.trim();
-    const icon = document.getElementById('editModuleIcon').value.trim() || 'bi-journal-bookmark';
-    const bgImage = document.getElementById('editModuleBgImage').value.trim();
-    const description = document.getElementById('editModuleDesc').value.trim();
-    
-    const quizTitle = document.getElementById('editQuizTitle').value.trim() || title;
-    const maxAttempts = parseInt(document.getElementById('editMaxAttempts').value, 10) || 0;
-    const timerMinutes = parseInt(document.getElementById('editQuizTimerMinutes').value, 10) || 0;
-    const timerSeconds = parseInt(document.getElementById('editQuizTimerSeconds').value, 10) || 0;
-    const timerTotalSeconds = (timerMinutes * 60) + timerSeconds;
-    const showResultsAtEnd = document.getElementById('editShowResultsAtEnd').checked;
-
-    const isRequirePassword = document.getElementById('editQuizRequirePassword') ? document.getElementById('editQuizRequirePassword').checked : false;
-    const quizPassword = document.getElementById('editQuizPassword') ? document.getElementById('editQuizPassword').value.trim() : '';
-
-    if (isRequirePassword && !quizPassword) {
-        if (errorAlert && errorMsg) {
-            errorMsg.textContent = "Veuillez renseigner un mot de passe d'accès pour ce quiz ou désactiver la protection par mot de passe.";
-            errorAlert.classList.remove('hidden');
-        }
-        return;
-    }
-
-    if (!title) {
-        if (errorAlert && errorMsg) {
-            errorMsg.textContent = "Veuillez renseigner le titre du module.";
-            errorAlert.classList.remove('hidden');
-        }
-        return;
-    }
-
-    for (let i = 0; i < currentEditingQuestions.length; i++) {
-        const q = currentEditingQuestions[i];
-        if (!q.text || !q.text.trim()) {
-            if (errorAlert && errorMsg) {
-                errorMsg.textContent = `La question ${i + 1} n'a pas d'énoncé.`;
-                errorAlert.classList.remove('hidden');
-            }
-            return;
-        }
-        if (q.type === 'qcm') {
-            if (!q.options || q.options.length < 2) {
-                if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (QCM) doit avoir au moins 2 options.`;
-                    errorAlert.classList.remove('hidden');
-                }
-                return;
-            }
-            for (let j = 0; j < q.options.length; j++) {
-                if (!q.options[j] || !q.options[j].trim()) {
-                    if (errorAlert && errorMsg) {
-                        errorMsg.textContent = `L'option ${j + 1} de la question ${i + 1} est vide.`;
-                        errorAlert.classList.remove('hidden');
-                    }
-                    return;
-                }
-            }
-        } else if (q.type === 'cloze') {
-            if (!q.clozeText || !q.clozeText.trim()) {
-                if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Texte à trous) nécessite un texte avec au moins un mot entre crochets [mot].`;
-                    errorAlert.classList.remove('hidden');
-                }
-                return;
-            }
-            const clozeMatches = q.clozeText.match(/\[([^\]]+)\]/g);
-            if (!clozeMatches || clozeMatches.length === 0) {
-                if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Texte à trous) ne comporte aucun trou valide [mot]. Entourez les mots à deviner avec des [crochets].`;
-                    errorAlert.classList.remove('hidden');
-                }
-                return;
-            }
-        } else if (q.type === 'pinpoint') {
-            if (!q.pinImage || !q.pinImage.trim()) {
-                if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Repère sur image) nécessite une image illustrative.`;
-                    errorAlert.classList.remove('hidden');
-                }
-                return;
-            }
-        } else if (q.type === 'puzzle') {
-            if (!q.items || q.items.length < 2) {
-                if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Puzzle) doit avoir au moins 2 éléments à ordonner.`;
-                    errorAlert.classList.remove('hidden');
-                }
-                return;
-            }
-            for (let j = 0; j < q.items.length; j++) {
-                if (!q.items[j] || !q.items[j].trim()) {
-                    if (errorAlert && errorMsg) {
-                        errorMsg.textContent = `L'élément ${j + 1} de la question ${i + 1} (Puzzle) est vide.`;
-                        errorAlert.classList.remove('hidden');
-                    }
-                    return;
-                }
-            }
-        }
-    }
-
-    if (errorAlert) errorAlert.classList.add('hidden');
-    btnLoading(btn, true);
-
-    try {
-        const existingMod = currentFormationModulesList.find(m => m.id === id);
-        const isModVisible = document.getElementById('editModuleVisible') ? document.getElementById('editModuleVisible').checked : true;
-        const modulePayload = {
-            id: id,
-            num: num,
-            title: title,
-            subtitle: subtitle,
-            icon: icon,
-            bgImage: bgImage,
-            description: description,
-            enabled: existingMod ? (existingMod.enabled === true) : false,
-            visible: isModVisible,
-            quizConfig: {
-                quizTitle: quizTitle,
-                maxAttempts: maxAttempts,
-                timerMinutes: timerMinutes,
-                timerSeconds: timerSeconds,
-                timerTotalSeconds: timerTotalSeconds,
-                showResultsAtEnd: showResultsAtEnd,
-                requirePassword: isRequirePassword,
-                password: isRequirePassword ? quizPassword : ''
-            }
-        };
-
-        await saveFormationModule(modulePayload, currentEditingQuestions);
-        btnLoading(btn, false);
-        closeModal('overlayModuleEdit');
-        showToast(`Module "${title}" enregistré avec succès !`, "success");
-        loadFormationModules();
-    } catch (err) {
-        btnLoading(btn, false);
-        console.error("Save module error:", err);
-        showToast("Erreur lors de l'enregistrement.", "error");
-    }
-});
-
-document.getElementById('editQuizRequirePassword')?.addEventListener('change', (e) => {
-    const wrap = document.getElementById('quizPasswordInputWrap');
-    const input = document.getElementById('editQuizPassword');
-    if (wrap) {
-        if (e.target.checked) {
-            wrap.classList.remove('hidden');
-            if (input) input.focus();
-        } else {
-            wrap.classList.add('hidden');
-        }
-    }
 });
 
 function updateModuleBgPreview(url) {
@@ -4967,7 +4668,6 @@ auth.onAuthStateChanged(async (user) => {
 
     // Initialiser le système de Promo de Formation
     initPromoModalEvents();
-    initFormateurAddQuestionEvents();
     loadFormationPromos();
 
     // Charger les modules de formation

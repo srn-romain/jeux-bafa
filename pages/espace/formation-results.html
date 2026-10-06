@@ -63,6 +63,10 @@
             gap: 16px;
             box-shadow: var(--shadow-sm);
         }
+        .es-stat-card > div:not(.es-stat-card__icon) {
+            flex: 1;
+            text-align: center;
+        }
         .es-stat-card__icon {
             width: 50px;
             height: 50px;
@@ -161,9 +165,9 @@
                 <div class="es-stat-card__icon" style="background:rgba(52, 152, 219, 0.15); color:#3498db;">
                     <i class="bi bi-send-check"></i>
                 </div>
-                <div>
-                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Total Copies</div>
-                    <div id="statTotalAttempts" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0</div>
+                <div style="flex:1; text-align:center;">
+                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase; text-align:center;">Total Copies</div>
+                    <div id="statTotalAttempts" style="font-size:1.6rem; font-weight:800; color:var(--clr-text); text-align:center;">0</div>
                 </div>
             </div>
 
@@ -171,9 +175,9 @@
                 <div class="es-stat-card__icon" style="background:rgba(166, 216, 102, 0.18); color:var(--clr-primary-xdark);">
                     <i class="bi bi-people-fill"></i>
                 </div>
-                <div>
-                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Stagiaires Uniques</div>
-                    <div id="statUniqueStagiaires" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0</div>
+                <div style="flex:1; text-align:center;">
+                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase; text-align:center;">Stagiaires Uniques</div>
+                    <div id="statUniqueStagiaires" style="font-size:1.6rem; font-weight:800; color:var(--clr-text); text-align:center;">0</div>
                 </div>
             </div>
 
@@ -181,9 +185,9 @@
                 <div class="es-stat-card__icon" style="background:rgba(39, 174, 96, 0.15); color:#27ae60;">
                     <i class="bi bi-award-fill"></i>
                 </div>
-                <div>
-                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Taux de Réussite</div>
-                    <div id="statSuccessRate" style="font-size:1.6rem; font-weight:800; color:#27ae60;">0%</div>
+                <div style="flex:1; text-align:center;">
+                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase; text-align:center;">Taux de Réussite</div>
+                    <div id="statSuccessRate" style="font-size:1.6rem; font-weight:800; color:#27ae60; text-align:center;">0%</div>
                 </div>
             </div>
 
@@ -191,9 +195,9 @@
                 <div class="es-stat-card__icon" style="background:rgba(243, 156, 18, 0.15); color:var(--clr-accent);">
                     <i class="bi bi-calculator-fill"></i>
                 </div>
-                <div>
-                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Moyenne Générale</div>
-                    <div id="statAverageScore" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0%</div>
+                <div style="flex:1; text-align:center;">
+                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase; text-align:center;">Moyenne Générale</div>
+                    <div id="statAverageScore" style="font-size:1.6rem; font-weight:800; color:var(--clr-text); text-align:center;">0%</div>
                 </div>
             </div>
         </div>

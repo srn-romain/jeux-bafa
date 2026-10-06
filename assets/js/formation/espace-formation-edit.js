@@ -373,7 +373,6 @@ async function loadModuleHubData() {
             }
 
             const qConfig = moduleData.quizConfig || {};
-            document.getElementById('editQuizTitle').value = qConfig.quizTitle || moduleData.title || '';
             document.getElementById('editMaxAttempts').value = (qConfig.maxAttempts !== undefined) ? qConfig.maxAttempts : 0;
 
             let initialMins = 0;
@@ -408,12 +407,12 @@ async function loadModuleHubData() {
             const topbarIcon = document.getElementById('moduleIconTopbar');
             const topbarTitle = document.getElementById('moduleNameTopbar');
             if (topbarIcon) topbarIcon.innerHTML = `<i class="bi ${moduleData.icon || 'bi-journal-bookmark'}"></i>`;
-            if (topbarTitle) topbarTitle.textContent = `M.${moduleData.num < 10 ? '0' + moduleData.num : moduleData.num} — ${moduleData.title}`;
+            if (topbarTitle) topbarTitle.textContent = `Module ${moduleData.num < 10 ? '0' + moduleData.num : moduleData.num} — ${moduleData.title}`;
 
             // Hero UI
             document.getElementById('heroModuleTitle').textContent = moduleData.title;
             document.getElementById('heroModuleSubtitle').textContent = moduleData.subtitle || '';
-            document.getElementById('heroModuleBadge').textContent = `M.${moduleData.num < 10 ? '0' + moduleData.num : moduleData.num}`;
+            document.getElementById('heroModuleBadge').textContent = `Module ${moduleData.num < 10 ? '0' + moduleData.num : moduleData.num}`;
             
             const visBadge = document.getElementById('heroVisibilityBadge');
             if (visBadge) {
@@ -449,7 +448,6 @@ async function loadModuleHubData() {
                 document.getElementById('editModuleVisible').checked = true;
             }
 
-            document.getElementById('editQuizTitle').value = '';
             document.getElementById('editMaxAttempts').value = 1;
             document.getElementById('editQuizTimerMinutes').value = 0;
             document.getElementById('editQuizTimerSeconds').value = 0;
@@ -1062,6 +1060,82 @@ document.getElementById('btnExportModulePdf')?.addEventListener('click', () => {
 // ----------------------------------------------------------------
 // GESTION DU BUILDER DE QUESTIONS (ONGLET 1)
 // ----------------------------------------------------------------
+function syncQuestionsFromDOM() {
+    const container = document.getElementById('questionsContainer');
+    if (!container) return;
+
+    const cards = container.querySelectorAll('.es-qcard');
+    cards.forEach(card => {
+        const idx = parseInt(card.getAttribute('data-qidx'), 10);
+        if (isNaN(idx) || !currentEditingQuestions[idx]) return;
+
+        const q = currentEditingQuestions[idx];
+
+        // Énoncé
+        const textInput = card.querySelector('.q-text-input');
+        if (textInput) q.text = textInput.value;
+
+        // Image
+        const imgInput = card.querySelector('.q-image-input');
+        if (imgInput) q.imageUrl = imgInput.value.trim();
+
+        // Indice
+        const hintInput = card.querySelector('.q-hint-input');
+        if (hintInput) q.hint = hintInput.value;
+
+        // Type
+        const typeSelect = card.querySelector('.q-type-select');
+        if (typeSelect) q.type = typeSelect.value;
+
+        // Champs spécifiques selon le type
+        if (q.type === 'qcm') {
+            const optInputs = card.querySelectorAll('.qcm-opt-input');
+            const opts = [];
+            optInputs.forEach(optInput => {
+                opts.push(optInput.value);
+            });
+            if (opts.length > 0) q.options = opts;
+
+            const checkedRadio = card.querySelector('input[type="radio"]:checked');
+            if (checkedRadio) {
+                q.correctIndex = parseInt(checkedRadio.value, 10);
+            }
+        } else if (q.type === 'cloze') {
+            const clozeInput = card.querySelector('.q-cloze-text-input');
+            if (clozeInput) q.clozeText = clozeInput.value;
+
+            const distractorsInput = card.querySelector('.q-distractors-input');
+            if (distractorsInput) q.distractors = distractorsInput.value;
+        } else if (q.type === 'puzzle') {
+            const puzzleInputs = card.querySelectorAll('.puzzle-item-input');
+            const items = [];
+            puzzleInputs.forEach(pInput => {
+                items.push(pInput.value);
+            });
+            if (items.length > 0) q.items = items;
+        }
+    });
+}
+
+function moveQuestion(fromIdx, toIdx) {
+    if (toIdx < 0 || toIdx >= currentEditingQuestions.length || fromIdx === toIdx) return;
+    syncQuestionsFromDOM();
+    const [movedItem] = currentEditingQuestions.splice(fromIdx, 1);
+    currentEditingQuestions.splice(toIdx, 0, movedItem);
+    renderQuestionsEditor();
+
+    setTimeout(() => {
+        const targetCard = document.querySelector(`.es-qcard[data-qidx="${toIdx}"]`);
+        if (targetCard) {
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetCard.style.boxShadow = '0 0 0 3px var(--clr-primary)';
+            setTimeout(() => {
+                targetCard.style.boxShadow = '';
+            }, 1200);
+        }
+    }, 40);
+}
+
 function renderQuestionsEditor() {
     const container = document.getElementById('questionsContainer');
     const badgeCount = document.getElementById('badgeQuestionsTotalCount');
@@ -1198,6 +1272,9 @@ function renderQuestionsEditor() {
             `;
         }
 
+        const isFirst = (idx === 0);
+        const isLast = (idx === currentEditingQuestions.length - 1);
+
         return `
             <div class="es-qcard" data-qidx="${idx}">
                 <div class="es-qcard__header">
@@ -1210,21 +1287,17 @@ function renderQuestionsEditor() {
                             <option value="cloze" ${type === 'cloze' ? 'selected' : ''}>📝 Texte à trous (Glisser-déposer)</option>
                         </select>
                     </div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        ${idx > 0 ? `
-                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-up" data-qidx="${idx}" title="Monter" style="padding:6px 10px;">
-                                <i class="bi bi-arrow-up"></i>
-                            </button>
-                        ` : ''}
-                        ${idx < currentEditingQuestions.length - 1 ? `
-                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-down" data-qidx="${idx}" title="Descendre" style="padding:6px 10px;">
-                                <i class="bi bi-arrow-down"></i>
-                            </button>
-                        ` : ''}
-                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-duplicate-q" data-qidx="${idx}" title="Dupliquer" style="padding:6px 10px;">
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-up" data-qidx="${idx}" ${isFirst ? 'disabled' : ''} style="padding:6px 10px; ${isFirst ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isFirst ? 'Première position' : 'Monter d\'un rang (flèche haut)'}">
+                            <i class="bi bi-arrow-up" style="font-weight:800; font-size:1rem;"></i>
+                        </button>
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-down" data-qidx="${idx}" ${isLast ? 'disabled' : ''} style="padding:6px 10px; ${isLast ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isLast ? 'Dernière position' : 'Descendre d\'un rang (flèche bas)'}">
+                            <i class="bi bi-arrow-down" style="font-weight:800; font-size:1rem;"></i>
+                        </button>
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-duplicate-q" data-qidx="${idx}" title="Dupliquer la question" style="padding:6px 10px;">
                             <i class="bi bi-copy"></i>
                         </button>
-                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-delete-q" data-qidx="${idx}" title="Supprimer" style="padding:6px 10px; color:var(--clr-danger);">
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-delete-q" data-qidx="${idx}" title="Supprimer la question" style="padding:6px 10px; color:var(--clr-danger);">
                             <i class="bi bi-trash"></i>
                         </button>
                     </div>
@@ -1254,6 +1327,7 @@ function bindQuestionsEvents() {
 
     container.querySelectorAll('.q-type-select').forEach(select => {
         select.addEventListener('change', (e) => {
+            syncQuestionsFromDOM();
             const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
             const newType = e.target.value;
             currentEditingQuestions[idx].type = newType;
@@ -1273,30 +1347,39 @@ function bindQuestionsEvents() {
     container.querySelectorAll('.q-text-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
-            currentEditingQuestions[idx].text = e.target.value;
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].text = e.target.value;
+            }
         });
     });
 
     container.querySelectorAll('.q-image-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
-            currentEditingQuestions[idx].imageUrl = e.target.value.trim();
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].imageUrl = e.target.value.trim();
+            }
         });
     });
 
     container.querySelectorAll('.q-hint-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
-            currentEditingQuestions[idx].hint = e.target.value;
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].hint = e.target.value;
+            }
         });
     });
 
     container.querySelectorAll('.q-cloze-text-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
-            currentEditingQuestions[idx].clozeText = e.target.value;
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].clozeText = e.target.value;
+            }
         });
         input.addEventListener('blur', () => {
+            syncQuestionsFromDOM();
             renderQuestionsEditor();
         });
     });
@@ -1304,9 +1387,12 @@ function bindQuestionsEvents() {
     container.querySelectorAll('.q-distractors-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
-            currentEditingQuestions[idx].distractors = e.target.value;
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].distractors = e.target.value;
+            }
         });
         input.addEventListener('blur', () => {
+            syncQuestionsFromDOM();
             renderQuestionsEditor();
         });
     });
@@ -1315,7 +1401,9 @@ function bindQuestionsEvents() {
         radio.addEventListener('change', (e) => {
             const name = e.target.name;
             const qidx = parseInt(name.replace('q_correct_', ''), 10);
-            currentEditingQuestions[qidx].correctIndex = parseInt(e.target.value, 10);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].correctIndex = parseInt(e.target.value, 10);
+            }
         });
     });
 
@@ -1323,27 +1411,35 @@ function bindQuestionsEvents() {
         input.addEventListener('input', (e) => {
             const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
             const oidx = parseInt(e.target.getAttribute('data-oidx'), 10);
-            currentEditingQuestions[qidx].options[oidx] = e.target.value;
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].options) {
+                currentEditingQuestions[qidx].options[oidx] = e.target.value;
+            }
         });
     });
 
     container.querySelectorAll('.btn-add-option').forEach(btn => {
         btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
-            currentEditingQuestions[qidx].options.push(`Option ${currentEditingQuestions[qidx].options.length + 1}`);
-            renderQuestionsEditor();
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].options.push(`Option ${currentEditingQuestions[qidx].options.length + 1}`);
+                renderQuestionsEditor();
+            }
         });
     });
 
     container.querySelectorAll('.btn-remove-option').forEach(btn => {
         btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
             const oidx = parseInt(btn.getAttribute('data-oidx'), 10);
-            currentEditingQuestions[qidx].options.splice(oidx, 1);
-            if (currentEditingQuestions[qidx].correctIndex >= currentEditingQuestions[qidx].options.length) {
-                currentEditingQuestions[qidx].correctIndex = 0;
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].options) {
+                currentEditingQuestions[qidx].options.splice(oidx, 1);
+                if (currentEditingQuestions[qidx].correctIndex >= currentEditingQuestions[qidx].options.length) {
+                    currentEditingQuestions[qidx].correctIndex = 0;
+                }
+                renderQuestionsEditor();
             }
-            renderQuestionsEditor();
         });
     });
 
@@ -1351,53 +1447,60 @@ function bindQuestionsEvents() {
         input.addEventListener('input', (e) => {
             const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
             const pidx = parseInt(e.target.getAttribute('data-pidx'), 10);
-            currentEditingQuestions[qidx].items[pidx] = e.target.value;
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].items) {
+                currentEditingQuestions[qidx].items[pidx] = e.target.value;
+            }
         });
     });
 
     container.querySelectorAll('.btn-add-puzzle-item').forEach(btn => {
         btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
-            currentEditingQuestions[qidx].items.push(`Étape ${currentEditingQuestions[qidx].items.length + 1}`);
-            renderQuestionsEditor();
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].items.push(`Étape ${currentEditingQuestions[qidx].items.length + 1}`);
+                renderQuestionsEditor();
+            }
         });
     });
 
     container.querySelectorAll('.btn-remove-puzzle-item').forEach(btn => {
         btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
             const pidx = parseInt(btn.getAttribute('data-pidx'), 10);
-            currentEditingQuestions[qidx].items.splice(pidx, 1);
-            renderQuestionsEditor();
-        });
-    });
-
-    container.querySelectorAll('.btn-move-q-up').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
-            if (qidx > 0) {
-                const temp = currentEditingQuestions[qidx];
-                currentEditingQuestions[qidx] = currentEditingQuestions[qidx - 1];
-                currentEditingQuestions[qidx - 1] = temp;
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].items) {
+                currentEditingQuestions[qidx].items.splice(pidx, 1);
                 renderQuestionsEditor();
             }
         });
     });
 
-    container.querySelectorAll('.btn-move-q-down').forEach(btn => {
-        btn.addEventListener('click', () => {
+    // Flèches Haut et Bas pour réorganiser l'ordre des questions
+    container.querySelectorAll('.btn-move-q-up:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            if (qidx > 0) {
+                moveQuestion(qidx, qidx - 1);
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-move-q-down:not([disabled])').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
             if (qidx < currentEditingQuestions.length - 1) {
-                const temp = currentEditingQuestions[qidx];
-                currentEditingQuestions[qidx] = currentEditingQuestions[qidx + 1];
-                currentEditingQuestions[qidx + 1] = temp;
-                renderQuestionsEditor();
+                moveQuestion(qidx, qidx + 1);
             }
         });
     });
 
     container.querySelectorAll('.btn-duplicate-q').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            syncQuestionsFromDOM();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
             const copy = JSON.parse(JSON.stringify(currentEditingQuestions[qidx]));
             copy.id = 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
@@ -1409,7 +1512,9 @@ function bindQuestionsEvents() {
     });
 
     container.querySelectorAll('.btn-delete-q').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            syncQuestionsFromDOM();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
             if (confirm("Supprimer cette question ?")) {
                 currentEditingQuestions.splice(qidx, 1);
@@ -1476,6 +1581,7 @@ document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e
 // ENREGISTREMENT DU MODULE DANS FIRESTORE
 // ----------------------------------------------------------------
 async function saveModuleData(btnEl) {
+    syncQuestionsFromDOM();
     const errorAlert = document.getElementById('moduleEditErrorAlert');
     const errorMsg = document.getElementById('moduleEditErrorMsg');
     const successAlert = document.getElementById('moduleEditSuccessAlert');
@@ -1490,7 +1596,6 @@ async function saveModuleData(btnEl) {
     const bgImage = document.getElementById('editModuleBgImage').value.trim();
     const isVisible = document.getElementById('editModuleVisible') ? document.getElementById('editModuleVisible').checked : true;
 
-    const quizTitle = document.getElementById('editQuizTitle').value.trim();
     const maxAttempts = parseInt(document.getElementById('editMaxAttempts').value, 10) || 0;
     const timerMinutes = parseInt(document.getElementById('editQuizTimerMinutes').value, 10) || 0;
     const timerSeconds = parseInt(document.getElementById('editQuizTimerSeconds').value, 10) || 0;
@@ -1603,7 +1708,7 @@ async function saveModuleData(btnEl) {
             visible: isVisible,
             questionsCount: currentEditingQuestions.length,
             quizConfig: {
-                quizTitle: quizTitle || title,
+                quizTitle: title,
                 maxAttempts: maxAttempts,
                 timerMinutes: timerMinutes,
                 timerSeconds: timerSeconds,

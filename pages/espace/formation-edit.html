@@ -191,6 +191,10 @@
             gap: 16px;
             box-shadow: var(--shadow-sm);
         }
+        .es-stat-card > div:not(.es-stat-card__icon) {
+            flex: 1;
+            text-align: center;
+        }
         .es-stat-card__icon {
             width: 48px;
             height: 48px;
@@ -449,11 +453,6 @@
                             </h2>
 
                             <div class="es-field" style="margin-bottom:14px;">
-                                <label class="es-field__label" for="editQuizTitle">Titre de l'épreuve (optionnel)</label>
-                                <input class="es-input" type="text" id="editQuizTitle" placeholder="Ex: Évaluation sommative #1">
-                            </div>
-
-                            <div class="es-field" style="margin-bottom:14px;">
                                 <label class="es-field__label" for="editMaxAttempts">Tentatives autorisées :</label>
                                 <select class="es-select" id="editMaxAttempts">
                                     <option value="0">Illimitées (Entraînement libre)</option>
@@ -556,9 +555,9 @@
                     <div class="es-stat-card__icon" style="background:rgba(52, 152, 219, 0.15); color:#3498db;">
                         <i class="bi bi-send-check"></i>
                     </div>
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Total Copies</div>
-                        <div id="statModuleTotalAttempts" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0</div>
+                    <div style="flex:1; text-align:center;">
+                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase; text-align:center;">Total Copies</div>
+                        <div id="statModuleTotalAttempts" style="font-size:1.6rem; font-weight:800; color:var(--clr-text); text-align:center;">0</div>
                     </div>
                 </div>
 
@@ -566,9 +565,9 @@
                     <div class="es-stat-card__icon" style="background:rgba(166, 216, 102, 0.18); color:var(--clr-primary-xdark);">
                         <i class="bi bi-people-fill"></i>
                     </div>
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Stagiaires Uniques</div>
-                        <div id="statModuleUniqueStagiaires" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0</div>
+                    <div style="flex:1; text-align:center;">
+                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase; text-align:center;">Stagiaires Uniques</div>
+                        <div id="statModuleUniqueStagiaires" style="font-size:1.6rem; font-weight:800; color:var(--clr-text); text-align:center;">0</div>
                     </div>
                 </div>
 
@@ -576,9 +575,9 @@
                     <div class="es-stat-card__icon" style="background:rgba(39, 174, 96, 0.15); color:#27ae60;">
                         <i class="bi bi-award-fill"></i>
                     </div>
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Taux de Réussite</div>
-                        <div id="statModuleSuccessRate" style="font-size:1.6rem; font-weight:800; color:#27ae60;">0%</div>
+                    <div style="flex:1; text-align:center;">
+                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase; text-align:center;">Taux de Réussite</div>
+                        <div id="statModuleSuccessRate" style="font-size:1.6rem; font-weight:800; color:#27ae60; text-align:center;">0%</div>
                     </div>
                 </div>
 
@@ -586,9 +585,9 @@
                     <div class="es-stat-card__icon" style="background:rgba(243, 156, 18, 0.15); color:var(--clr-accent);">
                         <i class="bi bi-calculator-fill"></i>
                     </div>
-                    <div>
-                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Moyenne Générale</div>
-                        <div id="statModuleAverageScore" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0%</div>
+                    <div style="flex:1; text-align:center;">
+                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase; text-align:center;">Moyenne Générale</div>
+                        <div id="statModuleAverageScore" style="font-size:1.6rem; font-weight:800; color:var(--clr-text); text-align:center;">0%</div>
                     </div>
                 </div>
             </div>
