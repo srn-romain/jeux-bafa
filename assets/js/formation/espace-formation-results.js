@@ -588,6 +588,50 @@ function renderInspectionQuestions(questions, sub) {
                     </table>
                 </div>
             `;
+        } else if (type === 'classification') {
+            const categories = q.categories || [];
+            const items = q.items || [];
+            const userPlacements = (ans && typeof ans === 'object') ? ans : {};
+
+            const catBoxesHtml = categories.map(cat => {
+                const placedItems = items.filter(it => userPlacements[it.id] === cat.id);
+                const itemsBadges = placedItems.map(it => {
+                    const isCorrect = (it.categoryId === cat.id);
+                    const expectedCat = categories.find(c => c.id === it.categoryId);
+                    return `
+                        <span class="es-badge" style="background:${isCorrect ? 'rgba(39, 174, 96, 0.15)' : 'rgba(231, 76, 60, 0.15)'}; color:${isCorrect ? '#27ae60' : '#e74c3c'}; border:1px solid ${isCorrect ? 'rgba(39, 174, 96, 0.3)' : 'rgba(231, 76, 60, 0.3)'}; padding:4px 8px; font-size:0.8rem; font-weight:700;">
+                            <i class="bi ${isCorrect ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}"></i>
+                            ${escapeHtml(it.text || '')}
+                            ${!isCorrect ? `<small style="font-size:0.7rem; opacity:0.85; margin-left:4px;">(attendu : ${escapeHtml(expectedCat?.title || 'autre')})</small>` : ''}
+                        </span>
+                    `;
+                }).join('');
+
+                const unplacedExpected = items.filter(it => it.categoryId === cat.id && userPlacements[it.id] !== cat.id);
+                const missingBadges = unplacedExpected.map(it => `
+                    <span class="es-badge" style="background:rgba(243, 156, 18, 0.1); color:#d68910; border:1px dashed rgba(243, 156, 18, 0.4); padding:4px 8px; font-size:0.75rem;">
+                        <i class="bi bi-dash-circle"></i> Non placé : ${escapeHtml(it.text || '')}
+                    </span>
+                `).join('');
+
+                return `
+                    <div style="background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); padding:12px; display:flex; flex-direction:column; gap:8px;">
+                        <div style="font-size:0.85rem; font-weight:800; color:var(--clr-text); border-bottom:1px solid var(--clr-surface-3); padding-bottom:6px;">
+                            📁 ${escapeHtml(cat.title || 'Catégorie')}
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px; min-height:36px; align-items:center;">
+                            ${itemsBadges || '<span style="font-size:0.75rem; color:var(--clr-text-muted); font-style:italic;">Aucune étiquette placée</span>'}
+                            ${missingBadges}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            contentHtml = `
+                <div style="margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+                    ${catBoxesHtml}
+                </div>
+            `;
         } else if (type === 'cloze') {
             const rawCloze = q.clozeText || '';
             const rawMatches = rawCloze.match(/\[([^\]]+)\]/g) || [];
@@ -724,9 +768,25 @@ function renderInspectionQuestions(questions, sub) {
                 `;
             }).join('');
 
+            let distractorsHtml = '';
+            let distractors = [];
+            if (typeof q.rightDistractors === 'string') {
+                distractors = q.rightDistractors.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+            } else if (Array.isArray(q.rightDistractors)) {
+                distractors = q.rightDistractors.map(s => String(s).trim()).filter(Boolean);
+            }
+            if (distractors.length > 0) {
+                distractorsHtml = `
+                    <div style="margin-top:6px; font-size:0.78rem; color:var(--clr-text-muted);">
+                        <em>Options pièges / non reliées présentes :</em> ${distractors.map(d => `<span style="background:var(--clr-surface-3); padding:2px 8px; border-radius:4px; margin-left:4px; font-weight:600;">${escapeHtml(d)}</span>`).join('')}
+                    </div>
+                `;
+            }
+
             contentHtml = `
                 <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
                     ${matchesHtml || '<div style="font-size:0.82rem; color:var(--clr-text-muted);">Aucune association définie.</div>'}
+                    ${distractorsHtml}
                 </div>
             `;
         } else if (type === 'text') {

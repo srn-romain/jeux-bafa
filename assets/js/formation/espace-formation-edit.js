@@ -973,6 +973,50 @@ function renderInspectionQuestions(questions, sub) {
                     </table>
                 </div>
             `;
+        } else if (type === 'classification') {
+            const categories = q.categories || [];
+            const items = q.items || [];
+            const userPlacements = (ans && typeof ans === 'object') ? ans : {};
+
+            const catBoxesHtml = categories.map(cat => {
+                const placedItems = items.filter(it => userPlacements[it.id] === cat.id);
+                const itemsBadges = placedItems.map(it => {
+                    const isCorrect = (it.categoryId === cat.id);
+                    const expectedCat = categories.find(c => c.id === it.categoryId);
+                    return `
+                        <span class="es-badge" style="background:${isCorrect ? 'rgba(39, 174, 96, 0.15)' : 'rgba(231, 76, 60, 0.15)'}; color:${isCorrect ? '#27ae60' : '#e74c3c'}; border:1px solid ${isCorrect ? 'rgba(39, 174, 96, 0.3)' : 'rgba(231, 76, 60, 0.3)'}; padding:4px 8px; font-size:0.8rem; font-weight:700;">
+                            <i class="bi ${isCorrect ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}"></i>
+                            ${escapeHtml(it.text || '')}
+                            ${!isCorrect ? `<small style="font-size:0.7rem; opacity:0.85; margin-left:4px;">(attendu : ${escapeHtml(expectedCat?.title || 'autre')})</small>` : ''}
+                        </span>
+                    `;
+                }).join('');
+
+                const unplacedExpected = items.filter(it => it.categoryId === cat.id && userPlacements[it.id] !== cat.id);
+                const missingBadges = unplacedExpected.map(it => `
+                    <span class="es-badge" style="background:rgba(243, 156, 18, 0.1); color:#d68910; border:1px dashed rgba(243, 156, 18, 0.4); padding:4px 8px; font-size:0.75rem;">
+                        <i class="bi bi-dash-circle"></i> Non placé : ${escapeHtml(it.text || '')}
+                    </span>
+                `).join('');
+
+                return `
+                    <div style="background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); padding:12px; display:flex; flex-direction:column; gap:8px;">
+                        <div style="font-size:0.85rem; font-weight:800; color:var(--clr-text); border-bottom:1px solid var(--clr-surface-3); padding-bottom:6px;">
+                            📁 ${escapeHtml(cat.title || 'Catégorie')}
+                        </div>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px; min-height:36px; align-items:center;">
+                            ${itemsBadges || '<span style="font-size:0.75rem; color:var(--clr-text-muted); font-style:italic;">Aucune étiquette placée</span>'}
+                            ${missingBadges}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            contentHtml = `
+                <div style="margin-top:10px; display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+                    ${catBoxesHtml}
+                </div>
+            `;
         } else if (type === 'cloze') {
             const rawCloze = q.clozeText || '';
             const rawMatches = rawCloze.match(/\[([^\]]+)\]/g) || [];
@@ -1109,9 +1153,25 @@ function renderInspectionQuestions(questions, sub) {
                 `;
             }).join('');
 
+            let distractorsHtml = '';
+            let distractors = [];
+            if (typeof q.rightDistractors === 'string') {
+                distractors = q.rightDistractors.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+            } else if (Array.isArray(q.rightDistractors)) {
+                distractors = q.rightDistractors.map(s => String(s).trim()).filter(Boolean);
+            }
+            if (distractors.length > 0) {
+                distractorsHtml = `
+                    <div style="margin-top:6px; font-size:0.78rem; color:var(--clr-text-muted);">
+                        <em>Options pièges / non reliées présentes :</em> ${distractors.map(d => `<span style="background:var(--clr-surface-3); padding:2px 8px; border-radius:4px; margin-left:4px; font-weight:600;">${escapeHtml(d)}</span>`).join('')}
+                    </div>
+                `;
+            }
+
             contentHtml = `
                 <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
                     ${matchesHtml || '<div style="font-size:0.82rem; color:var(--clr-text-muted);">Aucune association définie.</div>'}
+                    ${distractorsHtml}
                 </div>
             `;
         } else if (type === 'text') {
@@ -1411,6 +1471,32 @@ function syncQuestionsFromDOM() {
                 });
             });
             if (rows.length > 0) q.tableRows = rows;
+        } else if (q.type === 'classification') {
+            const catCards = card.querySelectorAll('.classification-cat-item');
+            const categories = [];
+            catCards.forEach(cEl => {
+                const catId = cEl.getAttribute('data-catid');
+                const titleInp = cEl.querySelector('.classification-cat-title-input');
+                categories.push({
+                    id: catId,
+                    title: titleInp ? titleInp.value : ''
+                });
+            });
+            if (categories.length > 0) q.categories = categories;
+
+            const itemCards = card.querySelectorAll('.classification-tag-item');
+            const items = [];
+            itemCards.forEach(iEl => {
+                const itemId = iEl.getAttribute('data-itemid');
+                const textInp = iEl.querySelector('.classification-item-text-input');
+                const selCat = iEl.querySelector('.classification-item-cat-select');
+                items.push({
+                    id: itemId,
+                    text: textInp ? textInp.value : '',
+                    categoryId: selCat ? selCat.value : (categories[0]?.id || '')
+                });
+            });
+            if (items.length > 0) q.items = items;
         } else if (q.type === 'boolean') {
             const checkedBoolRadio = card.querySelector('.q-boolean-radio:checked');
             if (checkedBoolRadio) {
@@ -1467,6 +1553,10 @@ function syncQuestionsFromDOM() {
                 }
             });
             if (pairs.length > 0) q.pairs = pairs;
+            const distInp = card.querySelector('.matching-distractors-input');
+            if (distInp) {
+                q.rightDistractors = distInp.value;
+            }
         }
     });
 }
@@ -1531,12 +1621,13 @@ function renderQuestionsEditor() {
             const sDesc = q.description || '';
             return `
                 <div class="es-qcard es-qcard--section" data-qidx="${idx}">
-                    <div class="es-qcard__header" style="background:rgba(166, 216, 102, 0.15); border-bottom:1px solid rgba(166, 216, 102, 0.3);">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <span class="es-badge es-badge--approved" style="font-size:0.82rem; font-weight:800; padding:6px 12px; display:inline-flex; align-items:center; gap:6px;">
-                                <i class="bi bi-bookmark-fill"></i> Section ${runningSectionNum} (Page ${runningSectionNum})
+                    <div class="es-qcard__header" style="background:rgba(166, 216, 102, 0.12); border-bottom:1px solid rgba(166, 216, 102, 0.25);">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <i class="bi bi-bookmark-fill" style="color:var(--clr-primary-dark); font-size:0.95rem;"></i>
+                            <span style="font-size:0.92rem; font-weight:800; color:var(--clr-primary-dark);">
+                                Section ${runningSectionNum} (Page ${runningSectionNum})
                             </span>
-                            <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text-muted);">Nouvelle page de questionnaire</span>
+                            <span style="font-size:0.82rem; font-weight:600; color:var(--clr-text-muted); margin-left:6px;">— Nouvelle page</span>
                         </div>
                         <div style="display:flex; align-items:center; gap:4px;">
                             <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-up" data-qidx="${idx}" ${isFirst ? 'disabled' : ''} style="padding:6px 10px; ${isFirst ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isFirst ? 'Première position' : 'Monter d\'un rang'}">
@@ -1727,6 +1818,87 @@ function renderQuestionsEditor() {
                             <i class="bi bi-plus-circle"></i> Ajouter une affirmation
                         </button>
                     ` : ''}
+                </div>
+            `;
+        } else if (type === 'classification') {
+            const categories = q.categories || [
+                { id: 'cat_1', title: 'Mammifères' },
+                { id: 'cat_2', title: 'Oiseaux' }
+            ];
+            const items = q.items || [
+                { id: 'item_1', text: 'Éléphant', categoryId: 'cat_1' },
+                { id: 'item_2', text: 'Baleine', categoryId: 'cat_1' },
+                { id: 'item_3', text: 'Poule', categoryId: 'cat_2' },
+                { id: 'item_4', text: 'Pie', categoryId: 'cat_2' }
+            ];
+
+            const catListHtml = categories.map((cat, cIdx) => `
+                <div class="classification-cat-item" data-qidx="${idx}" data-cidx="${cIdx}" data-catid="${escapeHtml(cat.id)}" style="display:flex; align-items:center; gap:8px; margin-bottom:8px; background:var(--clr-surface); padding:8px 12px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm);">
+                    <span style="font-weight:700; font-size:0.8rem; color:var(--clr-primary-dark); display:flex; align-items:center; gap:4px; min-width:85px;">
+                        📁 Cat. ${cIdx + 1} :
+                    </span>
+                    <input class="es-input classification-cat-title-input" type="text" data-qidx="${idx}" data-cidx="${cIdx}" value="${escapeHtml(cat.title || '')}" placeholder="Nom de la catégorie (ex: Mammifères, Oiseaux...)" required style="flex:1; font-weight:700; font-size:0.88rem; padding:6px 10px;">
+                    ${categories.length > 2 ? `
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-remove-classification-cat" data-qidx="${idx}" data-cidx="${cIdx}" style="padding:6px 10px; color:var(--clr-danger);" title="Supprimer cette catégorie">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            const itemsListHtml = items.map((item, iIdx) => `
+                <div class="classification-tag-item" data-qidx="${idx}" data-iidx="${iIdx}" data-itemid="${escapeHtml(item.id)}" style="display:flex; align-items:center; gap:8px; margin-bottom:8px; background:var(--clr-surface); padding:8px 12px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm);">
+                    <span style="width:24px; height:24px; border-radius:50%; background:var(--clr-surface-3); font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; color:var(--clr-text); flex-shrink:0;">${iIdx + 1}</span>
+                    <input class="es-input classification-item-text-input" type="text" data-qidx="${idx}" data-iidx="${iIdx}" value="${escapeHtml(item.text || '')}" placeholder="Texte de l'étiquette / tag (ex: Éléphant, Poule...)" required style="flex:1; font-size:0.88rem; padding:6px 10px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:0.75rem; font-weight:700; color:var(--clr-text-muted);"><i class="bi bi-arrow-right"></i> Ranger dans :</span>
+                        <select class="es-select classification-item-cat-select" data-qidx="${idx}" data-iidx="${iIdx}" style="font-size:0.82rem; font-weight:700; padding:6px 10px; width:auto;">
+                            ${categories.map((c, cIdx) => `
+                                <option value="${escapeHtml(c.id)}" ${item.categoryId === c.id ? 'selected' : ''}>${escapeHtml(c.title || `Catégorie ${cIdx + 1}`)}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    ${items.length > 2 ? `
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-remove-classification-item" data-qidx="${idx}" data-iidx="${iIdx}" style="padding:6px 10px; color:var(--clr-danger);" title="Supprimer cette étiquette">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            specificFields = `
+                <div style="margin-top:12px; display:flex; flex-direction:column; gap:16px;">
+                    <!-- Bloc Catégories -->
+                    <div style="background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); padding:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label class="es-field__label" style="margin:0; font-weight:800; color:var(--clr-text);">📁 1. Catégories réceptrices (Boîtes / Colonnes) :</label>
+                            <span class="es-badge es-badge--approved" style="font-size:0.75rem; font-weight:800; padding:3px 8px;">
+                                ${categories.length} catégorie${categories.length > 1 ? 's' : ''}
+                            </span>
+                        </div>
+                        <div class="classification-cats-wrap">${catListHtml}</div>
+                        ${categories.length < 6 ? `
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-classification-cat" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
+                                <i class="bi bi-plus-circle"></i> Ajouter une catégorie
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <!-- Bloc Étiquettes -->
+                    <div style="background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); padding:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <label class="es-field__label" style="margin:0; font-weight:800; color:var(--clr-text);">🏷️ 2. Étiquettes (Tags) et catégorie attendue :</label>
+                            <span class="es-badge es-badge--stagiaire" style="font-size:0.75rem; font-weight:800; padding:3px 8px;">
+                                ${items.length} étiquette${items.length > 1 ? 's' : ''} à classer
+                            </span>
+                        </div>
+                        <div class="classification-items-wrap">${itemsListHtml}</div>
+                        ${items.length < 20 ? `
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-classification-item" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
+                                <i class="bi bi-plus-circle"></i> Ajouter une étiquette
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
             `;
         } else if (type === 'boolean') {
@@ -1964,11 +2136,11 @@ function renderQuestionsEditor() {
             const pairsHtml = pairs.map((p, pIdx) => `
                 <div class="matching-pair-row" style="display:flex; align-items:center; gap:8px; margin-bottom:8px; background:var(--clr-surface); padding:8px 10px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm);">
                     <span style="width:24px; height:24px; border-radius:50%; background:var(--clr-surface-3); font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; color:var(--clr-text); flex-shrink:0;">${pIdx + 1}</span>
-                    <input class="es-input matching-left-input" type="text" data-qidx="${idx}" data-pidx="${pIdx}" value="${escapeHtml(p.left || '')}" placeholder="Élément gauche (ex: Sigle A)" required style="flex:1; font-size:0.88rem; padding:8px 12px;">
+                    <input class="es-input matching-left-input" type="text" data-qidx="${idx}" data-pidx="${pIdx}" value="${escapeHtml(p.left || '')}" placeholder="Élément gauche (ex: Chien)" required style="flex:1; font-size:0.88rem; padding:8px 12px;">
                     <div style="color:var(--clr-primary-dark); font-weight:800; font-size:1.1rem; flex-shrink:0;" title="Relié à">
-                        <i class="bi bi-arrow-left-right"></i>
+                        <i class="bi bi-arrow-right"></i>
                     </div>
-                    <input class="es-input matching-right-input" type="text" data-qidx="${idx}" data-pidx="${pIdx}" value="${escapeHtml(p.right || '')}" placeholder="Élément droite (ex: Définition A)" required style="flex:1; font-size:0.88rem; padding:8px 12px;">
+                    <input class="es-input matching-right-input" type="text" data-qidx="${idx}" data-pidx="${pIdx}" value="${escapeHtml(p.right || '')}" placeholder="Élément droite (ex: Mammifère)" required style="flex:1; font-size:0.88rem; padding:8px 12px;">
                     ${pairs.length > 2 ? `
                         <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-remove-matching-pair" data-qidx="${idx}" data-pidx="${pIdx}" style="padding:6px 10px; color:var(--clr-danger);" title="Supprimer cette paire">
                             <i class="bi bi-trash"></i>
@@ -1977,18 +2149,30 @@ function renderQuestionsEditor() {
                 </div>
             `).join('');
 
+            const rightDistractorsVal = typeof q.rightDistractors === 'string' ? q.rightDistractors : (Array.isArray(q.rightDistractors) ? q.rightDistractors.join(', ') : '');
+
             specificFields = `
                 <div style="margin-top:12px;">
-                    <label class="es-field__label">Paires à relier (Colonne de gauche ↔ Colonne de droite) :</label>
-                    <div style="font-size:0.78rem; color:var(--clr-text-muted); margin-bottom:8px;">
-                        💡 Les éléments de la colonne de droite seront automatiquement mélangés lors du passage du quiz par le stagiaire.
+                    <label class="es-field__label">Paires à relier (Colonne de gauche ➔ Colonne de droite) :</label>
+                    <div style="font-size:0.78rem; color:var(--clr-text-muted); margin-bottom:8px; line-height:1.45;">
+                        💡 <strong>Flexibilité d'association (N vers 1) :</strong> Vous pouvez attribuer la <em>même correspondance à droite</em> à plusieurs éléments de gauche différents (ex: « Chien » ➔ « Mammifère », « Chat » ➔ « Mammifère »). L'élément n'apparaîtra qu'une seule fois dans la colonne de droite du quiz.
                     </div>
                     <div class="matching-pairs-wrap">${pairsHtml}</div>
-                    ${pairs.length < 10 ? `
+                    ${pairs.length < 12 ? `
                         <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-matching-pair" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
                             <i class="bi bi-plus"></i> Ajouter une paire
                         </button>
                     ` : ''}
+
+                    <div style="margin-top:14px; padding:12px 14px; background:var(--clr-surface-2); border:1px dashed var(--clr-surface-3); border-radius:var(--radius-sm);">
+                        <label class="es-field__label" style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:0.84rem;">
+                            <i class="bi bi-shuffle" style="color:var(--clr-warning);"></i> Options pièges / distracteurs à droite (facultatif) :
+                        </label>
+                        <div style="font-size:0.76rem; color:var(--clr-text-muted); margin-bottom:8px; line-height:1.4;">
+                            Ajoutez des options supplémentaires qui apparaîtront dans la colonne de droite mais ne devront être reliées à aucun élément de gauche (séparées par des virgules).
+                        </div>
+                        <input class="es-input matching-distractors-input" type="text" data-qidx="${idx}" value="${escapeHtml(rightDistractorsVal)}" placeholder="Ex: Poisson, Reptile (séparés par des virgules)" style="font-size:0.88rem; padding:8px 12px; background:var(--clr-surface);">
+                    </div>
                 </div>
             `;
         }
@@ -2002,13 +2186,14 @@ function renderQuestionsEditor() {
                             <option value="qcm" ${type === 'qcm' ? 'selected' : ''}>1- 🔘 QCM (Choix unique textuel)</option>
                             <option value="image_choice" ${type === 'image_choice' ? 'selected' : ''}>2- 🖼️ QCM Choix d'images</option>
                             <option value="table_choice" ${type === 'table_choice' ? 'selected' : ''}>3- 📋 Tableau à 2 colonnes (Affirmations)</option>
-                            <option value="boolean" ${type === 'boolean' ? 'selected' : ''}>4- ⚖️ Vrai / Faux</option>
-                            <option value="pinpoint" ${type === 'pinpoint' ? 'selected' : ''}>5- 📍 Repère sur image (Pin)</option>
-                            <option value="range" ${type === 'range' ? 'selected' : ''}>6- 📏 Curseur horizontal (Slider)</option>
-                            <option value="matching" ${type === 'matching' ? 'selected' : ''}>7- 🔗 Relier les colonnes (Association)</option>
-                            <option value="puzzle" ${type === 'puzzle' ? 'selected' : ''}>8- 🧩 Puzzle chronologique</option>
-                            <option value="cloze" ${type === 'cloze' ? 'selected' : ''}>9- 📝 Texte à trous (Glisser-déposer)</option>
-                            <option value="text" ${type === 'text' ? 'selected' : ''}>10- ✍️ Rédaction libre</option>
+                            <option value="classification" ${type === 'classification' ? 'selected' : ''}>4- 🗂️ Classement par catégories (Glisser-déposer de tags)</option>
+                            <option value="boolean" ${type === 'boolean' ? 'selected' : ''}>5- ⚖️ Vrai / Faux</option>
+                            <option value="pinpoint" ${type === 'pinpoint' ? 'selected' : ''}>6- 📍 Repère sur image (Pin)</option>
+                            <option value="range" ${type === 'range' ? 'selected' : ''}>7- 📏 Curseur horizontal (Slider)</option>
+                            <option value="matching" ${type === 'matching' ? 'selected' : ''}>8- 🔗 Relier les colonnes (Association)</option>
+                            <option value="puzzle" ${type === 'puzzle' ? 'selected' : ''}>9- 🧩 Puzzle chronologique</option>
+                            <option value="cloze" ${type === 'cloze' ? 'selected' : ''}>10- 📝 Texte à trous (Glisser-déposer)</option>
+                            <option value="text" ${type === 'text' ? 'selected' : ''}>11- ✍️ Rédaction libre</option>
                         </select>
                     </div>
                     <div style="display:flex; align-items:center; gap:4px;">
@@ -2120,6 +2305,17 @@ function bindQuestionsEvents() {
                 currentEditingQuestions[idx].tableRows = [
                     { text: 'Affirmation 1...', correctCol1: true, correctCol2: false },
                     { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }
+                ];
+            } else if (newType === 'classification' && (!currentEditingQuestions[idx].categories || currentEditingQuestions[idx].categories.length === 0)) {
+                currentEditingQuestions[idx].categories = [
+                    { id: 'cat_1', title: 'Mammifères' },
+                    { id: 'cat_2', title: 'Oiseaux' }
+                ];
+                currentEditingQuestions[idx].items = [
+                    { id: 'item_1', text: 'Éléphant', categoryId: 'cat_1' },
+                    { id: 'item_2', text: 'Baleine', categoryId: 'cat_1' },
+                    { id: 'item_3', text: 'Poule', categoryId: 'cat_2' },
+                    { id: 'item_4', text: 'Pie', categoryId: 'cat_2' }
                 ];
             } else if (newType === 'boolean' && currentEditingQuestions[idx].correctAnswer === undefined) {
                 currentEditingQuestions[idx].correctAnswer = true;
@@ -2669,6 +2865,109 @@ function bindQuestionsEvents() {
         });
     });
 
+    // Classification events
+    container.querySelectorAll('.classification-cat-title-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            const cidx = parseInt(e.target.getAttribute('data-cidx'), 10);
+            if (currentEditingQuestions[qidx]?.categories?.[cidx]) {
+                currentEditingQuestions[qidx].categories[cidx].title = e.target.value;
+                // Live update option texts in item selects
+                const card = input.closest('.es-qcard');
+                if (card) {
+                    const catId = currentEditingQuestions[qidx].categories[cidx].id;
+                    card.querySelectorAll(`.classification-item-cat-select option[value="${catId}"]`).forEach(opt => {
+                        opt.textContent = e.target.value || `Catégorie ${cidx + 1}`;
+                    });
+                }
+            }
+        });
+    });
+
+    container.querySelectorAll('.classification-item-text-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            const iidx = parseInt(e.target.getAttribute('data-iidx'), 10);
+            if (currentEditingQuestions[qidx]?.items?.[iidx]) {
+                currentEditingQuestions[qidx].items[iidx].text = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.classification-item-cat-select').forEach(select => {
+        select.addEventListener('change', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            const iidx = parseInt(e.target.getAttribute('data-iidx'), 10);
+            if (currentEditingQuestions[qidx]?.items?.[iidx]) {
+                currentEditingQuestions[qidx].items[iidx].categoryId = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-add-classification-cat').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                if (!currentEditingQuestions[qidx].categories) currentEditingQuestions[qidx].categories = [];
+                const newCatId = `cat_${Date.now()}_${currentEditingQuestions[qidx].categories.length + 1}`;
+                currentEditingQuestions[qidx].categories.push({
+                    id: newCatId,
+                    title: `Catégorie ${currentEditingQuestions[qidx].categories.length + 1}`
+                });
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-remove-classification-cat').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            const cidx = parseInt(btn.getAttribute('data-cidx'), 10);
+            if (currentEditingQuestions[qidx]?.categories) {
+                const removedId = currentEditingQuestions[qidx].categories[cidx].id;
+                currentEditingQuestions[qidx].categories.splice(cidx, 1);
+                // Reassign items that belonged to this category to the first available category
+                const firstCatId = currentEditingQuestions[qidx].categories[0]?.id || '';
+                (currentEditingQuestions[qidx].items || []).forEach(it => {
+                    if (it.categoryId === removedId) it.categoryId = firstCatId;
+                });
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-add-classification-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                if (!currentEditingQuestions[qidx].items) currentEditingQuestions[qidx].items = [];
+                const firstCatId = currentEditingQuestions[qidx].categories?.[0]?.id || 'cat_1';
+                const newItemId = `item_${Date.now()}_${currentEditingQuestions[qidx].items.length + 1}`;
+                currentEditingQuestions[qidx].items.push({
+                    id: newItemId,
+                    text: `Étiquette ${currentEditingQuestions[qidx].items.length + 1}`,
+                    categoryId: firstCatId
+                });
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-remove-classification-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            const iidx = parseInt(btn.getAttribute('data-iidx'), 10);
+            if (currentEditingQuestions[qidx]?.items) {
+                currentEditingQuestions[qidx].items.splice(iidx, 1);
+                renderQuestionsEditor();
+            }
+        });
+    });
+
     container.querySelectorAll('.qcm-opt-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
@@ -2786,6 +3085,15 @@ function bindQuestionsEvents() {
         });
     });
 
+    container.querySelectorAll('.matching-distractors-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].rightDistractors = e.target.value;
+            }
+        });
+    });
+
     container.querySelectorAll('.q-section-title-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
@@ -2897,6 +3205,7 @@ document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e
                     options: q.options || (q.type === 'qcm' ? ['Option 1', 'Option 2'] : undefined),
                     imageOptions: q.imageOptions || (q.type === 'image_choice' ? [{ imageUrl: '', label: 'Option 1' }, { imageUrl: '', label: 'Option 2' }] : undefined),
                     tableRows: q.tableRows || (q.type === 'table_choice' ? [{ text: 'Affirmation 1...', correctCol1: true, correctCol2: false }, { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }] : undefined),
+                    categories: q.categories || (q.type === 'classification' ? [{ id: 'cat_1', title: 'Catégorie 1' }, { id: 'cat_2', title: 'Catégorie 2' }] : undefined),
                     col1Label: q.col1Label || 'VRAI',
                     col2Label: q.col2Label || 'FAUX',
                     correctIndex: q.correctIndex !== undefined ? q.correctIndex : 0,
@@ -2916,7 +3225,7 @@ document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e
                     tolerance: q.tolerance !== undefined ? q.tolerance : 0,
                     clozeText: q.clozeText || '',
                     distractors: q.distractors || '',
-                    items: q.items || (q.type === 'puzzle' ? ['Étape 1', 'Étape 2'] : undefined),
+                    items: q.items || (q.type === 'classification' ? [{ id: 'item_1', text: 'Élément 1', categoryId: 'cat_1' }, { id: 'item_2', text: 'Élément 2', categoryId: 'cat_2' }] : (q.type === 'puzzle' ? ['Étape 1', 'Étape 2'] : undefined)),
                     pairs: q.pairs || (q.type === 'matching' ? [{ left: 'A', right: '1' }, { left: 'B', right: '2' }] : undefined),
                     hint: q.hint || '',
                     imageUrl: q.imageUrl || ''
@@ -2989,13 +3298,17 @@ async function saveModuleData(btnEl) {
     }
 
     // Validation questions
+    let validQuestionNum = 0;
+    let validSectionNum = 0;
+
     for (let i = 0; i < currentEditingQuestions.length; i++) {
         const q = currentEditingQuestions[i];
 
         if (q.type === 'section') {
+            validSectionNum++;
             if (!q.title || !q.title.trim()) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `Le titre de la section ${i + 1} est vide.`;
+                    errorMsg.textContent = `Le titre de la section ${validSectionNum} est vide.`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -3003,9 +3316,12 @@ async function saveModuleData(btnEl) {
             continue;
         }
 
+        validQuestionNum++;
+        const qNum = validQuestionNum;
+
         if (!q.text || !q.text.trim()) {
             if (errorAlert && errorMsg) {
-                errorMsg.textContent = `L'énoncé de la question ${i + 1} est vide.`;
+                errorMsg.textContent = `L'énoncé de la question ${qNum} est vide.`;
                 errorAlert.classList.remove('hidden');
             }
             return;
@@ -3014,7 +3330,7 @@ async function saveModuleData(btnEl) {
         if (q.type === 'qcm') {
             if (!q.options || q.options.length < 2) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (QCM) doit comporter au moins 2 options.`;
+                    errorMsg.textContent = `La question ${qNum} (QCM) doit comporter au moins 2 options.`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -3022,7 +3338,7 @@ async function saveModuleData(btnEl) {
             for (let j = 0; j < q.options.length; j++) {
                 if (!q.options[j] || !q.options[j].trim()) {
                     if (errorAlert && errorMsg) {
-                        errorMsg.textContent = `L'option ${j + 1} de la question ${i + 1} est vide.`;
+                        errorMsg.textContent = `L'option ${j + 1} de la question ${qNum} est vide.`;
                         errorAlert.classList.remove('hidden');
                     }
                     return;
@@ -3031,7 +3347,7 @@ async function saveModuleData(btnEl) {
         } else if (q.type === 'image_choice') {
             if (!q.imageOptions || q.imageOptions.length < 2) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (QCM Choix d'images) doit comporter au moins 2 options.`;
+                    errorMsg.textContent = `La question ${qNum} (QCM Choix d'images) doit comporter au moins 2 options.`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -3040,7 +3356,7 @@ async function saveModuleData(btnEl) {
                 const opt = q.imageOptions[j];
                 if (!opt || !opt.imageUrl || !opt.imageUrl.trim()) {
                     if (errorAlert && errorMsg) {
-                        errorMsg.textContent = `L'option ${j + 1} de la question ${i + 1} (QCM Choix d'images) n'a pas d'image.`;
+                        errorMsg.textContent = `L'option ${j + 1} de la question ${qNum} (QCM Choix d'images) n'a pas d'image.`;
                         errorAlert.classList.remove('hidden');
                     }
                     return;
@@ -3049,7 +3365,7 @@ async function saveModuleData(btnEl) {
         } else if (q.type === 'table_choice') {
             if (!q.tableRows || q.tableRows.length < 2) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Tableau à 2 colonnes) doit comporter au moins 2 affirmations.`;
+                    errorMsg.textContent = `La question ${qNum} (Tableau à 2 colonnes) doit comporter au moins 2 affirmations.`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -3058,14 +3374,49 @@ async function saveModuleData(btnEl) {
                 const row = q.tableRows[j];
                 if (!row || !row.text || !row.text.trim()) {
                     if (errorAlert && errorMsg) {
-                        errorMsg.textContent = `L'affirmation ${j + 1} de la question ${i + 1} (Tableau à 2 colonnes) est vide.`;
+                        errorMsg.textContent = `L'affirmation ${j + 1} de la question ${qNum} (Tableau à 2 colonnes) est vide.`;
                         errorAlert.classList.remove('hidden');
                     }
                     return;
                 }
                 if (!row.correctCol1 && !row.correctCol2) {
                     if (errorAlert && errorMsg) {
-                        errorMsg.textContent = `L'affirmation ${j + 1} de la question ${i + 1} doit avoir au moins une réponse cochée (${q.col1Label || 'Col 1'} ou ${q.col2Label || 'Col 2'}).`;
+                        errorMsg.textContent = `L'affirmation ${j + 1} de la question ${qNum} doit avoir au moins une réponse cochée (${q.col1Label || 'Col 1'} ou ${q.col2Label || 'Col 2'}).`;
+                        errorAlert.classList.remove('hidden');
+                    }
+                    return;
+                }
+            }
+        } else if (q.type === 'classification') {
+            if (!q.categories || q.categories.length < 2) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `La question ${qNum} (Classement par catégories) doit comporter au moins 2 catégories.`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
+            for (let j = 0; j < q.categories.length; j++) {
+                const cat = q.categories[j];
+                if (!cat || !cat.title || !cat.title.trim()) {
+                    if (errorAlert && errorMsg) {
+                        errorMsg.textContent = `La catégorie ${j + 1} de la question ${qNum} (Classement par catégories) a un titre vide.`;
+                        errorAlert.classList.remove('hidden');
+                    }
+                    return;
+                }
+            }
+            if (!q.items || q.items.length < 2) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `La question ${qNum} (Classement par catégories) doit comporter au moins 2 étiquettes.`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
+            for (let j = 0; j < q.items.length; j++) {
+                const it = q.items[j];
+                if (!it || !it.text || !it.text.trim()) {
+                    if (errorAlert && errorMsg) {
+                        errorMsg.textContent = `L'étiquette ${j + 1} de la question ${qNum} (Classement par catégories) est vide.`;
                         errorAlert.classList.remove('hidden');
                     }
                     return;
@@ -3074,7 +3425,7 @@ async function saveModuleData(btnEl) {
         } else if (q.type === 'pinpoint') {
             if (!q.pinImage) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Repère sur image) nécessite une image support.`;
+                    errorMsg.textContent = `La question ${qNum} (Repère sur image) nécessite une image support.`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -3084,7 +3435,7 @@ async function saveModuleData(btnEl) {
             const max = parseFloat(q.max) || 100;
             if (min >= max) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Curseur) a une valeur minimale supérieure ou égale au maximum.`;
+                    errorMsg.textContent = `La question ${qNum} (Curseur) a une valeur minimale supérieure ou égale au maximum.`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -3092,7 +3443,7 @@ async function saveModuleData(btnEl) {
         } else if (q.type === 'cloze') {
             if (!q.clozeText || !q.clozeText.trim()) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Texte à trous) nécessite un texte avec [mot].`;
+                    errorMsg.textContent = `La question ${qNum} (Texte à trous) nécessite un texte avec [mot].`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -3100,7 +3451,7 @@ async function saveModuleData(btnEl) {
             const clozeMatches = q.clozeText.match(/\[([^\]]+)\]/g);
             if (!clozeMatches || clozeMatches.length === 0) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Texte à trous) ne comporte aucun trou valide [mot].`;
+                    errorMsg.textContent = `La question ${qNum} (Texte à trous) ne comporte aucun trou valide [mot].`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -3108,7 +3459,7 @@ async function saveModuleData(btnEl) {
         } else if (q.type === 'puzzle') {
             if (!q.items || q.items.length < 2) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Puzzle) doit comporter au moins 2 éléments à ordonner.`;
+                    errorMsg.textContent = `La question ${qNum} (Puzzle) doit comporter au moins 2 éléments à ordonner.`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -3116,7 +3467,7 @@ async function saveModuleData(btnEl) {
             for (let j = 0; j < q.items.length; j++) {
                 if (!q.items[j] || !q.items[j].trim()) {
                     if (errorAlert && errorMsg) {
-                        errorMsg.textContent = `L'élément ${j + 1} de la question ${i + 1} (Puzzle) est vide.`;
+                        errorMsg.textContent = `L'élément ${j + 1} de la question ${qNum} (Puzzle) est vide.`;
                         errorAlert.classList.remove('hidden');
                     }
                     return;
@@ -3125,7 +3476,7 @@ async function saveModuleData(btnEl) {
         } else if (q.type === 'matching') {
             if (!q.pairs || q.pairs.length < 2) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${i + 1} (Relier les colonnes) doit comporter au moins 2 paires.`;
+                    errorMsg.textContent = `La question ${qNum} (Relier les colonnes) doit comporter au moins 2 paires.`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -3134,7 +3485,7 @@ async function saveModuleData(btnEl) {
                 const pair = q.pairs[j];
                 if (!pair || !pair.left || !pair.left.trim() || !pair.right || !pair.right.trim()) {
                     if (errorAlert && errorMsg) {
-                        errorMsg.textContent = `La paire ${j + 1} de la question ${i + 1} (Relier les colonnes) est incomplète.`;
+                        errorMsg.textContent = `La paire ${j + 1} de la question ${qNum} (Relier les colonnes) est incomplète.`;
                         errorAlert.classList.remove('hidden');
                     }
                     return;
@@ -3218,6 +3569,9 @@ async function saveModuleData(btnEl) {
                 qData.col1Label = q.col1Label || 'VRAI';
                 qData.col2Label = q.col2Label || 'FAUX';
                 qData.tableRows = q.tableRows || [];
+            } else if (q.type === 'classification') {
+                qData.categories = q.categories || [];
+                qData.items = q.items || [];
             } else if (q.type === 'boolean') {
                 qData.correctAnswer = q.correctAnswer !== undefined ? (q.correctAnswer === true || q.correctAnswer === 'true') : true;
             } else if (q.type === 'pinpoint') {
@@ -3242,6 +3596,7 @@ async function saveModuleData(btnEl) {
                 qData.items = q.items || [];
             } else if (q.type === 'matching') {
                 qData.pairs = q.pairs || [];
+                qData.rightDistractors = q.rightDistractors || '';
             }
 
             batch.set(qRef, qData);

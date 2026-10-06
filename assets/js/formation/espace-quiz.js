@@ -272,11 +272,27 @@ function renderBriefingScreen() {
     // Avertissement de début d'épreuve
     const warningTextEl = document.getElementById('briefingWarningText');
     if (warningTextEl) {
-        let warnContent = `Ce module ${maxAttempts > 0 ? `autorise un maximum de <strong>${maxAttempts} tentative(s)</strong>.` : `est disponible pour évaluation.`} <br>`;
+        const allowPrev = (qConfig.allowPreviousPage !== false);
+        let warnContent = '';
+
+        if (maxAttempts > 0) {
+            warnContent += `Ce module autorise un maximum de <strong>${maxAttempts} tentative(s)</strong>.<br>`;
+        } else {
+            warnContent += `Ce module autorise un <strong>nombre illimité de tentatives</strong>. Notez toutefois que <strong>l'ensemble de vos essais</strong> sera enregistré. Veillez à traiter chaque tentative avec sérieux.<br>`;
+        }
+
         if (totalDurationSecs > 0) {
             warnContent += `⏱️ <strong>Épreuve minutée (${formatDurationText(totalDurationSecs)}) :</strong> Le chronomètre deviendra <strong>rouge à 10% du temps</strong> puis <strong>clignotant / animé à 5% du temps restant</strong>. Vos réponses seront automatiquement transmises à l'échéance.<br>`;
         }
-        warnContent += `Ne tentez pas de recharger ou de fermer la page en cours de route, cette tentative sera considérée comme <strong>consommée</strong>.`;
+
+        if (sectionsCount > 1 && !allowPrev) {
+            warnContent += `⚠️ <strong>Navigation sans retour arrière :</strong> Ce quiz est composé de <strong>${sectionsCount} pages</strong>. Une fois passée à la page suivante, <strong>aucun retour en arrière n'est possible</strong>. Assurez-vous d'avoir validé l'ensemble de vos réponses sur chaque page avant de poursuivre.<br>`;
+        }
+
+        if (maxAttempts > 0) {
+            warnContent += `Ne tentez pas de recharger ou de fermer la page en cours de route, cette tentative sera considérée comme <strong>consommée</strong>.`;
+        }
+
         warningTextEl.innerHTML = warnContent;
     }
 
@@ -561,6 +577,15 @@ function saveCurrentPageAnswersToState() {
                 }
             });
             userAnswersState[q.id] = ansObj;
+        } else if (q.type === 'classification') {
+            const classInp = form.querySelector(`input[name="question_${q.id}"]`);
+            if (classInp && classInp.value) {
+                try {
+                    userAnswersState[q.id] = typeof classInp.value === 'object' ? classInp.value : JSON.parse(classInp.value);
+                } catch(e) {
+                    userAnswersState[q.id] = {};
+                }
+            }
         } else if (q.type === 'matching') {
             const matchInp = form.querySelector(`input[name="question_${q.id}"]`);
             if (matchInp && matchInp.value) {
@@ -727,16 +752,13 @@ function renderActiveSectionPage() {
         if (quizSections.length > 1 || (sec.description && sec.description.trim())) {
             bannerEl.classList.remove('hidden');
             bannerEl.innerHTML = `
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                    <span class="es-badge es-badge--stagiaire" style="font-size:0.75rem; font-weight:800;">
-                        <i class="bi bi-bookmark-fill"></i> Section ${currentSectionIndex + 1} / ${quizSections.length}
-                    </span>
-                    <span style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600;">
-                        Page ${currentSectionIndex + 1}
-                    </span>
+                <div class="es-quiz-section-banner__header">
+                    <i class="bi bi-bookmark-fill"></i>
+                    <span>Section ${currentSectionIndex + 1} / ${quizSections.length}</span>
+                    <span style="font-size:0.82rem; font-weight:600; color:var(--clr-text-muted); margin-left:4px;">(Page ${currentSectionIndex + 1})</span>
                 </div>
-                <h3 style="font-size:1.18rem; font-weight:800; color:var(--clr-text); margin:0 0 4px 0;">${escapeHtml(sec.title)}</h3>
-                ${sec.description ? `<p style="font-size:0.86rem; color:var(--clr-text-muted); margin:0; line-height:1.5;">${escapeHtml(sec.description)}</p>` : ''}
+                <h3 class="es-quiz-section-banner__title">${escapeHtml(sec.title)}</h3>
+                ${sec.description ? `<p class="es-quiz-section-banner__desc">${escapeHtml(sec.description)}</p>` : ''}
             `;
         } else {
             bannerEl.classList.add('hidden');
@@ -870,6 +892,80 @@ function renderActiveSectionPage() {
                         <span>👎 FAUX</span>
                     </label>
                 </div>`;
+            } else if (q.type === 'classification') {
+                const categories = q.categories || [];
+                const rawItems = q.items || [];
+                const savedPlacements = (savedVal && typeof savedVal === 'object') ? savedVal : {};
+
+                const placedCount = Object.keys(savedPlacements).filter(itemId => savedPlacements[itemId]).length;
+
+                const catBoxesHtml = categories.map(cat => {
+                    const catItems = rawItems.filter(it => savedPlacements[it.id] === cat.id);
+                    const placedTagsHtml = catItems.map(it => `
+                        <div class="es-classification-placed-tag" id="tag_placed_${q.id}_${it.id}" data-q-id="${q.id}" data-item-id="${it.id}" draggable="true">
+                            <span class="es-classification-tag-handle"><i class="bi bi-grip-vertical"></i></span>
+                            <span>${escapeHtml(it.text)}</span>
+                            <button type="button" class="es-classification-tag-remove" data-q-id="${q.id}" data-item-id="${it.id}" title="Retirer et remettre dans la banque">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                    `).join('');
+
+                    return `
+                        <div class="es-classification-cat-card" id="cat_card_${q.id}_${cat.id}" data-q-id="${q.id}" data-cat-id="${cat.id}">
+                            <div class="es-classification-cat-header">
+                                <h4 class="es-classification-cat-title"><i class="bi bi-folder-fill" style="color:var(--clr-primary-dark); margin-right:4px;"></i> ${escapeHtml(cat.title)}</h4>
+                                <span class="es-badge es-badge--stagiaire cat-count-badge" style="font-size:0.7rem; padding:2px 6px;">
+                                    ${catItems.length}
+                                </span>
+                            </div>
+                            <div class="es-classification-cat-dropzone" id="dropzone_${q.id}_${cat.id}" data-q-id="${q.id}" data-cat-id="${cat.id}">
+                                ${placedTagsHtml}
+                                <div class="es-classification-drop-empty ${catItems.length > 0 ? 'hidden' : ''}">
+                                    <i class="bi bi-box-arrow-in-down" style="font-size:1.3rem; margin-bottom:4px; opacity:0.6;"></i>
+                                    Déposez ou cliquez pour classer ici
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                const bankItems = rawItems.filter(it => !savedPlacements[it.id]);
+                const bankTagsHtml = bankItems.map(it => `
+                    <div class="es-classification-tag" id="tag_bank_${q.id}_${it.id}" data-q-id="${q.id}" data-item-id="${it.id}" draggable="true">
+                        <span class="es-classification-tag-handle"><i class="bi bi-grip-vertical"></i></span>
+                        <span>${escapeHtml(it.text)}</span>
+                    </div>
+                `).join('');
+
+                inputHtml = `
+                <div class="es-classification-wrap" id="classification_wrap_${q.id}" data-q-id="${q.id}">
+                    <input type="hidden" name="question_${q.id}" id="classification_input_${q.id}" class="quiz-track-input" value="${escapeHtml(JSON.stringify(savedPlacements))}">
+
+                    <!-- Banque des étiquettes -->
+                    <div class="es-classification-bank-card">
+                        <div class="es-classification-bank-header">
+                            <div class="es-classification-bank-title">
+                                <i class="bi bi-tags-fill" style="color:var(--clr-primary-dark);"></i>
+                                Étiquettes à ranger :
+                            </div>
+                            <span class="es-badge es-badge--stagiaire" id="classification_status_${q.id}" style="font-size:0.75rem; padding:3px 8px;">
+                                ${placedCount} / ${rawItems.length} classée${placedCount > 1 ? 's' : ''}
+                            </span>
+                        </div>
+                        <div class="es-classification-bank" id="bank_${q.id}" data-q-id="${q.id}">
+                            ${bankTagsHtml}
+                            <div class="es-classification-drop-empty ${bankItems.length > 0 ? 'hidden' : ''}" style="width:100%; padding:8px 0; font-style:italic;">
+                                ✨ Toutes les étiquettes ont été réparties !
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Grille des catégories réceptrices -->
+                    <div class="es-classification-grid">
+                        ${catBoxesHtml}
+                    </div>
+                </div>`;
             } else if (q.type === 'pinpoint') {
                 const coords = (savedVal && typeof savedVal === 'object') ? savedVal : null;
                 inputHtml = `
@@ -944,13 +1040,52 @@ function renderActiveSectionPage() {
                 </div>`;
             } else if (q.type === 'matching') {
                 const rawPairs = q.pairs || [];
-                const leftItems = rawPairs.map((p, idx) => ({ id: `l_${q.id}_${idx}`, text: p.left, originalIndex: idx }));
-                const rightItems = shuffleArray(rawPairs.map((p, idx) => ({ id: `r_${q.id}_${idx}`, text: p.right, originalIndex: idx })));
+                const leftItems = rawPairs.map((p, idx) => ({
+                    id: `l_${q.id}_${idx}`,
+                    text: (p.left || '').trim(),
+                    originalIndex: idx
+                })).filter(it => it.text.length > 0);
+
+                // Dédoublonnage des correspondances droites pour autoriser plusieurs éléments gauches vers un même élément droit
+                const rightSet = new Set();
+                const rightItemsList = [];
+
+                rawPairs.forEach((p, idx) => {
+                    const rText = (p.right || '').trim();
+                    if (rText && !rightSet.has(rText.toLowerCase())) {
+                        rightSet.add(rText.toLowerCase());
+                        rightItemsList.push({
+                            id: `r_${q.id}_${rightItemsList.length}`,
+                            text: rText
+                        });
+                    }
+                });
+
+                // Ajouter les éventuels distracteurs / options pièges à droite
+                let distractors = [];
+                if (typeof q.rightDistractors === 'string') {
+                    distractors = q.rightDistractors.split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+                } else if (Array.isArray(q.rightDistractors)) {
+                    distractors = q.rightDistractors.map(s => String(s).trim()).filter(Boolean);
+                }
+
+                distractors.forEach(dText => {
+                    if (dText && !rightSet.has(dText.toLowerCase())) {
+                        rightSet.add(dText.toLowerCase());
+                        rightItemsList.push({
+                            id: `r_${q.id}_${rightItemsList.length}`,
+                            text: dText,
+                            isDistractor: true
+                        });
+                    }
+                });
+
+                const rightItems = shuffleArray(rightItemsList);
                 const savedMatches = (savedVal && typeof savedVal === 'object') ? savedVal : {};
 
                 inputHtml = `
                 <div class="es-matching-wrap" id="matching_wrap_${q.id}" data-q-id="${q.id}">
-                    <input type="hidden" name="question_${q.id}" id="matching_input_${q.id}" class="quiz-track-input" data-pairs-count="${rawPairs.length}" value="${escapeHtml(JSON.stringify(savedMatches))}">
+                    <input type="hidden" name="question_${q.id}" id="matching_input_${q.id}" class="quiz-track-input" data-pairs-count="${leftItems.length}" value="${escapeHtml(JSON.stringify(savedMatches))}">
                     
                     <div class="es-matching-instructions">
                         <i class="bi bi-info-circle-fill" style="color:var(--clr-primary);"></i>
@@ -986,7 +1121,7 @@ function renderActiveSectionPage() {
                     </div>
 
                     <div class="es-matching-status-bar" id="matching_status_bar_${q.id}">
-                        <span class="es-matching-count-badge" id="matching_count_${q.id}">0 / ${rawPairs.length} paires reliées</span>
+                        <span class="es-matching-count-badge" id="matching_count_${q.id}">0 / ${leftItems.length} reliés</span>
                         <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-reset-matching" data-q-id="${q.id}" style="font-size:0.76rem; padding:3px 8px;">
                             <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser les liaisons
                         </button>
@@ -1060,6 +1195,7 @@ function renderActiveSectionPage() {
             let typeBadgeLabel = 'QCM';
             if (q.type === 'image_choice') typeBadgeLabel = '🖼️ QCM Choix d\'images';
             else if (q.type === 'table_choice') typeBadgeLabel = '📋 Tableau d\'affirmations';
+            else if (q.type === 'classification') typeBadgeLabel = '🗂️ Classement par catégories';
             else if (q.type === 'cloze') typeBadgeLabel = '🔤 Texte à trous';
             else if (q.type === 'pinpoint') typeBadgeLabel = '📍 Repère sur image';
             else if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
@@ -1541,6 +1677,14 @@ function attachQuizInteractions(container) {
         let selectedLeftEl = null;
         let userMatches = {}; // { leftText: rightText }
 
+        if (input && input.value) {
+            try {
+                userMatches = typeof input.value === 'object' ? input.value : JSON.parse(input.value);
+            } catch(e) {
+                userMatches = {};
+            }
+        }
+
         const MATCHING_PALETTE = [
             { bg: 'rgba(52, 152, 219, 0.12)', border: '#3498db', text: '#2980b9' },
             { bg: 'rgba(155, 89, 182, 0.12)', border: '#9b59b6', text: '#8e44ad' },
@@ -1555,24 +1699,22 @@ function attachQuizInteractions(container) {
         function syncMatchingUI() {
             const leftItems = wrap.querySelectorAll('.es-matching-item--left');
             const rightItems = wrap.querySelectorAll('.es-matching-item--right');
-            const leftEntries = Object.entries(userMatches);
 
             // Mise à jour de la colonne de gauche
-            leftItems.forEach(item => {
+            leftItems.forEach((item, idx) => {
                 const lText = item.getAttribute('data-item-text');
                 const matchedRight = userMatches[lText];
                 const badge = item.querySelector('.es-matching-link-badge');
                 const icon = item.querySelector('.es-matching-item-num i');
 
                 if (matchedRight) {
-                    const matchIdx = leftEntries.findIndex(([k]) => k === lText);
-                    const color = MATCHING_PALETTE[matchIdx % MATCHING_PALETTE.length];
+                    const color = MATCHING_PALETTE[idx % MATCHING_PALETTE.length];
                     item.classList.add('es-matching-item--connected');
                     item.style.backgroundColor = color.bg;
                     item.style.borderColor = color.border;
                     if (badge) {
                         badge.classList.remove('hidden');
-                        badge.textContent = `🔗 Lien ${matchIdx + 1}`;
+                        badge.textContent = `➔ ${matchedRight}`;
                         badge.style.backgroundColor = color.border;
                         badge.style.color = '#ffffff';
                     }
@@ -1586,24 +1728,35 @@ function attachQuizInteractions(container) {
                 }
             });
 
-            // Mise à jour de la colonne de droite
-            rightItems.forEach(item => {
-                const rText = item.getAttribute('data-item-text');
-                const matchingLeftEntry = leftEntries.find(([, v]) => v === rText);
+            // Mise à jour de la colonne de droite (support N vers 1)
+            rightItems.forEach((item, rIdx) => {
+                const rText = (item.getAttribute('data-item-text') || '').trim();
+                const connectedLeftEntries = Object.keys(userMatches).filter(k => (userMatches[k] || '').trim().toLowerCase() === rText.toLowerCase());
                 const badge = item.querySelector('.es-matching-link-badge');
                 const icon = item.querySelector('.es-matching-item-num i');
 
-                if (matchingLeftEntry) {
-                    const matchIdx = leftEntries.indexOf(matchingLeftEntry);
-                    const color = MATCHING_PALETTE[matchIdx % MATCHING_PALETTE.length];
+                if (connectedLeftEntries.length > 0) {
                     item.classList.add('es-matching-item--connected');
-                    item.style.backgroundColor = color.bg;
-                    item.style.borderColor = color.border;
-                    if (badge) {
-                        badge.classList.remove('hidden');
-                        badge.textContent = `🔗 Lien ${matchIdx + 1}`;
-                        badge.style.backgroundColor = color.border;
-                        badge.style.color = '#ffffff';
+                    if (connectedLeftEntries.length === 1) {
+                        const leftIdx = Array.from(leftItems).findIndex(el => el.getAttribute('data-item-text') === connectedLeftEntries[0]);
+                        const color = MATCHING_PALETTE[(leftIdx >= 0 ? leftIdx : rIdx) % MATCHING_PALETTE.length];
+                        item.style.backgroundColor = color.bg;
+                        item.style.borderColor = color.border;
+                        if (badge) {
+                            badge.classList.remove('hidden');
+                            badge.textContent = `🔗 1 liaison`;
+                            badge.style.backgroundColor = color.border;
+                            badge.style.color = '#ffffff';
+                        }
+                    } else {
+                        item.style.backgroundColor = 'rgba(52, 152, 219, 0.15)';
+                        item.style.borderColor = 'var(--clr-primary)';
+                        if (badge) {
+                            badge.classList.remove('hidden');
+                            badge.textContent = `🔗 ${connectedLeftEntries.length} liaisons`;
+                            badge.style.backgroundColor = 'var(--clr-primary)';
+                            badge.style.color = '#ffffff';
+                        }
                     }
                     if (icon) icon.className = 'bi bi-check-circle-fill';
                 } else {
@@ -1616,9 +1769,9 @@ function attachQuizInteractions(container) {
             });
 
             const totalPairs = parseInt(input.getAttribute('data-pairs-count'), 10) || leftItems.length;
-            const connectedCount = Object.keys(userMatches).length;
+            const connectedCount = Object.keys(userMatches).filter(k => userMatches[k]).length;
             if (countBadge) {
-                countBadge.textContent = `${connectedCount} / ${totalPairs} paire${totalPairs > 1 ? 's' : ''} reliée${connectedCount > 1 ? 's' : ''}`;
+                countBadge.textContent = `${connectedCount} / ${totalPairs} élément${totalPairs > 1 ? 's' : ''} relié${connectedCount > 1 ? 's' : ''}`;
             }
 
             input.value = connectedCount > 0 ? JSON.stringify(userMatches) : '';
@@ -1643,28 +1796,16 @@ function attachQuizInteractions(container) {
                 const rText = item.getAttribute('data-item-text');
                 if (selectedLeftEl) {
                     const lText = selectedLeftEl.getAttribute('data-item-text');
-                    // Supprimer toute ancienne liaison pour cet élément droit
-                    for (const k in userMatches) {
-                        if (userMatches[k] === rText) {
-                            delete userMatches[k];
-                        }
+                    // Si on clique sur la même correspondance déjà attribuée à cet élément, on la délie
+                    if (userMatches[lText] === rText) {
+                        delete userMatches[lText];
+                    } else {
+                        // Relier l'élément gauche à cet élément droit
+                        userMatches[lText] = rText;
                     }
-                    userMatches[lText] = rText;
                     selectedLeftEl.classList.remove('es-matching-item--selected');
                     selectedLeftEl = null;
                     syncMatchingUI();
-                } else {
-                    // Si aucun élément gauche n'est sélectionné et qu'on clique sur un élément droit connecté, le délier
-                    let unlinked = false;
-                    for (const k in userMatches) {
-                        if (userMatches[k] === rText) {
-                            delete userMatches[k];
-                            unlinked = true;
-                        }
-                    }
-                    if (unlinked) {
-                        syncMatchingUI();
-                    }
                 }
             });
         });
@@ -1677,6 +1818,238 @@ function attachQuizInteractions(container) {
                     selectedLeftEl = null;
                 }
                 syncMatchingUI();
+            });
+        }
+
+        syncMatchingUI();
+    });
+
+    // ----------------------------------------------------------------
+    // INTERACTIONS CLASSIFICATION (CLASSEMENT PAR CATÉGORIES / GLISSER-DÉPOSER)
+    // ----------------------------------------------------------------
+    function syncClassificationValue(qId) {
+        const wrap = document.getElementById(`classification_wrap_${qId}`);
+        const input = document.getElementById(`classification_input_${qId}`);
+        const bank = document.getElementById(`bank_${qId}`);
+        const statusEl = document.getElementById(`classification_status_${qId}`);
+        if (!wrap || !input) return;
+
+        const currentQ = (currentQuestions || []).find(q => q.id === qId);
+        const totalItems = (currentQ?.items || []).length;
+
+        const placements = {};
+        let placedCount = 0;
+
+        wrap.querySelectorAll('.es-classification-cat-card').forEach(card => {
+            const catId = card.getAttribute('data-cat-id');
+            const dropzone = card.querySelector('.es-classification-cat-dropzone');
+            const countBadge = card.querySelector('.cat-count-badge');
+            const emptyNotice = card.querySelector('.es-classification-drop-empty');
+            
+            const placedTags = dropzone ? dropzone.querySelectorAll('.es-classification-placed-tag') : [];
+            placedTags.forEach(tag => {
+                const itemId = tag.getAttribute('data-item-id');
+                if (itemId) {
+                    placements[itemId] = catId;
+                    placedCount++;
+                }
+            });
+
+            if (countBadge) countBadge.textContent = placedTags.length;
+            if (emptyNotice) {
+                if (placedTags.length > 0) emptyNotice.classList.add('hidden');
+                else emptyNotice.classList.remove('hidden');
+            }
+        });
+
+        if (bank) {
+            const bankEmptyNotice = bank.querySelector('.es-classification-drop-empty');
+            const remainingTags = bank.querySelectorAll('.es-classification-tag').length;
+            if (bankEmptyNotice) {
+                if (remainingTags === 0) bankEmptyNotice.classList.remove('hidden');
+                else bankEmptyNotice.classList.add('hidden');
+            }
+        }
+
+        input.value = JSON.stringify(placements);
+        userAnswersState[qId] = placements;
+
+        if (statusEl) {
+            statusEl.textContent = `${placedCount} / ${totalItems} classée${placedCount > 1 ? 's' : ''}`;
+            if (placedCount === totalItems) {
+                statusEl.className = 'es-badge es-badge--success';
+            } else {
+                statusEl.className = 'es-badge es-badge--stagiaire';
+            }
+        }
+
+        updateProgress();
+    }
+
+    container.querySelectorAll('.es-classification-wrap').forEach(wrap => {
+        const qId = wrap.getAttribute('data-q-id');
+        const currentQ = (currentQuestions || []).find(q => q.id === qId);
+        const rawItems = currentQ?.items || [];
+        const itemMap = {};
+        rawItems.forEach(it => { itemMap[it.id] = it; });
+
+        let selectedTagId = null;
+
+        function clearSelected() {
+            wrap.querySelectorAll('.es-classification-tag, .es-classification-placed-tag').forEach(el => el.classList.remove('selected'));
+            selectedTagId = null;
+        }
+
+        function moveItemToCategory(itemId, catId) {
+            const item = itemMap[itemId];
+            if (!item) return;
+            const dropzone = wrap.querySelector(`#dropzone_${qId}_${catId}`);
+            if (!dropzone) return;
+
+            const oldBankEl = wrap.querySelector(`#tag_bank_${qId}_${itemId}`);
+            if (oldBankEl) oldBankEl.remove();
+            const oldPlacedEl = wrap.querySelector(`#tag_placed_${qId}_${itemId}`);
+            if (oldPlacedEl) oldPlacedEl.remove();
+
+            const newTag = document.createElement('div');
+            newTag.className = 'es-classification-placed-tag';
+            newTag.id = `tag_placed_${qId}_${itemId}`;
+            newTag.setAttribute('data-q-id', qId);
+            newTag.setAttribute('data-item-id', itemId);
+            newTag.setAttribute('draggable', 'true');
+            newTag.innerHTML = `
+                <span class="es-classification-tag-handle"><i class="bi bi-grip-vertical"></i></span>
+                <span>${escapeHtml(item.text)}</span>
+                <button type="button" class="es-classification-tag-remove" data-q-id="${qId}" data-item-id="${itemId}" title="Retirer et remettre dans la banque">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+
+            dropzone.appendChild(newTag);
+            bindTagEvents(newTag);
+            clearSelected();
+            syncClassificationValue(qId);
+        }
+
+        function moveItemToBank(itemId) {
+            const item = itemMap[itemId];
+            if (!item) return;
+            const bank = wrap.querySelector(`#bank_${qId}`);
+            if (!bank) return;
+
+            const oldBankEl = wrap.querySelector(`#tag_bank_${qId}_${itemId}`);
+            if (oldBankEl) oldBankEl.remove();
+            const oldPlacedEl = wrap.querySelector(`#tag_placed_${qId}_${itemId}`);
+            if (oldPlacedEl) oldPlacedEl.remove();
+
+            const newTag = document.createElement('div');
+            newTag.className = 'es-classification-tag';
+            newTag.id = `tag_bank_${qId}_${itemId}`;
+            newTag.setAttribute('data-q-id', qId);
+            newTag.setAttribute('data-item-id', itemId);
+            newTag.setAttribute('draggable', 'true');
+            newTag.innerHTML = `
+                <span class="es-classification-tag-handle"><i class="bi bi-grip-vertical"></i></span>
+                <span>${escapeHtml(item.text)}</span>
+            `;
+
+            bank.appendChild(newTag);
+            bindTagEvents(newTag);
+            clearSelected();
+            syncClassificationValue(qId);
+        }
+
+        function bindTagEvents(tagEl) {
+            const itemId = tagEl.getAttribute('data-item-id');
+
+            tagEl.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', JSON.stringify({ qId, itemId }));
+                tagEl.classList.add('is-dragging');
+            });
+
+            tagEl.addEventListener('dragend', () => {
+                tagEl.classList.remove('is-dragging');
+            });
+
+            tagEl.addEventListener('click', (e) => {
+                if (e.target.closest('.es-classification-tag-remove')) {
+                    e.stopPropagation();
+                    moveItemToBank(itemId);
+                    return;
+                }
+                e.stopPropagation();
+                if (selectedTagId === itemId) {
+                    clearSelected();
+                } else {
+                    clearSelected();
+                    selectedTagId = itemId;
+                    tagEl.classList.add('selected');
+                }
+            });
+        }
+
+        wrap.querySelectorAll('.es-classification-tag, .es-classification-placed-tag').forEach(tag => {
+            bindTagEvents(tag);
+        });
+
+        wrap.querySelectorAll('.es-classification-cat-dropzone').forEach(dz => {
+            const catId = dz.getAttribute('data-cat-id');
+
+            dz.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                dz.classList.add('drag-over');
+            });
+
+            dz.addEventListener('dragleave', () => {
+                dz.classList.remove('drag-over');
+            });
+
+            dz.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dz.classList.remove('drag-over');
+                try {
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    if (data && data.qId === qId && data.itemId) {
+                        moveItemToCategory(data.itemId, catId);
+                    }
+                } catch(err) {}
+            });
+
+            dz.addEventListener('click', () => {
+                if (selectedTagId) {
+                    moveItemToCategory(selectedTagId, catId);
+                }
+            });
+        });
+
+        const bank = wrap.querySelector('.es-classification-bank');
+        if (bank) {
+            bank.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                bank.classList.add('drag-over');
+            });
+
+            bank.addEventListener('dragleave', () => {
+                bank.classList.remove('drag-over');
+            });
+
+            bank.addEventListener('drop', (e) => {
+                e.preventDefault();
+                bank.classList.remove('drag-over');
+                try {
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    if (data && data.qId === qId && data.itemId) {
+                        moveItemToBank(data.itemId);
+                    }
+                } catch(err) {}
+            });
+
+            bank.addEventListener('click', () => {
+                if (selectedTagId) {
+                    moveItemToBank(selectedTagId);
+                }
             });
         }
     });
@@ -1710,6 +2083,55 @@ function updatePuzzleNumbers(listEl) {
     });
 }
 
+function isQuestionAnswered(q, val) {
+    if (val === undefined || val === null) return false;
+    if (q.type === 'qcm' || q.type === 'image_choice') {
+        return (val !== '' && val !== null && !isNaN(val));
+    }
+    if (q.type === 'boolean') {
+        return (val === true || val === false || val === 'true' || val === 'false');
+    }
+    if (q.type === 'range' || q.type === 'puzzle') {
+        return true;
+    }
+    if (q.type === 'pinpoint') {
+        return (typeof val === 'object' && val.x !== undefined && val.y !== undefined);
+    }
+    if (q.type === 'cloze') {
+        if (!val || typeof val !== 'object') return false;
+        const { blanks } = parseClozeQuestion(q.clozeText || '');
+        const total = blanks.length || 1;
+        const filled = Object.values(val).filter(v => v !== null && v !== undefined && String(v).trim().length > 0).length;
+        return filled >= total;
+    }
+    if (q.type === 'matching') {
+        if (!val || typeof val !== 'object') return false;
+        const leftPairs = (q.pairs || []).map(p => (p.left || '').trim()).filter(Boolean);
+        const totalPairs = leftPairs.length || 1;
+        const filled = leftPairs.filter(leftText => val[leftText] && String(val[leftText]).trim().length > 0).length;
+        return filled >= totalPairs;
+    }
+    if (q.type === 'table_choice') {
+        const rows = q.tableRows || [];
+        if (!val || typeof val !== 'object') return false;
+        const answeredRows = rows.filter((r, rIdx) => {
+            const rowAns = val[rIdx];
+            return rowAns && (rowAns.col1 || rowAns.col2);
+        }).length;
+        return (answeredRows === rows.length);
+    }
+    if (q.type === 'classification') {
+        const items = q.items || [];
+        if (!val || typeof val !== 'object') return false;
+        const placedCount = items.filter(it => val[it.id]).length;
+        return (placedCount === items.length);
+    }
+    if (typeof val === 'string') {
+        return val.trim().length > 0;
+    }
+    return true;
+}
+
 function updateProgress() {
     saveCurrentPageAnswersToState();
     const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
@@ -1717,45 +2139,8 @@ function updateProgress() {
 
     let answeredCount = 0;
     regularQuestions.forEach(q => {
-        const val = userAnswersState[q.id];
-        if (q.type === 'qcm' || q.type === 'image_choice') {
-            if (val !== undefined && val !== null && val !== '') answeredCount++;
-        } else if (q.type === 'table_choice') {
-            const rows = q.tableRows || [];
-            if (rows.length > 0 && val && typeof val === 'object') {
-                const answeredRows = rows.filter((r, rIdx) => {
-                    const rowAns = val[rIdx];
-                    return rowAns && (rowAns.col1 || rowAns.col2);
-                }).length;
-                if (answeredRows === rows.length) {
-                    answeredCount++;
-                }
-            }
-        } else if (q.type === 'boolean') {
-            if (val === true || val === false || val === 'true' || val === 'false') answeredCount++;
-        } else if (q.type === 'cloze') {
-            if (val && typeof val === 'object') {
-                const { blanks } = parseClozeQuestion(q.clozeText || '');
-                const totalBlanks = blanks.length || 1;
-                const filledBlanks = Object.values(val).filter(v => v !== null && v !== undefined && String(v).trim().length > 0).length;
-                if (filledBlanks === totalBlanks) {
-                    answeredCount++;
-                }
-            }
-        } else if (q.type === 'matching') {
-            if (val && typeof val === 'object') {
-                const totalPairs = (q.pairs || []).length || 1;
-                const filledPairs = Object.keys(val).filter(k => val[k] && String(val[k]).trim().length > 0).length;
-                if (filledPairs === totalPairs) {
-                    answeredCount++;
-                }
-            }
-        } else if (q.type === 'pinpoint') {
-            if (val && typeof val === 'object' && val.x !== undefined && val.y !== undefined) answeredCount++;
-        } else if (q.type === 'range' || q.type === 'puzzle') {
+        if (isQuestionAnswered(q, userAnswersState[q.id])) {
             answeredCount++;
-        } else {
-            if (typeof val === 'string' && val.trim().length > 0) answeredCount++;
         }
     });
 
@@ -1878,6 +2263,28 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 answers[q.id] = null;
                 missingCount++;
             }
+        } else if (q.type === 'classification') {
+            qcmTotal++;
+            const rawItems = q.items || [];
+            const userPlacements = (savedVal && typeof savedVal === 'object') ? savedVal : {};
+
+            answers[q.id] = userPlacements;
+
+            const placedCount = rawItems.filter(it => userPlacements[it.id]).length;
+            if (placedCount < rawItems.length) {
+                missingCount++;
+            }
+
+            let allCorrect = (rawItems.length > 0);
+            rawItems.forEach(it => {
+                if (userPlacements[it.id] !== it.categoryId) {
+                    allCorrect = false;
+                }
+            });
+
+            if (allCorrect) {
+                qcmCorrect++;
+            }
         } else if (q.type === 'cloze') {
             qcmTotal++;
             const { blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
@@ -1918,16 +2325,19 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
 
             answers[q.id] = userMatchesObj;
 
-            const filledCount = Object.keys(userMatchesObj).filter(k => userMatchesObj[k] && String(userMatchesObj[k]).trim().length > 0).length;
-            if (filledCount < rawPairs.length) {
+            const leftKeys = rawPairs.map(p => (p.left || '').trim()).filter(Boolean);
+            const filledCount = leftKeys.filter(k => userMatchesObj[k] && String(userMatchesObj[k]).trim().length > 0).length;
+            if (filledCount < leftKeys.length) {
                 missingCount++;
             }
 
             // Vérification de chaque paire
             let allCorrect = (rawPairs.length > 0);
             rawPairs.forEach(pair => {
-                const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
-                if (!uRight || String(uRight).trim().toLowerCase() !== String(pair.right).trim().toLowerCase()) {
+                const lText = (pair.left || '').trim();
+                const expRight = (pair.right || '').trim();
+                const uRight = (userMatchesObj[lText] || userMatchesObj[pair.left] || '').trim();
+                if (!uRight || uRight.toLowerCase() !== expRight.toLowerCase()) {
                     allCorrect = false;
                 }
             });
@@ -1991,6 +2401,8 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
     // Au 1er clic, on affiche le libellé warning in-page. Au 2ème clic (warning déjà visible), on valide quand même !
     if (missingCount > 0 && !autoSubmitByTimer) {
         if (warningLabel && warningLabel.classList.contains('hidden')) {
+            const textSpan = warningLabel.querySelector('span') || warningLabel;
+            textSpan.textContent = `Attention, vous n'avez pas rempli toutes les questions (${missingCount} non répondue${missingCount > 1 ? 's' : ''}). Voulez-vous quand même envoyer vos réponses ? Cliquez à nouveau sur « Valider et envoyer » pour confirmer.`;
             warningLabel.classList.remove('hidden');
             warningLabel.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
@@ -2071,6 +2483,29 @@ document.getElementById('btnSubmitQuiz')?.addEventListener('click', () => {
 
 document.getElementById('btnNextSection')?.addEventListener('click', () => {
     saveCurrentPageAnswersToState();
+
+    const allowPrev = (currentModuleData?.quizConfig?.allowPreviousPage !== false);
+    const warningLabel = document.getElementById('quizWarningLabel');
+
+    // Si le verrou de page est activé (retour arrière interdit)
+    if (!allowPrev) {
+        const sec = quizSections[currentSectionIndex];
+        const secQuestions = (sec?.questions || []).filter(q => q.type !== 'section');
+        const missingOnPage = secQuestions.filter(q => !isQuestionAnswered(q, userAnswersState[q.id]));
+
+        if (missingOnPage.length > 0) {
+            if (warningLabel && warningLabel.classList.contains('hidden')) {
+                const textSpan = warningLabel.querySelector('span') || warningLabel;
+                textSpan.textContent = `Attention, vous n'avez pas répondu à toutes les questions de cette page (${missingOnPage.length} non répondue${missingOnPage.length > 1 ? 's' : ''}). Le retour en arrière étant désactivé, vous ne pourrez plus modifier vos réponses. Voulez-vous vraiment passer à la page suivante ? Cliquez à nouveau sur « Page suivante » pour confirmer.`;
+                warningLabel.classList.remove('hidden');
+                warningLabel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+        }
+    }
+
+    if (warningLabel) warningLabel.classList.add('hidden');
+
     if (currentSectionIndex < quizSections.length - 1) {
         currentSectionIndex++;
         renderActiveSectionPage();
@@ -2326,6 +2761,64 @@ function renderResultsScreen(submission = {}) {
                                 ${tableRowsHtml}
                             </tbody>
                         </table>
+                    </div>
+                </div>`;
+            } else if (q.type === 'classification') {
+                const categories = q.categories || [];
+                const rawItems = q.items || [];
+                const userPlacements = (userAns && typeof userAns === 'object') ? userAns : {};
+
+                let allCorrect = (rawItems.length > 0);
+                rawItems.forEach(it => {
+                    if (userPlacements[it.id] !== it.categoryId) {
+                        allCorrect = false;
+                    }
+                });
+
+                const catResultsHtml = categories.map(cat => {
+                    const placedItems = rawItems.filter(it => userPlacements[it.id] === cat.id);
+                    const itemsBadges = placedItems.map(it => {
+                        const isItemCorrect = (it.categoryId === cat.id);
+                        const expectedCat = categories.find(c => c.id === it.categoryId);
+                        return `
+                            <span class="es-badge" style="background:${isItemCorrect ? 'rgba(39, 174, 96, 0.15)' : 'rgba(231, 76, 60, 0.15)'}; color:${isItemCorrect ? '#27ae60' : '#e74c3c'}; border:1px solid ${isItemCorrect ? 'rgba(39, 174, 96, 0.3)' : 'rgba(231, 76, 60, 0.3)'}; padding:4px 8px; font-size:0.8rem; font-weight:700;">
+                                <i class="bi ${isItemCorrect ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}"></i>
+                                ${escapeHtml(it.text || '')}
+                                ${!isItemCorrect ? `<small style="font-size:0.7rem; opacity:0.85; margin-left:4px;">(attendu : ${escapeHtml(expectedCat?.title || 'autre')})</small>` : ''}
+                            </span>
+                        `;
+                    }).join('');
+
+                    const unplacedExpected = rawItems.filter(it => it.categoryId === cat.id && userPlacements[it.id] !== cat.id);
+                    const missingBadges = unplacedExpected.map(it => `
+                        <span class="es-badge" style="background:rgba(243, 156, 18, 0.1); color:#d68910; border:1px dashed rgba(243, 156, 18, 0.4); padding:4px 8px; font-size:0.75rem;">
+                            <i class="bi bi-dash-circle"></i> Non classé ici : ${escapeHtml(it.text || '')}
+                        </span>
+                    `).join('');
+
+                    return `
+                        <div style="background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); padding:12px; display:flex; flex-direction:column; gap:8px;">
+                            <div style="font-size:0.85rem; font-weight:800; color:var(--clr-text); border-bottom:1px solid var(--clr-surface-3); padding-bottom:6px;">
+                                📁 ${escapeHtml(cat.title || 'Catégorie')}
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:6px; min-height:36px; align-items:center;">
+                                ${itemsBadges || '<span style="font-size:0.75rem; color:var(--clr-text-muted); font-style:italic;">Aucune étiquette placée</span>'}
+                                ${missingBadges}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                ansDisplay = `
+                <div style="background:#ffffff; border:1.5px solid ${allCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <strong>Votre classement :</strong>
+                        <span style="font-weight:700; color:${allCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                            ${allCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}
+                        </span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-top:8px;">
+                        ${catResultsHtml}
                     </div>
                 </div>`;
             } else if (q.type === 'boolean') {
