@@ -20,15 +20,194 @@ const pageLoader = document.getElementById('pageLoader');
 const formationView = document.getElementById('formationView');
 
 // ----------------------------------------------------------------
+// CACHE INTELLIGENT (Économie des quotas Firestore & Anti-spam F5)
+// ----------------------------------------------------------------
+let _modulesCache = null;
+let _modulesCacheTime = 0;
+const MODULES_CACHE_TTL = 30 * 1000; // 30 secondes en mémoire/session
+let _moduleQuestionsCache = {};
+
+function invalidateFormationCache() {
+    _modulesCache = null;
+    _modulesCacheTime = 0;
+    _moduleQuestionsCache = {};
+    try {
+        sessionStorage.removeItem('cached_formation_modules');
+        sessionStorage.removeItem('cached_formation_modules_ts');
+        if (currentUser) {
+            sessionStorage.removeItem('cached_stagiaire_subs_' + currentUser.uid);
+            sessionStorage.removeItem('cached_stagiaire_subs_ts_' + currentUser.uid);
+        }
+    } catch (e) {}
+}
+window.invalidateFormationCache = invalidateFormationCache;
+
+// ----------------------------------------------------------------
+// HELPER PARTAGE WHATSAPP (Résultats quiz stagiaire)
+// ----------------------------------------------------------------
+function generateWhatsAppShareUrl(moduleTitle, score) {
+    const siteUrl = 'https://srn-romain.github.io/jeux-bafa/index.html';
+    let shareText = '';
+    
+    if (score && score.total > 0) {
+        const percent = score.percent !== undefined ? score.percent : Math.round((score.correct / score.total) * 100);
+        let emoji = percent >= 80 ? '🏆' : (percent >= 50 ? '🎉' : '🎯');
+        shareText = `${emoji} *Mon score au Quiz Formation BAFA*\n\n` +
+            `📖 *Module :* ${moduleTitle}\n` +
+            `✨ *Score :* ${score.correct} / ${score.total} (${percent}%)\n\n` +
+            `🎓 Je prépare mon BAFA et je m'entraîne sur *Jeux BAFA* !\n` +
+            `Découvre la boîte à outils et les jeux pour l'animation ici : ${siteUrl}`;
+    } else {
+        shareText = `🎉 *Quiz Formation BAFA complété !*\n\n` +
+            `📖 *Module :* ${moduleTitle}\n` +
+            `📝 J'ai validé mon épreuve de formation !\n\n` +
+            `🎓 Je prépare mon BAFA et je m'entraîne sur *Jeux BAFA* !\n` +
+            `Découvre la boîte à outils et les jeux pour l'animation ici : ${siteUrl}`;
+    }
+
+    return `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+}
+
+// ----------------------------------------------------------------
+// BANDEAU COMPTE À REBOURS SYNCHRONISATION FIRESTORE (30s)
+// ----------------------------------------------------------------
+let _syncCountdownTimer = null;
+
+function showFirestoreSyncCountdown(seconds = 30) {
+    if (_syncCountdownTimer) {
+        clearInterval(_syncCountdownTimer);
+        _syncCountdownTimer = null;
+    }
+
+    let banner = document.getElementById('firestoreSyncCountdownBanner');
+    if (!banner) {
+        banner = document.createElement('div');
+        banner.id = 'firestoreSyncCountdownBanner';
+        banner.style.cssText = `
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 99999;
+            background: rgba(20, 32, 24, 0.96);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1.5px solid rgba(46, 204, 113, 0.4);
+            border-radius: 12px;
+            padding: 14px 18px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), 0 0 16px rgba(46, 204, 113, 0.18);
+            color: #ffffff;
+            font-size: 0.86rem;
+            line-height: 1.45;
+            max-width: 430px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        `;
+        document.body.appendChild(banner);
+    }
+
+    let remaining = seconds;
+
+    const renderBanner = () => {
+        if (!banner) return;
+        if (remaining > 0) {
+            const progressPercent = Math.min(100, Math.max(0, ((seconds - remaining) / seconds) * 100));
+            banner.innerHTML = `
+                <div style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                    🛡️
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 700; color: #ffffff; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                        <span style="font-size: 0.88rem;">Protection des lectures Firestore</span>
+                        <span style="background: rgba(243, 156, 18, 0.2); color: #f39c12; border: 1px solid rgba(243, 156, 18, 0.4); border-radius: 20px; padding: 1px 8px; font-size: 0.76rem; font-weight: 800; min-width: 32px; text-align: center;">${remaining}s</span>
+                    </div>
+                    <div style="font-size: 0.79rem; color: rgba(255, 255, 255, 0.85); margin-top: 4px;">
+                        Votre modification est enregistrée. Elle sera visible pour l'ensemble des stagiaires au maximum dans <strong style="color: #f39c12;">${remaining}s</strong>.
+                    </div>
+                    <div style="width: 100%; background: rgba(255, 255, 255, 0.1); height: 3px; border-radius: 2px; margin-top: 8px; overflow: hidden;">
+                        <div style="background: #2ecc71; height: 100%; width: ${progressPercent}%; transition: width 1s linear;"></div>
+                    </div>
+                </div>
+            `;
+        } else {
+            banner.innerHTML = `
+                <div style="background: rgba(46, 204, 113, 0.25); color: #2ecc71; width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; flex-shrink: 0;">
+                    ✅
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <div style="font-weight: 700; color: #2ecc71; font-size: 0.88rem;">
+                        Synchronisation active !
+                    </div>
+                    <div style="font-size: 0.79rem; color: rgba(255, 255, 255, 0.9); margin-top: 3px;">
+                        Vos modifications sont désormais visibles pour tous les stagiaires.
+                    </div>
+                </div>
+            `;
+            setTimeout(() => {
+                if (banner) {
+                    banner.style.opacity = '0';
+                    banner.style.transform = 'translateY(10px)';
+                    setTimeout(() => {
+                        banner?.remove();
+                    }, 400);
+                }
+            }, 2500);
+        }
+    };
+
+    renderBanner();
+
+    _syncCountdownTimer = setInterval(() => {
+        remaining--;
+        if (remaining <= 0) {
+            clearInterval(_syncCountdownTimer);
+            _syncCountdownTimer = null;
+        }
+        renderBanner();
+    }, 1000);
+}
+window.showFirestoreSyncCountdown = showFirestoreSyncCountdown;
+
+// ----------------------------------------------------------------
 // RÉCUPÉRATION ET SYNCHRONISATION DES MODULES & QUESTIONS
 // ----------------------------------------------------------------
-async function getFormationModulesList() {
+async function getFormationModulesList(forceRefresh = false) {
+    const now = Date.now();
+    
+    // 1. Vérification du cache mémoire rapide
+    if (!forceRefresh && _modulesCache && (now - _modulesCacheTime < MODULES_CACHE_TTL)) {
+        currentFormationModulesList = _modulesCache;
+        return currentFormationModulesList;
+    }
+
+    // 2. Vérification du sessionStorage (persiste au rechargement de page F5)
+    if (!forceRefresh) {
+        try {
+            const sCached = sessionStorage.getItem('cached_formation_modules');
+            const sTs = parseInt(sessionStorage.getItem('cached_formation_modules_ts') || '0', 10);
+            if (sCached && (now - sTs < MODULES_CACHE_TTL)) {
+                const parsed = JSON.parse(sCached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    _modulesCache = parsed;
+                    _modulesCacheTime = sTs;
+                    currentFormationModulesList = parsed;
+                    return currentFormationModulesList;
+                }
+            }
+        } catch (sErr) {}
+    }
+
     let list = [];
     try {
         const snap = await db.collection('formation').orderBy('num', 'asc').get();
         if (!snap.empty) {
             list = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             localStorage.setItem('offline_formation_modules', JSON.stringify(list));
+            try {
+                sessionStorage.setItem('cached_formation_modules', JSON.stringify(list));
+                sessionStorage.setItem('cached_formation_modules_ts', String(now));
+            } catch (e) {}
         }
     } catch (e) {
         console.warn("Offline fallback for formation collection:", e);
@@ -39,11 +218,22 @@ async function getFormationModulesList() {
     }
 
     currentFormationModulesList = list.sort((a, b) => (parseInt(a.num, 10) || 0) - (parseInt(b.num, 10) || 0));
+    _modulesCache = currentFormationModulesList;
+    _modulesCacheTime = now;
     return currentFormationModulesList;
 }
 
-// Récupération des questions d'un module depuis sa sous-collection 'questions'
-async function fetchModuleQuestions(moduleId) {
+// Récupération des questions d'un module depuis sa sous-collection 'questions' (avec cache mémoire)
+async function fetchModuleQuestions(moduleId, forceRefresh = false) {
+    if (!forceRefresh && _moduleQuestionsCache[moduleId] && _moduleQuestionsCache[moduleId].length > 0) {
+        const mod = currentFormationModulesList.find(m => m.id === moduleId);
+        if (mod) {
+            mod.questions = _moduleQuestionsCache[moduleId];
+            mod.questionsCount = _moduleQuestionsCache[moduleId].length;
+        }
+        return _moduleQuestionsCache[moduleId];
+    }
+
     let questions = [];
     try {
         const snap = await db.collection('formation').doc(moduleId).collection('questions').orderBy('order', 'asc').get();
@@ -54,6 +244,7 @@ async function fetchModuleQuestions(moduleId) {
         console.warn(`Could not load questions for module ${moduleId} from subcollection:`, err);
     }
 
+    _moduleQuestionsCache[moduleId] = questions;
     const mod = currentFormationModulesList.find(m => m.id === moduleId);
     if (mod) {
         mod.questions = questions;
@@ -143,7 +334,8 @@ async function saveFormationModule(moduleData, questionsList = []) {
         console.error("Error updating questions subcollection:", qErr);
     }
 
-    let list = await getFormationModulesList();
+    invalidateFormationCache();
+    let list = await getFormationModulesList(true);
     const idx = list.findIndex(m => m.id === moduleData.id);
     if (idx >= 0) {
         list[idx] = { ...list[idx], ...payload, questions: questionsList };
@@ -154,6 +346,7 @@ async function saveFormationModule(moduleData, questionsList = []) {
 
     localStorage.setItem('offline_formation_modules', JSON.stringify(list));
     currentFormationModulesList = list;
+    showFirestoreSyncCountdown(30);
     return list;
 }
 
@@ -172,18 +365,19 @@ async function deleteFormationModule(moduleId) {
     }
 
     await db.collection('formation').doc(moduleId).delete();
-
-    let list = await getFormationModulesList();
+    invalidateFormationCache();
+    let list = await getFormationModulesList(true);
     list = list.filter(m => m.id !== moduleId);
     localStorage.setItem('offline_formation_modules', JSON.stringify(list));
     currentFormationModulesList = list;
+    showFirestoreSyncCountdown(30);
     return list;
 }
 
 // ----------------------------------------------------------------
 // CHARGEMENT DE L'AFFICHAGE DES MODULES
 // ----------------------------------------------------------------
-async function loadFormationModules() {
+async function loadFormationModules(forceRefresh = false) {
     const loader = document.getElementById('formationLoader');
     const grid = document.getElementById('formationModulesGrid');
     const adminControls = document.getElementById('formationAdminControls');
@@ -218,33 +412,52 @@ async function loadFormationModules() {
     const effectiveRole = (actualRole === 'admin' && isSimulatedStagiaireRole) ? 'stagiaire' : actualRole;
 
     try {
-        const modules = await getFormationModulesList();
+        const modules = await getFormationModulesList(forceRefresh);
 
-        // 1. Soumissions du stagiaire connecté (historique de toutes ses tentatives)
+        // 1. Soumissions du stagiaire connecté (historique de toutes ses tentatives avec cache 30s)
         stagiaireSubmissionsMap = {};
         if (currentUser) {
-            await Promise.all(modules.map(async (m) => {
+            const now = Date.now();
+            let subsLoadedFromCache = false;
+            if (!forceRefresh && effectiveRole === 'stagiaire') {
                 try {
-                    const snap = await db.collection('formation').doc(m.id).collection('submissions')
-                        .where('userId', '==', currentUser.uid)
-                        .get();
-                    if (!snap.empty) {
-                        const allAttempts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-                        allAttempts.sort((a, b) => {
-                            const ta = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : (a.submittedAt?.seconds ? a.submittedAt.seconds * 1000 : (a.submittedAt ? new Date(a.submittedAt).getTime() : 0));
-                            const tb = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : (b.submittedAt?.seconds ? b.submittedAt.seconds * 1000 : (b.submittedAt ? new Date(b.submittedAt).getTime() : 0));
-                            return tb - ta;
-                        });
-                        stagiaireSubmissionsMap[m.id] = {
-                            ...allAttempts[0],
-                            allAttempts: allAttempts,
-                            attemptsCount: allAttempts.length
-                        };
+                    const cachedSubs = sessionStorage.getItem('cached_stagiaire_subs_' + currentUser.uid);
+                    const cachedSubsTs = parseInt(sessionStorage.getItem('cached_stagiaire_subs_ts_' + currentUser.uid) || '0', 10);
+                    if (cachedSubs && (now - cachedSubsTs < 30 * 1000)) {
+                        stagiaireSubmissionsMap = JSON.parse(cachedSubs);
+                        subsLoadedFromCache = true;
                     }
-                } catch (subErr) {
-                    console.warn(`Submissions fetch error for ${m.id}:`, subErr);
-                }
-            }));
+                } catch (e) {}
+            }
+
+            if (!subsLoadedFromCache) {
+                await Promise.all(modules.map(async (m) => {
+                    try {
+                        const snap = await db.collection('formation').doc(m.id).collection('submissions')
+                            .where('userId', '==', currentUser.uid)
+                            .get();
+                        if (!snap.empty) {
+                            const allAttempts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                            allAttempts.sort((a, b) => {
+                                const ta = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : (a.submittedAt?.seconds ? a.submittedAt.seconds * 1000 : (a.submittedAt ? new Date(a.submittedAt).getTime() : 0));
+                                const tb = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : (b.submittedAt?.seconds ? b.submittedAt.seconds * 1000 : (b.submittedAt ? new Date(b.submittedAt).getTime() : 0));
+                                return tb - ta;
+                            });
+                            stagiaireSubmissionsMap[m.id] = {
+                                ...allAttempts[0],
+                                allAttempts: allAttempts,
+                                attemptsCount: allAttempts.length
+                            };
+                        }
+                    } catch (subErr) {
+                        console.warn(`Submissions fetch error for ${m.id}:`, subErr);
+                    }
+                }));
+                try {
+                    sessionStorage.setItem('cached_stagiaire_subs_' + currentUser.uid, JSON.stringify(stagiaireSubmissionsMap));
+                    sessionStorage.setItem('cached_stagiaire_subs_ts_' + currentUser.uid, String(now));
+                } catch (e) {}
+            }
         }
 
         // 2. Compteurs administrateur / formateur par module (nombre de réponses & stagiaires uniques)
@@ -387,14 +600,26 @@ async function loadFormationModules() {
                 if (isEnabled) {
                     if (isAttemptsExceeded) {
                         actionBtn = `
-                        <button type="button" class="es-btn es-btn--ghost es-btn--sm es-btn--full btn-open-quiz" data-module-id="${m.id}">
-                            <i class="bi bi-check2-circle"></i> ${showResultsAtEnd ? 'Voir mes résultats & corrigé' : 'Quiz complété'}
-                        </button>`;
+                        <div style="display:flex; gap:8px; width:100%; align-items:center;">
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-open-quiz" data-module-id="${m.id}" style="flex:1;">
+                                <i class="bi bi-check2-circle"></i> ${showResultsAtEnd ? 'Résultats & corrigé' : 'Quiz complété'}
+                            </button>
+                            ${hasSubmitted ? `
+                            <a href="${generateWhatsAppShareUrl(m.title || ('Module ' + m.num), existingSub.score)}" target="_blank" rel="noopener noreferrer" class="es-btn es-btn--sm" title="Partager mon score sur WhatsApp" style="background:#25D366; color:#ffffff; border:none; padding:0 12px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius-sm); font-weight:700; box-shadow:0 2px 6px rgba(37,211,102,0.25); text-decoration:none; flex-shrink:0;">
+                                <i class="bi bi-whatsapp" style="font-size:1.05rem;"></i>
+                            </a>` : ''}
+                        </div>`;
                     } else {
                         actionBtn = `
-                        <button type="button" class="es-btn es-btn--primary es-btn--sm es-btn--full btn-open-quiz" data-module-id="${m.id}">
-                            <i class="bi bi-pencil-square"></i> ${hasSubmitted ? (showResultsAtEnd ? 'Voir le corrigé / Repasser' : 'Repasser le quiz') : 'Faire le quiz'}
-                        </button>`;
+                        <div style="display:flex; gap:8px; width:100%; align-items:center;">
+                            <button type="button" class="es-btn es-btn--primary es-btn--sm btn-open-quiz" data-module-id="${m.id}" style="flex:1;">
+                                <i class="bi bi-pencil-square"></i> ${hasSubmitted ? (showResultsAtEnd ? 'Corrigé / Repasser' : 'Repasser le quiz') : 'Faire le quiz'}
+                            </button>
+                            ${hasSubmitted ? `
+                            <a href="${generateWhatsAppShareUrl(m.title || ('Module ' + m.num), existingSub.score)}" target="_blank" rel="noopener noreferrer" class="es-btn es-btn--sm" title="Partager mon score sur WhatsApp" style="background:#25D366; color:#ffffff; border:none; padding:0 12px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:var(--radius-sm); font-weight:700; box-shadow:0 2px 6px rgba(37,211,102,0.25); text-decoration:none; flex-shrink:0;">
+                                <i class="bi bi-whatsapp" style="font-size:1.05rem;"></i>
+                            </a>` : ''}
+                        </div>`;
                     }
                 } else {
                     actionBtn = `
@@ -488,6 +713,7 @@ async function loadFormationModules() {
                     if (mod) mod.visible = newVisible;
                     localStorage.setItem('offline_formation_modules', JSON.stringify(currentFormationModulesList));
                     showToast(newVisible ? "Module visible pour les stagiaires." : "Module masqué pour les stagiaires.", "info");
+                    showFirestoreSyncCountdown(30);
                     loadFormationModules();
                 } catch (err) {
                     console.error("Toggle module visibility error:", err);
@@ -508,6 +734,7 @@ async function loadFormationModules() {
                     const mod = currentFormationModulesList.find(m => m.id === moduleId);
                     if (mod) mod.enabled = isChecked;
                     showToast(isChecked ? "Module activé pour les stagiaires." : "Module verrouillé.", "success");
+                    showFirestoreSyncCountdown(30);
                     loadFormationModules();
                 } catch (err) {
                     console.error("Toggle error:", err);
@@ -2484,6 +2711,7 @@ async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decis
         });
 
         showToast(decisionBool ? "Réponse validée (Vrai) !" : "Réponse invalidée (Faux) !", "success");
+        showFirestoreSyncCountdown(30);
 
         // Recharger les modales si ouvertes
         const resultsOverlay = document.getElementById('overlayFormationResults');
@@ -2587,6 +2815,7 @@ document.getElementById('btnConfirmPurgePromoSubmissions')?.addEventListener('cl
         btnLoading(btn, false);
         closeModal('overlayConfirmPromoSubmissionsPurge');
         showToast(`Toutes les réponses de la promo ont été supprimées (${totalDocs} copie(s) effacée(s)).`, "success");
+        showFirestoreSyncCountdown(30);
 
         // Rafraîchir les données
         await loadFormationModules();
@@ -2654,6 +2883,7 @@ document.getElementById('btnConfirmSingleSubDelete')?.addEventListener('click', 
         btnLoading(btn, false);
         closeModal('overlayConfirmSingleSubmissionDelete');
         showToast("Réponses supprimées avec succès !", "success");
+        showFirestoreSyncCountdown(30);
 
         // Rafraîchir les données
         await loadFormationModules();
