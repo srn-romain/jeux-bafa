@@ -511,15 +511,7 @@ async function loadFormationModules(forceRefresh = false) {
                 bgStyle = `style="background-image: linear-gradient(to bottom, rgba(14, 24, 16, 0.50) 0%, rgba(14, 24, 16, 0.90) 100%), url('${escapeHtml(m.bgImage)}');"`;
             }
 
-            let statsDisplay = '';
-            if (adminStats.totalAttempts === 0) {
-                statsDisplay = '0 réponse';
-            } else if (adminStats.uniqueStagiaires === adminStats.totalAttempts) {
-                statsDisplay = `${adminStats.totalAttempts} réponse${adminStats.totalAttempts > 1 ? 's' : ''}`;
-            } else {
-                statsDisplay = `${adminStats.totalAttempts} réponse${adminStats.totalAttempts > 1 ? 's' : ''} (${adminStats.uniqueStagiaires} stagiaire${adminStats.uniqueStagiaires > 1 ? 's' : ''})`;
-            }
-
+            const statsDisplay = `${adminStats.totalAttempts} réponse${adminStats.totalAttempts > 1 ? 's' : ''}`;
             const questionsCount = m.questionsCount || (m.questions ? m.questions.length : 0);
 
             // 1. Tag Masqué
@@ -528,13 +520,13 @@ async function loadFormationModules(forceRefresh = false) {
                 hiddenTagHtml = `<span class="es-formation-tag es-formation-tag--hidden-status es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="Module masqué pour les candidats"><i class="bi bi-eye-slash-fill"></i> Masqué</span>`;
             }
 
-            // 2. Tag Nombre de Questions
+            // 2. Tag Nombre de Questions (en bas à gauche)
             const questionsTagHtml = `<span class="es-formation-tag es-formation-tag--questions es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="Nombre de questions dans ce quiz"><i class="bi bi-patch-question"></i> ${questionsCount} question${questionsCount > 1 ? 's' : ''}</span>`;
 
-            // 3. Tag Nombre de réponses et stagiaires (Admin / Formateur)
+            // 3. Tag Nombre de réponses uniquement (en bas à droite pour Admin / Formateur)
             let statsTagHtml = '';
             if (effectiveRole === 'admin' || effectiveRole === 'formateur') {
-                statsTagHtml = `<span class="es-formation-tag es-formation-tag--stats es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="${adminStats.uniqueStagiaires} stagiaire(s) distinct(s) — ${adminStats.totalAttempts} réponse(s) au total"><i class="bi bi-chat-left-text"></i> ${statsDisplay}</span>`;
+                statsTagHtml = `<span class="es-formation-tag es-formation-tag--stats es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="${adminStats.totalAttempts} réponse(s) au total"><i class="bi bi-chat-left-text"></i> ${statsDisplay}</span>`;
             }
 
             // 4. Tag Mot de passe requis (si activé)
@@ -601,14 +593,16 @@ async function loadFormationModules(forceRefresh = false) {
                     <h3 class="es-formation-title" style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:4px;">
                         <span>${escapeHtml(m.title)}</span>
                         ${hiddenTagHtml}
-                        ${questionsTagHtml}
                         ${passwordTagHtml}
-                        ${statsTagHtml}
                     </h3>
                     <p class="es-formation-desc">${escapeHtml(m.subtitle || m.description || '')}</p>
                 </div>
+                <div class="es-formation-card__bottom-meta" style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:auto; padding-top:14px; gap:8px;">
+                    <div>${questionsTagHtml}</div>
+                    <div>${statsTagHtml}</div>
+                </div>
                 ${actionBtn ? `
-                <div class="es-formation-footer">
+                <div class="es-formation-footer" style="margin-top:10px;">
                     ${actionBtn}
                 </div>` : ''}
             </div>`;
