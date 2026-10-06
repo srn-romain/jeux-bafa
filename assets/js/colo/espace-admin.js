@@ -55,6 +55,7 @@ auth.onAuthStateChanged(async (user) => {
     document.getElementById('adminContent')?.classList.remove('hidden');
 
     initAdminTabs();
+    initMatrixSubtabs();
     loadAdminFormationModules();
     loadPendingBadge(); // badge demandes en attente dès l'ouverture
 });
@@ -776,6 +777,32 @@ document.getElementById('btnToggleAdminKeyVisibility')?.addEventListener('click'
         }
     }
 });
+
+// ----------------------------------------------------------------
+// SOUS-ONGLETS MATRICE DES HABILITATIONS (Formation vs Colos)
+// ----------------------------------------------------------------
+function initMatrixSubtabs() {
+    const btnFormation = document.getElementById('btnMatrixTabFormation');
+    const btnColos = document.getElementById('btnMatrixTabColos');
+    const viewFormation = document.getElementById('matrixFormationView');
+    const viewColos = document.getElementById('matrixColosView');
+
+    if (!btnFormation || !btnColos) return;
+
+    btnFormation.addEventListener('click', () => {
+        btnFormation.classList.add('active');
+        btnColos.classList.remove('active');
+        viewFormation?.classList.remove('hidden');
+        viewColos?.classList.add('hidden');
+    });
+
+    btnColos.addEventListener('click', () => {
+        btnColos.classList.add('active');
+        btnFormation.classList.remove('active');
+        viewColos?.classList.remove('hidden');
+        viewFormation?.classList.add('hidden');
+    });
+}
 
 
 // ================================================================
