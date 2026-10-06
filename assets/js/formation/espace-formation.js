@@ -2112,12 +2112,21 @@ async function openFormationResultsModal(moduleId) {
 
     try {
         const snap = await db.collection('formation').doc(moduleId).collection('submissions').get();
-
         if (loader) loader.classList.add('hidden');
+
+        const btnPurge = document.getElementById('btnAdminPurgeModulePromoSubmissions');
 
         if (snap.empty) {
             if (empty) empty.classList.remove('hidden');
+            if (btnPurge) btnPurge.classList.add('hidden');
             return;
+        }
+
+        if (actualRole === 'admin' && btnPurge) {
+            btnPurge.classList.remove('hidden');
+            btnPurge.onclick = () => openPurgePromoSubmissionsModal(moduleData, snap.size);
+        } else if (btnPurge) {
+            btnPurge.classList.add('hidden');
         }
 
         const subs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -2343,6 +2352,10 @@ async function openFormationResultsModal(moduleId) {
                         <div style="font-size:0.75rem; font-weight:600; color:var(--clr-text-light); background:var(--clr-surface); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3);">
                             🕒 ${formatFullDate(sub.submittedAt)}
                         </div>
+                        ${(actualRole === 'admin') ? `
+                        <button type="button" class="es-btn es-btn--danger es-btn--sm btn-delete-single-submission" data-sub-id="${sub.id}" data-user-id="${sub.userId || ''}" data-module-id="${moduleId}" data-user-name="${escapeHtml(sub.userName || sub.userEmail)}" data-module-title="${escapeHtml(moduleData.title)}" style="padding:4px 8px; font-size:0.75rem;" title="Supprimer cette copie">
+                            <i class="bi bi-trash3"></i>
+                        </button>` : ''}
                     </div>
                 </div>
                 ${answersHtml}
@@ -2359,6 +2372,18 @@ async function openFormationResultsModal(moduleId) {
                     const qId = btn.getAttribute('data-q-id');
                     const decision = (btn.getAttribute('data-val') === 'true');
                     await gradeOpenQuestionAnswer(modId, subId, qId, decision, btn);
+                });
+            });
+
+            list.querySelectorAll('.btn-delete-single-submission').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const subId = btn.getAttribute('data-sub-id');
+                    const userId = btn.getAttribute('data-user-id');
+                    const modId = btn.getAttribute('data-module-id');
+                    const uName = btn.getAttribute('data-user-name');
+                    const modTitle = btn.getAttribute('data-module-title');
+                    openSingleDeleteConfirmModal({ subId, userId, moduleId: modId, userName: uName, moduleTitle: modTitle });
                 });
             });
         }
@@ -2477,6 +2502,179 @@ async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decis
 
 document.getElementById('btnCloseResultsModal')?.addEventListener('click', () => closeModal('overlayFormationResults'));
 document.getElementById('btnCloseResultsModal2')?.addEventListener('click', () => closeModal('overlayFormationResults'));
+
+// ================================================================
+// SUPPRESSION DES RÉPONSES (ADMIN UNIQUEMENT)
+// ================================================================
+
+// 1. Purge des réponses de toute la promo pour un module (Plusieurs confirmations)
+function openPurgePromoSubmissionsModal(moduleData, subCount = 0) {
+    if (actualRole !== 'admin') {
+        showToast("Action réservée à l'administrateur.", "error");
+        return;
+    }
+
+    const modal = document.getElementById('overlayConfirmPromoSubmissionsPurge');
+    if (!modal || !moduleData) return;
+
+    document.getElementById('purgeModuleId').value = moduleData.id;
+    document.getElementById('purgeModalModuleName').textContent = moduleData.title || `Module ${moduleData.num}`;
+    document.getElementById('purgeModalSubCount').textContent = subCount;
+
+    const inputConfirm = document.getElementById('purgeConfirmInput');
+    const checkAck = document.getElementById('purgeCheckAcknowledge');
+    const btnConfirm = document.getElementById('btnConfirmPurgePromoSubmissions');
+
+    if (inputConfirm) inputConfirm.value = '';
+    if (checkAck) checkAck.checked = false;
+    if (btnConfirm) btnConfirm.disabled = true;
+
+    openModal('overlayConfirmPromoSubmissionsPurge');
+}
+
+function updatePurgePromoConfirmState() {
+    const inputConfirm = document.getElementById('purgeConfirmInput');
+    const checkAck = document.getElementById('purgeCheckAcknowledge');
+    const btnConfirm = document.getElementById('btnConfirmPurgePromoSubmissions');
+
+    const isTextValid = (inputConfirm?.value || '').trim().toUpperCase() === 'SUPPRIMER';
+    const isAckValid = checkAck?.checked === true;
+
+    if (btnConfirm) {
+        btnConfirm.disabled = !(isTextValid && isAckValid);
+    }
+}
+
+document.getElementById('purgeConfirmInput')?.addEventListener('input', updatePurgePromoConfirmState);
+document.getElementById('purgeCheckAcknowledge')?.addEventListener('change', updatePurgePromoConfirmState);
+
+document.getElementById('btnClosePurgeModal')?.addEventListener('click', () => closeModal('overlayConfirmPromoSubmissionsPurge'));
+document.getElementById('btnCancelPurge')?.addEventListener('click', () => closeModal('overlayConfirmPromoSubmissionsPurge'));
+
+document.getElementById('btnConfirmPurgePromoSubmissions')?.addEventListener('click', async () => {
+    if (actualRole !== 'admin') {
+        showToast("Action réservée à l'administrateur.", "error");
+        return;
+    }
+
+    const btn = document.getElementById('btnConfirmPurgePromoSubmissions');
+    const moduleId = document.getElementById('purgeModuleId').value;
+    const inputConfirm = document.getElementById('purgeConfirmInput');
+    const checkAck = document.getElementById('purgeCheckAcknowledge');
+
+    if ((inputConfirm?.value || '').trim().toUpperCase() !== 'SUPPRIMER' || !checkAck?.checked) {
+        showToast("Veuillez valider toutes les étapes de confirmation.", "warning");
+        return;
+    }
+
+    if (!moduleId) return;
+
+    btnLoading(btn, true);
+    try {
+        const snap = await db.collection('formation').doc(moduleId).collection('submissions').get();
+        const totalDocs = snap.size;
+
+        // Suppression par batch
+        const batchSize = 450;
+        const docs = snap.docs;
+        for (let i = 0; i < docs.length; i += batchSize) {
+            const batch = db.batch();
+            const chunk = docs.slice(i, i + batchSize);
+            chunk.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+        }
+
+        btnLoading(btn, false);
+        closeModal('overlayConfirmPromoSubmissionsPurge');
+        showToast(`Toutes les réponses de la promo ont été supprimées (${totalDocs} copie(s) effacée(s)).`, "success");
+
+        // Rafraîchir les données
+        await loadFormationModules();
+        if (typeof loadAdminCandidatesBilan === 'function') {
+            await loadAdminCandidatesBilan();
+        }
+
+        const resultsOverlay = document.getElementById('overlayFormationResults');
+        if (resultsOverlay && !resultsOverlay.classList.contains('hidden')) {
+            await openFormationResultsModal(moduleId);
+        }
+    } catch (err) {
+        btnLoading(btn, false);
+        console.error("Purge promo submissions error:", err);
+        showToast("Erreur lors de la suppression groupée des réponses.", "error");
+    }
+});
+
+// 2. Suppression des réponses d'un stagiaire individuel sur un module
+function openSingleDeleteConfirmModal({ subId = '', userId = '', moduleId = '', userName = '', moduleTitle = '' } = {}) {
+    if (actualRole !== 'admin') {
+        showToast("Action réservée à l'administrateur.", "error");
+        return;
+    }
+
+    const modal = document.getElementById('overlayConfirmSingleSubmissionDelete');
+    if (!modal) return;
+
+    document.getElementById('singleDeleteSubId').value = subId;
+    document.getElementById('singleDeleteUserId').value = userId;
+    document.getElementById('singleDeleteModuleId').value = moduleId;
+    document.getElementById('singleDeleteUserName').textContent = userName || 'Ce candidat';
+    document.getElementById('singleDeleteModuleName').textContent = moduleTitle || 'ce module';
+
+    openModal('overlayConfirmSingleSubmissionDelete');
+}
+
+document.getElementById('btnCloseSingleSubDelete')?.addEventListener('click', () => closeModal('overlayConfirmSingleSubmissionDelete'));
+document.getElementById('btnCancelSingleSubDelete')?.addEventListener('click', () => closeModal('overlayConfirmSingleSubmissionDelete'));
+
+document.getElementById('btnConfirmSingleSubDelete')?.addEventListener('click', async () => {
+    if (actualRole !== 'admin') {
+        showToast("Action réservée à l'administrateur.", "error");
+        return;
+    }
+
+    const btn = document.getElementById('btnConfirmSingleSubDelete');
+    const subId = document.getElementById('singleDeleteSubId').value;
+    const userId = document.getElementById('singleDeleteUserId').value;
+    const moduleId = document.getElementById('singleDeleteModuleId').value;
+
+    if (!moduleId || (!subId && !userId)) return;
+
+    btnLoading(btn, true);
+    try {
+        if (subId) {
+            await db.collection('formation').doc(moduleId).collection('submissions').doc(subId).delete();
+        } else if (userId) {
+            const snap = await db.collection('formation').doc(moduleId).collection('submissions').where('userId', '==', userId).get();
+            for (const doc of snap.docs) {
+                await doc.ref.delete();
+            }
+        }
+
+        btnLoading(btn, false);
+        closeModal('overlayConfirmSingleSubmissionDelete');
+        showToast("Réponses supprimées avec succès !", "success");
+
+        // Rafraîchir les données
+        await loadFormationModules();
+        if (typeof loadAdminCandidatesBilan === 'function') {
+            await loadAdminCandidatesBilan();
+        }
+
+        const resultsOverlay = document.getElementById('overlayFormationResults');
+        const candBilanOverlay = document.getElementById('overlayAdminCandidateBilan');
+        if (resultsOverlay && !resultsOverlay.classList.contains('hidden')) {
+            await openFormationResultsModal(moduleId);
+        }
+        if (candBilanOverlay && !candBilanOverlay.classList.contains('hidden') && userId) {
+            await openAdminCandidateBilanModal(userId);
+        }
+    } catch (err) {
+        btnLoading(btn, false);
+        console.error("Delete single submission error:", err);
+        showToast("Erreur lors de la suppression.", "error");
+    }
+});
 
 // ================================================================
 // EXPORTS PDF DU BILAN (STAGIAIRE & PROMOTION)
@@ -4068,7 +4266,12 @@ async function openAdminCandidateBilanModal(userId) {
                         ${hasSubmitted ? `
                         <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-toggle-cand-modal-acc" data-mod="${m.id}" style="font-size:0.78rem;">
                             <i class="bi bi-eye"></i> Voir les réponses
+                        </button>
+                        ${(actualRole === 'admin') ? `
+                        <button type="button" class="es-btn es-btn--danger es-btn--sm btn-delete-candidate-module-sub" data-user-id="${cand.uid}" data-module-id="${m.id}" data-user-name="${escapeHtml(displayName)}" data-module-title="${escapeHtml(m.title)}" style="font-size:0.78rem; padding:4px 10px;" title="Supprimer les réponses de ce candidat pour ce module">
+                            <i class="bi bi-trash3"></i> Supprimer
                         </button>` : ''}
+                        ` : ''}
                     </div>
                 </div>
                 ${hasSubmitted ? `
@@ -4098,6 +4301,17 @@ async function openAdminCandidateBilanModal(userId) {
                     const qId = btn.getAttribute('data-q-id');
                     const decision = (btn.getAttribute('data-val') === 'true');
                     await gradeOpenQuestionAnswer(modId, subId, qId, decision, btn);
+                });
+            });
+
+            list.querySelectorAll('.btn-delete-candidate-module-sub').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const uId = btn.getAttribute('data-user-id');
+                    const mId = btn.getAttribute('data-module-id');
+                    const uName = btn.getAttribute('data-user-name');
+                    const mTitle = btn.getAttribute('data-module-title');
+                    openSingleDeleteConfirmModal({ userId: uId, moduleId: mId, userName: uName, moduleTitle: mTitle });
                 });
             });
         }

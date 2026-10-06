@@ -472,8 +472,115 @@
                 </div>
                 <div id="resultsSubmissionsList" class="hidden" style="display:flex; flex-direction:column; gap:16px;"></div>
             </div>
-            <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3);">
+            <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                <div>
+                    <button type="button" class="es-btn es-btn--danger es-btn--sm hidden" id="btnAdminPurgeModulePromoSubmissions" style="font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="bi bi-trash3-fill"></i> Supprimer toutes les réponses de la promo
+                    </button>
+                </div>
                 <button class="es-btn es-btn--ghost" id="btnCloseResultsModal2">Fermer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+     MODAL : Confirmation Solennelle - Purge des réponses de la promo (Admin)
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlayConfirmPromoSubmissionsPurge" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:540px;">
+            <div class="es-modal__header" style="border-bottom:1.5px solid var(--clr-surface-3);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(231,76,60,0.15); color:var(--clr-danger); display:flex; align-items:center; justify-content:center; font-size:1.2rem;">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:0.72rem; font-weight:700; color:var(--clr-danger); text-transform:uppercase;">Action Irréversible • Admin</div>
+                        <h2 class="es-modal__title" style="font-size:1.1rem; color:var(--clr-text);">Supprimer les réponses de la promo</h2>
+                    </div>
+                </div>
+                <button class="es-modal__close" id="btnClosePurgeModal"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body" style="padding:20px 24px;">
+                <input type="hidden" id="purgeModuleId" value="">
+
+                <!-- Étape 1 : Avertissement d'impact -->
+                <div class="es-alert es-alert--error" style="font-size:0.86rem; line-height:1.5; margin-bottom:16px;">
+                    <i class="bi bi-shield-exclamation" style="font-size:1.3rem; flex-shrink:0;"></i>
+                    <div>
+                        <strong>Confirmation 1/2 : Avertissement critique</strong>
+                        <div style="margin-top:4px;">
+                            Vous êtes sur le point d'effacer définitivement les copies et réponses de <strong>tous les stagiaires</strong> pour le <strong id="purgeModalModuleName">ce module</strong> (<span id="purgeModalSubCount">0</span> réponse(s)).
+                        </div>
+                    </div>
+                </div>
+
+                <p style="font-size:0.84rem; color:var(--clr-text-muted); margin-bottom:14px;">
+                    Cette action réinitialisera l'état du module pour toute la promotion. Les stagiaires pourront repasser l'épreuve à zéro.
+                </p>
+
+                <!-- Étape 2 : Confirmation explicite avec mot-clé -->
+                <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:14px; margin-bottom:14px;">
+                    <label for="purgeConfirmInput" style="font-size:0.82rem; font-weight:700; color:var(--clr-text); display:block; margin-bottom:6px;">
+                        Confirmation 2/2 : Tapez <code style="color:var(--clr-danger); font-weight:800;">SUPPRIMER</code> pour débloquer la validation :
+                    </label>
+                    <input type="text" id="purgeConfirmInput" class="es-input" placeholder="Tapez SUPPRIMER ici..." autocomplete="off" style="text-transform:uppercase; font-weight:700; letter-spacing:1px;">
+                </div>
+
+                <!-- Case à cocher de sécurité supplémentaire -->
+                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:0.82rem; color:var(--clr-text-muted);">
+                    <input type="checkbox" id="purgeCheckAcknowledge" style="width:16px; height:16px; accent-color:var(--clr-danger);">
+                    <span>Je confirme vouloir effacer toutes les données de ce quiz pour la promo.</span>
+                </label>
+            </div>
+            <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3); display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" class="es-btn es-btn--ghost" id="btnCancelPurge">Annuler</button>
+                <button type="button" class="es-btn es-btn--danger" id="btnConfirmPurgePromoSubmissions" disabled style="font-weight:700;">
+                    <i class="bi bi-trash3-fill"></i>
+                    <span class="es-btn__text">Supprimer définitivement</span>
+                    <span class="es-btn__spinner"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+     MODAL : Confirmation - Suppression des réponses d'un stagiaire (Admin)
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlayConfirmSingleSubmissionDelete" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:480px;">
+            <div class="es-modal__header" style="border-bottom:1.5px solid var(--clr-surface-3);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:10px; background:rgba(231,76,60,0.15); color:var(--clr-danger); display:flex; align-items:center; justify-content:center; font-size:1.1rem;">
+                        <i class="bi bi-person-x-fill"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:0.72rem; font-weight:700; color:var(--clr-danger); text-transform:uppercase;">Suppression Individuelle • Admin</div>
+                        <h2 class="es-modal__title" style="font-size:1.05rem; color:var(--clr-text);">Supprimer les réponses</h2>
+                    </div>
+                </div>
+                <button class="es-modal__close" id="btnCloseSingleSubDelete"><i class="bi bi-x"></i></button>
+            </div>
+            <div class="es-modal__body" style="padding:20px 24px;">
+                <input type="hidden" id="singleDeleteSubId" value="">
+                <input type="hidden" id="singleDeleteUserId" value="">
+                <input type="hidden" id="singleDeleteModuleId" value="">
+
+                <p style="font-size:0.9rem; color:var(--clr-text); line-height:1.5; margin-bottom:12px;">
+                    Voulez-vous supprimer les réponses de <strong id="singleDeleteUserName" style="color:var(--clr-primary);">ce candidat</strong> pour le <strong id="singleDeleteModuleName">ce module</strong> ?
+                </p>
+
+                <div class="es-alert es-alert--error" style="font-size:0.82rem; margin-bottom:0;">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <span>La copie et les scores associés seront effacés, permettant au candidat de repasser le quiz.</span>
+                </div>
+            </div>
+            <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3); display:flex; justify-content:space-between; align-items:center;">
+                <button type="button" class="es-btn es-btn--ghost" id="btnCancelSingleSubDelete">Annuler</button>
+                <button type="button" class="es-btn es-btn--danger" id="btnConfirmSingleSubDelete" style="font-weight:700;">
+                    <i class="bi bi-trash3-fill"></i>
+                    <span class="es-btn__text">Confirmer la suppression</span>
+                    <span class="es-btn__spinner"></span>
+                </button>
             </div>
         </div>
     </div>
