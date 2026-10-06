@@ -102,6 +102,52 @@
                     </div>
                 </div>
 
+                <!-- Bloc Déverrouillage par mot de passe si activé -->
+                <div id="quizPasswordLockBlock" class="hidden" style="background:var(--clr-surface-2); border:1.5px solid rgba(230, 126, 34, 0.4); border-radius:var(--radius-md); padding:20px; margin:20px 0;">
+                    <div style="display:flex; align-items:flex-start; gap:14px;">
+                        <div style="width:42px; height:42px; border-radius:12px; background:rgba(230,126,34,0.15); color:var(--clr-accent); display:flex; align-items:center; justify-content:center; font-size:1.35rem; flex-shrink:0;">
+                            <i class="bi bi-shield-lock-fill" id="unlockIconState"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                                <div style="font-weight:700; font-size:1rem; color:var(--clr-text);" id="unlockBlockTitle">
+                                    🔐 Épreuve protégée par mot de passe
+                                </div>
+                                <span class="es-badge es-badge--pending" id="unlockStatusBadge">Verrouillé</span>
+                            </div>
+                            <p style="font-size:0.84rem; color:var(--clr-text-muted); margin:4px 0 12px;" id="unlockBlockDesc">
+                                Votre formateur a configuré un mot de passe pour accéder aux questions de ce module.
+                            </p>
+                            
+                            <div id="unlockAdminHint" class="hidden" style="font-size:0.78rem; font-weight:700; color:var(--clr-primary); margin-bottom:10px;">
+                                <i class="bi bi-key-fill"></i> Mot de passe configuré (Admin) : <span id="unlockAdminHintVal" style="background:rgba(39,174,96,0.15); padding:2px 6px; border-radius:4px;"></span>
+                            </div>
+
+                            <form id="quizUnlockForm" onsubmit="return false;" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                <div style="position:relative; flex:1; min-width:200px; max-width:320px;">
+                                    <input type="text" id="quizUnlockPasswordInput" class="es-input" placeholder="Saisir le mot de passe..." autocomplete="off" style="font-weight:600; letter-spacing:0.5px; padding-left:36px;">
+                                    <i class="bi bi-key-fill" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--clr-text-muted); font-size:1rem;"></i>
+                                </div>
+                                <button type="button" class="es-btn es-btn--primary" id="btnUnlockQuiz" style="padding:10px 20px; font-weight:700;">
+                                    <i class="bi bi-unlock-fill"></i> Déverrouiller
+                                </button>
+                            </form>
+                            
+                            <!-- Message d'erreur mot de passe -->
+                            <div class="es-alert es-alert--error hidden" id="quizUnlockErrorAlert" style="margin-top:10px; padding:10px 14px; font-size:0.84rem; display:flex; align-items:center; gap:8px;">
+                                <i class="bi bi-exclamation-triangle-fill" style="flex-shrink:0;"></i>
+                                <span id="quizUnlockErrorMsg">Mot de passe incorrect. Demandez le code d'accès à votre formateur.</span>
+                            </div>
+                            
+                            <!-- Message de succès quand déverrouillé -->
+                            <div class="es-alert es-alert--success hidden" id="quizUnlockSuccessAlert" style="margin-top:10px; padding:10px 14px; font-size:0.84rem; background:rgba(39, 174, 96, 0.15); color:#27ae60; border-color:rgba(39, 174, 96, 0.3); display:flex; align-items:center; gap:8px;">
+                                <i class="bi bi-check-circle-fill" style="flex-shrink:0;"></i>
+                                <span>Quiz déverrouillé avec succès ! Vous pouvez maintenant commencer votre épreuve.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Avertissement de début d'épreuve -->
                 <div class="es-quiz-warning-box" id="briefingWarningBox">
                     <div class="es-quiz-warning-icon">

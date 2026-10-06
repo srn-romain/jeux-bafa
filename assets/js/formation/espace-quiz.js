@@ -12,6 +12,7 @@ let currentModuleData = null;
 let currentQuestions = [];
 let userPreviousSubmissions = [];
 let isQuizActive = false;
+let isQuizUnlocked = false;
 
 // Variables pour le chronomètre / timer
 let quizTimerInterval = null;
@@ -256,6 +257,60 @@ function renderBriefingScreen() {
         warningTextEl.innerHTML = warnContent;
     }
 
+    // Gestion de la protection par mot de passe
+    const isPasswordRequired = Boolean(qConfig.requirePassword === true || (qConfig.password && String(qConfig.password).trim() !== ''));
+    const expectedPassword = String(qConfig.password || '').trim();
+    const lockBlock = document.getElementById('quizPasswordLockBlock');
+    const unlockForm = document.getElementById('quizUnlockForm');
+    const unlockBadge = document.getElementById('unlockStatusBadge');
+    const unlockTitle = document.getElementById('unlockBlockTitle');
+    const unlockIcon = document.getElementById('unlockIconState');
+    const unlockAdminHint = document.getElementById('unlockAdminHint');
+    const unlockAdminHintVal = document.getElementById('unlockAdminHintVal');
+    const errAlert = document.getElementById('quizUnlockErrorAlert');
+    const succAlert = document.getElementById('quizUnlockSuccessAlert');
+
+    if (!isPasswordRequired) {
+        // Protection désactivée : masquer totalement le bloc de mot de passe
+        if (lockBlock) lockBlock.classList.add('hidden');
+        isQuizUnlocked = true;
+    } else {
+        // Protection activée
+        if (lockBlock) lockBlock.classList.remove('hidden');
+
+        // Afficher l'indice pour les admins / formateurs
+        if (currentRole === 'admin' || currentRole === 'formateur') {
+            if (unlockAdminHint && unlockAdminHintVal) {
+                unlockAdminHint.classList.remove('hidden');
+                unlockAdminHintVal.textContent = expectedPassword || '(aucun)';
+            }
+        } else {
+            if (unlockAdminHint) unlockAdminHint.classList.add('hidden');
+        }
+
+        if (isQuizUnlocked) {
+            if (unlockForm) unlockForm.classList.add('hidden');
+            if (errAlert) errAlert.classList.add('hidden');
+            if (succAlert) succAlert.classList.remove('hidden');
+            if (unlockBadge) {
+                unlockBadge.className = 'es-badge es-badge--approved';
+                unlockBadge.textContent = 'Déverrouillé';
+            }
+            if (unlockTitle) unlockTitle.innerHTML = '🔓 Épreuve déverrouillée';
+            if (unlockIcon) unlockIcon.className = 'bi bi-unlock-fill';
+        } else {
+            if (unlockForm) unlockForm.classList.remove('hidden');
+            if (errAlert) errAlert.classList.add('hidden');
+            if (succAlert) succAlert.classList.add('hidden');
+            if (unlockBadge) {
+                unlockBadge.className = 'es-badge es-badge--pending';
+                unlockBadge.textContent = 'Code requis';
+            }
+            if (unlockTitle) unlockTitle.innerHTML = '🔐 Épreuve protégée par mot de passe';
+            if (unlockIcon) unlockIcon.className = 'bi bi-shield-lock-fill';
+        }
+    }
+
     // Gestion du bloc d'avertissement & boutons
     const warningBox = document.getElementById('briefingWarningBox');
     const lockedAlert = document.getElementById('briefingLockedAlert');
@@ -268,6 +323,7 @@ function renderBriefingScreen() {
         if (btnStart) {
             btnStart.disabled = true;
             btnStart.style.opacity = '0.5';
+            btnStart.classList.remove('hidden');
             btnStart.innerHTML = `<i class="bi bi-lock-fill"></i> Tentatives épuisées (${prevAttempts}/${maxAttempts})`;
         }
         if (showResults && userPreviousSubmissions.length > 0 && btnViewResults) {
@@ -278,10 +334,18 @@ function renderBriefingScreen() {
         if (warningBox) warningBox.classList.remove('hidden');
         if (lockedAlert) lockedAlert.classList.add('hidden');
         if (btnStart) {
-            btnStart.disabled = false;
-            btnStart.style.opacity = '1';
-            btnStart.innerHTML = `<i class="bi bi-rocket-takeoff-fill"></i> Commencer l'épreuve`;
-            btnStart.onclick = () => startActiveQuiz();
+            if (isPasswordRequired && !isQuizUnlocked) {
+                btnStart.disabled = true;
+                btnStart.style.opacity = '0.5';
+                btnStart.classList.remove('hidden');
+                btnStart.innerHTML = `<i class="bi bi-shield-lock-fill"></i> Déverrouillage requis`;
+            } else {
+                btnStart.disabled = false;
+                btnStart.style.opacity = '1';
+                btnStart.classList.remove('hidden');
+                btnStart.innerHTML = `<i class="bi bi-rocket-takeoff-fill"></i> Commencer l'épreuve`;
+                btnStart.onclick = () => startActiveQuiz();
+            }
         }
         if (showResults && userPreviousSubmissions.length > 0 && btnViewResults) {
             btnViewResults.classList.remove('hidden');
@@ -293,6 +357,75 @@ function renderBriefingScreen() {
     document.getElementById('quizActiveView').classList.add('hidden');
     document.getElementById('quizResultsView').classList.add('hidden');
 }
+
+// ----------------------------------------------------------------
+// DÉVERROUILLAGE DU QUIZ PAR MOT DE PASSE
+// ----------------------------------------------------------------
+function handleUnlockQuiz() {
+    const mod = currentModuleData;
+    const qConfig = mod?.quizConfig || {};
+    const expectedPassword = String(qConfig.password || '').trim();
+    const input = document.getElementById('quizUnlockPasswordInput');
+    const entered = (input?.value || '').trim();
+    const errAlert = document.getElementById('quizUnlockErrorAlert');
+    const succAlert = document.getElementById('quizUnlockSuccessAlert');
+    const unlockForm = document.getElementById('quizUnlockForm');
+    const unlockBadge = document.getElementById('unlockStatusBadge');
+    const unlockTitle = document.getElementById('unlockBlockTitle');
+    const unlockIcon = document.getElementById('unlockIconState');
+    const btnStart = document.getElementById('btnStartQuizNow');
+
+    if (!entered) {
+        if (errAlert) {
+            document.getElementById('quizUnlockErrorMsg').textContent = "Veuillez saisir un mot de passe.";
+            errAlert.classList.remove('hidden');
+        }
+        return;
+    }
+
+    // Comparaison (insensible à la casse et sans espaces superflus)
+    if (entered.toLowerCase() === expectedPassword.toLowerCase()) {
+        isQuizUnlocked = true;
+        if (errAlert) errAlert.classList.add('hidden');
+        if (succAlert) succAlert.classList.remove('hidden');
+        if (unlockForm) unlockForm.classList.add('hidden');
+        if (unlockBadge) {
+            unlockBadge.className = 'es-badge es-badge--approved';
+            unlockBadge.textContent = 'Déverrouillé';
+        }
+        if (unlockTitle) unlockTitle.innerHTML = '🔓 Épreuve déverrouillée';
+        if (unlockIcon) unlockIcon.className = 'bi bi-unlock-fill';
+
+        const maxAttempts = parseInt(qConfig.maxAttempts, 10) || 0;
+        const prevAttempts = userPreviousSubmissions.length;
+        const isLocked = (maxAttempts > 0 && prevAttempts >= maxAttempts);
+
+        if (!isLocked && btnStart) {
+            btnStart.disabled = false;
+            btnStart.style.opacity = '1';
+            btnStart.classList.remove('hidden');
+            btnStart.innerHTML = `<i class="bi bi-rocket-takeoff-fill"></i> Commencer l'épreuve`;
+            btnStart.onclick = () => startActiveQuiz();
+        }
+
+        showToast("Quiz déverrouillé avec succès !", "success");
+    } else {
+        if (errAlert) {
+            document.getElementById('quizUnlockErrorMsg').textContent = "Mot de passe incorrect. Demandez le mot de passe à votre formateur.";
+            errAlert.classList.remove('hidden');
+        }
+        if (succAlert) succAlert.classList.add('hidden');
+        if (input) input.focus();
+    }
+}
+
+document.getElementById('btnUnlockQuiz')?.addEventListener('click', handleUnlockQuiz);
+document.getElementById('quizUnlockPasswordInput')?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        handleUnlockQuiz();
+    }
+});
 
 // ----------------------------------------------------------------
 // VUE 2 : MODE QUIZ ACTIF (ÉPREUVE EN COURS)

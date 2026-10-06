@@ -347,7 +347,11 @@ async function loadFormationModules() {
                 statsTagHtml = `<span class="es-formation-tag es-formation-tag--stats es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="${adminStats.uniqueStagiaires} stagiaire(s) distinct(s) — ${adminStats.totalAttempts} réponse(s) au total"><i class="bi bi-chat-left-text"></i> ${statsDisplay}</span>`;
             }
 
-            // 4. Info Statut du Quiz (Disponible / Verrouillé / Répondu) placé dans l'en-tête
+            // 4. Tag Mot de passe requis (si activé)
+            const isPasswordProtected = Boolean(qConfig.requirePassword === true || (qConfig.password && String(qConfig.password).trim() !== ''));
+            const passwordTagHtml = isPasswordProtected ? `<span class="es-formation-tag es-formation-tag--password es-formation-card__badge-tag ${!showFormationTags ? 'es-tags--hidden' : ''}" title="Accès protégé par mot de passe" style="background:rgba(230, 126, 34, 0.15); color:#e67e22; border-color:rgba(230, 126, 34, 0.3);"><i class="bi bi-key-fill"></i> Code requis</span>` : '';
+
+            // 5. Info Statut du Quiz (Disponible / Verrouillé / Répondu) placé dans l'en-tête
             let statusInfoHtml = '';
             if (hasSubmitted) {
                 const scoreText = (showResultsAtEnd && existingSub.score) ? ` (${existingSub.score.correct}/${existingSub.score.total})` : '';
@@ -427,6 +431,7 @@ async function loadFormationModules() {
                         <span>${escapeHtml(m.title)}</span>
                         ${hiddenTagHtml}
                         ${questionsTagHtml}
+                        ${passwordTagHtml}
                         ${statsTagHtml}
                     </h3>
                     <p class="es-formation-desc">${escapeHtml(m.description || m.subtitle || '')}</p>
@@ -580,6 +585,18 @@ async function openFormationModuleEdit(moduleId = null) {
         document.getElementById('editQuizTimerSeconds').value = initialSecs;
         document.getElementById('editShowResultsAtEnd').checked = qConfig.showResultsAtEnd === true;
 
+        const hasPwd = Boolean(qConfig.requirePassword === true || (qConfig.password && String(qConfig.password).trim() !== ''));
+        const pwdVal = qConfig.password || '';
+        const chkRequirePassword = document.getElementById('editQuizRequirePassword');
+        const inputPassword = document.getElementById('editQuizPassword');
+        const wrapPassword = document.getElementById('quizPasswordInputWrap');
+        if (chkRequirePassword) chkRequirePassword.checked = hasPwd;
+        if (inputPassword) inputPassword.value = pwdVal;
+        if (wrapPassword) {
+            if (hasPwd) wrapPassword.classList.remove('hidden');
+            else wrapPassword.classList.add('hidden');
+        }
+
         currentEditingQuestions = JSON.parse(JSON.stringify(questions || []));
 
         modalTitle.textContent = `Modifier : ${moduleData.title}`;
@@ -607,6 +624,13 @@ async function openFormationModuleEdit(moduleId = null) {
         document.getElementById('editQuizTimerMinutes').value = 0;
         document.getElementById('editQuizTimerSeconds').value = 0;
         document.getElementById('editShowResultsAtEnd').checked = false;
+
+        const chkRequirePassword = document.getElementById('editQuizRequirePassword');
+        const inputPassword = document.getElementById('editQuizPassword');
+        const wrapPassword = document.getElementById('quizPasswordInputWrap');
+        if (chkRequirePassword) chkRequirePassword.checked = false;
+        if (inputPassword) inputPassword.value = '';
+        if (wrapPassword) wrapPassword.classList.add('hidden');
 
         currentEditingQuestions = [
             {
@@ -1687,6 +1711,17 @@ document.getElementById('btnSaveModule')?.addEventListener('click', async () => 
     const timerTotalSeconds = (timerMinutes * 60) + timerSeconds;
     const showResultsAtEnd = document.getElementById('editShowResultsAtEnd').checked;
 
+    const isRequirePassword = document.getElementById('editQuizRequirePassword') ? document.getElementById('editQuizRequirePassword').checked : false;
+    const quizPassword = document.getElementById('editQuizPassword') ? document.getElementById('editQuizPassword').value.trim() : '';
+
+    if (isRequirePassword && !quizPassword) {
+        if (errorAlert && errorMsg) {
+            errorMsg.textContent = "Veuillez renseigner un mot de passe d'accès pour ce quiz ou désactiver la protection par mot de passe.";
+            errorAlert.classList.remove('hidden');
+        }
+        return;
+    }
+
     if (!title) {
         if (errorAlert && errorMsg) {
             errorMsg.textContent = "Veuillez renseigner le titre du module.";
@@ -1771,7 +1806,9 @@ document.getElementById('btnSaveModule')?.addEventListener('click', async () => 
                 timerMinutes: timerMinutes,
                 timerSeconds: timerSeconds,
                 timerTotalSeconds: timerTotalSeconds,
-                showResultsAtEnd: showResultsAtEnd
+                showResultsAtEnd: showResultsAtEnd,
+                requirePassword: isRequirePassword,
+                password: isRequirePassword ? quizPassword : ''
             }
         };
 
@@ -1784,6 +1821,19 @@ document.getElementById('btnSaveModule')?.addEventListener('click', async () => 
         btnLoading(btn, false);
         console.error("Save module error:", err);
         showToast("Erreur lors de l'enregistrement.", "error");
+    }
+});
+
+document.getElementById('editQuizRequirePassword')?.addEventListener('change', (e) => {
+    const wrap = document.getElementById('quizPasswordInputWrap');
+    const input = document.getElementById('editQuizPassword');
+    if (wrap) {
+        if (e.target.checked) {
+            wrap.classList.remove('hidden');
+            if (input) input.focus();
+        } else {
+            wrap.classList.add('hidden');
+        }
     }
 });
 

@@ -633,6 +633,32 @@
                                 <input type="checkbox" id="editShowResultsAtEnd" style="width:18px; height:18px; accent-color:var(--clr-primary);">
                             </label>
                         </div>
+
+                        <!-- Protection du quiz par mot de passe (Admin uniquement) -->
+                        <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:14px 16px; margin-top:10px;">
+                            <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; gap:12px; margin:0;">
+                                <div>
+                                    <div style="font-weight:600; font-size:0.88rem; color:var(--clr-text); display:flex; align-items:center; gap:6px;">
+                                        <i class="bi bi-key-fill" style="color:var(--clr-accent);"></i> Protéger l'accès par un mot de passe
+                                    </div>
+                                    <div style="font-size:0.78rem; color:var(--clr-text-muted);">Si activé, les stagiaires devront saisir ce mot de passe pour déverrouiller et accéder aux questions.</div>
+                                </div>
+                                <input type="checkbox" id="editQuizRequirePassword" style="width:18px; height:18px; accent-color:var(--clr-primary);">
+                            </label>
+                            
+                            <!-- Champ mot de passe (masqué si l'option est désactivée) -->
+                            <div id="quizPasswordInputWrap" class="hidden" style="margin-top:12px; padding-top:12px; border-top:1px dashed var(--clr-surface-3);">
+                                <label class="es-field__label" for="editQuizPassword" style="display:flex; align-items:center; gap:6px; font-weight:700; color:var(--clr-text);">
+                                    <i class="bi bi-shield-lock-fill" style="color:var(--clr-primary);"></i> Mot de passe d'accès au quiz :
+                                </label>
+                                <div style="display:flex; gap:8px; align-items:center;">
+                                    <input class="es-input" type="text" id="editQuizPassword" placeholder="Ex: BAFA2026, ANIMATION, SECRET..." autocomplete="off" style="font-weight:600; letter-spacing:0.5px;">
+                                </div>
+                                <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:4px;">
+                                    <i class="bi bi-info-circle"></i> Ce mot de passe est modifiable à tout moment uniquement par l'administrateur.
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <hr style="border:none; border-top:1.5px solid var(--clr-surface-3); margin:20px 0;">
