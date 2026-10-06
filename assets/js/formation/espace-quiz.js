@@ -318,6 +318,7 @@ function startActiveQuiz() {
     document.getElementById('activeHeaderTitle').textContent = mod.quizConfig?.quizTitle || mod.title;
     document.getElementById('activeAttemptBadge').innerHTML = `<i class="bi bi-lightning-charge-fill"></i> Tentative #${prevAttempts + 1}${maxAttempts > 0 ? ` / ${maxAttempts}` : ''}`;
     document.getElementById('activeProgressLabel').textContent = `0 / ${currentQuestions.length} répondues`;
+    document.getElementById('quizWarningLabel')?.classList.add('hidden');
 
     // Gestion de l'affichage et du lancement du timer
     const timerBadge = document.getElementById('quizActiveTimerBadge');
@@ -645,6 +646,15 @@ function attachQuizInteractions(container) {
         inp.addEventListener('input', () => updateProgress());
         inp.addEventListener('change', () => updateProgress());
     });
+
+    // Masquage direct du warning dès toute interaction sur le formulaire
+    const form = document.getElementById('quizFormEl');
+    form?.addEventListener('input', () => {
+        document.getElementById('quizWarningLabel')?.classList.add('hidden');
+    });
+    form?.addEventListener('change', () => {
+        document.getElementById('quizWarningLabel')?.classList.add('hidden');
+    });
 }
 
 function updatePuzzleNumbers(listEl) {
@@ -686,6 +696,12 @@ function updateProgress() {
 
     const label = document.getElementById('activeProgressLabel');
     if (label) label.textContent = `${answeredCount} / ${currentQuestions.length} répondues (${percent}%)`;
+
+    // Dès qu'une réponse est modifiée / saisie, faire disparaître l'avertissement
+    const warningLabel = document.getElementById('quizWarningLabel');
+    if (warningLabel && !warningLabel.classList.contains('hidden')) {
+        warningLabel.classList.add('hidden');
+    }
 }
 
 // ----------------------------------------------------------------
@@ -701,15 +717,13 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
     }
 
     const form = document.getElementById('quizFormEl');
-    const errorAlert = document.getElementById('quizErrorAlert');
-    const errorMsg = document.getElementById('quizErrorMsg');
+    const warningLabel = document.getElementById('quizWarningLabel');
     const btn = document.getElementById('btnSubmitQuiz');
     const qConfig = currentModuleData.quizConfig || {};
-    const showResults = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
 
     const answers = {};
     const evaluations = {};
-    let hasMissing = false;
+    let missingCount = 0;
     let qcmTotal = 0;
     let qcmCorrect = 0;
 
@@ -724,7 +738,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 if (val === correctIdx) qcmCorrect++;
             } else {
                 answers[q.id] = null;
-                hasMissing = true;
+                missingCount++;
             }
         } else if (q.type === 'boolean') {
             qcmTotal++;
@@ -736,7 +750,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 if (val === expectedBool) qcmCorrect++;
             } else {
                 answers[q.id] = null;
-                hasMissing = true;
+                missingCount++;
             }
         } else if (q.type === 'range') {
             const rangeInput = form ? form.querySelector(`input[name="question_${q.id}"]`) : null;
@@ -753,7 +767,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 }
             } else {
                 answers[q.id] = (q.min !== undefined) ? parseFloat(q.min) : 0;
-                hasMissing = true;
+                missingCount++;
             }
         } else if (q.type === 'pinpoint') {
             qcmTotal++;
@@ -773,11 +787,11 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                     }
                 } catch(e) {
                     answers[q.id] = null;
-                    hasMissing = true;
+                    missingCount++;
                 }
             } else {
                 answers[q.id] = null;
-                hasMissing = true;
+                missingCount++;
             }
         } else if (q.type === 'puzzle') {
             qcmTotal++;
@@ -792,7 +806,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 }
             } else {
                 answers[q.id] = [];
-                hasMissing = true;
+                missingCount++;
             }
         } else {
             qcmTotal++;
@@ -842,22 +856,22 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                     gradedAt: null
                 };
                 answers[q.id] = '';
-                hasMissing = true;
+                missingCount++;
             }
         }
     });
 
-    // En mode soumission manuelle, on bloque si des questions sont incomplètes
-    if (hasMissing && !autoSubmitByTimer) {
-        if (errorAlert && errorMsg) {
-            errorMsg.textContent = "Merci de répondre à toutes les questions avant de valider l'épreuve.";
-            errorAlert.classList.remove('hidden');
-            errorAlert.scrollIntoView({ behavior: 'smooth' });
+    // Si des questions sont incomplètes lors d'une soumission manuelle :
+    // Au 1er clic, on affiche le libellé warning in-page. Au 2ème clic (warning déjà visible), on valide quand même !
+    if (missingCount > 0 && !autoSubmitByTimer) {
+        if (warningLabel && warningLabel.classList.contains('hidden')) {
+            warningLabel.classList.remove('hidden');
+            warningLabel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
         }
-        return;
     }
 
-    if (errorAlert) errorAlert.classList.add('hidden');
+    if (warningLabel) warningLabel.classList.add('hidden');
     if (btn) btnLoading(btn, true);
 
     try {
@@ -1027,11 +1041,13 @@ function renderResultsScreen(submission = {}) {
             } else if (q.type === 'boolean') {
                 const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
                 const userBool = (userAns === true || userAns === 'true');
-                const isCorrect = (userAns !== null && userAns !== undefined && userBool === expectedBool);
+                const isAnswered = (userAns !== null && userAns !== undefined && userAns !== '');
+                const isCorrect = isAnswered && (userBool === expectedBool);
+                const userChoiceText = isAnswered ? (userBool ? '👍 VRAI' : '👎 FAUX') : '<span style="color:var(--clr-text-muted); font-style:italic;">Non renseigné</span>';
 
                 ansDisplay = `
                 <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
-                    <div><strong>Votre choix :</strong> ${userBool ? '👍 VRAI' : '👎 FAUX'}
+                    <div><strong>Votre choix :</strong> ${userChoiceText}
                         <span style="margin-left:8px; font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
                             ${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect'}
                         </span>

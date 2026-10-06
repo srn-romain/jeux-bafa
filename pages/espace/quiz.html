@@ -176,10 +176,10 @@
                     <!-- Les questions dynamiques (QCM, Curseur, Vrai/Faux, Puzzle, Rédigée) sont injectées ici -->
                 </div>
 
-                <!-- Message d'erreur si champs manquants -->
-                <div class="es-alert es-alert--error hidden" id="quizErrorAlert" style="margin-top:24px;">
-                    <i class="bi bi-exclamation-triangle-fill"></i>
-                    <span id="quizErrorMsg">Merci de répondre à toutes les questions avant de valider.</span>
+                <!-- Libellé d'avertissement si questions manquantes -->
+                <div class="es-alert es-alert--error hidden" id="quizWarningLabel" style="margin-top:24px; padding:14px 18px; font-size:0.92rem; font-weight:600; display:flex; align-items:center; gap:12px;">
+                    <i class="bi bi-exclamation-triangle-fill" style="font-size:1.3rem; flex-shrink:0;"></i>
+                    <span>Attention, vous n'avez pas rempli toutes les questions. Voulez-vous quand même envoyer vos réponses ? Cliquez à nouveau sur "Valider et envoyer" pour confirmer.</span>
                 </div>
 
                 <!-- Barre d'action finale -->
