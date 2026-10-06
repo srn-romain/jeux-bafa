@@ -1621,13 +1621,17 @@ function renderQuestionsEditor() {
             const sDesc = q.description || '';
             return `
                 <div class="es-qcard es-qcard--section" data-qidx="${idx}">
-                    <div class="es-qcard__header" style="background:rgba(166, 216, 102, 0.12); border-bottom:1px solid rgba(166, 216, 102, 0.25);">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <i class="bi bi-bookmark-fill" style="color:var(--clr-primary-dark); font-size:0.95rem;"></i>
-                            <span style="font-size:0.92rem; font-weight:800; color:var(--clr-primary-dark);">
-                                Section ${runningSectionNum} (Page ${runningSectionNum})
+                    <div class="es-qcard__header">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:6px; background:var(--clr-primary); color:var(--clr-bg-deep); font-size:0.95rem; flex-shrink:0;">
+                                <i class="bi bi-bookmark-fill"></i>
                             </span>
-                            <span style="font-size:0.82rem; font-weight:600; color:var(--clr-text-muted); margin-left:6px;">— Nouvelle page</span>
+                            <div style="display:flex; align-items:baseline; gap:8px; flex-wrap:wrap;">
+                                <span style="font-size:0.95rem; font-weight:800; color:var(--clr-primary-dark);">
+                                    Section ${runningSectionNum} (Page ${runningSectionNum})
+                                </span>
+                                <span style="font-size:0.8rem; font-weight:600; color:var(--clr-text-muted);">— Nouvelle page</span>
+                            </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:4px;">
                             <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-up" data-qidx="${idx}" ${isFirst ? 'disabled' : ''} style="padding:6px 10px; ${isFirst ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isFirst ? 'Première position' : 'Monter d\'un rang'}">
@@ -1645,7 +1649,7 @@ function renderQuestionsEditor() {
                         </div>
                     </div>
 
-                    <div style="display:flex; flex-direction:column; gap:12px; padding:16px;">
+                    <div style="display:flex; flex-direction:column; gap:14px; padding:18px;">
                         <div class="es-field">
                             <label class="es-field__label" style="color:var(--clr-primary-dark); font-weight:800;">🏷️ Titre de la section / page :</label>
                             <input class="es-input q-section-title-input" type="text" data-qidx="${idx}" value="${escapeHtml(sTitle)}" placeholder="Ex: Section 1 : Petite enfance (3-6 ans)" required style="font-weight:700; font-size:0.95rem; border-color:var(--clr-primary);">
@@ -1822,14 +1826,16 @@ function renderQuestionsEditor() {
             `;
         } else if (type === 'classification') {
             const categories = q.categories || [
-                { id: 'cat_1', title: 'Mammifères' },
-                { id: 'cat_2', title: 'Oiseaux' }
+                { id: 'cat_1', title: 'Petite enfance (3 - 5 ans)' },
+                { id: 'cat_2', title: 'Enfance (6 - 11 ans)' },
+                { id: 'cat_3', title: 'Préadolescence (12 - 14 ans)' },
+                { id: 'cat_4', title: 'Adolescence (15 - 17 ans)' }
             ];
             const items = q.items || [
-                { id: 'item_1', text: 'Éléphant', categoryId: 'cat_1' },
-                { id: 'item_2', text: 'Baleine', categoryId: 'cat_1' },
-                { id: 'item_3', text: 'Poule', categoryId: 'cat_2' },
-                { id: 'item_4', text: 'Pie', categoryId: 'cat_2' }
+                { id: 'item_1', text: 'Besoin de sieste et rituels rassurants', categoryId: 'cat_1' },
+                { id: 'item_2', text: 'Jeux de règles et développement moteur', categoryId: 'cat_2' },
+                { id: 'item_3', text: 'Importance du groupe de pairs et pudeur', categoryId: 'cat_3' },
+                { id: 'item_4', text: 'Co-construction des projets et émancipation', categoryId: 'cat_4' }
             ];
 
             const catListHtml = categories.map((cat, cIdx) => `
@@ -1837,7 +1843,7 @@ function renderQuestionsEditor() {
                     <span style="font-weight:700; font-size:0.8rem; color:var(--clr-primary-dark); display:flex; align-items:center; gap:4px; min-width:85px;">
                         📁 Cat. ${cIdx + 1} :
                     </span>
-                    <input class="es-input classification-cat-title-input" type="text" data-qidx="${idx}" data-cidx="${cIdx}" value="${escapeHtml(cat.title || '')}" placeholder="Nom de la catégorie (ex: Mammifères, Oiseaux...)" required style="flex:1; font-weight:700; font-size:0.88rem; padding:6px 10px;">
+                    <input class="es-input classification-cat-title-input" type="text" data-qidx="${idx}" data-cidx="${cIdx}" value="${escapeHtml(cat.title || '')}" placeholder="Nom de la catégorie (ex: Petite enfance, Adolescence...)" required style="flex:1; font-weight:700; font-size:0.88rem; padding:6px 10px;">
                     ${categories.length > 2 ? `
                         <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-remove-classification-cat" data-qidx="${idx}" data-cidx="${cIdx}" style="padding:6px 10px; color:var(--clr-danger);" title="Supprimer cette catégorie">
                             <i class="bi bi-trash"></i>
@@ -1849,7 +1855,7 @@ function renderQuestionsEditor() {
             const itemsListHtml = items.map((item, iIdx) => `
                 <div class="classification-tag-item" data-qidx="${idx}" data-iidx="${iIdx}" data-itemid="${escapeHtml(item.id)}" style="display:flex; align-items:center; gap:8px; margin-bottom:8px; background:var(--clr-surface); padding:8px 12px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm);">
                     <span style="width:24px; height:24px; border-radius:50%; background:var(--clr-surface-3); font-size:0.75rem; font-weight:700; display:flex; align-items:center; justify-content:center; color:var(--clr-text); flex-shrink:0;">${iIdx + 1}</span>
-                    <input class="es-input classification-item-text-input" type="text" data-qidx="${idx}" data-iidx="${iIdx}" value="${escapeHtml(item.text || '')}" placeholder="Texte de l'étiquette / tag (ex: Éléphant, Poule...)" required style="flex:1; font-size:0.88rem; padding:6px 10px;">
+                    <input class="es-input classification-item-text-input" type="text" data-qidx="${idx}" data-iidx="${iIdx}" value="${escapeHtml(item.text || '')}" placeholder="Texte de l'étiquette / tag (ex: Besoin de sieste, Sorties autonomes...)" required style="flex:1; font-size:0.88rem; padding:6px 10px;">
                     <div style="display:flex; align-items:center; gap:6px;">
                         <span style="font-size:0.75rem; font-weight:700; color:var(--clr-text-muted);"><i class="bi bi-arrow-right"></i> Ranger dans :</span>
                         <select class="es-select classification-item-cat-select" data-qidx="${idx}" data-iidx="${iIdx}" style="font-size:0.82rem; font-weight:700; padding:6px 10px; width:auto;">
@@ -2307,15 +2313,20 @@ function bindQuestionsEvents() {
                     { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }
                 ];
             } else if (newType === 'classification' && (!currentEditingQuestions[idx].categories || currentEditingQuestions[idx].categories.length === 0)) {
+                if (!currentEditingQuestions[idx].text) {
+                    currentEditingQuestions[idx].text = "Classez les caractéristiques et besoins selon la tranche d'âge correspondante :";
+                }
                 currentEditingQuestions[idx].categories = [
-                    { id: 'cat_1', title: 'Mammifères' },
-                    { id: 'cat_2', title: 'Oiseaux' }
+                    { id: 'cat_1', title: 'Petite enfance (3 - 5 ans)' },
+                    { id: 'cat_2', title: 'Enfance (6 - 11 ans)' },
+                    { id: 'cat_3', title: 'Préadolescence (12 - 14 ans)' },
+                    { id: 'cat_4', title: 'Adolescence (15 - 17 ans)' }
                 ];
                 currentEditingQuestions[idx].items = [
-                    { id: 'item_1', text: 'Éléphant', categoryId: 'cat_1' },
-                    { id: 'item_2', text: 'Baleine', categoryId: 'cat_1' },
-                    { id: 'item_3', text: 'Poule', categoryId: 'cat_2' },
-                    { id: 'item_4', text: 'Pie', categoryId: 'cat_2' }
+                    { id: 'item_1', text: 'Besoin de sieste et rituels rassurants', categoryId: 'cat_1' },
+                    { id: 'item_2', text: 'Jeux de règles et développement moteur', categoryId: 'cat_2' },
+                    { id: 'item_3', text: 'Importance du groupe de pairs et pudeur', categoryId: 'cat_3' },
+                    { id: 'item_4', text: 'Co-construction des projets et émancipation', categoryId: 'cat_4' }
                 ];
             } else if (newType === 'boolean' && currentEditingQuestions[idx].correctAnswer === undefined) {
                 currentEditingQuestions[idx].correctAnswer = true;
@@ -3205,7 +3216,7 @@ document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e
                     options: q.options || (q.type === 'qcm' ? ['Option 1', 'Option 2'] : undefined),
                     imageOptions: q.imageOptions || (q.type === 'image_choice' ? [{ imageUrl: '', label: 'Option 1' }, { imageUrl: '', label: 'Option 2' }] : undefined),
                     tableRows: q.tableRows || (q.type === 'table_choice' ? [{ text: 'Affirmation 1...', correctCol1: true, correctCol2: false }, { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }] : undefined),
-                    categories: q.categories || (q.type === 'classification' ? [{ id: 'cat_1', title: 'Catégorie 1' }, { id: 'cat_2', title: 'Catégorie 2' }] : undefined),
+                    categories: q.categories || (q.type === 'classification' ? [{ id: 'cat_1', title: 'Petite enfance (3 - 5 ans)' }, { id: 'cat_2', title: 'Enfance (6 - 11 ans)' }, { id: 'cat_3', title: 'Préadolescence (12 - 14 ans)' }, { id: 'cat_4', title: 'Adolescence (15 - 17 ans)' }] : undefined),
                     col1Label: q.col1Label || 'VRAI',
                     col2Label: q.col2Label || 'FAUX',
                     correctIndex: q.correctIndex !== undefined ? q.correctIndex : 0,
@@ -3225,7 +3236,7 @@ document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e
                     tolerance: q.tolerance !== undefined ? q.tolerance : 0,
                     clozeText: q.clozeText || '',
                     distractors: q.distractors || '',
-                    items: q.items || (q.type === 'classification' ? [{ id: 'item_1', text: 'Élément 1', categoryId: 'cat_1' }, { id: 'item_2', text: 'Élément 2', categoryId: 'cat_2' }] : (q.type === 'puzzle' ? ['Étape 1', 'Étape 2'] : undefined)),
+                    items: q.items || (q.type === 'classification' ? [{ id: 'item_1', text: 'Besoin de sieste et rituels rassurants', categoryId: 'cat_1' }, { id: 'item_2', text: 'Jeux de règles et développement moteur', categoryId: 'cat_2' }, { id: 'item_3', text: 'Importance du groupe de pairs et pudeur', categoryId: 'cat_3' }, { id: 'item_4', text: 'Co-construction des projets et émancipation', categoryId: 'cat_4' }] : (q.type === 'puzzle' ? ['Étape 1', 'Étape 2'] : undefined)),
                     pairs: q.pairs || (q.type === 'matching' ? [{ left: 'A', right: '1' }, { left: 'B', right: '2' }] : undefined),
                     hint: q.hint || '',
                     imageUrl: q.imageUrl || ''

@@ -7312,13 +7312,18 @@ body.modal-open .es-topbar {
 
 /* Carte Section dans l'éditeur */
 .es-qcard--section {
-  background: linear-gradient(to right, rgba(166, 216, 102, 0.12), var(--clr-surface)) !important;
+  padding: 0 !important;
+  overflow: hidden;
+  background: var(--clr-surface) !important;
   border: 2px dashed var(--clr-primary) !important;
   box-shadow: 0 4px 14px rgba(166, 216, 102, 0.15) !important;
 }
 
 .es-qcard--section .es-qcard__header {
-  background: rgba(166, 216, 102, 0.2) !important;
+  margin-bottom: 0 !important;
+  padding: 14px 18px !important;
+  background: rgba(166, 216, 102, 0.16) !important;
+  border-bottom: 1.5px solid rgba(166, 216, 102, 0.3) !important;
 }
 
 /* ================================================================
