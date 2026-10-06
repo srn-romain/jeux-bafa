@@ -484,6 +484,13 @@
                                 </label>
                             </div>
 
+                            <div class="es-field" style="margin-bottom:14px;">
+                                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--clr-text);">
+                                    <input type="checkbox" id="editQuizAllowPreviousPage" checked style="width:18px; height:18px; accent-color:var(--clr-primary);">
+                                    <span>Autoriser le retour aux pages précédentes</span>
+                                </label>
+                            </div>
+
                             <div class="es-field" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--clr-surface-3);">
                                 <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--clr-text);">
                                     <input type="checkbox" id="editQuizRequirePassword" style="width:18px; height:18px; accent-color:var(--clr-primary);">
@@ -502,11 +509,11 @@
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1.5px solid var(--clr-surface-3); padding-bottom:16px;">
                             <div>
                                 <h2 style="font-size:1.15rem; font-weight:800; color:var(--clr-text); margin:0; display:flex; align-items:center; gap:8px;">
-                                    <span>📝 Questions du Quiz</span>
+                                    <span>📝 Questions & Sections du Quiz</span>
                                     <span id="badgeQuestionsTotalCount" class="es-badge es-badge--stagiaire" style="font-size:0.75rem;">0 question</span>
                                 </h2>
                                 <p style="font-size:0.82rem; color:var(--clr-text-muted); margin:4px 0 0;">
-                                    QCM, Rédaction, Puzzle chronologique et Textes à trous.
+                                    Organisez vos questions en sections / pages numérotées.
                                 </p>
                             </div>
 
@@ -525,9 +532,12 @@
                             <!-- Rempli en JS -->
                         </div>
 
-                        <div style="display:flex; justify-content:center; margin-top:8px; padding-top:16px; border-top:1.5px dashed var(--clr-surface-3);">
-                            <button type="button" class="es-btn es-btn--primary" id="btnAddQuestion" style="font-weight:700; padding:12px 24px;">
-                                <i class="bi bi-plus-circle-fill"></i> Ajouter une nouvelle question
+                        <div style="display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin-top:8px; padding-top:16px; border-top:1.5px dashed var(--clr-surface-3);">
+                            <button type="button" class="es-btn es-btn--primary" id="btnAddQuestion" style="font-weight:700; padding:12px 22px;">
+                                <i class="bi bi-plus-circle-fill"></i> Ajouter une question
+                            </button>
+                            <button type="button" class="es-btn es-btn--ghost" id="btnAddSectionHeader" style="font-weight:700; padding:12px 22px; border:1.5px dashed var(--clr-primary-dark); color:var(--clr-primary-dark); background:rgba(166, 216, 102, 0.08);">
+                                <i class="bi bi-bookmark-plus-fill"></i> Ajouter une section / page
                             </button>
                         </div>
 

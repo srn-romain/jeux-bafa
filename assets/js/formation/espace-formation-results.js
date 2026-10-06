@@ -427,7 +427,24 @@ function renderInspectionQuestions(questions, sub) {
     const answers = sub.answers || {};
     const evaluations = sub.evaluations || {};
 
+    let questionCounter = 0;
     container.innerHTML = questions.map((q, idx) => {
+        if (q.type === 'section') {
+            return `
+                <div style="background:var(--clr-surface); border:1.5px solid var(--clr-primary); border-radius:var(--radius-md); padding:16px 20px; margin: 20px 0 10px 0;">
+                    <div style="font-size:0.75rem; font-weight:800; color:var(--clr-primary); text-transform:uppercase; letter-spacing:0.5px;">
+                        <i class="bi bi-bookmark-fill"></i> Section
+                    </div>
+                    <div style="font-size:1.1rem; font-weight:800; color:var(--clr-text); margin-top:2px;">
+                        ${escapeHtml(q.title || q.text || 'Section')}
+                    </div>
+                    ${q.description ? `<div style="font-size:0.84rem; color:var(--clr-text-muted); margin-top:4px; line-height:1.4;">${escapeHtml(q.description)}</div>` : ''}
+                </div>
+            `;
+        }
+
+        questionCounter++;
+        const currentQNum = questionCounter;
         const ans = answers[q.id];
         const type = q.type || 'qcm';
         let contentHtml = '';
@@ -466,6 +483,109 @@ function renderInspectionQuestions(questions, sub) {
             contentHtml = `
                 <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
                     ${optionsHtml}
+                </div>
+            `;
+        } else if (type === 'image_choice') {
+            const chosenIdx = ans !== undefined && ans !== null && ans !== '' ? parseInt(ans, 10) : -1;
+            const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
+            const isCorrect = (chosenIdx === correctIdx);
+            const options = q.imageOptions || [];
+
+            const optionsHtml = options.map((opt, oIdx) => {
+                const isSelected = (chosenIdx === oIdx);
+                const isExpected = (correctIdx === oIdx);
+                let borderStyle = 'border:1.5px solid var(--clr-surface-3); background:var(--clr-surface);';
+                let badge = '';
+
+                if (isSelected && isExpected) {
+                    borderStyle = 'border:2px solid var(--clr-success); background:rgba(39, 174, 96, 0.08);';
+                    badge = `<span style="position:absolute; top:6px; right:6px; background:var(--clr-success); color:#fff; font-size:0.7rem; font-weight:800; padding:2px 6px; border-radius:4px;"><i class="bi bi-check-circle-fill"></i> Choisie & Correcte</span>`;
+                } else if (isSelected && !isExpected) {
+                    borderStyle = 'border:2px solid var(--clr-danger); background:rgba(231, 76, 60, 0.08);';
+                    badge = `<span style="position:absolute; top:6px; right:6px; background:var(--clr-danger); color:#fff; font-size:0.7rem; font-weight:800; padding:2px 6px; border-radius:4px;"><i class="bi bi-x-circle-fill"></i> Réponse choisie</span>`;
+                } else if (isExpected) {
+                    borderStyle = 'border:2px dashed var(--clr-success); background:rgba(39, 174, 96, 0.05);';
+                    badge = `<span style="position:absolute; top:6px; right:6px; background:var(--clr-success); color:#fff; font-size:0.7rem; font-weight:800; padding:2px 6px; border-radius:4px;"><i class="bi bi-check"></i> Attendu</span>`;
+                }
+
+                return `
+                    <div style="position:relative; border-radius:var(--radius-sm); padding:10px; display:flex; flex-direction:column; gap:6px; ${borderStyle}">
+                        ${badge}
+                        <div style="width:100%; height:110px; background:#181c19; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                            <img src="${escapeHtml(opt.imageUrl || '')}" alt="Option ${oIdx + 1}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                        </div>
+                        <div style="font-size:0.82rem; font-weight:700; color:var(--clr-text); text-align:center;">
+                            ${escapeHtml(opt.label || ('Option ' + (oIdx + 1)))}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            contentHtml = `
+                <div style="margin-top:10px;">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
+                        ${optionsHtml}
+                    </div>
+                </div>
+            `;
+        } else if (type === 'table_choice') {
+            const col1 = q.col1Label || 'VRAI';
+            const col2 = q.col2Label || 'FAUX';
+            const rows = q.tableRows || [];
+            const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
+
+            const tableRowsHtml = rows.map((row, rIdx) => {
+                const userRow = userAnsObj[rIdx] || {};
+                const uCol1 = !!userRow.col1;
+                const uCol2 = !!userRow.col2;
+                const expCol1 = !!row.correctCol1;
+                const expCol2 = !!row.correctCol2;
+                const isRowCorrect = (uCol1 === expCol1 && uCol2 === expCol2);
+
+                const getCellState = (uSelected, expSelected) => {
+                    if (uSelected && expSelected) {
+                        return { icon: '<i class="bi bi-check-circle-fill" style="color:var(--clr-success); font-size:1.1rem;"></i>', style: 'background:rgba(39,174,96,0.12);' };
+                    } else if (uSelected && !expSelected) {
+                        return { icon: '<i class="bi bi-x-circle-fill" style="color:var(--clr-danger); font-size:1.1rem;"></i>', style: 'background:rgba(231,76,60,0.12);' };
+                    } else if (!uSelected && expSelected) {
+                        return { icon: '<i class="bi bi-arrow-right-circle" style="color:var(--clr-success); font-size:1rem;" title="Attendu"></i>', style: 'background:rgba(39,174,96,0.05);' };
+                    }
+                    return { icon: '<span style="color:var(--clr-surface-3); font-size:1.1rem;">○</span>', style: '' };
+                };
+
+                const cell1 = getCellState(uCol1, expCol1);
+                const cell2 = getCellState(uCol2, expCol2);
+
+                return `
+                    <tr style="border-bottom:1px solid var(--clr-surface-3); ${isRowCorrect ? '' : 'background:rgba(231,76,60,0.03);'}">
+                        <td style="padding:10px 14px; font-size:0.85rem; font-weight:600; color:var(--clr-text);">
+                            <span style="font-weight:800; color:var(--clr-text-muted); margin-right:6px;">${rIdx + 1}.</span>
+                            ${escapeHtml(row.text || '')}
+                        </td>
+                        <td style="text-align:center; padding:8px; ${cell1.style}">
+                            ${cell1.icon}
+                        </td>
+                        <td style="text-align:center; padding:8px; ${cell2.style}">
+                            ${cell2.icon}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            contentHtml = `
+                <div style="margin-top:10px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); overflow:hidden;">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:var(--clr-surface-2); border-bottom:2px solid var(--clr-surface-3);">
+                                <th style="padding:10px 14px; font-size:0.8rem; font-weight:800; text-align:left;">Affirmation</th>
+                                <th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col1)}</th>
+                                <th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col2)}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRowsHtml}
+                        </tbody>
+                    </table>
                 </div>
             `;
         } else if (type === 'cloze') {
@@ -547,9 +667,9 @@ function renderInspectionQuestions(questions, sub) {
                         <span style="color:var(--clr-text-muted);">Cible : (${targetX}%, ${targetY}%) ± ${radius}%</span>
                     </div>
                     ${q.pinImage ? `
-                        <div class="es-pinpoint-result-zone" style="max-width:440px; margin:0 auto; position:relative; border-radius:6px; overflow:hidden; border:1px solid var(--clr-surface-3);">
-                            <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" style="width:100%; display:block;">
-                            <div class="es-pinpoint-target-zone" style="position:absolute; left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%; transform:translate(-50%, -50%); border-radius:50%; border:2px dashed #2ecc71; background:rgba(46, 204, 113, 0.25); pointer-events:none;"></div>
+                        <div class="es-pinpoint-result-zone" style="max-width:440px; margin:0 auto; position:relative; border-radius:6px; overflow:hidden; border:1px solid var(--clr-surface-3); text-align:center;">
+                            <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" style="display:block; margin:0 auto; max-width:100%; height:auto;">
+                            <div class="es-pinpoint-target-zone" style="position:absolute; left:${targetX}%; top:${targetY}%; width:${radius * 2}%; aspect-ratio:1 / 1; height:auto; transform:translate(-50%, -50%); border-radius:50%; border:2px dashed #2ecc71; background:rgba(46, 204, 113, 0.25); pointer-events:none;"></div>
                             <div style="position:absolute; left:${targetX}%; top:${targetY}%; transform:translate(-50%, -50%); color:#27ae60; font-size:1.2rem; pointer-events:none;" title="Cible attendue"><i class="bi bi-bullseye"></i></div>
                             ${userCoords ? `
                                 <div style="position:absolute; left:${userCoords.x}%; top:${userCoords.y}%; transform:translate(-50%, -50%); color:${isCorrect ? '#27ae60' : '#e74c3c'}; font-size:1.4rem; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));" title="Position stagiaire"><i class="bi bi-geo-alt-fill"></i></div>
@@ -654,7 +774,7 @@ function renderInspectionQuestions(questions, sub) {
         return `
             <div style="background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:16px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
-                    <span style="font-weight:700; font-size:0.85rem; color:var(--clr-primary-xdark);">Question ${idx + 1}</span>
+                    <span style="font-weight:700; font-size:0.85rem; color:var(--clr-primary-xdark);">Question ${currentQNum}</span>
                     <span class="es-badge es-badge--stagiaire" style="font-size:0.68rem;">${type.toUpperCase()}</span>
                 </div>
                 <div style="font-weight:700; font-size:0.92rem; color:var(--clr-text);">${escapeHtml(q.text || '')}</div>

@@ -424,6 +424,11 @@ async function loadModuleHubData() {
             document.getElementById('editQuizTimerSeconds').value = initialSecs;
             document.getElementById('editShowResultsAtEnd').checked = qConfig.showResultsAtEnd === true;
 
+            const chkAllowPrev = document.getElementById('editQuizAllowPreviousPage');
+            if (chkAllowPrev) {
+                chkAllowPrev.checked = (qConfig.allowPreviousPage !== false);
+            }
+
             const hasPwd = Boolean(qConfig.requirePassword === true || (qConfig.password && String(qConfig.password).trim() !== ''));
             const pwdVal = qConfig.password || '';
             const chkRequirePassword = document.getElementById('editQuizRequirePassword');
@@ -487,6 +492,9 @@ async function loadModuleHubData() {
             document.getElementById('editQuizTimerMinutes').value = 0;
             document.getElementById('editQuizTimerSeconds').value = 0;
             document.getElementById('editShowResultsAtEnd').checked = false;
+            if (document.getElementById('editQuizAllowPreviousPage')) {
+                document.getElementById('editQuizAllowPreviousPage').checked = true;
+            }
 
             const chkRequirePassword = document.getElementById('editQuizRequirePassword');
             const inputPassword = document.getElementById('editQuizPassword');
@@ -812,6 +820,18 @@ function renderInspectionQuestions(questions, sub) {
     container.innerHTML = questions.map((q, idx) => {
         const ans = answers[q.id];
         const type = q.type || 'qcm';
+
+        if (type === 'section') {
+            return `
+                <div style="background:var(--clr-surface-2); border-left:4px solid var(--clr-primary); border-radius:var(--radius-sm); padding:12px 16px; margin-top:12px; margin-bottom:4px;">
+                    <div style="font-size:0.82rem; font-weight:800; color:var(--clr-primary-dark); text-transform:uppercase; display:flex; align-items:center; gap:6px;">
+                        <i class="bi bi-bookmark-fill"></i> ${escapeHtml(q.title || q.text || 'Section')}
+                    </div>
+                    ${q.description ? `<div style="font-size:0.8rem; color:var(--clr-text-muted); margin-top:4px;">${escapeHtml(q.description)}</div>` : ''}
+                </div>
+            `;
+        }
+
         let contentHtml = '';
 
         if (type === 'qcm') {
@@ -848,6 +868,109 @@ function renderInspectionQuestions(questions, sub) {
             contentHtml = `
                 <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
                     ${optionsHtml}
+                </div>
+            `;
+        } else if (type === 'image_choice') {
+            const chosenIdx = ans !== undefined && ans !== null && ans !== '' ? parseInt(ans, 10) : -1;
+            const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
+            const isCorrect = (chosenIdx === correctIdx);
+            const options = q.imageOptions || [];
+
+            const optionsHtml = options.map((opt, oIdx) => {
+                const isSelected = (chosenIdx === oIdx);
+                const isExpected = (correctIdx === oIdx);
+                let borderStyle = 'border:1.5px solid var(--clr-surface-3); background:var(--clr-surface);';
+                let badge = '';
+
+                if (isSelected && isExpected) {
+                    borderStyle = 'border:2px solid var(--clr-success); background:rgba(39, 174, 96, 0.08);';
+                    badge = `<span style="position:absolute; top:6px; right:6px; background:var(--clr-success); color:#fff; font-size:0.7rem; font-weight:800; padding:2px 6px; border-radius:4px;"><i class="bi bi-check-circle-fill"></i> Choisie & Correcte</span>`;
+                } else if (isSelected && !isExpected) {
+                    borderStyle = 'border:2px solid var(--clr-danger); background:rgba(231, 76, 60, 0.08);';
+                    badge = `<span style="position:absolute; top:6px; right:6px; background:var(--clr-danger); color:#fff; font-size:0.7rem; font-weight:800; padding:2px 6px; border-radius:4px;"><i class="bi bi-x-circle-fill"></i> Réponse choisie</span>`;
+                } else if (isExpected) {
+                    borderStyle = 'border:2px dashed var(--clr-success); background:rgba(39, 174, 96, 0.05);';
+                    badge = `<span style="position:absolute; top:6px; right:6px; background:var(--clr-success); color:#fff; font-size:0.7rem; font-weight:800; padding:2px 6px; border-radius:4px;"><i class="bi bi-check"></i> Attendu</span>`;
+                }
+
+                return `
+                    <div style="position:relative; border-radius:var(--radius-sm); padding:10px; display:flex; flex-direction:column; gap:6px; ${borderStyle}">
+                        ${badge}
+                        <div style="width:100%; height:110px; background:#181c19; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                            <img src="${escapeHtml(opt.imageUrl || '')}" alt="Option ${oIdx + 1}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                        </div>
+                        <div style="font-size:0.82rem; font-weight:700; color:var(--clr-text); text-align:center;">
+                            ${escapeHtml(opt.label || ('Option ' + (oIdx + 1)))}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            contentHtml = `
+                <div style="margin-top:10px;">
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
+                        ${optionsHtml}
+                    </div>
+                </div>
+            `;
+        } else if (type === 'table_choice') {
+            const col1 = q.col1Label || 'VRAI';
+            const col2 = q.col2Label || 'FAUX';
+            const rows = q.tableRows || [];
+            const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
+
+            const tableRowsHtml = rows.map((row, rIdx) => {
+                const userRow = userAnsObj[rIdx] || {};
+                const uCol1 = !!userRow.col1;
+                const uCol2 = !!userRow.col2;
+                const expCol1 = !!row.correctCol1;
+                const expCol2 = !!row.correctCol2;
+                const isRowCorrect = (uCol1 === expCol1 && uCol2 === expCol2);
+
+                const getCellState = (uSelected, expSelected) => {
+                    if (uSelected && expSelected) {
+                        return { icon: '<i class="bi bi-check-circle-fill" style="color:var(--clr-success); font-size:1.1rem;"></i>', style: 'background:rgba(39,174,96,0.12);' };
+                    } else if (uSelected && !expSelected) {
+                        return { icon: '<i class="bi bi-x-circle-fill" style="color:var(--clr-danger); font-size:1.1rem;"></i>', style: 'background:rgba(231,76,60,0.12);' };
+                    } else if (!uSelected && expSelected) {
+                        return { icon: '<i class="bi bi-arrow-right-circle" style="color:var(--clr-success); font-size:1rem;" title="Attendu"></i>', style: 'background:rgba(39,174,96,0.05);' };
+                    }
+                    return { icon: '<span style="color:var(--clr-surface-3); font-size:1.1rem;">○</span>', style: '' };
+                };
+
+                const cell1 = getCellState(uCol1, expCol1);
+                const cell2 = getCellState(uCol2, expCol2);
+
+                return `
+                    <tr style="border-bottom:1px solid var(--clr-surface-3); ${isRowCorrect ? '' : 'background:rgba(231,76,60,0.03);'}">
+                        <td style="padding:10px 14px; font-size:0.85rem; font-weight:600; color:var(--clr-text);">
+                            <span style="font-weight:800; color:var(--clr-text-muted); margin-right:6px;">${rIdx + 1}.</span>
+                            ${escapeHtml(row.text || '')}
+                        </td>
+                        <td style="text-align:center; padding:8px; ${cell1.style}">
+                            ${cell1.icon}
+                        </td>
+                        <td style="text-align:center; padding:8px; ${cell2.style}">
+                            ${cell2.icon}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            contentHtml = `
+                <div style="margin-top:10px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); overflow:hidden;">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="background:var(--clr-surface-2); border-bottom:2px solid var(--clr-surface-3);">
+                                <th style="padding:10px 14px; font-size:0.8rem; font-weight:800; text-align:left;">Affirmation</th>
+                                <th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col1)}</th>
+                                <th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col2)}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRowsHtml}
+                        </tbody>
+                    </table>
                 </div>
             `;
         } else if (type === 'cloze') {
@@ -929,9 +1052,9 @@ function renderInspectionQuestions(questions, sub) {
                         <span style="color:var(--clr-text-muted);">Cible : (${targetX}%, ${targetY}%) ± ${radius}%</span>
                     </div>
                     ${q.pinImage ? `
-                        <div class="es-pinpoint-result-zone" style="max-width:440px; margin:0 auto; position:relative; border-radius:6px; overflow:hidden; border:1px solid var(--clr-surface-3);">
-                            <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" style="width:100%; display:block;">
-                            <div class="es-pinpoint-target-zone" style="position:absolute; left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%; transform:translate(-50%, -50%); border-radius:50%; border:2px dashed #2ecc71; background:rgba(46, 204, 113, 0.25); pointer-events:none;"></div>
+                        <div class="es-pinpoint-result-zone" style="max-width:440px; margin:0 auto; position:relative; border-radius:6px; overflow:hidden; border:1px solid var(--clr-surface-3); text-align:center;">
+                            <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" style="display:block; margin:0 auto; max-width:100%; height:auto;">
+                            <div class="es-pinpoint-target-zone" style="position:absolute; left:${targetX}%; top:${targetY}%; width:${radius * 2}%; aspect-ratio:1 / 1; height:auto; transform:translate(-50%, -50%); border-radius:50%; border:2px dashed #2ecc71; background:rgba(46, 204, 113, 0.25); pointer-events:none;"></div>
                             <div style="position:absolute; left:${targetX}%; top:${targetY}%; transform:translate(-50%, -50%); color:#27ae60; font-size:1.2rem; pointer-events:none;" title="Cible attendue"><i class="bi bi-bullseye"></i></div>
                             ${userCoords ? `
                                 <div style="position:absolute; left:${userCoords.x}%; top:${userCoords.y}%; transform:translate(-50%, -50%); color:${isCorrect ? '#27ae60' : '#e74c3c'}; font-size:1.4rem; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.5));" title="Position stagiaire"><i class="bi bi-geo-alt-fill"></i></div>
@@ -1208,6 +1331,19 @@ function syncQuestionsFromDOM() {
 
         const q = currentEditingQuestions[idx];
 
+        if (q.type === 'section') {
+            const titleInput = card.querySelector('.q-section-title-input');
+            const descInput = card.querySelector('.q-section-desc-input');
+            if (titleInput) {
+                q.title = titleInput.value;
+                q.text = titleInput.value;
+            }
+            if (descInput) {
+                q.description = descInput.value;
+            }
+            return;
+        }
+
         // Énoncé
         const textInput = card.querySelector('.q-text-input');
         if (textInput) q.text = textInput.value;
@@ -1233,10 +1369,48 @@ function syncQuestionsFromDOM() {
             });
             if (opts.length > 0) q.options = opts;
 
-            const checkedRadio = card.querySelector('input[type="radio"]:checked');
+            const checkedRadio = card.querySelector('input[name^="q_correct_"]:checked');
             if (checkedRadio) {
                 q.correctIndex = parseInt(checkedRadio.value, 10);
             }
+        } else if (q.type === 'image_choice') {
+            const optCards = card.querySelectorAll('.image-choice-opt-card');
+            const imgOpts = [];
+            optCards.forEach(optCard => {
+                const imgData = optCard.getAttribute('data-img-src') || '';
+                const urlInp = optCard.querySelector('.q-imagechoice-url-input');
+                const labelInp = optCard.querySelector('.q-imagechoice-label-input');
+                const finalImg = imgData || (urlInp ? urlInp.value.trim() : '');
+                imgOpts.push({
+                    imageUrl: finalImg,
+                    label: labelInp ? labelInp.value.trim() : ''
+                });
+            });
+            if (imgOpts.length > 0) q.imageOptions = imgOpts;
+
+            const checkedRadio = card.querySelector('input[name^="q_imgchoice_correct_"]:checked');
+            if (checkedRadio) {
+                q.correctIndex = parseInt(checkedRadio.value, 10);
+            }
+        } else if (q.type === 'table_choice') {
+            const col1Inp = card.querySelector('.q-tablechoice-col1-label');
+            const col2Inp = card.querySelector('.q-tablechoice-col2-label');
+            q.col1Label = col1Inp ? col1Inp.value.trim() : (q.col1Label || 'VRAI');
+            q.col2Label = col2Inp ? col2Inp.value.trim() : (q.col2Label || 'FAUX');
+
+            const rowCards = card.querySelectorAll('.table-choice-row-item');
+            const rows = [];
+            rowCards.forEach(rowEl => {
+                const textInp = rowEl.querySelector('.table-choice-row-text');
+                const col1Cb = rowEl.querySelector('.table-choice-cb-col1');
+                const col2Cb = rowEl.querySelector('.table-choice-cb-col2');
+                rows.push({
+                    text: textInp ? textInp.value : '',
+                    correctCol1: col1Cb ? col1Cb.checked : false,
+                    correctCol2: col2Cb ? col2Cb.checked : false
+                });
+            });
+            if (rows.length > 0) q.tableRows = rows;
         } else if (q.type === 'boolean') {
             const checkedBoolRadio = card.querySelector('.q-boolean-radio:checked');
             if (checkedBoolRadio) {
@@ -1321,8 +1495,15 @@ function renderQuestionsEditor() {
     const badgeCount = document.getElementById('badgeQuestionsTotalCount');
     if (!container) return;
 
+    const nonSectionQuestions = currentEditingQuestions.filter(q => q.type !== 'section');
+    const sectionsCount = currentEditingQuestions.filter(q => q.type === 'section').length;
+
     if (badgeCount) {
-        badgeCount.textContent = `${currentEditingQuestions.length} question${currentEditingQuestions.length > 1 ? 's' : ''}`;
+        let badgeStr = `${nonSectionQuestions.length} question${nonSectionQuestions.length > 1 ? 's' : ''}`;
+        if (sectionsCount > 0) {
+            badgeStr += ` • ${sectionsCount} section${sectionsCount > 1 ? 's' : ''} (page${sectionsCount > 1 ? 's' : ''})`;
+        }
+        badgeCount.textContent = badgeStr;
     }
 
     if (currentEditingQuestions.length === 0) {
@@ -1330,14 +1511,65 @@ function renderQuestionsEditor() {
             <div style="text-align:center; padding:32px 16px; background:var(--clr-surface-2); border-radius:var(--radius-md); border:1.5px dashed var(--clr-surface-3);">
                 <i class="bi bi-patch-question" style="font-size:2.2rem; color:var(--clr-text-light);"></i>
                 <div style="font-weight:700; margin-top:8px; color:var(--clr-text);">Aucune question pour le moment</div>
-                <div style="font-size:0.83rem; color:var(--clr-text-muted); margin-top:4px;">Cliquez sur « Ajouter une nouvelle question » ci-dessous.</div>
+                <div style="font-size:0.83rem; color:var(--clr-text-muted); margin-top:4px;">Cliquez sur « Ajouter une question » ou « Ajouter une section / page » ci-dessous.</div>
             </div>
         `;
         return;
     }
 
+    let runningQuestionNum = 0;
+    let runningSectionNum = 0;
+
     container.innerHTML = currentEditingQuestions.map((q, idx) => {
         const type = q.type || 'qcm';
+        const isFirst = (idx === 0);
+        const isLast = (idx === currentEditingQuestions.length - 1);
+
+        if (type === 'section') {
+            runningSectionNum++;
+            const sTitle = q.title || q.text || `Section ${runningSectionNum}`;
+            const sDesc = q.description || '';
+            return `
+                <div class="es-qcard es-qcard--section" data-qidx="${idx}">
+                    <div class="es-qcard__header" style="background:rgba(166, 216, 102, 0.15); border-bottom:1px solid rgba(166, 216, 102, 0.3);">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="es-badge es-badge--approved" style="font-size:0.82rem; font-weight:800; padding:6px 12px; display:inline-flex; align-items:center; gap:6px;">
+                                <i class="bi bi-bookmark-fill"></i> Section ${runningSectionNum} (Page ${runningSectionNum})
+                            </span>
+                            <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text-muted);">Nouvelle page de questionnaire</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:4px;">
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-up" data-qidx="${idx}" ${isFirst ? 'disabled' : ''} style="padding:6px 10px; ${isFirst ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isFirst ? 'Première position' : 'Monter d\'un rang'}">
+                                <i class="bi bi-arrow-up" style="font-weight:800; font-size:1rem;"></i>
+                            </button>
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-down" data-qidx="${idx}" ${isLast ? 'disabled' : ''} style="padding:6px 10px; ${isLast ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isLast ? 'Dernière position' : 'Descendre d\'un rang'}">
+                                <i class="bi bi-arrow-down" style="font-weight:800; font-size:1rem;"></i>
+                            </button>
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-duplicate-q" data-qidx="${idx}" title="Dupliquer la section" style="padding:6px 10px;">
+                                <i class="bi bi-copy"></i>
+                            </button>
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-delete-q" data-qidx="${idx}" title="Supprimer la section" style="padding:6px 10px; color:var(--clr-danger);">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; flex-direction:column; gap:12px; padding:16px;">
+                        <div class="es-field">
+                            <label class="es-field__label" style="color:var(--clr-primary-dark); font-weight:800;">🏷️ Titre de la section / page :</label>
+                            <input class="es-input q-section-title-input" type="text" data-qidx="${idx}" value="${escapeHtml(sTitle)}" placeholder="Ex: Section 1 : Petite enfance (3-6 ans)" required style="font-weight:700; font-size:0.95rem; border-color:var(--clr-primary);">
+                        </div>
+                        <div class="es-field">
+                            <label class="es-field__label">📝 Consignes ou description de cette section (optionnel) :</label>
+                            <textarea class="es-input q-section-desc-input" data-qidx="${idx}" rows="2" placeholder="Ex: Répondez attentivement aux questions ci-dessous sur le développement de l'enfant..." style="font-size:0.85rem;">${escapeHtml(sDesc)}</textarea>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        runningQuestionNum++;
+        const currentQNum = runningQuestionNum;
         let specificFields = '';
 
         if (type === 'qcm') {
@@ -1362,6 +1594,137 @@ function renderQuestionsEditor() {
                     ${options.length < 6 ? `
                         <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-option" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
                             <i class="bi bi-plus"></i> Ajouter une option
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        } else if (type === 'image_choice') {
+            const options = q.imageOptions && q.imageOptions.length > 0 ? q.imageOptions : [
+                { imageUrl: '', label: 'Option 1' },
+                { imageUrl: '', label: 'Option 2' }
+            ];
+            const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
+            const optionsHtml = options.map((opt, oIdx) => {
+                const optImg = opt.imageUrl || '';
+                const isChecked = (correctIdx === oIdx);
+                return `
+                    <div class="image-choice-opt-card" data-qidx="${idx}" data-oidx="${oIdx}" data-img-src="${escapeHtml(optImg)}" style="background:var(--clr-surface); border:2px solid ${isChecked ? 'var(--clr-primary)' : 'var(--clr-surface-3)'}; border-radius:var(--radius-sm); padding:12px; display:flex; flex-direction:column; gap:8px; position:relative; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                            <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; font-size:0.85rem; color:${isChecked ? 'var(--clr-primary)' : 'var(--clr-text)'};">
+                                <input type="radio" name="q_imgchoice_correct_${idx}" value="${oIdx}" ${isChecked ? 'checked' : ''} style="accent-color:var(--clr-primary); width:18px; height:18px; cursor:pointer;">
+                                <span>Bonne réponse (${oIdx + 1})</span>
+                            </label>
+                            ${options.length > 2 ? `
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-remove-imagechoice-option" data-qidx="${idx}" data-oidx="${oIdx}" style="padding:4px 8px; color:var(--clr-danger);" title="Supprimer cette option">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        ${optImg ? `
+                            <div class="imagechoice-preview-box" style="position:relative; width:100%; height:140px; border-radius:6px; overflow:hidden; background:#181c19; display:flex; align-items:center; justify-content:center; border:1px solid var(--clr-surface-3);">
+                                <img src="${escapeHtml(optImg)}" alt="Option ${oIdx + 1}" style="max-width:100%; max-height:100%; object-fit:contain;">
+                                <div style="position:absolute; top:6px; right:6px; display:flex; gap:4px;">
+                                    <label class="es-btn es-btn--secondary es-btn--sm" style="padding:4px 8px; font-size:0.75rem; cursor:pointer; backdrop-filter:blur(4px); background:rgba(0,0,0,0.6); color:#fff;" title="Changer l'image">
+                                        <i class="bi bi-arrow-repeat"></i>
+                                        <input type="file" class="q-imagechoice-file-input hidden" data-qidx="${idx}" data-oidx="${oIdx}" accept="image/*">
+                                    </label>
+                                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-clear-imagechoice-img" data-qidx="${idx}" data-oidx="${oIdx}" style="padding:4px 8px; font-size:0.75rem; background:rgba(231,76,60,0.8); color:#fff;" title="Retirer l'image">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        ` : `
+                            <label class="es-imagechoice-dropzone" data-qidx="${idx}" data-oidx="${oIdx}" tabindex="0" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:18px 10px; background:var(--clr-surface-2); border:2px dashed var(--clr-primary); border-radius:6px; cursor:pointer; text-align:center; min-height:110px; transition:var(--transition); outline:none;">
+                                <input type="file" class="q-imagechoice-file-input hidden" data-qidx="${idx}" data-oidx="${oIdx}" accept="image/*">
+                                <i class="bi bi-cloud-arrow-up" style="font-size:1.6rem; color:var(--clr-primary); margin-bottom:4px;"></i>
+                                <span style="font-size:0.8rem; font-weight:700; color:var(--clr-text);">Importer une image</span>
+                                <span style="font-size:0.72rem; color:var(--clr-text-muted);">Glisser, clic ou Ctrl+V</span>
+                            </label>
+                            <input class="es-input q-imagechoice-url-input" type="text" data-qidx="${idx}" data-oidx="${oIdx}" value="" placeholder="Ou coller une URL https://..." style="font-size:0.78rem; padding:6px 8px;">
+                        `}
+
+                        <input class="es-input q-imagechoice-label-input" type="text" data-qidx="${idx}" data-oidx="${oIdx}" value="${escapeHtml(opt.label || '')}" placeholder="Légende optionnelle (ex: Option ${oIdx + 1})" style="font-size:0.85rem; padding:6px 10px;">
+                    </div>
+                `;
+            }).join('');
+
+            specificFields = `
+                <div style="margin-top:12px;">
+                    <label class="es-field__label">🖼️ Options sous forme d'images (Cochez l'image correcte) :</label>
+                    <div style="font-size:0.78rem; color:var(--clr-text-muted); margin-bottom:10px;">
+                        💡 Vous pouvez glisser-déposer des images ou faire Ctrl+V directement sur les cartes d'options.
+                    </div>
+                    <div class="image-choice-options-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:12px; margin-bottom:10px;">
+                        ${optionsHtml}
+                    </div>
+                    ${options.length < 8 ? `
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-imagechoice-option" data-qidx="${idx}" style="font-size:0.82rem;">
+                            <i class="bi bi-plus-circle"></i> Ajouter une image-réponse
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        } else if (type === 'table_choice') {
+            const col1 = q.col1Label || 'VRAI';
+            const col2 = q.col2Label || 'FAUX';
+            const rows = q.tableRows && q.tableRows.length > 0 ? q.tableRows : [
+                { text: 'Affirmation 1...', correctCol1: true, correctCol2: false },
+                { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }
+            ];
+
+            const hasMulti = rows.some(r => r.correctCol1 && r.correctCol2);
+
+            const rowsHtml = rows.map((row, rIdx) => `
+                <div class="table-choice-row-item" data-qidx="${idx}" data-ridx="${rIdx}" style="display:flex; align-items:center; gap:10px; background:var(--clr-surface); padding:10px 12px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); margin-bottom:8px;">
+                    <span style="font-weight:800; color:var(--clr-text-muted); font-size:0.85rem; min-width:24px;">${rIdx + 1}.</span>
+                    <input class="es-input table-choice-row-text" type="text" data-qidx="${idx}" data-ridx="${rIdx}" value="${escapeHtml(row.text || '')}" placeholder="Énoncé de l'affirmation ${rIdx + 1}" required style="flex:1; font-size:0.88rem; padding:8px 12px;">
+                    
+                    <div style="display:flex; align-items:center; gap:12px; padding:0 8px;">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.82rem; font-weight:700;" title="Cocher si '${escapeHtml(col1)}' est une bonne réponse">
+                            <input type="checkbox" class="table-choice-cb-col1" data-qidx="${idx}" data-ridx="${rIdx}" ${row.correctCol1 ? 'checked' : ''} style="accent-color:var(--clr-primary); width:18px; height:18px; cursor:pointer;">
+                            <span class="col1-preview-text" style="color:var(--clr-primary-dark);">${escapeHtml(col1 || 'Col 1')}</span>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.82rem; font-weight:700;" title="Cocher si '${escapeHtml(col2)}' est une bonne réponse">
+                            <input type="checkbox" class="table-choice-cb-col2" data-qidx="${idx}" data-ridx="${rIdx}" ${row.correctCol2 ? 'checked' : ''} style="accent-color:var(--clr-primary); width:18px; height:18px; cursor:pointer;">
+                            <span class="col2-preview-text" style="color:var(--clr-primary-dark);">${escapeHtml(col2 || 'Col 2')}</span>
+                        </label>
+                    </div>
+
+                    ${rows.length > 2 ? `
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-remove-tablechoice-row" data-qidx="${idx}" data-ridx="${rIdx}" style="padding:4px 8px; color:var(--clr-danger);" title="Supprimer cette ligne">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            specificFields = `
+                <div style="margin-top:12px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; background:var(--clr-surface-2); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--clr-surface-3);">
+                        <div>
+                            <label class="es-field__label" style="font-size:0.8rem; margin-bottom:4px;">🏷️ Intitulé Colonne 1 :</label>
+                            <input class="es-input q-tablechoice-col1-label" type="text" data-qidx="${idx}" value="${escapeHtml(col1)}" placeholder="Ex: VRAI, OUI, Autorisé..." style="font-weight:700; font-size:0.85rem; padding:6px 10px;">
+                        </div>
+                        <div>
+                            <label class="es-field__label" style="font-size:0.8rem; margin-bottom:4px;">🏷️ Intitulé Colonne 2 :</label>
+                            <input class="es-input q-tablechoice-col2-label" type="text" data-qidx="${idx}" value="${escapeHtml(col2)}" placeholder="Ex: FAUX, NON, Interdit..." style="font-weight:700; font-size:0.85rem; padding:6px 10px;">
+                        </div>
+                    </div>
+
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <label class="es-field__label" style="margin:0;">Lignes d'affirmations & Réponses attendues :</label>
+                        <span class="es-badge ${hasMulti ? 'es-badge--warning' : 'es-badge--approved'}" style="font-size:0.75rem; font-weight:800; padding:4px 8px;">
+                            <i class="bi ${hasMulti ? 'bi-check2-square' : 'bi-ui-radios'}"></i>
+                            ${hasMulti ? 'Mode Boîtes à cocher (plusieurs réponses possibles)' : 'Mode Boutons Radio (1 seule réponse par ligne)'}
+                        </span>
+                    </div>
+
+                    <div class="table-choice-rows-wrap">${rowsHtml}</div>
+
+                    ${rows.length < 12 ? `
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-tablechoice-row" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
+                            <i class="bi bi-plus-circle"></i> Ajouter une affirmation
                         </button>
                     ` : ''}
                 </div>
@@ -1412,10 +1775,10 @@ function renderQuestionsEditor() {
                             </div>
                         </div>
 
-                        <div style="text-align:center;">
-                            <div class="es-pinpoint-setter" data-qidx="${idx}" style="position:relative; display:inline-block; max-width:100%; cursor:crosshair; border-radius:6px; overflow:hidden; border:1.5px solid var(--clr-surface-3);">
-                                <img src="${escapeHtml(q.pinImage)}" alt="Image repère" style="display:block; max-width:100%; max-height:420px; user-select:none; pointer-events:none;">
-                                <div id="pin_target_zone_${idx}" class="es-pinpoint-target-zone" style="position:absolute; left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%; transform:translate(-50%, -50%); border-radius:50%; border:2px dashed #2ecc71; background:rgba(46,204,113,0.25); pointer-events:none;"></div>
+                        <div style="text-align:center; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                            <div class="es-pinpoint-setter" data-qidx="${idx}" style="position:relative; display:inline-block; margin:0 auto; max-width:100%; cursor:crosshair; border-radius:6px; overflow:hidden; border:1.5px solid var(--clr-surface-3);">
+                                <img src="${escapeHtml(q.pinImage)}" alt="Image repère" style="display:block; margin:0 auto; max-width:100%; max-height:420px; user-select:none; pointer-events:none;">
+                                <div id="pin_target_zone_${idx}" class="es-pinpoint-target-zone" style="position:absolute; left:${targetX}%; top:${targetY}%; width:${radius * 2}%; aspect-ratio:1 / 1; height:auto; transform:translate(-50%, -50%); border-radius:50%; border:2px dashed #2ecc71; background:rgba(46,204,113,0.25); pointer-events:none;"></div>
                                 <div id="pin_marker_${idx}" class="es-pinpoint-target-marker" style="position:absolute; left:${targetX}%; top:${targetY}%; transform:translate(-50%, -50%); color:#27ae60; font-size:1.6rem; pointer-events:none; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
                                     <i class="bi bi-geo-alt-fill"></i>
                                 </div>
@@ -1630,23 +1993,22 @@ function renderQuestionsEditor() {
             `;
         }
 
-        const isFirst = (idx === 0);
-        const isLast = (idx === currentEditingQuestions.length - 1);
-
         return `
             <div class="es-qcard" data-qidx="${idx}">
                 <div class="es-qcard__header">
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <span class="es-qcard__num">${idx + 1}</span>
+                        <span class="es-qcard__num">${currentQNum}</span>
                         <select class="es-select q-type-select" data-qidx="${idx}" style="font-weight:700; font-size:0.85rem; padding:6px 12px; width:auto;">
-                            <option value="qcm" ${type === 'qcm' ? 'selected' : ''}>1- 🔘 QCM (Choix unique)</option>
-                            <option value="boolean" ${type === 'boolean' ? 'selected' : ''}>2- ⚖️ Vrai / Faux</option>
-                            <option value="pinpoint" ${type === 'pinpoint' ? 'selected' : ''}>3- 📍 Repère sur image (Pin)</option>
-                            <option value="range" ${type === 'range' ? 'selected' : ''}>4- 📏 Curseur horizontal (Slider)</option>
-                            <option value="matching" ${type === 'matching' ? 'selected' : ''}>5- 🔗 Relier les colonnes (Association)</option>
-                            <option value="puzzle" ${type === 'puzzle' ? 'selected' : ''}>6- 🧩 Puzzle chronologique</option>
-                            <option value="cloze" ${type === 'cloze' ? 'selected' : ''}>7- 📝 Texte à trous (Glisser-déposer)</option>
-                            <option value="text" ${type === 'text' ? 'selected' : ''}>8- ✍️ Rédaction libre</option>
+                            <option value="qcm" ${type === 'qcm' ? 'selected' : ''}>1- 🔘 QCM (Choix unique textuel)</option>
+                            <option value="image_choice" ${type === 'image_choice' ? 'selected' : ''}>2- 🖼️ QCM Choix d'images</option>
+                            <option value="table_choice" ${type === 'table_choice' ? 'selected' : ''}>3- 📋 Tableau à 2 colonnes (Affirmations)</option>
+                            <option value="boolean" ${type === 'boolean' ? 'selected' : ''}>4- ⚖️ Vrai / Faux</option>
+                            <option value="pinpoint" ${type === 'pinpoint' ? 'selected' : ''}>5- 📍 Repère sur image (Pin)</option>
+                            <option value="range" ${type === 'range' ? 'selected' : ''}>6- 📏 Curseur horizontal (Slider)</option>
+                            <option value="matching" ${type === 'matching' ? 'selected' : ''}>7- 🔗 Relier les colonnes (Association)</option>
+                            <option value="puzzle" ${type === 'puzzle' ? 'selected' : ''}>8- 🧩 Puzzle chronologique</option>
+                            <option value="cloze" ${type === 'cloze' ? 'selected' : ''}>9- 📝 Texte à trous (Glisser-déposer)</option>
+                            <option value="text" ${type === 'text' ? 'selected' : ''}>10- ✍️ Rédaction libre</option>
                         </select>
                     </div>
                     <div style="display:flex; align-items:center; gap:4px;">
@@ -1681,6 +2043,34 @@ function renderQuestionsEditor() {
     }).join('');
 
     bindQuestionsEvents();
+}
+
+async function processAndSetImageChoiceOption(qidx, oidx, file) {
+    if (!file) return;
+    if (!file.type || !file.type.startsWith('image/')) {
+        showToast("Veuillez déposer ou coller un fichier image valide.", "warning");
+        return;
+    }
+    syncQuestionsFromDOM();
+    if (!currentEditingQuestions[qidx]) return;
+    if (!currentEditingQuestions[qidx].imageOptions) {
+        currentEditingQuestions[qidx].imageOptions = [
+            { imageUrl: '', label: 'Option 1' },
+            { imageUrl: '', label: 'Option 2' }
+        ];
+    }
+    if (!currentEditingQuestions[qidx].imageOptions[oidx]) {
+        currentEditingQuestions[qidx].imageOptions[oidx] = { imageUrl: '', label: `Option ${oidx + 1}` };
+    }
+    try {
+        const base64 = await compressImageToBase64(file, 800, 600, 0.82);
+        currentEditingQuestions[qidx].imageOptions[oidx].imageUrl = base64;
+        renderQuestionsEditor();
+        showToast(`Image de l'option ${oidx + 1} chargée !`, "success");
+    } catch (err) {
+        console.error("Erreur compression image option:", err);
+        showToast("Erreur lors du traitement de l'image de l'option.", "error");
+    }
 }
 
 async function processAndSetPinpointImage(qidx, file) {
@@ -1718,6 +2108,19 @@ function bindQuestionsEvents() {
             if (newType === 'qcm' && !currentEditingQuestions[idx].options) {
                 currentEditingQuestions[idx].options = ['Option 1', 'Option 2'];
                 currentEditingQuestions[idx].correctIndex = 0;
+            } else if (newType === 'image_choice' && (!currentEditingQuestions[idx].imageOptions || currentEditingQuestions[idx].imageOptions.length === 0)) {
+                currentEditingQuestions[idx].imageOptions = [
+                    { imageUrl: '', label: 'Option 1' },
+                    { imageUrl: '', label: 'Option 2' }
+                ];
+                currentEditingQuestions[idx].correctIndex = 0;
+            } else if (newType === 'table_choice' && (!currentEditingQuestions[idx].tableRows || currentEditingQuestions[idx].tableRows.length === 0)) {
+                currentEditingQuestions[idx].col1Label = 'VRAI';
+                currentEditingQuestions[idx].col2Label = 'FAUX';
+                currentEditingQuestions[idx].tableRows = [
+                    { text: 'Affirmation 1...', correctCol1: true, correctCol2: false },
+                    { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }
+                ];
             } else if (newType === 'boolean' && currentEditingQuestions[idx].correctAnswer === undefined) {
                 currentEditingQuestions[idx].correctAnswer = true;
             } else if (newType === 'pinpoint') {
@@ -1827,7 +2230,8 @@ function bindQuestionsEvents() {
             const zone = card?.querySelector('.es-pinpoint-target-zone');
             if (zone) {
                 zone.style.width = `${val * 2}%`;
-                zone.style.height = `${val * 2}%`;
+                zone.style.aspectRatio = '1 / 1';
+                zone.style.height = 'auto';
             }
         });
     });
@@ -2026,6 +2430,245 @@ function bindQuestionsEvents() {
         });
     });
 
+    // Image choice events
+    container.querySelectorAll('input[name^="q_imgchoice_correct_"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            const name = e.target.name;
+            const qidx = parseInt(name.replace('q_imgchoice_correct_', ''), 10);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].correctIndex = parseInt(e.target.value, 10);
+                // Update active borders
+                const card = radio.closest('.es-qcard');
+                if (card) {
+                    card.querySelectorAll('.image-choice-opt-card').forEach((optCard, oIdx) => {
+                        const isMatch = (oIdx === parseInt(e.target.value, 10));
+                        optCard.style.borderColor = isMatch ? 'var(--clr-primary)' : 'var(--clr-surface-3)';
+                    });
+                }
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-imagechoice-file-input').forEach(input => {
+        input.addEventListener('change', async (e) => {
+            const qidx = parseInt(input.getAttribute('data-qidx'), 10);
+            const oidx = parseInt(input.getAttribute('data-oidx'), 10);
+            const file = e.target.files && e.target.files[0];
+            if (file) {
+                await processAndSetImageChoiceOption(qidx, oidx, file);
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-imagechoice-url-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            const oidx = parseInt(e.target.getAttribute('data-oidx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].imageOptions && currentEditingQuestions[qidx].imageOptions[oidx]) {
+                currentEditingQuestions[qidx].imageOptions[oidx].imageUrl = e.target.value.trim();
+            }
+        });
+        input.addEventListener('blur', () => {
+            syncQuestionsFromDOM();
+            renderQuestionsEditor();
+        });
+    });
+
+    container.querySelectorAll('.q-imagechoice-label-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            const oidx = parseInt(e.target.getAttribute('data-oidx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].imageOptions && currentEditingQuestions[qidx].imageOptions[oidx]) {
+                currentEditingQuestions[qidx].imageOptions[oidx].label = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-add-imagechoice-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                if (!currentEditingQuestions[qidx].imageOptions) currentEditingQuestions[qidx].imageOptions = [];
+                currentEditingQuestions[qidx].imageOptions.push({
+                    imageUrl: '',
+                    label: `Option ${currentEditingQuestions[qidx].imageOptions.length + 1}`
+                });
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-remove-imagechoice-option').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            const oidx = parseInt(btn.getAttribute('data-oidx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].imageOptions) {
+                currentEditingQuestions[qidx].imageOptions.splice(oidx, 1);
+                if (currentEditingQuestions[qidx].correctIndex >= currentEditingQuestions[qidx].imageOptions.length) {
+                    currentEditingQuestions[qidx].correctIndex = 0;
+                }
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-clear-imagechoice-img').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            const oidx = parseInt(btn.getAttribute('data-oidx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].imageOptions && currentEditingQuestions[qidx].imageOptions[oidx]) {
+                currentEditingQuestions[qidx].imageOptions[oidx].imageUrl = '';
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    // Drag & Drop / Paste on image choice option cards
+    container.querySelectorAll('.image-choice-opt-card').forEach(card => {
+        const qidx = parseInt(card.getAttribute('data-qidx'), 10);
+        const oidx = parseInt(card.getAttribute('data-oidx'), 10);
+        const dropzone = card.querySelector('.es-imagechoice-dropzone');
+
+        if (dropzone) {
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.style.background = 'rgba(46, 204, 113, 0.15)';
+                    dropzone.style.borderColor = '#2ecc71';
+                }, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropzone.style.background = 'var(--clr-surface-2)';
+                    dropzone.style.borderColor = 'var(--clr-primary)';
+                }, false);
+            });
+
+            dropzone.addEventListener('drop', async (e) => {
+                const dt = e.dataTransfer;
+                const file = dt && dt.files && dt.files[0];
+                if (file) {
+                    await processAndSetImageChoiceOption(qidx, oidx, file);
+                }
+            }, false);
+        }
+
+        // Paste support on card
+        card.addEventListener('paste', async (e) => {
+            const targetTag = e.target?.tagName?.toLowerCase();
+            if (targetTag === 'input' && e.target.type === 'text') return; // Don't hijack text fields
+            const items = (e.clipboardData || window.clipboardData)?.items;
+            if (!items) return;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type && items[i].type.indexOf('image') !== -1) {
+                    const file = items[i].getAsFile();
+                    if (file) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        await processAndSetImageChoiceOption(qidx, oidx, file);
+                        break;
+                    }
+                }
+            }
+        });
+    });
+
+    // Table choice event bindings
+    container.querySelectorAll('.q-tablechoice-col1-label').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].col1Label = e.target.value;
+                const card = input.closest('.es-qcard');
+                if (card) {
+                    card.querySelectorAll('.col1-preview-text').forEach(el => el.textContent = e.target.value || 'Col 1');
+                }
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-tablechoice-col2-label').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].col2Label = e.target.value;
+                const card = input.closest('.es-qcard');
+                if (card) {
+                    card.querySelectorAll('.col2-preview-text').forEach(el => el.textContent = e.target.value || 'Col 2');
+                }
+            }
+        });
+    });
+
+    container.querySelectorAll('.table-choice-row-text').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            const ridx = parseInt(e.target.getAttribute('data-ridx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].tableRows && currentEditingQuestions[qidx].tableRows[ridx]) {
+                currentEditingQuestions[qidx].tableRows[ridx].text = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.table-choice-cb-col1').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const qidx = parseInt(cb.getAttribute('data-qidx'), 10);
+            const ridx = parseInt(cb.getAttribute('data-ridx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].tableRows && currentEditingQuestions[qidx].tableRows[ridx]) {
+                currentEditingQuestions[qidx].tableRows[ridx].correctCol1 = cb.checked;
+                syncQuestionsFromDOM();
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.table-choice-cb-col2').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const qidx = parseInt(cb.getAttribute('data-qidx'), 10);
+            const ridx = parseInt(cb.getAttribute('data-ridx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].tableRows && currentEditingQuestions[qidx].tableRows[ridx]) {
+                currentEditingQuestions[qidx].tableRows[ridx].correctCol2 = cb.checked;
+                syncQuestionsFromDOM();
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-add-tablechoice-row').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                if (!currentEditingQuestions[qidx].tableRows) currentEditingQuestions[qidx].tableRows = [];
+                currentEditingQuestions[qidx].tableRows.push({
+                    text: `Affirmation ${currentEditingQuestions[qidx].tableRows.length + 1}...`,
+                    correctCol1: true,
+                    correctCol2: false
+                });
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-remove-tablechoice-row').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            const ridx = parseInt(btn.getAttribute('data-ridx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].tableRows) {
+                currentEditingQuestions[qidx].tableRows.splice(ridx, 1);
+                renderQuestionsEditor();
+            }
+        });
+    });
+
     container.querySelectorAll('.qcm-opt-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
@@ -2143,6 +2786,25 @@ function bindQuestionsEvents() {
         });
     });
 
+    container.querySelectorAll('.q-section-title-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].title = e.target.value;
+                currentEditingQuestions[idx].text = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-section-desc-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].description = e.target.value;
+            }
+        });
+    });
+
     // Flèches Haut et Bas pour réorganiser l'ordre des questions
     container.querySelectorAll('.btn-move-q-up:not([disabled])').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -2170,11 +2832,17 @@ function bindQuestionsEvents() {
             syncQuestionsFromDOM();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
             const copy = JSON.parse(JSON.stringify(currentEditingQuestions[qidx]));
-            copy.id = 'q_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-            copy.text = (copy.text || '') + ' (Copie)';
+            const isSec = (copy.type === 'section');
+            copy.id = (isSec ? 'sec_' : 'q_') + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+            if (isSec) {
+                copy.title = (copy.title || 'Section') + ' (Copie)';
+                copy.text = copy.title;
+            } else {
+                copy.text = (copy.text || '') + ' (Copie)';
+            }
             currentEditingQuestions.splice(qidx + 1, 0, copy);
             renderQuestionsEditor();
-            showToast("Question dupliquée.", "info");
+            showToast(isSec ? "Section dupliquée." : "Question dupliquée.", "info");
         });
     });
 
@@ -2183,7 +2851,9 @@ function bindQuestionsEvents() {
             e.preventDefault();
             syncQuestionsFromDOM();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
-            if (confirm("Supprimer cette question ?")) {
+            const q = currentEditingQuestions[qidx];
+            const confirmMsg = (q && q.type === 'section') ? "Supprimer cette section / page ? Les questions situées en dessous ne seront pas supprimées mais intégrées à la section précédente." : "Supprimer cette question ?";
+            if (confirm(confirmMsg)) {
                 currentEditingQuestions.splice(qidx, 1);
                 renderQuestionsEditor();
             }
@@ -2219,10 +2889,16 @@ document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e
             const parsed = JSON.parse(event.target.result);
             if (Array.isArray(parsed) && parsed.length > 0) {
                 currentEditingQuestions = parsed.map((q, idx) => ({
-                    id: q.id || `q_${Date.now()}_${idx}`,
+                    id: q.id || ((q.type === 'section' ? 'sec_' : 'q_') + Date.now() + '_' + idx),
                     type: q.type || 'qcm',
-                    text: q.text || '',
+                    title: q.title || (q.type === 'section' ? q.text : undefined),
+                    description: q.description || '',
+                    text: q.text || q.title || '',
                     options: q.options || (q.type === 'qcm' ? ['Option 1', 'Option 2'] : undefined),
+                    imageOptions: q.imageOptions || (q.type === 'image_choice' ? [{ imageUrl: '', label: 'Option 1' }, { imageUrl: '', label: 'Option 2' }] : undefined),
+                    tableRows: q.tableRows || (q.type === 'table_choice' ? [{ text: 'Affirmation 1...', correctCol1: true, correctCol2: false }, { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }] : undefined),
+                    col1Label: q.col1Label || 'VRAI',
+                    col2Label: q.col2Label || 'FAUX',
                     correctIndex: q.correctIndex !== undefined ? q.correctIndex : 0,
                     correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : true,
                     pinImage: q.pinImage || '',
@@ -2246,7 +2922,7 @@ document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e
                     imageUrl: q.imageUrl || ''
                 }));
                 renderQuestionsEditor();
-                showToast(`🎉 ${currentEditingQuestions.length} questions importées !`, "success");
+                showToast(`🎉 ${currentEditingQuestions.length} éléments importés !`, "success");
             } else {
                 showToast("Fichier JSON invalide.", "error");
             }
@@ -2283,6 +2959,7 @@ async function saveModuleData(btnEl) {
     const timerSeconds = parseInt(document.getElementById('editQuizTimerSeconds').value, 10) || 0;
     const timerTotalSeconds = (timerMinutes * 60) + timerSeconds;
     const showResultsAtEnd = document.getElementById('editShowResultsAtEnd').checked;
+    const allowPreviousPage = document.getElementById('editQuizAllowPreviousPage') ? document.getElementById('editQuizAllowPreviousPage').checked : true;
 
     const isRequirePassword = document.getElementById('editQuizRequirePassword').checked;
     const quizPassword = document.getElementById('editQuizPassword').value.trim();
@@ -2314,6 +2991,18 @@ async function saveModuleData(btnEl) {
     // Validation questions
     for (let i = 0; i < currentEditingQuestions.length; i++) {
         const q = currentEditingQuestions[i];
+
+        if (q.type === 'section') {
+            if (!q.title || !q.title.trim()) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `Le titre de la section ${i + 1} est vide.`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
+            continue;
+        }
+
         if (!q.text || !q.text.trim()) {
             if (errorAlert && errorMsg) {
                 errorMsg.textContent = `L'énoncé de la question ${i + 1} est vide.`;
@@ -2334,6 +3023,49 @@ async function saveModuleData(btnEl) {
                 if (!q.options[j] || !q.options[j].trim()) {
                     if (errorAlert && errorMsg) {
                         errorMsg.textContent = `L'option ${j + 1} de la question ${i + 1} est vide.`;
+                        errorAlert.classList.remove('hidden');
+                    }
+                    return;
+                }
+            }
+        } else if (q.type === 'image_choice') {
+            if (!q.imageOptions || q.imageOptions.length < 2) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `La question ${i + 1} (QCM Choix d'images) doit comporter au moins 2 options.`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
+            for (let j = 0; j < q.imageOptions.length; j++) {
+                const opt = q.imageOptions[j];
+                if (!opt || !opt.imageUrl || !opt.imageUrl.trim()) {
+                    if (errorAlert && errorMsg) {
+                        errorMsg.textContent = `L'option ${j + 1} de la question ${i + 1} (QCM Choix d'images) n'a pas d'image.`;
+                        errorAlert.classList.remove('hidden');
+                    }
+                    return;
+                }
+            }
+        } else if (q.type === 'table_choice') {
+            if (!q.tableRows || q.tableRows.length < 2) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `La question ${i + 1} (Tableau à 2 colonnes) doit comporter au moins 2 affirmations.`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
+            for (let j = 0; j < q.tableRows.length; j++) {
+                const row = q.tableRows[j];
+                if (!row || !row.text || !row.text.trim()) {
+                    if (errorAlert && errorMsg) {
+                        errorMsg.textContent = `L'affirmation ${j + 1} de la question ${i + 1} (Tableau à 2 colonnes) est vide.`;
+                        errorAlert.classList.remove('hidden');
+                    }
+                    return;
+                }
+                if (!row.correctCol1 && !row.correctCol2) {
+                    if (errorAlert && errorMsg) {
+                        errorMsg.textContent = `L'affirmation ${j + 1} de la question ${i + 1} doit avoir au moins une réponse cochée (${q.col1Label || 'Col 1'} ou ${q.col2Label || 'Col 2'}).`;
                         errorAlert.classList.remove('hidden');
                     }
                     return;
@@ -2424,7 +3156,7 @@ async function saveModuleData(btnEl) {
             bgImage: bgImage,
             description: subtitle,
             visible: isVisible,
-            questionsCount: currentEditingQuestions.length,
+            questionsCount: currentEditingQuestions.filter(q => q.type !== 'section').length,
             quizConfig: {
                 quizTitle: title,
                 maxAttempts: maxAttempts,
@@ -2432,6 +3164,7 @@ async function saveModuleData(btnEl) {
                 timerSeconds: timerSeconds,
                 timerTotalSeconds: timerTotalSeconds,
                 showResultsAtEnd: showResultsAtEnd,
+                allowPreviousPage: allowPreviousPage,
                 requirePassword: isRequirePassword,
                 password: isRequirePassword ? quizPassword : ''
             },
@@ -2451,7 +3184,8 @@ async function saveModuleData(btnEl) {
         oldSnap.docs.forEach(d => batch.delete(d.ref));
 
         currentEditingQuestions.forEach((q, idx) => {
-            const qId = q.id || `q_${Date.now()}_${idx + 1}`;
+            const isSec = (q.type === 'section');
+            const qId = q.id || ((isSec ? 'sec_' : 'q_') + Date.now() + '_' + (idx + 1));
             const qRef = db.collection('formation').doc(id).collection('questions').doc(qId);
             
             let distractorArray = [];
@@ -2465,14 +3199,25 @@ async function saveModuleData(btnEl) {
                 id: qId,
                 order: idx + 1,
                 type: q.type || 'qcm',
-                text: q.text || '',
+                text: q.text || q.title || '',
                 imageUrl: q.imageUrl || '',
                 hint: q.hint || ''
             };
 
-            if (q.type === 'qcm') {
+            if (q.type === 'section') {
+                qData.title = q.title || q.text || `Section ${idx + 1}`;
+                qData.description = q.description || '';
+                qData.text = qData.title;
+            } else if (q.type === 'qcm') {
                 qData.options = q.options || ['Option 1', 'Option 2'];
                 qData.correctIndex = q.correctIndex !== undefined ? q.correctIndex : 0;
+            } else if (q.type === 'image_choice') {
+                qData.imageOptions = q.imageOptions || [];
+                qData.correctIndex = q.correctIndex !== undefined ? q.correctIndex : 0;
+            } else if (q.type === 'table_choice') {
+                qData.col1Label = q.col1Label || 'VRAI';
+                qData.col2Label = q.col2Label || 'FAUX';
+                qData.tableRows = q.tableRows || [];
             } else if (q.type === 'boolean') {
                 qData.correctAnswer = q.correctAnswer !== undefined ? (q.correctAnswer === true || q.correctAnswer === 'true') : true;
             } else if (q.type === 'pinpoint') {
@@ -2592,6 +3337,69 @@ document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
         correctIndex: 0,
         hint: ''
     });
+    renderQuestionsEditor();
+    const container = document.getElementById('questionsContainer');
+    if (container && container.lastElementChild) {
+        container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+});
+
+document.getElementById('btnAddSectionHeader')?.addEventListener('click', () => {
+    syncQuestionsFromDOM();
+    const existingSections = currentEditingQuestions.filter(q => q.type === 'section');
+
+    if (existingSections.length === 0) {
+        if (currentEditingQuestions.length === 0) {
+            // Quiz vide : on place Section 1 au sommet
+            currentEditingQuestions.push({
+                id: 'sec_' + Date.now() + '_1',
+                type: 'section',
+                title: 'Section 1',
+                description: '',
+                text: 'Section 1'
+            });
+            showToast("Section 1 créée en haut du quiz.", "success");
+        } else {
+            // Quiz avec des questions existantes : Section 1 est automatiquement placée tout en haut
+            // et la nouvelle section créée devient Section 2
+            currentEditingQuestions.unshift({
+                id: 'sec_' + Date.now() + '_1',
+                type: 'section',
+                title: 'Section 1',
+                description: '',
+                text: 'Section 1'
+            });
+            currentEditingQuestions.push({
+                id: 'sec_' + (Date.now() + 50) + '_2',
+                type: 'section',
+                title: 'Section 2',
+                description: '',
+                text: 'Section 2'
+            });
+            showToast("Section 1 insérée tout en haut du quiz et Section 2 ajoutée.", "success");
+        }
+    } else {
+        // Des sections existent déjà : si la première n'est pas tout en haut, on s'assure que Section 1 est au sommet
+        if (currentEditingQuestions[0]?.type !== 'section') {
+            currentEditingQuestions.unshift({
+                id: 'sec_' + Date.now() + '_top',
+                type: 'section',
+                title: 'Section 1',
+                description: '',
+                text: 'Section 1'
+            });
+        }
+        const updatedSecCount = currentEditingQuestions.filter(q => q.type === 'section').length + 1;
+        currentEditingQuestions.push({
+            id: 'sec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            type: 'section',
+            title: `Section ${updatedSecCount}`,
+            description: '',
+            text: `Section ${updatedSecCount}`
+        });
+        showToast(`Section ${updatedSecCount} ajoutée.`, "info");
+    }
+
     renderQuestionsEditor();
     const container = document.getElementById('questionsContainer');
     if (container && container.lastElementChild) {

@@ -14,6 +14,11 @@ let userPreviousSubmissions = [];
 let isQuizActive = false;
 let isQuizUnlocked = false;
 
+// Variables pour la pagination par sections / pages
+let currentSectionIndex = 0;
+let quizSections = [];
+let userAnswersState = {};
+
 // Variables pour le chronomètre / timer
 let quizTimerInterval = null;
 let quizRemainingSeconds = 0;
@@ -224,7 +229,13 @@ function renderBriefingScreen() {
     if (iconEl) iconEl.innerHTML = `<i class="bi ${mod.icon || 'bi-journal-bookmark'}"></i>`;
 
     // Badges / Pilules
-    document.getElementById('pillQuestionsCount').innerHTML = `<i class="bi bi-list-check"></i> <span>${currentQuestions.length} question${currentQuestions.length > 1 ? 's' : ''}</span>`;
+    const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
+    const sectionsCount = currentQuestions.filter(q => q.type === 'section').length;
+    let pillQText = `${regularQuestions.length} question${regularQuestions.length > 1 ? 's' : ''}`;
+    if (sectionsCount > 1) {
+        pillQText += ` (${sectionsCount} pages)`;
+    }
+    document.getElementById('pillQuestionsCount').innerHTML = `<i class="bi bi-list-check"></i> <span>${pillQText}</span>`;
     
     // Pilule Chronomètre
     const timerPill = document.getElementById('pillQuizTimer');
@@ -442,6 +453,132 @@ document.getElementById('quizUnlockPasswordInput')?.addEventListener('keydown', 
 // ----------------------------------------------------------------
 // VUE 2 : MODE QUIZ ACTIF (ÉPREUVE EN COURS)
 // ----------------------------------------------------------------
+function parseQuizSections(questions) {
+    const sections = [];
+    let currentSec = null;
+
+    questions.forEach((q, idx) => {
+        if (q.type === 'section') {
+            currentSec = {
+                id: q.id || `sec_${idx}`,
+                type: 'section',
+                title: q.title || q.text || `Section ${sections.length + 1}`,
+                description: q.description || '',
+                questions: []
+            };
+            sections.push(currentSec);
+        } else {
+            if (!currentSec) {
+                currentSec = {
+                    id: 'sec_default_0',
+                    type: 'section',
+                    title: 'Section 1',
+                    description: '',
+                    questions: []
+                };
+                sections.push(currentSec);
+            }
+            currentSec.questions.push(q);
+        }
+    });
+
+    const validSections = sections.filter(s => s.questions.length > 0);
+    if (validSections.length === 0) {
+        return [{
+            id: 'sec_default_0',
+            type: 'section',
+            title: 'Épreuve',
+            description: '',
+            questions: questions.filter(q => q.type !== 'section')
+        }];
+    }
+    return validSections;
+}
+
+function saveCurrentPageAnswersToState() {
+    const form = document.getElementById('quizFormEl');
+    if (!form || !quizSections[currentSectionIndex]) return;
+
+    const currentSecQuestions = quizSections[currentSectionIndex].questions;
+    currentSecQuestions.forEach(q => {
+        if (q.type === 'qcm' || q.type === 'image_choice') {
+            const sel = form.querySelector(`input[name="question_${q.id}"]:checked`);
+            userAnswersState[q.id] = sel ? parseInt(sel.value, 10) : (userAnswersState[q.id] !== undefined ? userAnswersState[q.id] : null);
+        } else if (q.type === 'boolean') {
+            const sel = form.querySelector(`input[name="question_${q.id}"]:checked`);
+            userAnswersState[q.id] = sel ? (sel.value === 'true') : (userAnswersState[q.id] !== undefined ? userAnswersState[q.id] : null);
+        } else if (q.type === 'range') {
+            const rangeInp = form.querySelector(`input[name="question_${q.id}"]`);
+            if (rangeInp) {
+                userAnswersState[q.id] = parseFloat(rangeInp.value);
+            }
+        } else if (q.type === 'pinpoint') {
+            const pinInp = form.querySelector(`input[name="question_${q.id}"]`);
+            if (pinInp && pinInp.value) {
+                try {
+                    userAnswersState[q.id] = typeof pinInp.value === 'object' ? pinInp.value : JSON.parse(pinInp.value);
+                } catch(e) {
+                    userAnswersState[q.id] = pinInp.value;
+                }
+            }
+        } else if (q.type === 'cloze') {
+            const clozeInp = form.querySelector(`input[name="question_${q.id}"]`);
+            if (clozeInp && clozeInp.value) {
+                try {
+                    userAnswersState[q.id] = typeof clozeInp.value === 'object' ? clozeInp.value : JSON.parse(clozeInp.value);
+                } catch(e) {
+                    userAnswersState[q.id] = {};
+                }
+            }
+        } else if (q.type === 'puzzle') {
+            const list = form.querySelector(`#puzzle_list_${q.id}`);
+            if (list) {
+                const currentOrder = Array.from(list.querySelectorAll('.es-puzzle-item')).map(el => el.getAttribute('data-item-text'));
+                userAnswersState[q.id] = currentOrder;
+            }
+        } else if (q.type === 'table_choice') {
+            const rows = q.tableRows || [];
+            const isMulti = rows.some(r => r.correctCol1 && r.correctCol2);
+            const ansObj = (userAnswersState[q.id] && typeof userAnswersState[q.id] === 'object') ? userAnswersState[q.id] : {};
+            rows.forEach((r, rIdx) => {
+                if (isMulti) {
+                    const c1 = form.querySelector(`input[name="q_${q.id}_r_${rIdx}_c1"]`);
+                    const c2 = form.querySelector(`input[name="q_${q.id}_r_${rIdx}_c2"]`);
+                    if (c1 || c2) {
+                        ansObj[rIdx] = {
+                            col1: c1 ? c1.checked : false,
+                            col2: c2 ? c2.checked : false
+                        };
+                    }
+                } else {
+                    const sel = form.querySelector(`input[name="q_${q.id}_r_${rIdx}"]:checked`);
+                    if (sel) {
+                        ansObj[rIdx] = {
+                            col1: sel.value === 'col1',
+                            col2: sel.value === 'col2'
+                        };
+                    }
+                }
+            });
+            userAnswersState[q.id] = ansObj;
+        } else if (q.type === 'matching') {
+            const matchInp = form.querySelector(`input[name="question_${q.id}"]`);
+            if (matchInp && matchInp.value) {
+                try {
+                    userAnswersState[q.id] = typeof matchInp.value === 'object' ? matchInp.value : JSON.parse(matchInp.value);
+                } catch(e) {
+                    userAnswersState[q.id] = {};
+                }
+            }
+        } else {
+            const txt = form.querySelector(`textarea[name="question_${q.id}"]`);
+            if (txt) {
+                userAnswersState[q.id] = txt.value;
+            }
+        }
+    });
+}
+
 function startActiveQuiz() {
     isQuizActive = true;
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -462,7 +599,9 @@ function startActiveQuiz() {
     document.getElementById('activeHeaderNum').textContent = `Module ${mod.num < 10 ? '0' + mod.num : mod.num}`;
     document.getElementById('activeHeaderTitle').textContent = mod.quizConfig?.quizTitle || mod.title;
     document.getElementById('activeAttemptBadge').innerHTML = `<i class="bi bi-lightning-charge-fill"></i> Tentative #${prevAttempts + 1}${maxAttempts > 0 ? ` / ${maxAttempts}` : ''}`;
-    document.getElementById('activeProgressLabel').textContent = `0 / ${currentQuestions.length} répondues`;
+    
+    const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
+    document.getElementById('activeProgressLabel').textContent = `0 / ${regularQuestions.length} répondues`;
     document.getElementById('quizWarningLabel')?.classList.add('hidden');
 
     // Gestion de l'affichage et du lancement du timer
@@ -524,7 +663,11 @@ function startActiveQuiz() {
         if (timerBadge) timerBadge.classList.add('hidden');
     }
 
-    renderQuizQuestions();
+    currentSectionIndex = 0;
+    userAnswersState = {};
+    quizSections = parseQuizSections(currentQuestions);
+
+    renderActiveSectionPage();
 
     document.getElementById('quizBriefingView').classList.add('hidden');
     document.getElementById('quizActiveView').classList.remove('hidden');
@@ -569,268 +712,420 @@ function shuffleArray(array) {
     return arr;
 }
 
-function renderQuizQuestions() {
+function renderActiveSectionPage() {
+    if (!quizSections || quizSections.length === 0) return;
+    if (currentSectionIndex < 0) currentSectionIndex = 0;
+    if (currentSectionIndex >= quizSections.length) currentSectionIndex = quizSections.length - 1;
+
+    const sec = quizSections[currentSectionIndex];
+    const allowPrev = (currentModuleData?.quizConfig?.allowPreviousPage !== false);
+    const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
+
+    // 1. Bannière de section active
+    const bannerEl = document.getElementById('quizSectionActiveBanner');
+    if (bannerEl) {
+        if (quizSections.length > 1 || (sec.description && sec.description.trim())) {
+            bannerEl.classList.remove('hidden');
+            bannerEl.innerHTML = `
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span class="es-badge es-badge--stagiaire" style="font-size:0.75rem; font-weight:800;">
+                        <i class="bi bi-bookmark-fill"></i> Section ${currentSectionIndex + 1} / ${quizSections.length}
+                    </span>
+                    <span style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600;">
+                        Page ${currentSectionIndex + 1}
+                    </span>
+                </div>
+                <h3 style="font-size:1.18rem; font-weight:800; color:var(--clr-text); margin:0 0 4px 0;">${escapeHtml(sec.title)}</h3>
+                ${sec.description ? `<p style="font-size:0.86rem; color:var(--clr-text-muted); margin:0; line-height:1.5;">${escapeHtml(sec.description)}</p>` : ''}
+            `;
+        } else {
+            bannerEl.classList.add('hidden');
+        }
+    }
+
+    // 3. Rendu des questions de cette page
     const container = document.getElementById('quizQuestionsContainer');
     if (!container) return;
 
-    if (currentQuestions.length === 0) {
+    if (!sec.questions || sec.questions.length === 0) {
         container.innerHTML = `
-        <div style="text-align:center; padding:40px; color:var(--clr-text-muted); background:var(--clr-surface); border-radius:var(--radius-md);">
-            <i class="bi bi-info-circle" style="font-size:2rem; display:block; margin-bottom:8px;"></i>
-            Aucune question configurée pour ce module.
-        </div>`;
-        return;
-    }
+            <div style="text-align:center; padding:40px; color:var(--clr-text-muted); background:var(--clr-surface); border-radius:var(--radius-md);">
+                Aucune question dans cette section.
+            </div>
+        `;
+    } else {
+        container.innerHTML = sec.questions.map(q => {
+            const globalIndex = regularQuestions.findIndex(rq => rq.id === q.id);
+            const qNum = (globalIndex !== -1) ? globalIndex + 1 : 1;
+            const savedVal = userAnswersState[q.id];
 
-    container.innerHTML = currentQuestions.map((q, qIdx) => {
-        let inputHtml = '';
-        const imageHtml = q.imageUrl ? `
-        <div class="es-quiz-image-box">
-            <img src="${escapeHtml(q.imageUrl)}" alt="Illustration question ${qIdx + 1}" onerror="this.parentElement.style.display='none'">
-        </div>` : '';
+            let inputHtml = '';
+            const imageHtml = q.imageUrl ? `
+                <div class="es-quiz-image-box">
+                    <img src="${escapeHtml(q.imageUrl)}" alt="Illustration question ${qNum}" onerror="this.parentElement.style.display='none'">
+                </div>` : '';
 
-        if (q.type === 'qcm') {
-            inputHtml = `
-            <div class="es-quiz-options">
-                ${(q.options || []).map((opt, optIdx) => `
-                    <label class="es-quiz-option-label">
-                        <input type="radio" name="question_${q.id}" value="${optIdx}" class="quiz-track-input">
-                        <span>${escapeHtml(opt)}</span>
-                    </label>
-                `).join('')}
-            </div>`;
-        } else if (q.type === 'cloze') {
-            const { parts, blanks } = parseClozeQuestion(q.clozeText || '');
-            const distractors = Array.isArray(q.distractors) ? q.distractors : [];
-            const allWords = [...blanks, ...distractors].filter(w => w && String(w).trim().length > 0);
-            
-            const tagObjects = allWords.map((word, wIdx) => ({
-                tagId: `tag_${q.id}_${wIdx}`,
-                word: String(word).trim()
-            }));
-            
-            const shuffledTags = shuffleArray(tagObjects);
-
-            inputHtml = `
-            <div class="es-cloze-wrap" id="cloze_wrap_${q.id}" data-q-id="${q.id}">
-                <input type="hidden" name="question_${q.id}" id="cloze_input_${q.id}" class="quiz-track-input" data-blanks-count="${blanks.length}">
-                
-                <!-- BANQUE D'ÉTIQUETTES / TAGS EN HAUT -->
-                <div class="es-cloze-bank-container" id="cloze_bank_box_${q.id}" data-q-id="${q.id}">
-                    <div class="es-cloze-bank-header">
-                        <div class="es-cloze-bank-title">
-                            <i class="bi bi-tags-fill" style="color:var(--clr-primary);"></i>
-                            <span>Étiquettes à placer (<span id="cloze_bank_count_${q.id}">${tagObjects.length}</span> disponibles pour ${blanks.length} trou${blanks.length > 1 ? 's' : ''})</span>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <span class="es-badge es-badge--stagiaire" id="cloze_status_${q.id}" style="font-size:0.75rem; padding:2px 8px;">
-                                0 / ${blanks.length} trou(s)
-                            </span>
-                            <div class="es-cloze-bank-hint">
-                                <i class="bi bi-hand-index-thumb"></i> Glissez ou cliquez
+            if (q.type === 'qcm') {
+                const chosenIdx = (savedVal !== undefined && savedVal !== null) ? parseInt(savedVal, 10) : -1;
+                inputHtml = `
+                <div class="es-quiz-options">
+                    ${(q.options || []).map((opt, optIdx) => `
+                        <label class="es-quiz-option-label ${chosenIdx === optIdx ? 'selected' : ''}">
+                            <input type="radio" name="question_${q.id}" value="${optIdx}" class="quiz-track-input" ${chosenIdx === optIdx ? 'checked' : ''}>
+                            <span>${escapeHtml(opt)}</span>
+                        </label>
+                    `).join('')}
+                </div>`;
+            } else if (q.type === 'image_choice') {
+                const chosenIdx = (savedVal !== undefined && savedVal !== null) ? parseInt(savedVal, 10) : -1;
+                inputHtml = `
+                <div class="es-image-choice-grid">
+                    ${(q.imageOptions || []).map((opt, optIdx) => {
+                        const isSelected = (chosenIdx === optIdx);
+                        return `
+                        <label class="es-image-choice-label ${isSelected ? 'selected' : ''}" data-q-id="${q.id}" data-oidx="${optIdx}">
+                            <input type="radio" name="question_${q.id}" value="${optIdx}" class="quiz-track-input" ${isSelected ? 'checked' : ''} style="position:absolute; opacity:0; pointer-events:none;">
+                            <div class="es-image-choice-img-box">
+                                <img src="${escapeHtml(opt.imageUrl || '')}" alt="${escapeHtml(opt.label || ('Option ' + (optIdx + 1)))}" class="es-image-choice-img" draggable="false">
                             </div>
+                            <div class="es-image-choice-footer">
+                                <div class="es-radio-custom" style="width:20px; height:20px; border-radius:50%; border:2px solid ${isSelected ? 'var(--clr-primary)' : 'var(--clr-surface-3)'}; background:${isSelected ? 'var(--clr-primary)' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                    ${isSelected ? '<div style="width:8px; height:8px; border-radius:50%; background:#fff;"></div>' : ''}
+                                </div>
+                                <span style="flex:1;">${escapeHtml(opt.label || ('Option ' + (optIdx + 1)))}</span>
+                            </div>
+                        </label>
+                    `}).join('')}
+                </div>`;
+            } else if (q.type === 'table_choice') {
+                const col1 = q.col1Label || 'VRAI';
+                const col2 = q.col2Label || 'FAUX';
+                const rows = q.tableRows || [];
+                const savedAns = (savedVal && typeof savedVal === 'object') ? savedVal : {};
+                const isMulti = rows.some(r => r.correctCol1 && r.correctCol2);
+
+                const tableRowsHtml = rows.map((row, rIdx) => {
+                    const userRow = savedAns[rIdx] || {};
+                    const isCol1Selected = !!userRow.col1;
+                    const isCol2Selected = !!userRow.col2;
+
+                    return `
+                    <tr class="es-table-choice-tr" data-q-id="${q.id}" data-ridx="${rIdx}">
+                        <td class="es-table-choice-td-stmt">
+                            <span style="font-weight:800; color:var(--clr-primary); margin-right:6px;">${rIdx + 1}.</span>
+                            ${escapeHtml(row.text)}
+                        </td>
+                        <td class="es-table-choice-td-choice">
+                            <label class="es-table-choice-cell-btn ${isMulti ? 'is-checkbox' : 'is-radio'} ${isCol1Selected ? 'selected' : ''}" title="${escapeHtml(col1)}">
+                                ${isMulti ? `
+                                    <input type="checkbox" name="q_${q.id}_r_${rIdx}_c1" value="col1" class="quiz-track-input table-choice-input" data-q-id="${q.id}" data-ridx="${rIdx}" data-col="col1" ${isCol1Selected ? 'checked' : ''} style="position:absolute; opacity:0; pointer-events:none;">
+                                    <i class="bi ${isCol1Selected ? 'bi-check-square-fill' : 'bi-square'}"></i>
+                                ` : `
+                                    <input type="radio" name="q_${q.id}_r_${rIdx}" value="col1" class="quiz-track-input table-choice-input" data-q-id="${q.id}" data-ridx="${rIdx}" data-col="col1" ${isCol1Selected ? 'checked' : ''} style="position:absolute; opacity:0; pointer-events:none;">
+                                    <i class="bi ${isCol1Selected ? 'bi-circle-fill' : 'bi-circle'}"></i>
+                                `}
+                            </label>
+                        </td>
+                        <td class="es-table-choice-td-choice">
+                            <label class="es-table-choice-cell-btn ${isMulti ? 'is-checkbox' : 'is-radio'} ${isCol2Selected ? 'selected' : ''}" title="${escapeHtml(col2)}">
+                                ${isMulti ? `
+                                    <input type="checkbox" name="q_${q.id}_r_${rIdx}_c2" value="col2" class="quiz-track-input table-choice-input" data-q-id="${q.id}" data-ridx="${rIdx}" data-col="col2" ${isCol2Selected ? 'checked' : ''} style="position:absolute; opacity:0; pointer-events:none;">
+                                    <i class="bi ${isCol2Selected ? 'bi-check-square-fill' : 'bi-square'}"></i>
+                                ` : `
+                                    <input type="radio" name="q_${q.id}_r_${rIdx}" value="col2" class="quiz-track-input table-choice-input" data-q-id="${q.id}" data-ridx="${rIdx}" data-col="col2" ${isCol2Selected ? 'checked' : ''} style="position:absolute; opacity:0; pointer-events:none;">
+                                    <i class="bi ${isCol2Selected ? 'bi-circle-fill' : 'bi-circle'}"></i>
+                                `}
+                            </label>
+                        </td>
+                    </tr>
+                    `;
+                }).join('');
+
+                inputHtml = `
+                <div class="es-table-choice-wrap">
+                    <table class="es-table-choice-table">
+                        <thead>
+                            <tr>
+                                <th>Affirmations</th>
+                                <th class="col-head-center"><span class="es-col-badge">${escapeHtml(col1)}</span></th>
+                                <th class="col-head-center"><span class="es-col-badge">${escapeHtml(col2)}</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRowsHtml}
+                        </tbody>
+                    </table>
+                </div>`;
+            } else if (q.type === 'boolean') {
+                const isTrue = (savedVal === true || savedVal === 'true');
+                const isFalse = (savedVal === false || savedVal === 'false');
+                inputHtml = `
+                <div class="es-boolean-grid">
+                    <label class="es-boolean-btn-label ${isTrue ? 'selected' : ''}">
+                        <input type="radio" name="question_${q.id}" value="true" class="quiz-track-input" ${isTrue ? 'checked' : ''}>
+                        <span>👍 VRAI</span>
+                    </label>
+                    <label class="es-boolean-btn-label ${isFalse ? 'selected' : ''}">
+                        <input type="radio" name="question_${q.id}" value="false" class="quiz-track-input" ${isFalse ? 'checked' : ''}>
+                        <span>👎 FAUX</span>
+                    </label>
+                </div>`;
+            } else if (q.type === 'pinpoint') {
+                const coords = (savedVal && typeof savedVal === 'object') ? savedVal : null;
+                inputHtml = `
+                <div class="es-pinpoint-candidate-wrap" style="text-align:center; margin-top:8px;">
+                    <input type="hidden" name="question_${q.id}" id="pinpoint_input_${q.id}" class="quiz-track-input" value="${coords ? escapeHtml(JSON.stringify(coords)) : ''}">
+                    <div class="es-pinpoint-candidate-zone" id="pinpoint_zone_${q.id}" data-q-id="${q.id}">
+                        <img src="${escapeHtml(q.pinImage || '')}" alt="Schéma à pointer" class="es-pinpoint-candidate-img" draggable="false">
+                        <div class="es-pinpoint-pin es-pinpoint-pin--candidate ${coords ? '' : 'hidden'}" id="pinpoint_pin_${q.id}" style="${coords ? `left:${coords.x}%; top:${coords.y}%;` : ''}">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </div>
+                        <div class="es-pinpoint-instructions-overlay" id="pinpoint_overlay_${q.id}" style="${coords ? 'display:none;' : ''}">
+                            <i class="bi bi-hand-index-thumb"></i> Cliquez sur l'image pour placer votre repère 📍
                         </div>
                     </div>
-                    <div class="es-cloze-bank" id="cloze_bank_${q.id}" data-q-id="${q.id}">
-                        ${shuffledTags.map(t => `
-                            <div class="es-cloze-tag" id="${t.tagId}" draggable="true" data-tag-id="${t.tagId}" data-tag-word="${escapeHtml(t.word)}" data-q-id="${q.id}">
-                                <span class="es-cloze-tag-handle"><i class="bi bi-grip-vertical"></i></span>
-                                <span class="es-cloze-tag-text">${escapeHtml(t.word)}</span>
+                    <div id="pinpoint_feedback_${q.id}" style="font-size:0.78rem; font-weight:600; color:var(--clr-text-muted); margin-top:6px;">
+                        ${coords ? `📍 <span style="color:var(--clr-primary);">Repère positionné (X: ${coords.x.toFixed(0)}%, Y: ${coords.y.toFixed(0)}%)</span> — Cliquez ailleurs pour modifier` : '👆 Cliquez sur l\'élément correspondant dans l\'image pour positionner votre pin.'}
+                    </div>
+                </div>`;
+            } else if (q.type === 'range') {
+                const minVal = parseFloat(q.min) || 0;
+                const maxVal = parseFloat(q.max) || 10;
+                const stepVal = parseFloat(q.step) || 1;
+                const unit = q.unit || '';
+                const currentVal = (savedVal !== undefined && savedVal !== null) ? parseFloat(savedVal) : Math.round((minVal + maxVal) / 2);
+
+                inputHtml = `
+                <div class="es-range-wrap">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text-muted);">Ajustez le curseur horizontal :</span>
+                        <span class="es-range-display-badge" id="range_val_display_${q.id}">
+                            ${currentVal} ${escapeHtml(unit)}
+                        </span>
+                    </div>
+                    <input type="range" class="es-range-slider quiz-range-input quiz-track-input" name="question_${q.id}" id="range_input_${q.id}"
+                        min="${minVal}" max="${maxVal}" step="${stepVal}" value="${currentVal}"
+                        data-unit="${escapeHtml(unit)}" data-display-id="range_val_display_${q.id}">
+                    <div class="es-range-labels">
+                        <span>${escapeHtml(q.minLabel || String(minVal))} (${minVal})</span>
+                        <span>${escapeHtml(q.maxLabel || String(maxVal))} (${maxVal})</span>
+                    </div>
+                </div>`;
+            } else if (q.type === 'puzzle') {
+                const expectedItems = q.items || [];
+                let displayItems = (Array.isArray(savedVal) && savedVal.length === expectedItems.length) ? savedVal : [...expectedItems];
+                if (!savedVal && displayItems.length > 1) {
+                    displayItems.reverse();
+                }
+
+                inputHtml = `
+                <div class="es-puzzle-wrap">
+                    <div class="es-puzzle-instructions">
+                        <i class="bi bi-info-circle-fill" style="color:var(--clr-primary);"></i>
+                        Placez les éléments dans l'ordre exact à l'aide des flèches ⬆️ ⬇️ (ou en glissant-déposant) :
+                    </div>
+                    <div class="es-puzzle-list" id="puzzle_list_${q.id}" data-q-id="${q.id}">
+                        ${displayItems.map((item, itemIdx) => `
+                            <div class="es-puzzle-item" draggable="true" data-item-text="${escapeHtml(item)}">
+                                <span class="es-puzzle-handle" title="Glisser pour déplacer"><i class="bi bi-grip-vertical"></i></span>
+                                <span class="es-puzzle-num">${itemIdx + 1}</span>
+                                <span class="es-puzzle-text">${escapeHtml(item)}</span>
+                                <div class="es-puzzle-controls">
+                                    <button type="button" class="es-puzzle-btn-move btn-puzzle-up" ${itemIdx === 0 ? 'disabled' : ''} title="Monter">
+                                        <i class="bi bi-chevron-up"></i>
+                                    </button>
+                                    <button type="button" class="es-puzzle-btn-move btn-puzzle-down" ${itemIdx === displayItems.length - 1 ? 'disabled' : ''} title="Descendre">
+                                        <i class="bi bi-chevron-down"></i>
+                                    </button>
+                                </div>
                             </div>
                         `).join('')}
-                        <div class="es-cloze-bank-empty hidden" id="cloze_empty_${q.id}">Toutes les étiquettes ont été placées.</div>
                     </div>
-                </div>
+                </div>`;
+            } else if (q.type === 'matching') {
+                const rawPairs = q.pairs || [];
+                const leftItems = rawPairs.map((p, idx) => ({ id: `l_${q.id}_${idx}`, text: p.left, originalIndex: idx }));
+                const rightItems = shuffleArray(rawPairs.map((p, idx) => ({ id: `r_${q.id}_${idx}`, text: p.right, originalIndex: idx })));
+                const savedMatches = (savedVal && typeof savedVal === 'object') ? savedVal : {};
 
-                <!-- TEXTE À TROUS EN DESSOUS -->
-                <div class="es-cloze-text-card">
-                    ${parts.map(part => {
-                        if (part.type === 'text') {
-                            return `<span>${escapeHtml(part.text)}</span>`;
-                        } else {
-                            return `
-                            <span class="es-cloze-dropzone" id="cloze_drop_${q.id}_${part.index}" data-q-id="${q.id}" data-blank-idx="${part.index}" title="Trou n°${part.index + 1}">
-                                <span class="es-cloze-dropzone-placeholder">
-                                    <i class="bi bi-dash"></i> [ ${part.index + 1} ] <i class="bi bi-dash"></i>
-                                </span>
-                            </span>`;
-                        }
-                    }).join('')}
-                </div>
-            </div>`;
-        } else if (q.type === 'boolean') {
-            inputHtml = `
-            <div class="es-boolean-grid">
-                <label class="es-boolean-btn-label">
-                    <input type="radio" name="question_${q.id}" value="true" class="quiz-track-input">
-                    <span>👍 VRAI</span>
-                </label>
-                <label class="es-boolean-btn-label">
-                    <input type="radio" name="question_${q.id}" value="false" class="quiz-track-input">
-                    <span>👎 FAUX</span>
-                </label>
-            </div>`;
-        } else if (q.type === 'pinpoint') {
-            inputHtml = `
-            <div class="es-pinpoint-candidate-wrap" style="text-align:center; margin-top:8px;">
-                <input type="hidden" name="question_${q.id}" id="pinpoint_input_${q.id}" class="quiz-track-input">
-                <div class="es-pinpoint-candidate-zone" id="pinpoint_zone_${q.id}" data-q-id="${q.id}">
-                    <img src="${escapeHtml(q.pinImage || '')}" alt="Schéma à pointer" class="es-pinpoint-candidate-img" draggable="false">
-                    <div class="es-pinpoint-pin es-pinpoint-pin--candidate hidden" id="pinpoint_pin_${q.id}">
-                        <i class="bi bi-geo-alt-fill"></i>
+                inputHtml = `
+                <div class="es-matching-wrap" id="matching_wrap_${q.id}" data-q-id="${q.id}">
+                    <input type="hidden" name="question_${q.id}" id="matching_input_${q.id}" class="quiz-track-input" data-pairs-count="${rawPairs.length}" value="${escapeHtml(JSON.stringify(savedMatches))}">
+                    
+                    <div class="es-matching-instructions">
+                        <i class="bi bi-info-circle-fill" style="color:var(--clr-primary);"></i>
+                        <span>Cliquez sur un élément à gauche, puis cliquez sur son correspondant à droite pour les relier.</span>
                     </div>
-                    <div class="es-pinpoint-instructions-overlay" id="pinpoint_overlay_${q.id}">
-                        <i class="bi bi-hand-index-thumb"></i> Cliquez sur l'image pour placer votre repère 📍
-                    </div>
-                </div>
-                <div id="pinpoint_feedback_${q.id}" style="font-size:0.78rem; font-weight:600; color:var(--clr-text-muted); margin-top:6px;">
-                    👆 Cliquez sur l'élément correspondant dans l'image pour positionner votre pin.
-                </div>
-            </div>`;
-        } else if (q.type === 'range') {
-            const minVal = parseFloat(q.min) || 0;
-            const maxVal = parseFloat(q.max) || 10;
-            const stepVal = parseFloat(q.step) || 1;
-            const unit = q.unit || '';
-            const defaultVal = Math.round((minVal + maxVal) / 2);
 
-            inputHtml = `
-            <div class="es-range-wrap">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                    <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text-muted);">Ajustez le curseur horizontal :</span>
-                    <span class="es-range-display-badge" id="range_val_display_${q.id}">
-                        ${defaultVal} ${escapeHtml(unit)}
-                    </span>
-                </div>
-                <input type="range" class="es-range-slider quiz-range-input quiz-track-input" name="question_${q.id}" id="range_input_${q.id}"
-                    min="${minVal}" max="${maxVal}" step="${stepVal}" value="${defaultVal}"
-                    data-unit="${escapeHtml(unit)}" data-display-id="range_val_display_${q.id}">
-                <div class="es-range-labels">
-                    <span>${escapeHtml(q.minLabel || String(minVal))} (${minVal})</span>
-                    <span>${escapeHtml(q.maxLabel || String(maxVal))} (${maxVal})</span>
-                </div>
-            </div>`;
-        } else if (q.type === 'puzzle') {
-            const expectedItems = q.items || [];
-            let displayItems = [...expectedItems];
-            if (displayItems.length > 1) {
-                displayItems.reverse();
-            }
-
-            inputHtml = `
-            <div class="es-puzzle-wrap">
-                <div class="es-puzzle-instructions">
-                    <i class="bi bi-info-circle-fill" style="color:var(--clr-primary);"></i>
-                    Placez les éléments dans l'ordre exact à l'aide des flèches ⬆️ ⬇️ (ou en glissant-déposant) :
-                </div>
-                <div class="es-puzzle-list" id="puzzle_list_${q.id}" data-q-id="${q.id}">
-                    ${displayItems.map((item, itemIdx) => `
-                        <div class="es-puzzle-item" draggable="true" data-item-text="${escapeHtml(item)}">
-                            <span class="es-puzzle-handle" title="Glisser pour déplacer"><i class="bi bi-grip-vertical"></i></span>
-                            <span class="es-puzzle-num">${itemIdx + 1}</span>
-                            <span class="es-puzzle-text">${escapeHtml(item)}</span>
-                            <div class="es-puzzle-controls">
-                                <button type="button" class="es-puzzle-btn-move btn-puzzle-up" ${itemIdx === 0 ? 'disabled' : ''} title="Monter">
-                                    <i class="bi bi-chevron-up"></i>
-                                </button>
-                                <button type="button" class="es-puzzle-btn-move btn-puzzle-down" ${itemIdx === displayItems.length - 1 ? 'disabled' : ''} title="Descendre">
-                                    <i class="bi bi-chevron-down"></i>
-                                </button>
+                    <div class="es-matching-grid">
+                        <div class="es-matching-col es-matching-col--left">
+                            <div class="es-matching-col-header"><i class="bi bi-list-columns-reverse"></i> Colonne de gauche</div>
+                            <div class="es-matching-list es-matching-list--left" data-q-id="${q.id}">
+                                ${leftItems.map(item => `
+                                    <div class="es-matching-item es-matching-item--left" id="${item.id}" data-q-id="${q.id}" data-side="left" data-item-text="${escapeHtml(item.text)}">
+                                        <span class="es-matching-item-num"><i class="bi bi-circle"></i></span>
+                                        <span class="es-matching-item-text">${escapeHtml(item.text)}</span>
+                                        <span class="es-matching-link-badge hidden" title="Relié"></span>
+                                    </div>
+                                `).join('')}
                             </div>
                         </div>
-                    `).join('')}
-                </div>
-            </div>`;
-        } else if (q.type === 'matching') {
-            const rawPairs = q.pairs || [];
-            const leftItems = rawPairs.map((p, idx) => ({ id: `l_${q.id}_${idx}`, text: p.left, originalIndex: idx }));
-            const rightItems = shuffleArray(rawPairs.map((p, idx) => ({ id: `r_${q.id}_${idx}`, text: p.right, originalIndex: idx })));
 
-            inputHtml = `
-            <div class="es-matching-wrap" id="matching_wrap_${q.id}" data-q-id="${q.id}">
-                <input type="hidden" name="question_${q.id}" id="matching_input_${q.id}" class="quiz-track-input" data-pairs-count="${rawPairs.length}">
-                
-                <div class="es-matching-instructions">
-                    <i class="bi bi-info-circle-fill" style="color:var(--clr-primary);"></i>
-                    <span>Cliquez sur un élément à gauche, puis cliquez sur son correspondant à droite pour les relier.</span>
-                </div>
-
-                <div class="es-matching-grid">
-                    <!-- COLONNE GAUCHE -->
-                    <div class="es-matching-col es-matching-col--left">
-                        <div class="es-matching-col-header">
-                            <i class="bi bi-list-columns-reverse"></i> Colonne de gauche
-                        </div>
-                        <div class="es-matching-list es-matching-list--left" data-q-id="${q.id}">
-                            ${leftItems.map(item => `
-                                <div class="es-matching-item es-matching-item--left" 
-                                     id="${item.id}" 
-                                     data-q-id="${q.id}" 
-                                     data-side="left" 
-                                     data-item-text="${escapeHtml(item.text)}">
-                                    <span class="es-matching-item-num"><i class="bi bi-circle"></i></span>
-                                    <span class="es-matching-item-text">${escapeHtml(item.text)}</span>
-                                    <span class="es-matching-link-badge hidden" title="Relié"></span>
-                                </div>
-                            `).join('')}
+                        <div class="es-matching-col es-matching-col--right">
+                            <div class="es-matching-col-header"><i class="bi bi-list-columns"></i> Colonne de droite</div>
+                            <div class="es-matching-list es-matching-list--right" data-q-id="${q.id}">
+                                ${rightItems.map(item => `
+                                    <div class="es-matching-item es-matching-item--right" id="${item.id}" data-q-id="${q.id}" data-side="right" data-item-text="${escapeHtml(item.text)}">
+                                        <span class="es-matching-item-num"><i class="bi bi-circle"></i></span>
+                                        <span class="es-matching-item-text">${escapeHtml(item.text)}</span>
+                                        <span class="es-matching-link-badge hidden" title="Relié"></span>
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
                     </div>
 
-                    <!-- COLONNE DROITE -->
-                    <div class="es-matching-col es-matching-col--right">
-                        <div class="es-matching-col-header">
-                            <i class="bi bi-list-columns"></i> Colonne de droite
+                    <div class="es-matching-status-bar" id="matching_status_bar_${q.id}">
+                        <span class="es-matching-count-badge" id="matching_count_${q.id}">0 / ${rawPairs.length} paires reliées</span>
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-reset-matching" data-q-id="${q.id}" style="font-size:0.76rem; padding:3px 8px;">
+                            <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser les liaisons
+                        </button>
+                    </div>
+                </div>`;
+            } else if (q.type === 'cloze') {
+                const { parts, blanks } = parseClozeQuestion(q.clozeText || '');
+                const distractors = Array.isArray(q.distractors) ? q.distractors : [];
+                const allWords = [...blanks, ...distractors].filter(w => w && String(w).trim().length > 0);
+                const tagObjects = allWords.map((word, wIdx) => ({
+                    tagId: `tag_${q.id}_${wIdx}`,
+                    word: String(word).trim()
+                }));
+                const shuffledTags = shuffleArray(tagObjects);
+                const savedCloze = (savedVal && typeof savedVal === 'object') ? savedVal : {};
+
+                inputHtml = `
+                <div class="es-cloze-wrap" id="cloze_wrap_${q.id}" data-q-id="${q.id}">
+                    <input type="hidden" name="question_${q.id}" id="cloze_input_${q.id}" class="quiz-track-input" data-blanks-count="${blanks.length}" value="${escapeHtml(JSON.stringify(savedCloze))}">
+                    
+                    <div class="es-cloze-bank-container" id="cloze_bank_box_${q.id}" data-q-id="${q.id}">
+                        <div class="es-cloze-bank-header">
+                            <div class="es-cloze-bank-title">
+                                <i class="bi bi-tags-fill" style="color:var(--clr-primary);"></i>
+                                <span>Étiquettes à placer (<span id="cloze_bank_count_${q.id}">${tagObjects.length}</span> disponibles pour ${blanks.length} trou${blanks.length > 1 ? 's' : ''})</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span class="es-badge es-badge--stagiaire" id="cloze_status_${q.id}" style="font-size:0.75rem; padding:2px 8px;">
+                                    0 / ${blanks.length} trou(s)
+                                </span>
+                                <div class="es-cloze-bank-hint">
+                                    <i class="bi bi-hand-index-thumb"></i> Glissez ou cliquez
+                                </div>
+                            </div>
                         </div>
-                        <div class="es-matching-list es-matching-list--right" data-q-id="${q.id}">
-                            ${rightItems.map(item => `
-                                <div class="es-matching-item es-matching-item--right" 
-                                     id="${item.id}" 
-                                     data-q-id="${q.id}" 
-                                     data-side="right" 
-                                     data-item-text="${escapeHtml(item.text)}">
-                                    <span class="es-matching-item-num"><i class="bi bi-circle"></i></span>
-                                    <span class="es-matching-item-text">${escapeHtml(item.text)}</span>
-                                    <span class="es-matching-link-badge hidden" title="Relié"></span>
+                        <div class="es-cloze-bank" id="cloze_bank_${q.id}" data-q-id="${q.id}">
+                            ${shuffledTags.map(t => `
+                                <div class="es-cloze-tag" id="${t.tagId}" draggable="true" data-tag-id="${t.tagId}" data-tag-word="${escapeHtml(t.word)}" data-q-id="${q.id}">
+                                    <span class="es-cloze-tag-handle"><i class="bi bi-grip-vertical"></i></span>
+                                    <span class="es-cloze-tag-text">${escapeHtml(t.word)}</span>
                                 </div>
                             `).join('')}
+                            <div class="es-cloze-bank-empty hidden" id="cloze_empty_${q.id}">Toutes les étiquettes ont été placées.</div>
                         </div>
                     </div>
-                </div>
 
-                <div class="es-matching-status-bar" id="matching_status_bar_${q.id}">
-                    <span class="es-matching-count-badge" id="matching_count_${q.id}">0 / ${rawPairs.length} paires reliées</span>
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-reset-matching" data-q-id="${q.id}" style="font-size:0.76rem; padding:3px 8px;">
-                        <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser les liaisons
-                    </button>
-                </div>
+                    <div class="es-cloze-text-card">
+                        ${parts.map(part => {
+                            if (part.type === 'text') {
+                                return `<span>${escapeHtml(part.text)}</span>`;
+                            } else {
+                                return `
+                                <span class="es-cloze-dropzone" id="cloze_drop_${q.id}_${part.index}" data-q-id="${q.id}" data-blank-idx="${part.index}" title="Trou n°${part.index + 1}">
+                                    <span class="es-cloze-dropzone-placeholder">
+                                        <i class="bi bi-dash"></i> [ ${part.index + 1} ] <i class="bi bi-dash"></i>
+                                    </span>
+                                </span>`;
+                            }
+                        }).join('')}
+                    </div>
+                </div>`;
+            } else {
+                const textVal = (typeof savedVal === 'string') ? savedVal : '';
+                inputHtml = `
+                <div class="es-quiz-textarea-wrap">
+                    ${q.hint ? `<div class="es-quiz-hint"><i class="bi bi-lightbulb"></i> <strong>Piste :</strong> ${escapeHtml(q.hint)}</div>` : ''}
+                    <textarea class="es-quiz-textarea quiz-track-input" name="question_${q.id}" placeholder="Rédigez votre réponse détaillée ici...">${escapeHtml(textVal)}</textarea>
+                </div>`;
+            }
+
+            let typeBadgeLabel = 'QCM';
+            if (q.type === 'image_choice') typeBadgeLabel = '🖼️ QCM Choix d\'images';
+            else if (q.type === 'table_choice') typeBadgeLabel = '📋 Tableau d\'affirmations';
+            else if (q.type === 'cloze') typeBadgeLabel = '🔤 Texte à trous';
+            else if (q.type === 'pinpoint') typeBadgeLabel = '📍 Repère sur image';
+            else if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
+            else if (q.type === 'boolean') typeBadgeLabel = 'Vrai / Faux';
+            else if (q.type === 'puzzle') typeBadgeLabel = 'Puzzle / Ordonnancement';
+            else if (q.type === 'matching') typeBadgeLabel = '🔗 Relier les colonnes';
+            else if (q.type === 'text') typeBadgeLabel = 'Réponse rédigée';
+
+            return `
+            <div class="es-quiz-question-box" id="q_box_${q.id}">
+                <div class="es-quiz-q-num">Question ${qNum} sur ${regularQuestions.length} • ${typeBadgeLabel}</div>
+                <div class="es-quiz-q-text">${escapeHtml(q.text)}</div>
+                ${imageHtml}
+                ${inputHtml}
             </div>`;
-        } else {
-            inputHtml = `
-            <div class="es-quiz-textarea-wrap">
-                ${q.hint ? `<div class="es-quiz-hint"><i class="bi bi-lightbulb"></i> <strong>Piste :</strong> ${escapeHtml(q.hint)}</div>` : ''}
-                <textarea class="es-quiz-textarea quiz-track-input" name="question_${q.id}" placeholder="Rédigez votre réponse détaillée ici..."></textarea>
-            </div>`;
-        }
-
-        let typeBadgeLabel = 'QCM';
-        if (q.type === 'cloze') typeBadgeLabel = '🔤 Texte à trous';
-        else if (q.type === 'pinpoint') typeBadgeLabel = '📍 Repère sur image';
-        else if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
-        else if (q.type === 'boolean') typeBadgeLabel = 'Vrai / Faux';
-        else if (q.type === 'puzzle') typeBadgeLabel = 'Puzzle / Ordonnancement';
-        else if (q.type === 'matching') typeBadgeLabel = '🔗 Relier les colonnes';
-        else if (q.type === 'text') typeBadgeLabel = 'Réponse rédigée';
-
-        return `
-        <div class="es-quiz-question-box" id="q_box_${q.id}">
-            <div class="es-quiz-q-num">Question ${qIdx + 1} sur ${currentQuestions.length} • ${typeBadgeLabel}</div>
-            <div class="es-quiz-q-text">${escapeHtml(q.text)}</div>
-            ${imageHtml}
-            ${inputHtml}
-        </div>`;
-    }).join('');
+        }).join('');
+    }
 
     attachQuizInteractions(container);
+
+    // 4. Boutons de navigation
+    const isFirstPage = (currentSectionIndex === 0);
+    const isLastPage = (currentSectionIndex === quizSections.length - 1);
+
+    const btnPrev = document.getElementById('btnPrevSection');
+    const noPrevWarn = document.getElementById('quizNoPrevWarn');
+    const btnNext = document.getElementById('btnNextSection');
+    const btnSubmit = document.getElementById('btnSubmitQuiz');
+    const pageBadge = document.getElementById('quizPageCounterBadge');
+
+    if (pageBadge) {
+        pageBadge.textContent = quizSections.length > 1 ? `Page ${currentSectionIndex + 1} / ${quizSections.length}` : `Page 1 / 1`;
+    }
+
+    if (btnPrev) {
+        if (!isFirstPage && allowPrev) {
+            btnPrev.classList.remove('hidden');
+        } else {
+            btnPrev.classList.add('hidden');
+        }
+    }
+
+    if (noPrevWarn) {
+        if (!isFirstPage && !allowPrev && quizSections.length > 1) {
+            noPrevWarn.classList.remove('hidden');
+        } else {
+            noPrevWarn.classList.add('hidden');
+        }
+    }
+
+    if (btnNext) {
+        if (!isLastPage) {
+            btnNext.classList.remove('hidden');
+        } else {
+            btnNext.classList.add('hidden');
+        }
+    }
+
+    if (btnSubmit) {
+        if (isLastPage) {
+            btnSubmit.classList.remove('hidden');
+        } else {
+            btnSubmit.classList.add('hidden');
+        }
+    }
+
     updateProgress();
 }
 
@@ -844,6 +1139,80 @@ function attachQuizInteractions(container) {
             if (displayEl) {
                 displayEl.textContent = `${e.target.value} ${unit}`.trim();
             }
+            updateProgress();
+        });
+    });
+
+    // Image choice candidate selection
+    container.querySelectorAll('.es-image-choice-label').forEach(label => {
+        label.addEventListener('click', (e) => {
+            const qId = label.getAttribute('data-q-id');
+            const oIdx = parseInt(label.getAttribute('data-oidx'), 10);
+            const parent = label.closest('.es-image-choice-grid');
+            if (parent) {
+                parent.querySelectorAll('.es-image-choice-label').forEach(lbl => {
+                    lbl.classList.remove('selected');
+                    const radioBox = lbl.querySelector('.es-radio-custom');
+                    if (radioBox) {
+                        radioBox.style.borderColor = 'var(--clr-surface-3)';
+                        radioBox.style.background = 'transparent';
+                        radioBox.innerHTML = '';
+                    }
+                });
+            }
+            label.classList.add('selected');
+            const radio = label.querySelector('input[type="radio"]');
+            if (radio) radio.checked = true;
+            const radioBox = label.querySelector('.es-radio-custom');
+            if (radioBox) {
+                radioBox.style.borderColor = 'var(--clr-primary)';
+                radioBox.style.background = 'var(--clr-primary)';
+                radioBox.innerHTML = '<div style="width:8px; height:8px; border-radius:50%; background:#fff;"></div>';
+            }
+            userAnswersState[qId] = oIdx;
+            updateProgress();
+        });
+    });
+
+    // Table choice interactions
+    container.querySelectorAll('.es-table-choice-cell-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const input = btn.querySelector('.table-choice-input');
+            if (!input) return;
+            const qId = input.getAttribute('data-q-id');
+            const rIdx = input.getAttribute('data-ridx');
+            const col = input.getAttribute('data-col');
+            const isRadio = input.type === 'radio';
+
+            if (!userAnswersState[qId]) userAnswersState[qId] = {};
+            if (!userAnswersState[qId][rIdx]) userAnswersState[qId][rIdx] = { col1: false, col2: false };
+
+            const tr = btn.closest('.es-table-choice-tr');
+
+            if (isRadio) {
+                input.checked = true;
+                userAnswersState[qId][rIdx] = {
+                    col1: (col === 'col1'),
+                    col2: (col === 'col2')
+                };
+                if (tr) {
+                    tr.querySelectorAll('.es-table-choice-cell-btn').forEach(b => {
+                        b.classList.remove('selected');
+                        const icon = b.querySelector('i');
+                        if (icon) icon.className = 'bi bi-circle';
+                    });
+                }
+                btn.classList.add('selected');
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = 'bi bi-circle-fill';
+            } else {
+                input.checked = !input.checked;
+                userAnswersState[qId][rIdx][col] = input.checked;
+                btn.classList.toggle('selected', input.checked);
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = `bi ${input.checked ? 'bi-check-square-fill' : 'bi-square'}`;
+            }
+
             updateProgress();
         });
     });
@@ -1342,55 +1711,60 @@ function updatePuzzleNumbers(listEl) {
 }
 
 function updateProgress() {
-    const form = document.getElementById('quizFormEl');
-    if (!form || currentQuestions.length === 0) return;
+    saveCurrentPageAnswersToState();
+    const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
+    if (regularQuestions.length === 0) return;
 
     let answeredCount = 0;
-    currentQuestions.forEach(q => {
-        if (q.type === 'qcm' || q.type === 'boolean') {
-            const sel = form.querySelector(`input[name="question_${q.id}"]:checked`);
-            if (sel) answeredCount++;
+    regularQuestions.forEach(q => {
+        const val = userAnswersState[q.id];
+        if (q.type === 'qcm' || q.type === 'image_choice') {
+            if (val !== undefined && val !== null && val !== '') answeredCount++;
+        } else if (q.type === 'table_choice') {
+            const rows = q.tableRows || [];
+            if (rows.length > 0 && val && typeof val === 'object') {
+                const answeredRows = rows.filter((r, rIdx) => {
+                    const rowAns = val[rIdx];
+                    return rowAns && (rowAns.col1 || rowAns.col2);
+                }).length;
+                if (answeredRows === rows.length) {
+                    answeredCount++;
+                }
+            }
+        } else if (q.type === 'boolean') {
+            if (val === true || val === false || val === 'true' || val === 'false') answeredCount++;
         } else if (q.type === 'cloze') {
-            const clozeInp = form.querySelector(`input[name="question_${q.id}"]`);
-            if (clozeInp && clozeInp.value) {
-                try {
-                    const parsed = JSON.parse(clozeInp.value);
-                    const totalBlanks = parseInt(clozeInp.getAttribute('data-blanks-count'), 10) || 1;
-                    const filledBlanks = Object.values(parsed).filter(v => v !== null && v !== undefined && String(v).trim().length > 0).length;
-                    if (filledBlanks === totalBlanks) {
-                        answeredCount++;
-                    }
-                } catch(e) {}
+            if (val && typeof val === 'object') {
+                const { blanks } = parseClozeQuestion(q.clozeText || '');
+                const totalBlanks = blanks.length || 1;
+                const filledBlanks = Object.values(val).filter(v => v !== null && v !== undefined && String(v).trim().length > 0).length;
+                if (filledBlanks === totalBlanks) {
+                    answeredCount++;
+                }
             }
         } else if (q.type === 'matching') {
-            const matchInp = form.querySelector(`input[name="question_${q.id}"]`);
-            if (matchInp && matchInp.value) {
-                try {
-                    const parsed = JSON.parse(matchInp.value);
-                    const totalPairs = parseInt(matchInp.getAttribute('data-pairs-count'), 10) || 1;
-                    const filledPairs = Object.keys(parsed).filter(k => parsed[k] && String(parsed[k]).trim().length > 0).length;
-                    if (filledPairs === totalPairs) {
-                        answeredCount++;
-                    }
-                } catch(e) {}
+            if (val && typeof val === 'object') {
+                const totalPairs = (q.pairs || []).length || 1;
+                const filledPairs = Object.keys(val).filter(k => val[k] && String(val[k]).trim().length > 0).length;
+                if (filledPairs === totalPairs) {
+                    answeredCount++;
+                }
             }
         } else if (q.type === 'pinpoint') {
-            const pinInp = form.querySelector(`input[name="question_${q.id}"]`);
-            if (pinInp && pinInp.value) answeredCount++;
+            if (val && typeof val === 'object' && val.x !== undefined && val.y !== undefined) answeredCount++;
         } else if (q.type === 'range' || q.type === 'puzzle') {
             answeredCount++;
         } else {
-            const txt = form.querySelector(`textarea[name="question_${q.id}"]`);
-            if (txt && txt.value.trim().length > 0) answeredCount++;
+            if (typeof val === 'string' && val.trim().length > 0) answeredCount++;
         }
     });
 
-    const percent = Math.round((answeredCount / currentQuestions.length) * 100);
+    const percent = Math.round((answeredCount / regularQuestions.length) * 100);
     const bar = document.getElementById('quizProgressBar');
     if (bar) bar.style.width = `${percent}%`;
 
     const label = document.getElementById('activeProgressLabel');
-    if (label) label.textContent = `${answeredCount} / ${currentQuestions.length} répondues (${percent}%)`;
+    if (label) label.textContent = `${answeredCount} / ${regularQuestions.length} répondues (${percent}%)`;
 
     // Dès qu'une réponse est modifiée / saisie, faire disparaître l'avertissement
     const warningLabel = document.getElementById('quizWarningLabel');
@@ -1411,10 +1785,11 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
         quizTimerInterval = null;
     }
 
-    const form = document.getElementById('quizFormEl');
+    saveCurrentPageAnswersToState();
+
     const warningLabel = document.getElementById('quizWarningLabel');
     const btn = document.getElementById('btnSubmitQuiz');
-    const qConfig = currentModuleData.quizConfig || {};
+    const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
 
     const answers = {};
     const evaluations = {};
@@ -1422,25 +1797,48 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
     let qcmTotal = 0;
     let qcmCorrect = 0;
 
-    currentQuestions.forEach(q => {
-        if (q.type === 'qcm') {
+    regularQuestions.forEach(q => {
+        const savedVal = userAnswersState[q.id];
+
+        if (q.type === 'qcm' || q.type === 'image_choice') {
             qcmTotal++;
-            const selected = form ? form.querySelector(`input[name="question_${q.id}"]:checked`) : null;
             const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-            if (selected) {
-                const val = parseInt(selected.value, 10);
+            if (savedVal !== undefined && savedVal !== null && savedVal !== '') {
+                const val = parseInt(savedVal, 10);
                 answers[q.id] = val;
                 if (val === correctIdx) qcmCorrect++;
             } else {
                 answers[q.id] = null;
                 missingCount++;
             }
+        } else if (q.type === 'table_choice') {
+            qcmTotal++;
+            const rows = q.tableRows || [];
+            const userAnsObj = (savedVal && typeof savedVal === 'object') ? savedVal : {};
+            answers[q.id] = userAnsObj;
+
+            let allRowsCorrect = (rows.length > 0);
+            let hasAnyAnswer = false;
+
+            rows.forEach((row, rIdx) => {
+                const userRow = userAnsObj[rIdx] || {};
+                const uCol1 = !!userRow.col1;
+                const uCol2 = !!userRow.col2;
+                if (uCol1 || uCol2) hasAnyAnswer = true;
+                const expCol1 = !!row.correctCol1;
+                const expCol2 = !!row.correctCol2;
+                if (uCol1 !== expCol1 || uCol2 !== expCol2) {
+                    allRowsCorrect = false;
+                }
+            });
+
+            if (!hasAnyAnswer) missingCount++;
+            if (allRowsCorrect) qcmCorrect++;
         } else if (q.type === 'boolean') {
             qcmTotal++;
-            const selected = form ? form.querySelector(`input[name="question_${q.id}"]:checked`) : null;
             const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
-            if (selected) {
-                const val = (selected.value === 'true');
+            if (savedVal === true || savedVal === false || savedVal === 'true' || savedVal === 'false') {
+                const val = (savedVal === true || savedVal === 'true');
                 answers[q.id] = val;
                 if (val === expectedBool) qcmCorrect++;
             } else {
@@ -1448,9 +1846,8 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 missingCount++;
             }
         } else if (q.type === 'range') {
-            const rangeInput = form ? form.querySelector(`input[name="question_${q.id}"]`) : null;
-            if (rangeInput) {
-                const val = parseFloat(rangeInput.value);
+            if (savedVal !== undefined && savedVal !== null) {
+                const val = parseFloat(savedVal);
                 answers[q.id] = val;
                 if (q.correctValue !== undefined && q.correctValue !== '' && q.correctValue !== null) {
                     qcmTotal++;
@@ -1466,23 +1863,16 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             }
         } else if (q.type === 'pinpoint') {
             qcmTotal++;
-            const pinInp = form ? form.querySelector(`input[name="question_${q.id}"]`) : null;
-            if (pinInp && pinInp.value) {
-                try {
-                    const parsed = typeof pinInp.value === 'object' ? pinInp.value : JSON.parse(pinInp.value);
-                    answers[q.id] = parsed;
-                    const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
-                    const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
-                    const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
-                    const dx = parsed.x - targetX;
-                    const dy = parsed.y - targetY;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist <= radius) {
-                        qcmCorrect++;
-                    }
-                } catch(e) {
-                    answers[q.id] = null;
-                    missingCount++;
+            if (savedVal && typeof savedVal === 'object' && savedVal.x !== undefined && savedVal.y !== undefined) {
+                answers[q.id] = savedVal;
+                const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+                const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+                const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+                const dx = savedVal.x - targetX;
+                const dy = savedVal.y - targetY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist <= radius) {
+                    qcmCorrect++;
                 }
             } else {
                 answers[q.id] = null;
@@ -1490,17 +1880,8 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             }
         } else if (q.type === 'cloze') {
             qcmTotal++;
-            const clozeInp = form ? form.querySelector(`input[name="question_${q.id}"]`) : null;
             const { blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
-            let userAnswersObj = {};
-
-            if (clozeInp && clozeInp.value) {
-                try {
-                    userAnswersObj = typeof clozeInp.value === 'object' ? clozeInp.value : JSON.parse(clozeInp.value);
-                } catch(e) {
-                    userAnswersObj = {};
-                }
-            }
+            const userAnswersObj = (savedVal && typeof savedVal === 'object') ? savedVal : {};
 
             answers[q.id] = userAnswersObj;
 
@@ -1523,32 +1904,17 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             }
         } else if (q.type === 'puzzle') {
             qcmTotal++;
-            const puzzleContainer = form ? form.querySelector(`#puzzle_list_${q.id}`) : null;
-            if (puzzleContainer) {
-                const currentOrder = Array.from(puzzleContainer.querySelectorAll('.es-puzzle-item')).map(el => el.getAttribute('data-item-text'));
-                answers[q.id] = currentOrder;
-                const expected = q.items || [];
-                const isExact = (currentOrder.length === expected.length && currentOrder.every((it, idx) => it === expected[idx]));
-                if (isExact) {
-                    qcmCorrect++;
-                }
-            } else {
-                answers[q.id] = [];
-                missingCount++;
+            const currentOrder = Array.isArray(savedVal) ? savedVal : (q.items || []);
+            answers[q.id] = currentOrder;
+            const expected = q.items || [];
+            const isExact = (currentOrder.length === expected.length && currentOrder.every((it, idx) => it === expected[idx]));
+            if (isExact) {
+                qcmCorrect++;
             }
         } else if (q.type === 'matching') {
             qcmTotal++;
-            const matchInp = form ? form.querySelector(`input[name="question_${q.id}"]`) : null;
             const rawPairs = q.pairs || [];
-            let userMatchesObj = {};
-
-            if (matchInp && matchInp.value) {
-                try {
-                    userMatchesObj = typeof matchInp.value === 'object' ? matchInp.value : JSON.parse(matchInp.value);
-                } catch(e) {
-                    userMatchesObj = {};
-                }
-            }
+            const userMatchesObj = (savedVal && typeof savedVal === 'object') ? savedVal : {};
 
             answers[q.id] = userMatchesObj;
 
@@ -1571,8 +1937,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             }
         } else {
             qcmTotal++;
-            const textarea = form ? form.querySelector(`textarea[name="question_${q.id}"]`) : null;
-            const val = textarea ? textarea.value.trim() : '';
+            const val = (typeof savedVal === 'string') ? savedVal.trim() : '';
             answers[q.id] = val;
             if (val.length > 0) {
                 // Algorithme de premier jet pour les réponses rédigées :
@@ -1697,8 +2062,34 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
     }
 }
 
+// ----------------------------------------------------------------
+// LISTENERS NAVIGATION ET SOUMISSION
+// ----------------------------------------------------------------
 document.getElementById('btnSubmitQuiz')?.addEventListener('click', () => {
     submitQuizAnswers({ autoSubmitByTimer: false });
+});
+
+document.getElementById('btnNextSection')?.addEventListener('click', () => {
+    saveCurrentPageAnswersToState();
+    if (currentSectionIndex < quizSections.length - 1) {
+        currentSectionIndex++;
+        renderActiveSectionPage();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+});
+
+document.getElementById('btnPrevSection')?.addEventListener('click', () => {
+    const allowPrev = (currentModuleData?.quizConfig?.allowPreviousPage !== false);
+    if (!allowPrev) {
+        showToast("Le retour aux sections précédentes n'est pas autorisé.", "warning");
+        return;
+    }
+    saveCurrentPageAnswersToState();
+    if (currentSectionIndex > 0) {
+        currentSectionIndex--;
+        renderActiveSectionPage();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 });
 
 // ----------------------------------------------------------------
@@ -1781,7 +2172,23 @@ function renderResultsScreen(submission = {}) {
 
     if (showResults) {
         correctionSection.classList.remove('hidden');
-        questionsList.innerHTML = currentQuestions.map((q, qIdx) => {
+        let questionCounter = 0;
+        questionsList.innerHTML = currentQuestions.map(q => {
+            if (q.type === 'section') {
+                return `
+                <div style="background:var(--clr-surface); border:1.5px solid var(--clr-primary); border-radius:var(--radius-md); padding:16px 20px; margin: 24px 0 12px 0;">
+                    <div style="font-size:0.75rem; font-weight:800; color:var(--clr-primary); text-transform:uppercase; letter-spacing:0.5px;">
+                        <i class="bi bi-bookmark-fill"></i> Section
+                    </div>
+                    <div style="font-size:1.15rem; font-weight:800; color:var(--clr-text); margin-top:2px;">
+                        ${escapeHtml(q.title || q.text || 'Section')}
+                    </div>
+                    ${q.description ? `<div style="font-size:0.86rem; color:var(--clr-text-muted); margin-top:4px; line-height:1.4;">${escapeHtml(q.description)}</div>` : ''}
+                </div>`;
+            }
+
+            questionCounter++;
+            const qNum = questionCounter;
             const userAns = answers[q.id];
             let ansDisplay = '';
             const imageThumb = q.imageUrl ? `
@@ -1807,6 +2214,119 @@ function renderResultsScreen(submission = {}) {
                             Bonne réponse attendue : <strong style="color:#27ae60;">${escapeHtml(q.options[correctIdx])}</strong>
                         </div>
                     ` : ''}
+                </div>`;
+            } else if (q.type === 'image_choice') {
+                const ansNum = (userAns !== null && userAns !== undefined) ? parseInt(userAns, 10) : null;
+                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+                const isCorrect = (ansNum === correctIdx);
+                const options = q.imageOptions || [];
+                const chosenOpt = (ansNum !== null && options[ansNum]) ? options[ansNum] : null;
+                const expectedOpt = options[correctIdx] || null;
+
+                ansDisplay = `
+                <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <strong>Votre choix :</strong>
+                        <span style="font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                            ${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}
+                        </span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-top:8px;">
+                        <div style="border:1.5px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:8px; background:rgba(0,0,0,0.02);">
+                            <div style="font-size:0.75rem; font-weight:800; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'}; margin-bottom:4px;">
+                                ${isCorrect ? '✓ Votre sélection (Correcte)' : '✗ Votre sélection'}
+                            </div>
+                            ${chosenOpt && chosenOpt.imageUrl ? `
+                                <div style="width:100%; height:110px; background:#181c19; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
+                                    <img src="${escapeHtml(chosenOpt.imageUrl)}" alt="Votre choix" style="max-width:100%; max-height:100%; object-fit:contain;">
+                                </div>
+                                <div style="font-size:0.82rem; font-weight:700; text-align:center;">${escapeHtml(chosenOpt.label || ('Option ' + (ansNum + 1)))}</div>
+                            ` : '<div style="font-size:0.82rem; color:var(--clr-text-muted); font-style:italic; padding:20px 0; text-align:center;">Aucune réponse</div>'}
+                        </div>
+
+                        ${!isCorrect && expectedOpt ? `
+                            <div style="border:1.5px dashed #27ae60; border-radius:6px; padding:8px; background:rgba(39,174,96,0.04);">
+                                <div style="font-size:0.75rem; font-weight:800; color:var(--clr-success); margin-bottom:4px;">
+                                    ⭐ Réponse attendue
+                                </div>
+                                ${expectedOpt.imageUrl ? `
+                                    <div style="width:100%; height:110px; background:#181c19; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
+                                        <img src="${escapeHtml(expectedOpt.imageUrl)}" alt="Bonne réponse" style="max-width:100%; max-height:100%; object-fit:contain;">
+                                    </div>
+                                    <div style="font-size:0.82rem; font-weight:700; color:#27ae60; text-align:center;">${escapeHtml(expectedOpt.label || ('Option ' + (correctIdx + 1)))}</div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>`;
+            } else if (q.type === 'table_choice') {
+                const col1 = q.col1Label || 'VRAI';
+                const col2 = q.col2Label || 'FAUX';
+                const rows = q.tableRows || [];
+                const userAnsObj = (userAns && typeof userAns === 'object') ? userAns : {};
+
+                let allCorrect = (rows.length > 0);
+                const tableRowsHtml = rows.map((row, rIdx) => {
+                    const userRow = userAnsObj[rIdx] || {};
+                    const uCol1 = !!userRow.col1;
+                    const uCol2 = !!userRow.col2;
+                    const expCol1 = !!row.correctCol1;
+                    const expCol2 = !!row.correctCol2;
+                    const isRowCorrect = (uCol1 === expCol1 && uCol2 === expCol2);
+                    if (!isRowCorrect) allCorrect = false;
+
+                    const getCellState = (uSelected, expSelected) => {
+                        if (uSelected && expSelected) {
+                            return { icon: '<i class="bi bi-check-circle-fill" style="color:#27ae60; font-size:1.1rem;"></i>', style: 'background:rgba(39,174,96,0.12);' };
+                        } else if (uSelected && !expSelected) {
+                            return { icon: '<i class="bi bi-x-circle-fill" style="color:#e74c3c; font-size:1.1rem;"></i>', style: 'background:rgba(231,76,60,0.12);' };
+                        } else if (!uSelected && expSelected) {
+                            return { icon: '<i class="bi bi-arrow-right-circle" style="color:#27ae60; font-size:1rem;" title="Attendu"></i>', style: 'background:rgba(39,174,96,0.05);' };
+                        }
+                        return { icon: '<span style="color:#ccc; font-size:1.1rem;">○</span>', style: '' };
+                    };
+
+                    const cell1 = getCellState(uCol1, expCol1);
+                    const cell2 = getCellState(uCol2, expCol2);
+
+                    return `
+                        <tr style="border-bottom:1px solid #eee; ${isRowCorrect ? '' : 'background:rgba(231,76,60,0.03);'}">
+                            <td style="padding:10px 14px; font-size:0.86rem; font-weight:600; color:#2c3e50;">
+                                <span style="font-weight:800; color:#7f8c8d; margin-right:6px;">${rIdx + 1}.</span>
+                                ${escapeHtml(row.text || '')}
+                            </td>
+                            <td style="text-align:center; padding:8px; ${cell1.style}">
+                                ${cell1.icon}
+                            </td>
+                            <td style="text-align:center; padding:8px; ${cell2.style}">
+                                ${cell2.icon}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                ansDisplay = `
+                <div style="background:#ffffff; border:1.5px solid ${allCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <strong>Bilan de la grille :</strong>
+                        <span style="font-weight:700; color:${allCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                            ${allCorrect ? '✅ Grille exacte (+1 pt)' : '❌ Incorrect (0 pt)'}
+                        </span>
+                    </div>
+                    <div style="border:1px solid #e2e8f0; border-radius:6px; overflow:hidden; margin-top:8px;">
+                        <table style="width:100%; border-collapse:collapse; text-align:left;">
+                            <thead>
+                                <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
+                                    <th style="padding:10px 14px; font-size:0.8rem; font-weight:800;">Affirmations</th>
+                                    <th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col1)}</th>
+                                    <th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col2)}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRowsHtml}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>`;
             } else if (q.type === 'boolean') {
                 const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
@@ -1855,9 +2375,9 @@ function renderResultsScreen(submission = {}) {
                     </div>
                     ${q.pinImage ? `
                     <div style="text-align:center; background:#181c19; padding:8px; border-radius:6px; margin-top:6px;">
-                        <div class="es-pinpoint-result-zone" style="max-width:520px; margin:0 auto;">
-                            <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" class="es-pinpoint-result-img">
-                            <div class="es-pinpoint-target-zone es-pinpoint-target-zone--result" style="left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%;" title="Zone attendue (±${radius}%)"></div>
+                        <div class="es-pinpoint-result-zone" style="max-width:520px; margin:0 auto; text-align:center;">
+                            <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" class="es-pinpoint-result-img" style="display:block; margin:0 auto; max-width:100%;">
+                            <div class="es-pinpoint-target-zone es-pinpoint-target-zone--result" style="left:${targetX}%; top:${targetY}%; width:${radius * 2}%; aspect-ratio:1 / 1; height:auto;" title="Zone attendue (±${radius}%)"></div>
                             <div class="es-pinpoint-pin es-pinpoint-pin--admin" style="left:${targetX}%; top:${targetY}%;" title="Cible"><i class="bi bi-bullseye" style="font-size:24px; color:#2ecc71;"></i></div>
                             ${userCoords ? `
                             <div class="es-pinpoint-pin ${isCorrect ? 'es-pinpoint-pin--correct' : 'es-pinpoint-pin--incorrect'}" style="left:${userCoords.x}%; top:${userCoords.y}%;" title="Votre repère"><i class="bi bi-geo-alt-fill"></i></div>
@@ -2063,7 +2583,7 @@ function renderResultsScreen(submission = {}) {
 
             return `
             <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:16px;">
-                <div style="font-size:0.75rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Question ${qIdx + 1} • ${typeBadgeLabel}</div>
+                <div style="font-size:0.75rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Question ${qNum} • ${typeBadgeLabel}</div>
                 <div style="font-size:0.92rem; font-weight:700; color:var(--clr-text); margin-top:2px;">${escapeHtml(q.text)}</div>
                 ${imageThumb}
                 ${ansDisplay}
