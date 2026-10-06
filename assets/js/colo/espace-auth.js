@@ -834,7 +834,7 @@ try {
             globalFormationActivePromoId = doc.data().activePromoId || '';
             window.globalFormationActivePromoId = globalFormationActivePromoId;
 
-            const isFormationPage = window.location.pathname.includes('formation.html') || window.location.pathname.includes('quiz.html');
+            const isFormationPage = window.location.pathname.includes('formation.html') || window.location.pathname.includes('quiz.html') || window.location.pathname.includes('formation-edit.html') || window.location.pathname.includes('formation-results.html');
 
             // Re-vérifier l'accès si un stagiaire ou formateur est connecté sur une page de formation
             if (window.currentAuthUserData && (window.currentAuthUserData.role === 'stagiaire' || (window.currentAuthUserData.role === 'formateur' && isFormationPage))) {
@@ -1068,7 +1068,7 @@ firebase.auth().onAuthStateChanged((user) => {
                     return;
                 }
 
-                const isFormationPage = window.location.pathname.includes('formation.html') || window.location.pathname.includes('quiz.html');
+                const isFormationPage = window.location.pathname.includes('formation.html') || window.location.pathname.includes('quiz.html') || window.location.pathname.includes('formation-edit.html') || window.location.pathname.includes('formation-results.html');
 
                 if (userData.role === 'stagiaire' || (userData.role === 'formateur' && isFormationPage)) {
                     // S'assurer de charger l'activePromoId le plus récent

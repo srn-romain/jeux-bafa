@@ -213,12 +213,15 @@
                             </div>
 
                             <div class="es-formation-admin-banner__actions">
+                                <a href="formation-results.html" class="es-btn es-btn--secondary es-btn--sm" style="background:var(--clr-surface-2); color:var(--clr-text); border:1.5px solid var(--clr-surface-3); font-weight:700; display:inline-flex; align-items:center; gap:6px;" title="Consulter toutes les réponses et copies des stagiaires sur une page dédiée">
+                                    <i class="bi bi-bar-chart-line-fill" style="color:var(--clr-accent);"></i> <span class="brand-label">Bilan & Réponses</span>
+                                </a>
                                 <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnOpenAIAuditFormation" style="background:var(--clr-surface-2); color:var(--clr-text); border:1.5px solid var(--clr-surface-3); font-weight:700; display:inline-flex; align-items:center; gap:6px;" title="Vérifier l'orthographe et la cohérence des quiz avec l'IA">
                                     <i class="bi bi-robot" style="color:var(--clr-primary);"></i> <span class="brand-label">Audit IA Quiz</span>
                                 </button>
-                                <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnAdminNewModule" style="font-weight:600;">
+                                <a href="formation-edit.html" class="es-btn es-btn--primary es-btn--sm" id="btnAdminNewModule" style="font-weight:600; display:inline-flex; align-items:center; gap:6px;">
                                     <i class="bi bi-plus-lg"></i> Nouveau module
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -685,7 +688,12 @@
                         <h2 class="es-modal__title" id="moduleEditModalTitle" style="font-size:1.15rem;">Nouveau module & Quiz</h2>
                     </div>
                 </div>
-                <button class="es-modal__close" id="btnCloseModuleEdit"><i class="bi bi-x"></i></button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <a id="btnOpenModuleDedicatedPage" href="#" target="_blank" class="es-btn es-btn--ghost es-btn--sm hidden" style="color:var(--clr-primary); font-size:0.82rem; padding:6px 12px; gap:6px;" title="Ouvrir le module sur une nouvelle page comme les stagiaires">
+                        <i class="bi bi-box-arrow-up-right"></i> Ouvrir sur une nouvelle page
+                    </a>
+                    <button class="es-modal__close" id="btnCloseModuleEdit"><i class="bi bi-x"></i></button>
+                </div>
             </div>
             <div class="es-modal__body" style="overflow-y:auto; padding:20px 24px; flex:1;">
                 <form id="moduleEditForm" novalidate>
@@ -730,10 +738,6 @@
                             <input class="es-input" type="text" id="editModuleSubtitle" placeholder="Ex: Sigles et repères fondamentaux">
                         </div>
 
-                        <div class="es-field">
-                            <label class="es-field__label" for="editModuleDesc">Description du module</label>
-                            <textarea class="es-input" id="editModuleDesc" rows="2" placeholder="Objectifs et compétences abordées..."></textarea>
-                        </div>
 
                         <div class="es-field" style="margin-top:12px;">
                             <label class="es-field__label">🖼️ Image de fond de la carte (comme dans Espace Colos) :</label>
@@ -1049,93 +1053,7 @@
         </div>
     </div>
 
-    <!-- ========================================================
-     MODAL : Questions du module & Ajout (Formateur)
-     ======================================================== -->
-    <div class="es-overlay hidden" id="overlayAddQuestionFormateur" role="dialog" aria-modal="true">
-        <div class="es-modal" style="max-width: 760px; max-height: 92vh; display: flex; flex-direction: column;">
-            <div class="es-modal__header" style="border-bottom: 1.5px solid var(--clr-surface-3);">
-                <div>
-                    <h2 class="es-modal__title" id="formateurAddQModalTitle" style="display: flex; align-items: center; gap: 8px;">
-                        <span>📋</span> Questions du module
-                    </h2>
-                    <p id="formateurAddQModuleSubtitle" style="font-size: 0.8rem; color: var(--clr-text-muted); margin: 2px 0 0 0;"></p>
-                </div>
-                <button type="button" class="es-modal__close" id="btnCloseAddQFormateur"><i class="bi bi-x"></i></button>
-            </div>
-            <div class="es-modal__body" style="overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px;">
-                <input type="hidden" id="formateurAddQModuleId" value="">
 
-                <!-- Section 1 : Questions existantes (Lecture seule) -->
-                <div id="formateurExistingQuestionsSection" style="background: var(--clr-surface); border: 1.5px solid var(--clr-surface-3); border-radius: 10px; padding: 16px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <h3 style="font-size: 0.92rem; font-weight: 700; color: var(--clr-text); display: flex; align-items: center; gap: 8px; margin: 0;">
-                            <span>👁️</span> Questions en place dans ce module
-                            <span id="badgeFormateurQuestionsCount" class="es-badge es-badge--anim" style="font-size: 0.72rem; padding: 2px 8px;">0 question</span>
-                        </h3>
-                        <span style="font-size: 0.72rem; color: var(--clr-text-muted); background: var(--clr-surface-2); padding: 3px 8px; border-radius: 6px; border: 1px solid var(--clr-surface-3);">
-                            <i class="bi bi-lock-fill"></i> Protégées
-                        </span>
-                    </div>
-
-                    <!-- Liste des questions existantes -->
-                    <div id="formateurExistingQuestionsList" style="display: flex; flex-direction: column; gap: 10px; max-height: 260px; overflow-y: auto; padding-right: 4px;">
-                        <!-- Rempli dynamiquement en JS -->
-                    </div>
-                </div>
-
-                <!-- Section 2 : Ajouter une nouvelle question -->
-                <div style="background: var(--clr-surface-2); border: 1.5px solid var(--clr-surface-3); border-radius: 10px; padding: 18px;">
-                    <h3 style="font-size: 0.92rem; font-weight: 700; color: var(--clr-primary); display: flex; align-items: center; gap: 8px; margin: 0 0 14px 0;">
-                        <span>➕</span> Ajouter une nouvelle question
-                    </h3>
-
-                    <div class="es-field">
-                        <label class="es-field__label" for="formateurAddQText">Énoncé de la question : *</label>
-                        <textarea class="es-input" id="formateurAddQText" rows="3" placeholder="Rédigez ici la nouvelle question pour les stagiaires..." required style="font-size: 0.92rem; background: var(--clr-surface);"></textarea>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;">
-                        <div class="es-field">
-                            <label class="es-field__label" for="formateurAddQType">Type de question :</label>
-                            <select class="es-input" id="formateurAddQType" style="font-size: 0.88rem; background: var(--clr-surface);">
-                                <option value="qcm">🔘 QCM (Choix unique / multiple)</option>
-                                <option value="boolean">⚖️ Vrai / Faux</option>
-                                <option value="puzzle">🧩 Puzzle / Ordonnancement</option>
-                                <option value="range">📏 Curseur horizontal (Slider)</option>
-                                <option value="text">📝 Question ouverte (Rédaction)</option>
-                            </select>
-                        </div>
-                        <div class="es-field">
-                            <label class="es-field__label" for="formateurAddQImageUrl">Image d'illustration (optionnel) :</label>
-                            <input type="url" class="es-input" id="formateurAddQImageUrl" placeholder="https://.../image.png" style="font-size: 0.85rem; background: var(--clr-surface);">
-                        </div>
-                    </div>
-
-                    <!-- Container dynamique selon le type choisi -->
-                    <div id="formateurAddQDynamicContainer" style="margin-top: 12px;"></div>
-
-                    <div class="es-field" style="margin-top: 12px;">
-                        <label class="es-field__label" for="formateurAddQHint">Piste de réflexion / Critères attendus (optionnel) :</label>
-                        <input type="text" class="es-input" id="formateurAddQHint" placeholder="Indice visible lors du corrigé..." style="font-size: 0.85rem; background: var(--clr-surface);">
-                    </div>
-
-                    <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
-                        <button type="button" class="es-btn es-btn--primary" id="btnSaveAddQFormateur">
-                            <i class="bi bi-plus-circle"></i> Ajouter la question au module
-                        </button>
-                    </div>
-                </div>
-
-                <div style="padding: 10px 14px; background: rgba(142,68,173,0.08); border: 1px solid rgba(142,68,173,0.2); border-radius: 8px; font-size: 0.78rem; color: var(--clr-text-muted); line-height: 1.45;">
-                    💡 <strong>Rôle Formateur :</strong> Vous pouvez consulter l'ensemble des questions du module et enrichir la banque de questions. Les questions déjà enregistrées restent protégées contre la modification et la suppression.
-                </div>
-            </div>
-            <div class="es-modal__footer" style="display: flex; justify-content: flex-end;">
-                <button type="button" class="es-btn es-btn--ghost" id="btnCancelAddQFormateur">Fermer</button>
-            </div>
-        </div>
-    </div>
 
     <!-- ========================================================
      MODAL : Sélectionner la Promo / Session de Formation

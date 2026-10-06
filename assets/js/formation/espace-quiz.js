@@ -192,8 +192,20 @@ function renderBriefingScreen() {
     const maxAttempts = parseInt(qConfig.maxAttempts, 10) || 0;
     const totalDurationSecs = getQuizTotalDurationSeconds(mod);
     const prevAttempts = userPreviousSubmissions.length;
-    const isLocked = (maxAttempts > 0 && prevAttempts >= maxAttempts);
-    const showResults = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+    const isAdminOrFormateur = (currentRole === 'admin' || currentRole === 'formateur');
+    const isLocked = !isAdminOrFormateur && (maxAttempts > 0 && prevAttempts >= maxAttempts);
+    const showResults = isAdminOrFormateur || Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+
+    // Bannière spéciale Admin / Formateur
+    const adminNotice = document.getElementById('adminFormateurNotice');
+    if (adminNotice) {
+        if (isAdminOrFormateur) adminNotice.classList.remove('hidden');
+        else adminNotice.classList.add('hidden');
+    }
+
+    if (isAdminOrFormateur) {
+        isQuizUnlocked = true;
+    }
 
     // Topbar
     document.getElementById('topbarModuleTitle').textContent = qConfig.quizTitle || mod.title;
@@ -205,7 +217,7 @@ function renderBriefingScreen() {
     document.getElementById('briefingModuleSubtitle').textContent = mod.subtitle || '';
     document.getElementById('briefingModuleDesc').innerHTML = `
         <div style="font-weight:700; color:var(--clr-primary); margin-bottom:4px;"><i class="bi bi-info-circle"></i> Objectifs & Consignes :</div>
-        ${escapeHtml(mod.description || 'Contrôle de connaissances théoriques et pratiques liées à ce module de formation.')}
+        ${escapeHtml(mod.subtitle || mod.description || 'Contrôle de connaissances théoriques et pratiques liées à ce module de formation.')}
     `;
 
     const iconEl = document.getElementById('briefingIcon');
@@ -521,6 +533,42 @@ function startActiveQuiz() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// ----------------------------------------------------------------
+// HELPER TEXTE À TROUS (CLOZE)
+// ----------------------------------------------------------------
+function parseClozeQuestion(clozeText) {
+    const regex = /\[([^\]]+)\]/g;
+    const parts = [];
+    const blanks = [];
+    let lastIdx = 0;
+    let match;
+    let bIdx = 0;
+    const textStr = clozeText || '';
+    while ((match = regex.exec(textStr)) !== null) {
+        if (match.index > lastIdx) {
+            parts.push({ type: 'text', text: textStr.substring(lastIdx, match.index) });
+        }
+        const expected = match[1].trim();
+        blanks.push(expected);
+        parts.push({ type: 'blank', index: bIdx, expected: expected });
+        bIdx++;
+        lastIdx = regex.lastIndex;
+    }
+    if (lastIdx < textStr.length) {
+        parts.push({ type: 'text', text: textStr.substring(lastIdx) });
+    }
+    return { parts, blanks };
+}
+
+function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
 function renderQuizQuestions() {
     const container = document.getElementById('quizQuestionsContainer');
     if (!container) return;
@@ -550,6 +598,65 @@ function renderQuizQuestions() {
                         <span>${escapeHtml(opt)}</span>
                     </label>
                 `).join('')}
+            </div>`;
+        } else if (q.type === 'cloze') {
+            const { parts, blanks } = parseClozeQuestion(q.clozeText || '');
+            const distractors = Array.isArray(q.distractors) ? q.distractors : [];
+            const allWords = [...blanks, ...distractors].filter(w => w && String(w).trim().length > 0);
+            
+            const tagObjects = allWords.map((word, wIdx) => ({
+                tagId: `tag_${q.id}_${wIdx}`,
+                word: String(word).trim()
+            }));
+            
+            const shuffledTags = shuffleArray(tagObjects);
+
+            inputHtml = `
+            <div class="es-cloze-wrap" id="cloze_wrap_${q.id}" data-q-id="${q.id}">
+                <input type="hidden" name="question_${q.id}" id="cloze_input_${q.id}" class="quiz-track-input" data-blanks-count="${blanks.length}" required>
+                
+                <!-- BANQUE D'ÉTIQUETTES / TAGS EN HAUT -->
+                <div class="es-cloze-bank-container" id="cloze_bank_box_${q.id}" data-q-id="${q.id}">
+                    <div class="es-cloze-bank-header">
+                        <div class="es-cloze-bank-title">
+                            <i class="bi bi-tags-fill" style="color:var(--clr-primary);"></i>
+                            <span>Étiquettes à placer (<span id="cloze_bank_count_${q.id}">${tagObjects.length}</span> disponibles pour ${blanks.length} trou${blanks.length > 1 ? 's' : ''})</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span class="es-badge es-badge--stagiaire" id="cloze_status_${q.id}" style="font-size:0.75rem; padding:2px 8px;">
+                                0 / ${blanks.length} trou(s)
+                            </span>
+                            <div class="es-cloze-bank-hint">
+                                <i class="bi bi-hand-index-thumb"></i> Glissez ou cliquez
+                            </div>
+                        </div>
+                    </div>
+                    <div class="es-cloze-bank" id="cloze_bank_${q.id}" data-q-id="${q.id}">
+                        ${shuffledTags.map(t => `
+                            <div class="es-cloze-tag" id="${t.tagId}" draggable="true" data-tag-id="${t.tagId}" data-tag-word="${escapeHtml(t.word)}" data-q-id="${q.id}">
+                                <span class="es-cloze-tag-handle"><i class="bi bi-grip-vertical"></i></span>
+                                <span class="es-cloze-tag-text">${escapeHtml(t.word)}</span>
+                            </div>
+                        `).join('')}
+                        <div class="es-cloze-bank-empty hidden" id="cloze_empty_${q.id}">Toutes les étiquettes ont été placées.</div>
+                    </div>
+                </div>
+
+                <!-- TEXTE À TROUS EN DESSOUS -->
+                <div class="es-cloze-text-card">
+                    ${parts.map(part => {
+                        if (part.type === 'text') {
+                            return `<span>${escapeHtml(part.text)}</span>`;
+                        } else {
+                            return `
+                            <span class="es-cloze-dropzone" id="cloze_drop_${q.id}_${part.index}" data-q-id="${q.id}" data-blank-idx="${part.index}" title="Trou n°${part.index + 1}">
+                                <span class="es-cloze-dropzone-placeholder">
+                                    <i class="bi bi-dash"></i> [ ${part.index + 1} ] <i class="bi bi-dash"></i>
+                                </span>
+                            </span>`;
+                        }
+                    }).join('')}
+                </div>
             </div>`;
         } else if (q.type === 'boolean') {
             inputHtml = `
@@ -643,7 +750,8 @@ function renderQuizQuestions() {
         }
 
         let typeBadgeLabel = 'QCM';
-        if (q.type === 'pinpoint') typeBadgeLabel = '📍 Repère sur image';
+        if (q.type === 'cloze') typeBadgeLabel = '🔤 Texte à trous';
+        else if (q.type === 'pinpoint') typeBadgeLabel = '📍 Repère sur image';
         else if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
         else if (q.type === 'boolean') typeBadgeLabel = 'Vrai / Faux';
         else if (q.type === 'puzzle') typeBadgeLabel = 'Puzzle / Ordonnancement';
@@ -774,6 +882,222 @@ function attachQuizInteractions(container) {
         });
     });
 
+    // ----------------------------------------------------------------
+    // INTERACTIONS TEXTE À TROUS (CLOZE / DRAG & DROP & TAP-TO-PLACE)
+    // ----------------------------------------------------------------
+    function syncClozeValue(qId) {
+        const wrap = document.getElementById(`cloze_wrap_${qId}`);
+        const input = document.getElementById(`cloze_input_${qId}`);
+        const bank = document.getElementById(`cloze_bank_${qId}`);
+        const emptyNotice = document.getElementById(`cloze_empty_${qId}`);
+        if (!wrap || !input) return;
+
+        const dropzones = wrap.querySelectorAll('.es-cloze-dropzone');
+        const answersObj = {};
+        let filledCount = 0;
+
+        dropzones.forEach(dz => {
+            const bIdx = dz.getAttribute('data-blank-idx');
+            const placedTag = dz.querySelector('.es-cloze-tag');
+            if (placedTag) {
+                const word = placedTag.getAttribute('data-tag-word') || '';
+                answersObj[bIdx] = word;
+                dz.classList.add('es-cloze-dropzone--filled');
+                const placeholder = dz.querySelector('.es-cloze-dropzone-placeholder');
+                if (placeholder) placeholder.style.display = 'none';
+                filledCount++;
+            } else {
+                answersObj[bIdx] = null;
+                dz.classList.remove('es-cloze-dropzone--filled');
+                const placeholder = dz.querySelector('.es-cloze-dropzone-placeholder');
+                if (placeholder) placeholder.style.display = 'inline-flex';
+            }
+        });
+
+        input.value = filledCount > 0 ? JSON.stringify(answersObj) : '';
+
+        const totalBlanks = dropzones.length;
+        const statusEl = document.getElementById(`cloze_status_${qId}`);
+        if (statusEl) {
+            statusEl.textContent = `${filledCount} / ${totalBlanks} trou${totalBlanks > 1 ? 's' : ''}`;
+            if (filledCount === totalBlanks) {
+                statusEl.className = 'es-badge es-badge--success';
+            } else {
+                statusEl.className = 'es-badge es-badge--stagiaire';
+            }
+        }
+
+        if (bank) {
+            const remainingTags = bank.querySelectorAll('.es-cloze-tag').length;
+            const bankCountEl = document.getElementById(`cloze_bank_count_${qId}`);
+            if (bankCountEl) bankCountEl.textContent = remainingTags;
+
+            if (emptyNotice) {
+                if (remainingTags === 0) {
+                    emptyNotice.classList.remove('hidden');
+                } else {
+                    emptyNotice.classList.add('hidden');
+                }
+            }
+        }
+
+        updateProgress();
+    }
+
+    container.querySelectorAll('.es-cloze-tag').forEach(tag => {
+        tag.addEventListener('dragstart', (e) => {
+            tag.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', tag.id);
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        tag.addEventListener('dragend', () => {
+            tag.classList.remove('dragging');
+        });
+
+        // Click sur tag (Tap-to-place ou remise en banque)
+        tag.addEventListener('click', (e) => {
+            const qId = tag.getAttribute('data-q-id');
+            const isInDropzone = tag.closest('.es-cloze-dropzone');
+
+            if (isInDropzone) {
+                // Si on clique sur un tag dans un trou, le renvoyer dans la banque
+                const bank = document.getElementById(`cloze_bank_${qId}`);
+                if (bank) {
+                    const removeBtn = tag.querySelector('.es-cloze-tag-remove');
+                    if (removeBtn) removeBtn.remove();
+                    bank.appendChild(tag);
+                    syncClozeValue(qId);
+                }
+            } else {
+                // Tag dans la banque : bascule sélection
+                const isSelected = tag.classList.contains('is-selected');
+                const wrap = document.getElementById(`cloze_wrap_${qId}`);
+                if (wrap) {
+                    wrap.querySelectorAll('.es-cloze-tag.is-selected').forEach(t => t.classList.remove('is-selected'));
+                }
+                if (!isSelected) {
+                    tag.classList.add('is-selected');
+                }
+            }
+        });
+    });
+
+    container.querySelectorAll('.es-cloze-dropzone').forEach(dropzone => {
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            dropzone.classList.add('es-cloze-dropzone--dragover');
+        });
+
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('es-cloze-dropzone--dragover');
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('es-cloze-dropzone--dragover');
+            const tagId = e.dataTransfer.getData('text/plain');
+            const tag = document.getElementById(tagId);
+            const qId = dropzone.getAttribute('data-q-id');
+            if (!tag || tag.getAttribute('data-q-id') !== qId) return;
+
+            const existingTag = dropzone.querySelector('.es-cloze-tag');
+            const bank = document.getElementById(`cloze_bank_${qId}`);
+            if (existingTag && existingTag !== tag && bank) {
+                const removeBtn = existingTag.querySelector('.es-cloze-tag-remove');
+                if (removeBtn) removeBtn.remove();
+                bank.appendChild(existingTag);
+            }
+
+            if (!tag.querySelector('.es-cloze-tag-remove')) {
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'es-cloze-tag-remove';
+                removeBtn.title = 'Retirer du trou';
+                removeBtn.innerHTML = '<i class="bi bi-x"></i>';
+                removeBtn.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    if (bank) {
+                        removeBtn.remove();
+                        bank.appendChild(tag);
+                        syncClozeValue(qId);
+                    }
+                });
+                tag.appendChild(removeBtn);
+            }
+
+            dropzone.appendChild(tag);
+            tag.classList.remove('is-selected');
+            syncClozeValue(qId);
+        });
+
+        // Click sur dropzone pour déposer le tag sélectionné (Tap-to-place)
+        dropzone.addEventListener('click', (e) => {
+            if (e.target.closest('.es-cloze-tag')) return;
+            const qId = dropzone.getAttribute('data-q-id');
+            const wrap = document.getElementById(`cloze_wrap_${qId}`);
+            if (!wrap) return;
+
+            const selectedTag = wrap.querySelector('.es-cloze-bank .es-cloze-tag.is-selected');
+            if (selectedTag) {
+                const bank = document.getElementById(`cloze_bank_${qId}`);
+                const existingTag = dropzone.querySelector('.es-cloze-tag');
+                if (existingTag && existingTag !== selectedTag && bank) {
+                    const removeBtn = existingTag.querySelector('.es-cloze-tag-remove');
+                    if (removeBtn) removeBtn.remove();
+                    bank.appendChild(existingTag);
+                }
+
+                if (!selectedTag.querySelector('.es-cloze-tag-remove')) {
+                    const removeBtn = document.createElement('span');
+                    removeBtn.className = 'es-cloze-tag-remove';
+                    removeBtn.title = 'Retirer du trou';
+                    removeBtn.innerHTML = '<i class="bi bi-x"></i>';
+                    removeBtn.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        if (bank) {
+                            removeBtn.remove();
+                            bank.appendChild(selectedTag);
+                            syncClozeValue(qId);
+                        }
+                    });
+                    selectedTag.appendChild(removeBtn);
+                }
+
+                dropzone.appendChild(selectedTag);
+                selectedTag.classList.remove('is-selected');
+                syncClozeValue(qId);
+            }
+        });
+    });
+
+    container.querySelectorAll('.es-cloze-bank-container').forEach(bankContainer => {
+        bankContainer.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            bankContainer.classList.add('es-cloze-bank--dragover');
+        });
+
+        bankContainer.addEventListener('dragleave', () => {
+            bankContainer.classList.remove('es-cloze-bank--dragover');
+        });
+
+        bankContainer.addEventListener('drop', (e) => {
+            e.preventDefault();
+            bankContainer.classList.remove('es-cloze-bank--dragover');
+            const tagId = e.dataTransfer.getData('text/plain');
+            const tag = document.getElementById(tagId);
+            const qId = tag?.getAttribute('data-q-id');
+            const bank = document.getElementById(`cloze_bank_${qId}`);
+            if (tag && bank) {
+                const removeBtn = tag.querySelector('.es-cloze-tag-remove');
+                if (removeBtn) removeBtn.remove();
+                bank.appendChild(tag);
+                syncClozeValue(qId);
+            }
+        });
+    });
+
     // Track text & radio changes
     container.querySelectorAll('.quiz-track-input').forEach(inp => {
         inp.addEventListener('input', () => updateProgress());
@@ -812,6 +1136,18 @@ function updateProgress() {
         if (q.type === 'qcm' || q.type === 'boolean') {
             const sel = form.querySelector(`input[name="question_${q.id}"]:checked`);
             if (sel) answeredCount++;
+        } else if (q.type === 'cloze') {
+            const clozeInp = form.querySelector(`input[name="question_${q.id}"]`);
+            if (clozeInp && clozeInp.value) {
+                try {
+                    const parsed = JSON.parse(clozeInp.value);
+                    const totalBlanks = parseInt(clozeInp.getAttribute('data-blanks-count'), 10) || 1;
+                    const filledBlanks = Object.values(parsed).filter(v => v !== null && v !== undefined && String(v).trim().length > 0).length;
+                    if (filledBlanks === totalBlanks) {
+                        answeredCount++;
+                    }
+                } catch(e) {}
+            }
         } else if (q.type === 'pinpoint') {
             const pinInp = form.querySelector(`input[name="question_${q.id}"]`);
             if (pinInp && pinInp.value) answeredCount++;
@@ -925,6 +1261,39 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             } else {
                 answers[q.id] = null;
                 missingCount++;
+            }
+        } else if (q.type === 'cloze') {
+            qcmTotal++;
+            const clozeInp = form ? form.querySelector(`input[name="question_${q.id}"]`) : null;
+            const { blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
+            let userAnswersObj = {};
+
+            if (clozeInp && clozeInp.value) {
+                try {
+                    userAnswersObj = typeof clozeInp.value === 'object' ? clozeInp.value : JSON.parse(clozeInp.value);
+                } catch(e) {
+                    userAnswersObj = {};
+                }
+            }
+
+            answers[q.id] = userAnswersObj;
+
+            const filledCount = Object.values(userAnswersObj).filter(v => v !== null && v !== undefined && String(v).trim().length > 0).length;
+            if (filledCount < expectedBlanks.length) {
+                missingCount++;
+            }
+
+            // Vérification de chaque trou
+            let allCorrect = (expectedBlanks.length > 0);
+            expectedBlanks.forEach((expWord, bIdx) => {
+                const uWord = userAnswersObj[bIdx];
+                if (!uWord || String(uWord).trim().toLowerCase() !== String(expWord).trim().toLowerCase()) {
+                    allCorrect = false;
+                }
+            });
+
+            if (allCorrect) {
+                qcmCorrect++;
             }
         } else if (q.type === 'puzzle') {
             qcmTotal++;
@@ -1078,7 +1447,8 @@ document.getElementById('btnSubmitQuiz')?.addEventListener('click', () => {
 // ----------------------------------------------------------------
 function renderResultsScreen(submission = {}) {
     const qConfig = currentModuleData.quizConfig || {};
-    const showResults = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+    const isAdminOrFormateur = (currentRole === 'admin' || currentRole === 'formateur');
+    const showResults = isAdminOrFormateur || Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
     const score = submission?.score || { correct: 0, total: 0, percent: 100 };
     const answers = submission?.answers || {};
 
@@ -1265,6 +1635,55 @@ function renderResultsScreen(submission = {}) {
                         ${rangeGrade}
                     </div>
                 </div>`;
+            } else if (q.type === 'cloze') {
+                const { parts, blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
+                const userAnswersObj = userAns && typeof userAns === 'object' ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
+                
+                let correctBlanksCount = 0;
+                expectedBlanks.forEach((expWord, bIdx) => {
+                    const uWord = userAnswersObj[bIdx];
+                    if (uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase()) {
+                        correctBlanksCount++;
+                    }
+                });
+
+                const isAllCorrect = (expectedBlanks.length > 0) && (correctBlanksCount === expectedBlanks.length);
+
+                ansDisplay = `
+                <div style="background:#ffffff; border:1.5px solid ${isAllCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:14px 16px; margin-top:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
+                        <div style="font-size:0.85rem; font-weight:700; color:var(--clr-text);">
+                            Résultat : <span style="color:var(--clr-primary); font-weight:800;">${correctBlanksCount} / ${expectedBlanks.length} trou${expectedBlanks.length > 1 ? 's' : ''} correct${expectedBlanks.length > 1 ? 's' : ''}</span>
+                        </div>
+                        <span style="font-weight:700; color:${isAllCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.88rem;">
+                            ${isAllCorrect ? '✅ Texte parfaitement complété (+1 pt)' : '❌ Texte incomplet ou erroné'}
+                        </span>
+                    </div>
+
+                    <div class="es-cloze-result-card">
+                        ${parts.map(part => {
+                            if (part.type === 'text') {
+                                return `<span>${escapeHtml(part.text)}</span>`;
+                            } else {
+                                const uWord = userAnswersObj[part.index];
+                                const expWord = part.expected;
+                                const isBlankCorrect = uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase();
+
+                                if (isBlankCorrect) {
+                                    return `<span class="es-cloze-res-tag es-cloze-res-tag--correct"><i class="bi bi-check-lg"></i> ${escapeHtml(uWord)}</span>`;
+                                } else if (uWord) {
+                                    return `
+                                    <span class="es-cloze-res-tag es-cloze-res-tag--wrong"><i class="bi bi-x-lg"></i> ${escapeHtml(uWord)}</span>
+                                    <span class="es-cloze-res-tag es-cloze-res-tag--expected">✓ ${escapeHtml(expWord)}</span>`;
+                                } else {
+                                    return `
+                                    <span class="es-cloze-res-tag es-cloze-res-tag--missing">∅ Non rempli</span>
+                                    <span class="es-cloze-res-tag es-cloze-res-tag--expected">✓ ${escapeHtml(expWord)}</span>`;
+                                }
+                            }
+                        }).join('')}
+                    </div>
+                </div>`;
             } else if (q.type === 'puzzle') {
                 const candidateOrder = Array.isArray(userAns) ? userAns : [];
                 const expectedOrder = q.items || [];
@@ -1324,7 +1743,8 @@ function renderResultsScreen(submission = {}) {
             }
 
             let typeBadgeLabel = 'QCM';
-            if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
+            if (q.type === 'cloze') typeBadgeLabel = '🔤 Texte à trous';
+            else if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
             else if (q.type === 'boolean') typeBadgeLabel = 'Vrai / Faux';
             else if (q.type === 'puzzle') typeBadgeLabel = 'Puzzle / Ordonnancement';
             else if (q.type === 'text') typeBadgeLabel = 'Rédaction';
@@ -1399,6 +1819,20 @@ auth.onAuthStateChanged(async (user) => {
     // Topbar User info
     const nameEl = document.getElementById('quizUserName');
     if (nameEl) nameEl.textContent = actualUserData?.displayName || `${actualUserData?.firstName || ''} ${actualUserData?.lastName || ''}`.trim() || user.email;
+
+    const badgeEl = document.getElementById('quizUserBadge');
+    if (badgeEl) {
+        if (currentRole === 'admin') {
+            badgeEl.className = 'es-badge es-badge--admin';
+            badgeEl.textContent = '⚡ Admin';
+        } else if (currentRole === 'formateur') {
+            badgeEl.className = 'es-badge es-badge--formateur';
+            badgeEl.textContent = '👨‍🏫 Formateur';
+        } else {
+            badgeEl.className = 'es-badge es-badge--stagiaire';
+            badgeEl.textContent = '🎓 BAFA';
+        }
+    }
 
     const avatarEl = document.getElementById('quizUserAvatar');
     if (avatarEl && (actualUserData?.photoURL || user.photoURL)) {

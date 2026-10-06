@@ -298,6 +298,9 @@ async function saveFormationModule(moduleData, questionsList = []) {
                 }
             } else if (q.type === 'puzzle') {
                 qDoc.items = q.items || [];
+            } else if (q.type === 'cloze') {
+                qDoc.clozeText = q.clozeText || '';
+                qDoc.distractors = Array.isArray(q.distractors) ? q.distractors : [];
             } else {
                 qDoc.hint = q.hint || '';
             }
@@ -552,23 +555,33 @@ async function loadFormationModules(forceRefresh = false) {
             let actionBtn = '';
             if (effectiveRole === 'admin') {
                 actionBtn = `
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:8px;">
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-admin-edit-module" data-module-id="${m.id}" title="Éditer le module et son quiz">
-                        <i class="bi bi-pencil"></i> Modifier
-                    </button>
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-admin-view-res" data-module-id="${m.id}">
-                        <i class="bi bi-eye"></i> Réponses (${adminStats.totalAttempts})
-                    </button>
+                <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                    <a href="formation-edit.html?id=${encodeURIComponent(m.id)}" class="es-btn es-btn--primary es-btn--sm es-btn--full" style="text-align:center; display:flex; align-items:center; justify-content:center; gap:6px;">
+                        <i class="bi bi-gear-wide-connected"></i> Gérer le module
+                    </a>
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:8px;">
+                        <a href="formation-edit.html?id=${encodeURIComponent(m.id)}&tab=editor" class="es-btn es-btn--ghost es-btn--sm" style="flex:1; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Modifier le questionnaire et la configuration">
+                            <i class="bi bi-pencil"></i> Modifier
+                        </a>
+                        <a href="formation-edit.html?id=${encodeURIComponent(m.id)}&tab=results" class="es-btn es-btn--ghost es-btn--sm" style="flex:1; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Consulter les copies et réponses des stagiaires">
+                            <i class="bi bi-eye"></i> Réponses (${adminStats.totalAttempts})
+                        </a>
+                    </div>
                 </div>`;
             } else if (effectiveRole === 'formateur') {
                 actionBtn = `
-                <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:8px;">
-                    <button type="button" class="es-btn es-btn--primary es-btn--sm btn-formateur-add-question" data-module-id="${m.id}" title="Consulter et ajouter des questions à ce module">
+                <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
+                    <a href="formation-edit.html?id=${encodeURIComponent(m.id)}" class="es-btn es-btn--primary es-btn--sm es-btn--full" style="text-align:center; display:flex; align-items:center; justify-content:center; gap:6px;">
                         <i class="bi bi-list-check"></i> Questions (${questionsCount})
-                    </button>
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-admin-view-res" data-module-id="${m.id}">
-                        <i class="bi bi-eye"></i> Réponses (${adminStats.totalAttempts})
-                    </button>
+                    </a>
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%; gap:8px;">
+                        <a href="formation-edit.html?id=${encodeURIComponent(m.id)}&tab=editor" class="es-btn es-btn--ghost es-btn--sm" style="flex:1; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Gérer les questions">
+                            <i class="bi bi-pencil"></i> Éditer
+                        </a>
+                        <a href="formation-edit.html?id=${encodeURIComponent(m.id)}&tab=results" class="es-btn es-btn--ghost es-btn--sm" style="flex:1; text-align:center; display:inline-flex; align-items:center; justify-content:center; gap:4px;" title="Consulter les copies et réponses des stagiaires">
+                            <i class="bi bi-eye"></i> Réponses (${adminStats.totalAttempts})
+                        </a>
+                    </div>
                 </div>`;
             } else {
                 if (isEnabled) {
@@ -613,7 +626,7 @@ async function loadFormationModules(forceRefresh = false) {
                             ` : ''}
                         </div>
                     </div>
-                    <div class="es-formation-num">Module ${m.num < 10 ? '0' + m.num : m.num}</div>
+                    <div class="es-formation-num">M.${m.num < 10 ? '0' + m.num : m.num}</div>
                     <h3 class="es-formation-title" style="display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:4px;">
                         <span>${escapeHtml(m.title)}</span>
                         ${hiddenTagHtml}
@@ -621,7 +634,7 @@ async function loadFormationModules(forceRefresh = false) {
                         ${passwordTagHtml}
                         ${statsTagHtml}
                     </h3>
-                    <p class="es-formation-desc">${escapeHtml(m.description || m.subtitle || '')}</p>
+                    <p class="es-formation-desc">${escapeHtml(m.subtitle || m.description || '')}</p>
                 </div>
                 <div class="es-formation-footer">
                     ${actionBtn}
@@ -727,12 +740,12 @@ function openFormationQuiz(moduleId) {
 // MODAL : CRÉER / MODIFIER UN MODULE & QUIZ (ADMIN)
 // ----------------------------------------------------------------
 async function openFormationModuleEdit(moduleId = null) {
-    const modalTitle = document.getElementById('moduleEditModalTitle');
-    const badge = document.getElementById('moduleEditBadge');
-    const btnDelete = document.getElementById('btnDeleteModule');
-    const errorAlert = document.getElementById('moduleEditErrorAlert');
-
-    if (errorAlert) errorAlert.classList.add('hidden');
+    if (moduleId) {
+        window.location.href = `formation-edit.html?id=${encodeURIComponent(moduleId)}`;
+    } else {
+        window.location.href = 'formation-edit.html';
+    }
+    return;
 
     let moduleData = null;
     if (moduleId) {
@@ -791,6 +804,12 @@ async function openFormationModuleEdit(moduleId = null) {
         modalTitle.textContent = `Modifier : ${moduleData.title}`;
         badge.textContent = `Module ${moduleData.num}`;
         btnDelete?.classList.remove('hidden');
+
+        const btnOpenPage = document.getElementById('btnOpenModuleDedicatedPage');
+        if (btnOpenPage) {
+            btnOpenPage.href = `quiz.html?module=${encodeURIComponent(moduleData.id)}`;
+            btnOpenPage.classList.remove('hidden');
+        }
     } else {
         const nextNum = (currentFormationModulesList.length > 0) 
             ? Math.max(...currentFormationModulesList.map(m => parseInt(m.num, 10) || 0)) + 1 
@@ -835,6 +854,11 @@ async function openFormationModuleEdit(moduleId = null) {
         modalTitle.textContent = 'Nouveau module de formation & Quiz';
         badge.textContent = 'Nouveau';
         btnDelete?.classList.add('hidden');
+
+        const btnOpenPage = document.getElementById('btnOpenModuleDedicatedPage');
+        if (btnOpenPage) {
+            btnOpenPage.classList.add('hidden');
+        }
     }
 
     const chosenIcon = document.getElementById('editModuleIcon').value || 'bi-journal-bookmark';
@@ -1229,6 +1253,59 @@ function renderQuestionsEditor() {
                     `).join('')}
                 </div>
             </div>`;
+        } else if (q.type === 'cloze') {
+            const clozeText = q.clozeText || '';
+            const distractors = Array.isArray(q.distractors) ? q.distractors : [];
+            const regex = /\[([^\]]+)\]/g;
+            const detectedBlanks = [];
+            let match;
+            while ((match = regex.exec(clozeText)) !== null) {
+                const w = match[1].trim();
+                if (w) detectedBlanks.push(w);
+            }
+
+            typeBody = `
+            <div class="es-cloze-builder-box">
+                <div class="es-cloze-builder-help">
+                    <div style="font-weight:700; color:var(--clr-primary); margin-bottom:2px; display:flex; align-items:center; gap:6px;">
+                        <i class="bi bi-info-circle-fill"></i> Comment créer le texte à trous :
+                    </div>
+                    <div>Entourez chaque mot ou nombre à deviner avec des crochets <code>[mot]</code>.</div>
+                    <div style="margin-top:2px; color:var(--clr-text-muted);">
+                        Exemple : <em>« En ACM, il faut 1 animateur pour <strong>[8]</strong> enfants de moins de <strong>[6]</strong> ans. »</em>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="es-field__label" style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">Texte avec trous [entre crochets] :</label>
+                    <textarea class="es-input q-cloze-text-input" data-q-idx="${qIdx}" rows="3" placeholder="Rédigez votre texte en plaçant les réponses attendues entre [crochets]..." style="font-size:0.9rem; line-height:1.5;">${escapeHtml(clozeText)}</textarea>
+                </div>
+
+                <div>
+                    <div style="font-size:0.78rem; font-weight:700; color:var(--clr-text-muted); margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
+                        <span>Trous détectés (${detectedBlanks.length}) :</span>
+                        <span style="font-size:0.75rem; color:var(--clr-primary); font-weight:700;">Total étiquettes banque : ${detectedBlanks.length + distractors.length}</span>
+                    </div>
+                    <div class="es-cloze-detected-blanks" id="cloze_blanks_preview_${qIdx}">
+                        ${detectedBlanks.length > 0 ? detectedBlanks.map((b, bIdx) => `
+                            <span class="es-cloze-detected-pill">
+                                <span style="opacity:0.75; font-size:0.7rem;">#${bIdx + 1}</span>
+                                <span>${escapeHtml(b)}</span>
+                            </span>
+                        `).join('') : '<span style="font-size:0.75rem; color:var(--clr-text-muted); font-style:italic;">Aucun trou détecté pour le moment (utilisez [mot])</span>'}
+                    </div>
+                </div>
+
+                <div style="padding-top:8px; border-top:1px dashed var(--clr-surface-3);">
+                    <label class="es-field__label" style="font-size:0.8rem; font-weight:700; display:block; margin-bottom:4px;">
+                        Étiquettes pièges / Distracteurs supplémentaires (optionnel) :
+                    </label>
+                    <input type="text" class="es-input q-cloze-distractors-input" data-q-idx="${qIdx}" value="${escapeHtml(distractors.join(', '))}" placeholder="Ex: 10, 12, 14, BAFD (séparés par des virgules)" style="font-size:0.85rem; padding:6px 10px;">
+                    <div style="font-size:0.72rem; color:var(--clr-text-muted); margin-top:2px;">
+                        💡 Vous pouvez ajouter autant d'étiquettes que souhaité pour avoir <strong>plus de tags dans la banque que de trous</strong> dans le texte.
+                    </div>
+                </div>
+            </div>`;
         } else {
             typeBody = `
             <div style="margin-top:10px;">
@@ -1244,6 +1321,7 @@ function renderQuestionsEditor() {
                     <span style="font-weight:700; font-size:0.82rem; color:var(--clr-primary); text-transform:uppercase;">Question ${qIdx + 1}</span>
                     <select class="es-input q-type-select" data-q-idx="${qIdx}" style="width:245px; font-size:0.8rem; padding:4px 8px;">
                         <option value="qcm" ${q.type === 'qcm' ? 'selected' : ''}>🔘 QCM (Choix multiple)</option>
+                        <option value="cloze" ${q.type === 'cloze' ? 'selected' : ''}>🔤 Texte à trous (Drag & Drop)</option>
                         <option value="pinpoint" ${q.type === 'pinpoint' ? 'selected' : ''}>📍 Placer un repère (Pin sur image)</option>
                         <option value="puzzle" ${q.type === 'puzzle' ? 'selected' : ''}>🧩 Puzzle / Ordonnancement</option>
                         <option value="range" ${q.type === 'range' ? 'selected' : ''}>📏 Curseur horizontal (Slider)</option>
@@ -1301,6 +1379,13 @@ function renderQuestionsEditor() {
                 if (newType === 'qcm' && (!currentEditingQuestions[idx].options || currentEditingQuestions[idx].options.length === 0)) {
                     currentEditingQuestions[idx].options = ['Option 1', 'Option 2'];
                     currentEditingQuestions[idx].correctIndex = 0;
+                } else if (newType === 'cloze') {
+                    if (!currentEditingQuestions[idx].clozeText) {
+                        currentEditingQuestions[idx].clozeText = "En ACM, il faut 1 animateur pour [8] enfants de moins de [6] ans.";
+                    }
+                    if (!currentEditingQuestions[idx].distractors) {
+                        currentEditingQuestions[idx].distractors = ['10', '12'];
+                    }
                 } else if (newType === 'puzzle' && (!currentEditingQuestions[idx].items || currentEditingQuestions[idx].items.length === 0)) {
                     currentEditingQuestions[idx].items = ['Étape 1', 'Étape 2', 'Étape 3'];
                 } else if (newType === 'pinpoint') {
@@ -1580,6 +1665,48 @@ function renderQuestionsEditor() {
         });
     });
 
+    // Cloze text & distractors listeners
+    container.querySelectorAll('.q-cloze-text-input').forEach(textarea => {
+        textarea.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-q-idx'), 10);
+            const val = e.target.value;
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].clozeText = val;
+                // Live preview of detected blanks
+                const previewContainer = document.getElementById(`cloze_blanks_preview_${idx}`);
+                if (previewContainer) {
+                    const regex = /\[([^\]]+)\]/g;
+                    const detected = [];
+                    let match;
+                    while ((match = regex.exec(val)) !== null) {
+                        const w = match[1].trim();
+                        if (w) detected.push(w);
+                    }
+                    if (detected.length > 0) {
+                        previewContainer.innerHTML = detected.map((b, bIdx) => `
+                            <span class="es-cloze-detected-pill">
+                                <span style="opacity:0.75; font-size:0.7rem;">#${bIdx + 1}</span>
+                                <span>${escapeHtml(b)}</span>
+                            </span>
+                        `).join('');
+                    } else {
+                        previewContainer.innerHTML = '<span style="font-size:0.75rem; color:var(--clr-text-muted); font-style:italic;">Aucun trou détecté pour le moment (utilisez [mot])</span>';
+                    }
+                }
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-cloze-distractors-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-q-idx'), 10);
+            if (currentEditingQuestions[idx]) {
+                const raw = e.target.value;
+                currentEditingQuestions[idx].distractors = raw.split(',').map(s => s.trim()).filter(s => s.length > 0);
+            }
+        });
+    });
+
     container.querySelectorAll('.btn-add-option').forEach(btn => {
         btn.addEventListener('click', () => {
             const qIdx = parseInt(btn.getAttribute('data-q-idx'), 10);
@@ -1710,6 +1837,9 @@ document.getElementById('btnExportJsonQuestions')?.addEventListener('click', () 
         if (q.type === 'qcm') {
             item.options = q.options || ['Option 1', 'Option 2'];
             item.correctIndex = q.correctIndex !== undefined ? q.correctIndex : 0;
+        } else if (q.type === 'cloze') {
+            item.clozeText = q.clozeText || '';
+            if (Array.isArray(q.distractors) && q.distractors.length > 0) item.distractors = q.distractors;
         } else if (q.type === 'pinpoint') {
             item.pinImage = q.pinImage;
             item.targetX = q.targetX !== undefined ? q.targetX : 50;
@@ -1786,6 +1916,8 @@ document.getElementById('btnApplyJsonImport')?.addEventListener('click', () => {
             let type = 'qcm';
             if (item.type === 'text' || item.type === 'open' || item.type === 'redaction') {
                 type = 'text';
+            } else if (item.type === 'cloze' || item.type === 'trous' || item.type === 'fill_blanks' || item.type === 'texte_a_trous') {
+                type = 'cloze';
             } else if (item.type === 'pinpoint' || item.type === 'pin' || item.type === 'image_pin' || item.type === 'repere') {
                 type = 'pinpoint';
             } else if (item.type === 'range' || item.type === 'slider' || item.type === 'curseur') {
@@ -1823,6 +1955,15 @@ document.getElementById('btnApplyJsonImport')?.addEventListener('click', () => {
 
                 resQ.options = options;
                 resQ.correctIndex = correctIndex;
+            } else if (type === 'cloze') {
+                resQ.clozeText = item.clozeText || item.textWithBlanks || item.template || '';
+                if (Array.isArray(item.distractors)) {
+                    resQ.distractors = item.distractors.map(d => String(d).trim()).filter(Boolean);
+                } else if (typeof item.distractors === 'string') {
+                    resQ.distractors = item.distractors.split(',').map(s => s.trim()).filter(Boolean);
+                } else {
+                    resQ.distractors = [];
+                }
             } else if (type === 'pinpoint') {
                 resQ.pinImage = item.pinImage || item.image || item.imageUrl || '';
                 resQ.targetX = item.targetX !== undefined ? parseFloat(item.targetX) : 50;
@@ -1944,6 +2085,22 @@ document.getElementById('btnSaveModule')?.addEventListener('click', async () => 
                     }
                     return;
                 }
+            }
+        } else if (q.type === 'cloze') {
+            if (!q.clozeText || !q.clozeText.trim()) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `La question ${i + 1} (Texte à trous) nécessite un texte avec au moins un mot entre crochets [mot].`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
+            }
+            const clozeMatches = q.clozeText.match(/\[([^\]]+)\]/g);
+            if (!clozeMatches || clozeMatches.length === 0) {
+                if (errorAlert && errorMsg) {
+                    errorMsg.textContent = `La question ${i + 1} (Texte à trous) ne comporte aucun trou valide [mot]. Entourez les mots à deviner avec des [crochets].`;
+                    errorAlert.classList.remove('hidden');
+                }
+                return;
             }
         } else if (q.type === 'pinpoint') {
             if (!q.pinImage || !q.pinImage.trim()) {
@@ -2274,11 +2431,12 @@ document.getElementById('checkFormationRoleToggle')?.addEventListener('change', 
 // MODAL : RÉSULTATS DES STAGIAIRES (ADMIN)
 // ----------------------------------------------------------------
 async function openFormationResultsModal(moduleId) {
-    const modal = document.getElementById('overlayFormationResults');
-    if (!modal) return;
-
-    let moduleData = (currentFormationModulesList || []).find(m => m.id === moduleId);
-    if (!moduleData) return;
+    if (moduleId) {
+        window.location.href = `formation-results.html?module=${encodeURIComponent(moduleId)}`;
+    } else {
+        window.location.href = 'formation-results.html';
+    }
+    return;
 
     // Charger les questions de la sous-collection
     const questions = await fetchModuleQuestions(moduleId);
@@ -2426,6 +2584,37 @@ async function openFormationResultsModal(moduleId) {
                             ${targetBadge}
                         </div>
                     </div>`;
+                } else if (q.type === 'cloze') {
+                    const clozeMatches = (q.clozeText || '').match(/\[([^\]]+)\]/g) || [];
+                    const expectedBlanks = clozeMatches.map(m => m.replace(/^\[|\]$/g, '').trim());
+                    const userAnswersObj = ans && typeof ans === 'object' ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
+                    
+                    let correctBlanksCount = 0;
+                    expectedBlanks.forEach((expWord, bIdx) => {
+                        const uWord = userAnswersObj[bIdx];
+                        if (uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase()) {
+                            correctBlanksCount++;
+                        }
+                    });
+
+                    const isAllCorrect = (expectedBlanks.length > 0) && (correctBlanksCount === expectedBlanks.length);
+
+                    ansDisplay = `
+                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.88rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                            <strong>Texte à trous complété :</strong>
+                            <span style="font-weight:700; color:${isAllCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                                ${isAllCorrect ? '✅ 100% Exact (+1 pt)' : `❌ ${correctBlanksCount}/${expectedBlanks.length} trou(s) correct(s)`}
+                            </span>
+                        </div>
+                        <div style="font-size:0.82rem; color:var(--clr-text); line-height:1.6;">
+                            ${expectedBlanks.map((expWord, bIdx) => {
+                                const uWord = userAnswersObj[bIdx];
+                                const isOk = uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase();
+                                return `<div>• Trou n°${bIdx + 1} : <strong style="color:${isOk ? '#27ae60' : '#e74c3c'};">${escapeHtml(uWord || 'Non rempli')}</strong> ${!isOk ? `(Attendu : <span style="color:#27ae60;">${escapeHtml(expWord)}</span>)` : '✓'}</div>`;
+                            }).join('')}
+                        </div>
+                    </div>`;
                 } else if (q.type === 'puzzle') {
                     const candidateOrder = Array.isArray(ans) ? ans : [];
                     const expectedOrder = q.items || [];
@@ -2510,7 +2699,8 @@ async function openFormationResultsModal(moduleId) {
                 }
 
                 let typeLabel = 'QCM';
-                if (q.type === 'pinpoint') typeLabel = '📍 Repère sur image';
+                if (q.type === 'cloze') typeLabel = '🔤 Texte à trous';
+                else if (q.type === 'pinpoint') typeLabel = '📍 Repère sur image';
                 else if (q.type === 'range') typeLabel = 'Curseur horizontal';
                 else if (q.type === 'boolean') typeLabel = 'Vrai / Faux';
                 else if (q.type === 'puzzle') typeLabel = 'Puzzle / Ordonnancement';
@@ -3563,6 +3753,23 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
                 <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
                     <div><strong>Repère placé :</strong> ${userCoords ? `X: ${userCoords.x.toFixed(1)}%, Y: ${userCoords.y.toFixed(1)}%` : '<span style="color:var(--clr-danger)">Pas de repère</span>'} <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Dans la cible (+1 pt)' : '❌ Hors cible (0 pt)'}</span></div>
                 </div>`;
+            } else if (q.type === 'cloze') {
+                const clozeMatches = (q.clozeText || '').match(/\[([^\]]+)\]/g) || [];
+                const expectedBlanks = clozeMatches.map(m => m.replace(/^\[|\]$/g, '').trim());
+                const userAnswersObj = userAns && typeof userAns === 'object' ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
+                
+                let correctBlanksCount = 0;
+                expectedBlanks.forEach((expWord, bIdx) => {
+                    const uWord = userAnswersObj[bIdx];
+                    if (uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase()) {
+                        correctBlanksCount++;
+                    }
+                });
+                const isAllCorrect = (expectedBlanks.length > 0) && (correctBlanksCount === expectedBlanks.length);
+
+                ansDisplay = `<div style="background:#ffffff; border:1px solid ${isAllCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                    <div><strong>Texte à trous :</strong> <span style="font-weight:700; color:${isAllCorrect ? '#27ae60' : '#e74c3c'};">${isAllCorrect ? '✅ 100% Correct (+1 pt)' : `❌ ${correctBlanksCount}/${expectedBlanks.length} trou(s) correct(s)`}</span></div>
+                </div>`;
             } else if (q.type === 'range') {
                 const val = (userAns !== null && userAns !== undefined) ? parseFloat(userAns) : null;
                 ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Valeur choisie :</strong> <span style="font-weight:700;">${val !== null ? `${val} ${escapeHtml(q.unit || '')}` : 'Non renseigné'}</span></div>`;
@@ -4360,6 +4567,24 @@ async function openAdminCandidateBilanModal(userId) {
                                 </div>
                             </div>` : ''}
                         </div>`;
+                    } else if (q.type === 'cloze') {
+                        const clozeMatches = (q.clozeText || '').match(/\[([^\]]+)\]/g) || [];
+                        const expectedBlanks = clozeMatches.map(m => m.replace(/^\[|\]$/g, '').trim());
+                        const userAnswersObj = userAns && typeof userAns === 'object' ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
+                        
+                        let correctBlanksCount = 0;
+                        expectedBlanks.forEach((expWord, bIdx) => {
+                            const uWord = userAnswersObj[bIdx];
+                            if (uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase()) {
+                                correctBlanksCount++;
+                            }
+                        });
+                        const isAllCorrect = (expectedBlanks.length > 0) && (correctBlanksCount === expectedBlanks.length);
+
+                        ansDisplay = `
+                        <div style="background:#ffffff; border:1px solid ${isAllCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                            <strong>Texte à trous :</strong> <span style="font-weight:700; color:${isAllCorrect ? '#27ae60' : '#e74c3c'};">${isAllCorrect ? '✅ 100% Exact (+1 pt)' : `❌ ${correctBlanksCount}/${expectedBlanks.length} trou(s) correct(s)`}</span>
+                        </div>`;
                     } else if (q.type === 'range') {
                         const val = (userAns !== null && userAns !== undefined) ? parseFloat(userAns) : null;
                         ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Curseur :</strong> <span style="font-weight:700;">${val !== null ? `${val} ${escapeHtml(q.unit || '')}` : 'Non renseigné'}</span> (Cible : ${q.correctValue || '—'})</div>`;
@@ -5106,509 +5331,18 @@ function initPromoModalEvents() {
 }
 
 // ----------------------------------------------------------------
-// MODAL : AJOUT DE QUESTION PAR LE FORMATEUR (SANS SUPPRESSION/MODIF EXISTANTES)
+// REDIRECTION ÉDITION / GESTION DU MODULE (PAGE DÉDIÉE)
 // ----------------------------------------------------------------
-let formateurAddQEventsInitialized = false;
-let formateurTempOptions = ['Option 1', 'Option 2'];
-let formateurTempCorrectIndex = 0;
-let formateurTempPuzzleItems = ['Étape 1', 'Étape 2', 'Étape 3'];
-
-async function openAddQuestionFormateur(moduleId) {
-    if (!moduleId) return;
-    const mod = (currentFormationModulesList || []).find(m => m.id === moduleId);
-    const modTitle = mod ? (mod.title || `Module ${mod.num || ''}`) : moduleId;
-
-    const modalTitle = document.getElementById('formateurAddQModalTitle');
-    const subtitle = document.getElementById('formateurAddQModuleSubtitle');
-    const hiddenInput = document.getElementById('formateurAddQModuleId');
-    const textInput = document.getElementById('formateurAddQText');
-    const imgInput = document.getElementById('formateurAddQImageUrl');
-    const hintInput = document.getElementById('formateurAddQHint');
-    const typeSelect = document.getElementById('formateurAddQType');
-    const existingListEl = document.getElementById('formateurExistingQuestionsList');
-    const countBadge = document.getElementById('badgeFormateurQuestionsCount');
-
-    if (modalTitle) modalTitle.innerHTML = `<span>📋</span> Questions du module`;
-    if (subtitle) subtitle.textContent = `Module : ${modTitle}`;
-    if (hiddenInput) hiddenInput.value = moduleId;
-    if (textInput) textInput.value = '';
-    if (imgInput) imgInput.value = '';
-    if (hintInput) hintInput.value = '';
-
-    formateurTempOptions = ['Option 1', 'Option 2'];
-    formateurTempCorrectIndex = 0;
-    formateurTempPuzzleItems = ['Étape 1', 'Étape 2', 'Étape 3'];
-
-    if (typeSelect) {
-        typeSelect.value = 'qcm';
-        renderFormateurQuestionTypeFields('qcm');
-    }
-
-    // Loader temporaire pour la liste des questions
-    if (existingListEl) {
-        existingListEl.innerHTML = `
-            <div style="text-align:center; padding:16px; color:var(--clr-text-muted); font-size:0.85rem;">
-                <span class="es-spinner" style="width:14px; height:14px; display:inline-block; vertical-align:middle; margin-right:6px;"></span>
-                Chargement des questions existantes...
-            </div>
-        `;
-    }
-
-    openModal('overlayAddQuestionFormateur');
-
-    try {
-        const questions = await fetchModuleQuestions(moduleId);
-        if (countBadge) countBadge.textContent = `${questions.length} question${questions.length > 1 ? 's' : ''}`;
-
-        if (!questions || questions.length === 0) {
-            if (existingListEl) {
-                existingListEl.innerHTML = `
-                    <div style="text-align:center; padding:16px; color:var(--clr-text-muted); font-size:0.82rem; background:var(--clr-surface-2); border-radius:6px; border:1px dashed var(--clr-surface-3);">
-                        <i class="bi bi-info-circle"></i> Aucune question enregistrée dans ce module pour le moment.
-                    </div>
-                `;
-            }
-            return;
-        }
-
-        if (existingListEl) {
-            existingListEl.innerHTML = questions.map((q, idx) => {
-                let typeBadge = '🔘 QCM';
-                let contentHtml = '';
-
-                if (q.type === 'boolean') {
-                    typeBadge = '⚖️ Vrai / Faux';
-                    const isTrue = q.correctAnswer === true || q.correctAnswer === 'true';
-                    contentHtml = `
-                        <div style="display:flex; gap:10px; margin-top:6px; font-size:0.82rem;">
-                            <span style="font-weight:700; color:${isTrue ? 'var(--clr-success)' : 'var(--clr-text-muted)'}; background:${isTrue ? 'rgba(39,174,96,0.12)' : 'var(--clr-surface-2)'}; padding:2px 8px; border-radius:4px; border:1px solid ${isTrue ? 'rgba(39,174,96,0.3)' : 'var(--clr-surface-3)'};">
-                                ${isTrue ? '✅ Vrai (Bonne réponse)' : 'Vrai'}
-                            </span>
-                            <span style="font-weight:700; color:${!isTrue ? 'var(--clr-success)' : 'var(--clr-text-muted)'}; background:${!isTrue ? 'rgba(39,174,96,0.12)' : 'var(--clr-surface-2)'}; padding:2px 8px; border-radius:4px; border:1px solid ${!isTrue ? 'rgba(39,174,96,0.3)' : 'var(--clr-surface-3)'};">
-                                ${!isTrue ? '✅ Faux (Bonne réponse)' : 'Faux'}
-                            </span>
-                        </div>
-                    `;
-                } else if (q.type === 'puzzle') {
-                    typeBadge = '🧩 Puzzle';
-                    const items = q.items || [];
-                    contentHtml = `
-                        <div style="margin-top:6px; font-size:0.8rem;">
-                            <div style="color:var(--clr-text-muted); font-size:0.75rem; margin-bottom:3px;">Ordre attendu :</div>
-                            <ol style="margin:0 0 0 18px; padding:0; line-height:1.4; color:var(--clr-text);">
-                                ${items.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
-                            </ol>
-                        </div>
-                    `;
-                } else if (q.type === 'range') {
-                    typeBadge = '📏 Curseur';
-                    const min = q.min !== undefined ? q.min : 0;
-                    const max = q.max !== undefined ? q.max : 10;
-                    const unit = q.unit ? ` ${escapeHtml(q.unit)}` : '';
-                    const hasTarget = q.correctValue !== undefined && q.correctValue !== '' && q.correctValue !== null;
-                    contentHtml = `
-                        <div style="margin-top:6px; font-size:0.8rem; display:flex; gap:12px; flex-wrap:wrap; color:var(--clr-text-muted);">
-                            <span>Échelle : <strong>${min} → ${max}${unit}</strong></span>
-                            ${hasTarget ? `<span style="color:var(--clr-success); font-weight:700;">Cible : ${q.correctValue}${unit} ${q.tolerance ? `(± ${q.tolerance})` : ''}</span>` : ''}
-                        </div>
-                    `;
-                } else if (q.type === 'pinpoint') {
-                    typeBadge = '📍 Repère';
-                    contentHtml = `
-                        <div style="margin-top:6px; font-size:0.8rem; color:var(--clr-text-muted);">
-                            Repère sur image (X: ${q.targetX || 50}%, Y: ${q.targetY || 50}%)
-                        </div>
-                    `;
-                } else if (q.type === 'text') {
-                    typeBadge = '📝 Rédaction';
-                    contentHtml = `
-                        <div style="margin-top:6px; font-size:0.8rem; color:var(--clr-text-muted);">
-                            ${q.hint ? `<span>Piste / Critères : <em>${escapeHtml(q.hint)}</em></span>` : 'Question à réponse libre'}
-                        </div>
-                    `;
-                } else {
-                    // QCM
-                    typeBadge = '🔘 QCM';
-                    const opts = q.options || [];
-                    const cIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                    contentHtml = `
-                        <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
-                            ${opts.map((opt, oIdx) => {
-                                const isCorrect = (oIdx === cIdx);
-                                return `
-                                    <div style="font-size:0.82rem; display:flex; align-items:center; gap:6px; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-text)'}; font-weight:${isCorrect ? '700' : '400'};">
-                                        <i class="bi bi-${isCorrect ? 'check-circle-fill' : 'circle'}" style="font-size:0.85rem; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-text-muted)'};"></i>
-                                        <span>${escapeHtml(opt)}</span>
-                                        ${isCorrect ? '<span class="es-badge es-badge--approved" style="font-size:0.65rem; padding:1px 5px; margin-left:4px;">Bonne réponse</span>' : ''}
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    `;
-                }
-
-                return `
-                    <div style="background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:8px; padding:12px 14px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:4px;">
-                            <div style="font-size:0.75rem; font-weight:800; color:var(--clr-primary); text-transform:uppercase; display:flex; align-items:center; gap:6px;">
-                                <span>Question ${idx + 1}</span>
-                                <span class="es-badge" style="font-size:0.7rem; background:rgba(255,255,255,0.08); border:1px solid var(--clr-surface-3); color:var(--clr-text);">${typeBadge}</span>
-                            </div>
-                            <span style="font-size:0.7rem; color:var(--clr-text-muted);"><i class="bi bi-shield-lock"></i> Protégée</span>
-                        </div>
-                        <div style="font-weight:600; font-size:0.88rem; color:var(--clr-text); line-height:1.4;">
-                            ${escapeHtml(q.text || 'Sans énoncé')}
-                        </div>
-                        ${q.imageUrl ? `
-                            <div style="margin-top:6px;">
-                                <img src="${escapeHtml(q.imageUrl)}" alt="Illustration" style="max-height:60px; max-width:120px; border-radius:4px; object-fit:contain; border:1px solid var(--clr-surface-3);" onerror="this.style.display='none'">
-                            </div>
-                        ` : ''}
-                        ${contentHtml}
-                    </div>
-                `;
-            }).join('');
-        }
-    } catch (err) {
-        console.error("Erreur chargement questions existantes formateur:", err);
-        if (existingListEl) {
-            existingListEl.innerHTML = `
-                <div style="color:var(--clr-danger); font-size:0.82rem; padding:8px;">
-                    Erreur lors de la récupération des questions existantes.
-                </div>
-            `;
-        }
-    }
-}
-
-function renderFormateurQuestionTypeFields(type) {
-    const container = document.getElementById('formateurAddQDynamicContainer');
-    if (!container) return;
-
-    if (type === 'qcm') {
-        container.innerHTML = `
-            <div style="background: var(--clr-surface-2); padding: 14px; border-radius: 8px; border: 1px solid var(--clr-surface-3);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                    <div style="font-size:0.83rem; font-weight:700; color:var(--clr-primary);">
-                        <i class="bi bi-ui-checks"></i> Options du QCM (Cochez la bonne réponse) :
-                    </div>
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnFormateurAddQcmOpt" style="font-size:0.75rem; padding:3px 8px;">
-                        <i class="bi bi-plus"></i> Ajouter une option
-                    </button>
-                </div>
-                <div id="formateurQcmOptionsList" style="display:flex; flex-direction:column; gap:8px;">
-                    ${formateurTempOptions.map((opt, idx) => `
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <input type="radio" name="formateur_correct_opt" value="${idx}" ${idx === formateurTempCorrectIndex ? 'checked' : ''} style="width:18px; height:18px; accent-color:var(--clr-primary); cursor:pointer;">
-                            <input type="text" class="es-input formateur-opt-val" data-idx="${idx}" value="${escapeHtml(opt)}" placeholder="Option ${idx + 1}" required style="font-size:0.88rem; flex:1;">
-                            ${formateurTempOptions.length > 2 ? `
-                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-del-formateur-opt" data-idx="${idx}" style="color:var(--clr-danger); padding:4px 8px;">
-                                    <i class="bi bi-trash3"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-
-        document.getElementById('btnFormateurAddQcmOpt')?.addEventListener('click', () => {
-            formateurTempOptions.push(`Option ${formateurTempOptions.length + 1}`);
-            renderFormateurQuestionTypeFields('qcm');
-        });
-
-        container.querySelectorAll('.formateur-opt-val').forEach(input => {
-            input.addEventListener('input', (e) => {
-                const idx = parseInt(e.target.getAttribute('data-idx'), 10);
-                formateurTempOptions[idx] = e.target.value;
-            });
-        });
-
-        container.querySelectorAll('input[name="formateur_correct_opt"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                formateurTempCorrectIndex = parseInt(e.target.value, 10);
-            });
-        });
-
-        container.querySelectorAll('.btn-del-formateur-opt').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.getAttribute('data-idx'), 10);
-                if (formateurTempOptions.length > 2) {
-                    formateurTempOptions.splice(idx, 1);
-                    if (formateurTempCorrectIndex >= formateurTempOptions.length) {
-                        formateurTempCorrectIndex = 0;
-                    }
-                    renderFormateurQuestionTypeFields('qcm');
-                }
-            });
-        });
-
-    } else if (type === 'boolean') {
-        container.innerHTML = `
-            <div style="background: var(--clr-surface-2); padding: 14px; border-radius: 8px; border: 1px solid var(--clr-surface-3);">
-                <label class="es-field__label" style="font-size:0.83rem; font-weight:700; color:var(--clr-primary); margin-bottom:8px; display:block;">
-                    <i class="bi bi-check2-circle"></i> Réponse attendue :
-                </label>
-                <div style="display:flex; gap:20px; align-items:center;">
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer;">
-                        <input type="radio" name="formateur_bool_answer" value="true" checked style="width:18px; height:18px; accent-color:var(--clr-primary);">
-                        <span>✅ VRAI</span>
-                    </label>
-                    <label style="display:flex; align-items:center; gap:8px; font-weight:600; cursor:pointer;">
-                        <input type="radio" name="formateur_bool_answer" value="false" style="width:18px; height:18px; accent-color:var(--clr-danger);">
-                        <span>❌ FAUX</span>
-                    </label>
-                </div>
-            </div>
-        `;
-
-    } else if (type === 'puzzle') {
-        container.innerHTML = `
-            <div style="background: var(--clr-surface-2); padding: 14px; border-radius: 8px; border: 1px solid var(--clr-surface-3);">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
-                    <div>
-                        <div style="font-size:0.83rem; font-weight:700; color:var(--clr-primary); display:flex; align-items:center; gap:6px;">
-                            <i class="bi bi-puzzle"></i> Étapes du puzzle (Dans l'ordre chronologique exact) :
-                        </div>
-                        <div style="font-size:0.75rem; color:var(--clr-text-muted);">
-                            Saisissez les étapes dans l'<strong>ordre attendu</strong>. Elles seront automatiquement mélangées pour le stagiaire.
-                        </div>
-                    </div>
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnFormateurAddPuzzleStep" style="font-size:0.75rem; padding:3px 8px;">
-                        <i class="bi bi-plus"></i> Ajouter une étape
-                    </button>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
-                    ${formateurTempPuzzleItems.map((itemText, itemIdx) => `
-                        <div class="es-puzzle-builder-row">
-                            <span class="es-puzzle-num" style="width:24px; height:24px; font-size:0.75rem;">${itemIdx + 1}</span>
-                            <input type="text" class="es-input formateur-puzzle-item" data-idx="${itemIdx}" value="${escapeHtml(itemText)}" placeholder="Étape ${itemIdx + 1}" required style="font-size:0.85rem; padding:5px 8px; flex:1;">
-                            <button type="button" class="es-puzzle-btn-move btn-formateur-puzzle-up" data-idx="${itemIdx}" ${itemIdx === 0 ? 'disabled' : ''} title="Monter">
-                                <i class="bi bi-chevron-up"></i>
-                            </button>
-                            <button type="button" class="es-puzzle-btn-move btn-formateur-puzzle-down" data-idx="${itemIdx}" ${itemIdx === formateurTempPuzzleItems.length - 1 ? 'disabled' : ''} title="Descendre">
-                                <i class="bi bi-chevron-down"></i>
-                            </button>
-                            ${formateurTempPuzzleItems.length > 2 ? `
-                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-del-formateur-puzzle" data-idx="${itemIdx}" style="color:var(--clr-danger); padding:2px 6px;" title="Supprimer cet élément">
-                                    <i class="bi bi-x-lg"></i>
-                                </button>
-                            ` : ''}
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-
-        document.getElementById('btnFormateurAddPuzzleStep')?.addEventListener('click', () => {
-            formateurTempPuzzleItems.push(`Étape ${formateurTempPuzzleItems.length + 1}`);
-            renderFormateurQuestionTypeFields('puzzle');
-        });
-
-        container.querySelectorAll('.formateur-puzzle-item').forEach(input => {
-            input.addEventListener('input', (e) => {
-                const idx = parseInt(e.target.getAttribute('data-idx'), 10);
-                formateurTempPuzzleItems[idx] = e.target.value;
-            });
-        });
-
-        container.querySelectorAll('.btn-formateur-puzzle-up').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.getAttribute('data-idx'), 10);
-                if (idx > 0) {
-                    const tmp = formateurTempPuzzleItems[idx];
-                    formateurTempPuzzleItems[idx] = formateurTempPuzzleItems[idx - 1];
-                    formateurTempPuzzleItems[idx - 1] = tmp;
-                    renderFormateurQuestionTypeFields('puzzle');
-                }
-            });
-        });
-
-        container.querySelectorAll('.btn-formateur-puzzle-down').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.getAttribute('data-idx'), 10);
-                if (idx < formateurTempPuzzleItems.length - 1) {
-                    const tmp = formateurTempPuzzleItems[idx];
-                    formateurTempPuzzleItems[idx] = formateurTempPuzzleItems[idx + 1];
-                    formateurTempPuzzleItems[idx + 1] = tmp;
-                    renderFormateurQuestionTypeFields('puzzle');
-                }
-            });
-        });
-
-        container.querySelectorAll('.btn-del-formateur-puzzle').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const idx = parseInt(btn.getAttribute('data-idx'), 10);
-                if (formateurTempPuzzleItems.length > 2) {
-                    formateurTempPuzzleItems.splice(idx, 1);
-                    renderFormateurQuestionTypeFields('puzzle');
-                }
-            });
-        });
-
-    } else if (type === 'range') {
-        container.innerHTML = `
-            <div style="background: var(--clr-surface-2); padding: 14px; border-radius: 8px; border: 1px solid var(--clr-surface-3);">
-                <div style="font-size:0.83rem; font-weight:700; color:var(--clr-primary); margin-bottom:8px;">
-                    <i class="bi bi-sliders"></i> Configuration du curseur (Slider) :
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:8px;">
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:600; color:var(--clr-text-muted);">Min</label>
-                        <input type="number" class="es-input" id="formateurRangeMin" value="0" style="font-size:0.85rem; padding:5px 8px;">
-                    </div>
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:600; color:var(--clr-text-muted);">Max</label>
-                        <input type="number" class="es-input" id="formateurRangeMax" value="10" style="font-size:0.85rem; padding:5px 8px;">
-                    </div>
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:600; color:var(--clr-text-muted);">Pas</label>
-                        <input type="number" class="es-input" id="formateurRangeStep" value="1" min="0.1" step="any" style="font-size:0.85rem; padding:5px 8px;">
-                    </div>
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:600; color:var(--clr-text-muted);">Unité (ex: ans, %)</label>
-                        <input type="text" class="es-input" id="formateurRangeUnit" placeholder="ex: ans" style="font-size:0.85rem; padding:5px 8px;">
-                    </div>
-                </div>
-                <div style="display:grid; grid-template-columns:1.5fr 1fr; gap:10px; margin-top:10px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:700; color:var(--clr-success);">Cible attendue (Auto-notation, optionnel)</label>
-                        <input type="number" class="es-input" id="formateurRangeTarget" placeholder="Laisser vide si pas de note automatique" style="font-size:0.85rem; padding:5px 8px;">
-                    </div>
-                    <div>
-                        <label style="font-size:0.75rem; font-weight:600; color:var(--clr-text-muted);">Tolérance autorisée (±)</label>
-                        <input type="number" class="es-input" id="formateurRangeTolerance" value="0" placeholder="0" style="font-size:0.85rem; padding:5px 8px;">
-                    </div>
-                </div>
-            </div>
-        `;
-
+function openAddQuestionFormateur(moduleId) {
+    if (moduleId) {
+        window.location.href = `formation-edit.html?id=${encodeURIComponent(moduleId)}`;
     } else {
-        container.innerHTML = `
-            <div style="background: var(--clr-surface-2); padding: 12px 14px; border-radius: 8px; border: 1px solid var(--clr-surface-3); font-size: 0.82rem; color: var(--clr-text-muted); line-height: 1.45;">
-                <i class="bi bi-info-circle-fill" style="color:var(--clr-primary);"></i>
-                Le stagiaire aura une zone de texte pour rédiger sa réponse en toute liberté. Vous pourrez consulter sa réponse dans le suivi des résultats.
-            </div>
-        `;
+        window.location.href = 'formation-edit.html';
     }
 }
 
-function initFormateurAddQuestionEvents() {
-    if (formateurAddQEventsInitialized) return;
-    formateurAddQEventsInitialized = true;
 
-    const overlay = document.getElementById('overlayAddQuestionFormateur');
-    const btnClose = document.getElementById('btnCloseAddQFormateur');
-    const btnCancel = document.getElementById('btnCancelAddQFormateur');
-    const typeSelect = document.getElementById('formateurAddQType');
-    const btnSave = document.getElementById('btnSaveAddQFormateur');
 
-    btnClose?.addEventListener('click', () => closeModal('overlayAddQuestionFormateur'));
-    btnCancel?.addEventListener('click', () => closeModal('overlayAddQuestionFormateur'));
-
-    typeSelect?.addEventListener('change', (e) => {
-        renderFormateurQuestionTypeFields(e.target.value);
-    });
-
-    btnSave?.addEventListener('click', async () => {
-        const moduleId = document.getElementById('formateurAddQModuleId')?.value;
-        const text = document.getElementById('formateurAddQText')?.value?.trim();
-        const type = document.getElementById('formateurAddQType')?.value || 'qcm';
-        const imageUrl = document.getElementById('formateurAddQImageUrl')?.value?.trim() || '';
-        const hint = document.getElementById('formateurAddQHint')?.value?.trim() || '';
-
-        if (!moduleId) {
-            showToast("Module non trouvé.", "error");
-            return;
-        }
-
-        if (!text) {
-            showToast("Veuillez saisir l'énoncé de la question.", "warning");
-            document.getElementById('formateurAddQText')?.focus();
-            return;
-        }
-
-        const existingQuestions = await fetchModuleQuestions(moduleId);
-        const nextOrder = existingQuestions.length + 1;
-        const questionId = `q_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
-
-        const qDoc = {
-            id: questionId,
-            moduleId: moduleId,
-            type: type,
-            text: text,
-            imageUrl: imageUrl,
-            hint: hint,
-            order: nextOrder,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-        };
-
-        if (type === 'qcm') {
-            const validOptions = formateurTempOptions.map(o => o.trim()).filter(Boolean);
-            if (validOptions.length < 2) {
-                showToast("Veuillez saisir au moins 2 options pour le QCM.", "warning");
-                return;
-            }
-            qDoc.options = validOptions;
-            qDoc.correctIndex = (formateurTempCorrectIndex >= 0 && formateurTempCorrectIndex < validOptions.length) ? formateurTempCorrectIndex : 0;
-
-        } else if (type === 'boolean') {
-            const boolVal = document.querySelector('input[name="formateur_bool_answer"]:checked')?.value;
-            qDoc.correctAnswer = (boolVal === 'true');
-
-        } else if (type === 'puzzle') {
-            const validItems = formateurTempPuzzleItems.map(it => it.trim()).filter(Boolean);
-            if (validItems.length < 2) {
-                showToast("Veuillez saisir au moins 2 étapes pour le puzzle.", "warning");
-                return;
-            }
-            qDoc.items = validItems;
-
-        } else if (type === 'range') {
-            qDoc.min = parseFloat(document.getElementById('formateurRangeMin')?.value) || 0;
-            qDoc.max = parseFloat(document.getElementById('formateurRangeMax')?.value) || 10;
-            qDoc.step = parseFloat(document.getElementById('formateurRangeStep')?.value) || 1;
-            qDoc.unit = document.getElementById('formateurRangeUnit')?.value?.trim() || '';
-            const targetVal = document.getElementById('formateurRangeTarget')?.value;
-            if (targetVal !== '' && targetVal !== null && targetVal !== undefined) {
-                qDoc.correctValue = parseFloat(targetVal);
-                qDoc.tolerance = parseFloat(document.getElementById('formateurRangeTolerance')?.value) || 0;
-            }
-        }
-
-        try {
-            btnSave.disabled = true;
-            btnSave.innerHTML = `<span class="es-spinner" style="width:16px; height:16px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:6px;"></span> Enregistrement...`;
-
-            await db.collection('formation').doc(moduleId).collection('questions').doc(questionId).set(qDoc);
-
-            // Mettre à jour la liste locale
-            const mod = currentFormationModulesList.find(m => m.id === moduleId);
-            if (mod) {
-                if (!mod.questions) mod.questions = [];
-                mod.questions.push(qDoc);
-                mod.questionsCount = (mod.questionsCount || 0) + 1;
-                localStorage.setItem('offline_formation_modules', JSON.stringify(currentFormationModulesList));
-            }
-
-            showToast("Question ajoutée avec succès !", "success");
-            closeModal('overlayAddQuestionFormateur');
-            await loadFormationModules();
-
-        } catch (err) {
-            console.error("Erreur ajout question formateur:", err);
-            showToast("Erreur lors de l'enregistrement de la question : " + (err.message || err), "error");
-        } finally {
-            btnSave.disabled = false;
-            btnSave.innerHTML = `<i class="bi bi-plus-circle"></i> Ajouter la question`;
-        }
-    });
-
-    overlay?.addEventListener('click', (e) => {
-        if (e.target === overlay) closeModal('overlayAddQuestionFormateur');
-    });
-}
 
 // ================================================================
 // MODULE IA : AUDIT QUALITÉ, ORTHOGRAPHE & COHÉRENCE DES QUIZ (ADMIN)

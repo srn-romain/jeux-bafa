@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3WN5QK4J41"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-3WN5QK4J41');
+    </script>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bilan des Réponses & Copies – Formation BAFA</title>
+    <meta name="description" content="Consultation détaillée des réponses des stagiaires, notation des rédactions et statistiques des quiz BAFA.">
+    <link href="../../public/images/favicon.webp" rel="icon">
+    <link rel="manifest" href="../../manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../assets/css/styleEspace.css?v=3.6">
+    <style>
+        .es-results-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px 80px;
+            width: 100%;
+        }
+        .es-sticky-header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(30, 42, 26, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+            padding: 12px 20px;
+        }
+        .es-sticky-header__inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .es-stats-hero {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .es-stat-card {
+            background: var(--clr-surface);
+            border: 1px solid var(--clr-surface-3);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        .es-stat-card__icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        .es-subs-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.9rem;
+        }
+        .es-subs-table th {
+            background: var(--clr-surface-2);
+            color: var(--clr-text-muted);
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            padding: 14px 16px;
+            border-bottom: 1.5px solid var(--clr-surface-3);
+            text-align: left;
+        }
+        .es-subs-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--clr-surface-3);
+            color: var(--clr-text);
+            vertical-align: middle;
+        }
+        .es-subs-table tr:hover td {
+            background: rgba(166, 216, 102, 0.05);
+        }
+    </style>
+</head>
+
+<body class="espace-body">
+
+    <!-- ========================================================
+     LOADER GLOBAL
+     ======================================================== -->
+    <div class="es-loader" id="pageLoader" style="height: 100vh;">
+        <div class="es-spinner"></div>
+        <span>Chargement des réponses des stagiaires…</span>
+    </div>
+
+    <!-- ========================================================
+     STICKY TOPBAR
+     ======================================================== -->
+    <header class="es-sticky-header" id="resultsHeader" style="display:none;">
+        <div class="es-sticky-header__inner">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <a href="formation.html" class="es-btn es-btn--ghost es-btn--sm" style="color:rgba(255,255,255,0.9); border-color:rgba(255,255,255,0.25);">
+                    <i class="bi bi-arrow-left"></i> <span>Modules</span>
+                </a>
+                <div style="display:flex; flex-direction:column;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span id="headerModuleBadge" class="es-badge es-badge--formateur" style="font-size:0.75rem; padding:2px 8px;">Module 01</span>
+                        <h1 id="headerModuleTitle" style="font-size:1.05rem; font-weight:700; color:#ffffff; margin:0; line-height:1.2;">Bilan des réponses</h1>
+                    </div>
+                    <span id="headerModuleSub" style="font-size:0.75rem; color:rgba(255,255,255,0.65);">Consultation, notation et statistiques complètes</span>
+                </div>
+            </div>
+
+            <!-- Actions du haut -->
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <select id="selectModuleFilter" class="es-select" style="font-size:0.85rem; font-weight:600; padding:6px 12px; background:rgba(255,255,255,0.12); color:#fff; border-color:rgba(255,255,255,0.25); min-width:180px;">
+                    <!-- Rempli en JS -->
+                </select>
+                <a id="btnEditCurrentModule" href="#" class="es-btn es-btn--ghost es-btn--sm" style="color:rgba(255,255,255,0.9); border-color:rgba(255,255,255,0.25);" title="Modifier les questions de ce module">
+                    <i class="bi bi-pencil-square"></i> Modifier
+                </a>
+                <a id="btnTestCurrentQuiz" href="#" target="_blank" class="es-btn es-btn--ghost es-btn--sm" style="color:var(--clr-primary); border-color:rgba(166, 216, 102, 0.4);" title="Tester ce quiz sur la page dédiée">
+                    <i class="bi bi-play-circle-fill"></i> Tester
+                </a>
+                <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnExportCsv" title="Exporter toutes les réponses en CSV">
+                    <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                </button>
+                <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportPdf" title="Générer un rapport PDF complet">
+                    <i class="bi bi-file-earmark-pdf-fill"></i> Rapport PDF
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================================
+     CONTENEUR PRINCIPAL
+     ======================================================== -->
+    <main class="es-results-container" id="resultsMainView" style="display:none;">
+
+        <!-- Grille des statistiques Clés -->
+        <div class="es-stats-hero">
+            <div class="es-stat-card">
+                <div class="es-stat-card__icon" style="background:rgba(52, 152, 219, 0.15); color:#3498db;">
+                    <i class="bi bi-send-check"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Total Copies</div>
+                    <div id="statTotalAttempts" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0</div>
+                </div>
+            </div>
+
+            <div class="es-stat-card">
+                <div class="es-stat-card__icon" style="background:rgba(166, 216, 102, 0.18); color:var(--clr-primary-xdark);">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Stagiaires Uniques</div>
+                    <div id="statUniqueStagiaires" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0</div>
+                </div>
+            </div>
+
+            <div class="es-stat-card">
+                <div class="es-stat-card__icon" style="background:rgba(39, 174, 96, 0.15); color:#27ae60;">
+                    <i class="bi bi-award-fill"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Taux de Réussite</div>
+                    <div id="statSuccessRate" style="font-size:1.6rem; font-weight:800; color:#27ae60;">0%</div>
+                </div>
+            </div>
+
+            <div class="es-stat-card">
+                <div class="es-stat-card__icon" style="background:rgba(243, 156, 18, 0.15); color:var(--clr-accent);">
+                    <i class="bi bi-calculator-fill"></i>
+                </div>
+                <div>
+                    <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Moyenne Générale</div>
+                    <div id="statAverageScore" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar & Filtres -->
+        <div style="background:var(--clr-surface); border:1px solid var(--clr-surface-3); border-radius:var(--radius-lg); padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; box-shadow:var(--shadow-sm);">
+            <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:260px;">
+                <div style="position:relative; width:100%; max-width:360px;">
+                    <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--clr-text-muted); font-size:0.9rem;"></i>
+                    <input type="text" id="searchSubmissionsInput" class="es-input" placeholder="Rechercher un stagiaire (nom, email)..." style="padding-left:36px; font-size:0.88rem;">
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <button type="button" class="es-btn es-btn--ghost es-btn--sm filter-status-btn active" data-filter="all">Tous (<span id="countFilterAll">0</span>)</button>
+                <button type="button" class="es-btn es-btn--ghost es-btn--sm filter-status-btn" data-filter="passed">Validés (<span id="countFilterPassed">0</span>)</button>
+                <button type="button" class="es-btn es-btn--ghost es-btn--sm filter-status-btn" data-filter="failed">À retravailler (<span id="countFilterFailed">0</span>)</button>
+                <button type="button" class="es-btn es-btn--ghost es-btn--sm filter-status-btn" data-filter="to_grade">Rédactions à noter (<span id="countFilterToGrade">0</span>)</button>
+            </div>
+        </div>
+
+        <!-- Tableau des copies & réponses -->
+        <div style="background:var(--clr-surface); border:1px solid var(--clr-surface-3); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-sm);">
+            <div style="overflow-x:auto;">
+                <table class="es-subs-table">
+                    <thead>
+                        <tr>
+                            <th>Stagiaire</th>
+                            <th>Module</th>
+                            <th>Tentative</th>
+                            <th>Date & Heure</th>
+                            <th>Score QCM</th>
+                            <th>Statut</th>
+                            <th style="text-align:right;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submissionsTableBody">
+                        <!-- Rempli en JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="emptySubmissionsPlaceholder" class="hidden" style="text-align:center; padding:48px 20px; color:var(--clr-text-muted);">
+                <i class="bi bi-inbox" style="font-size:2.5rem; color:var(--clr-text-light);"></i>
+                <div style="font-weight:700; margin-top:12px; color:var(--clr-text);">Aucune réponse trouvée</div>
+                <div style="font-size:0.85rem; margin-top:4px;">Aucun stagiaire ne correspond aux critères de recherche actuels.</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ========================================================
+     MODAL / DRAWER : INSPECTION COMPLÈTE & NOTATION D'UNE COPIE
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlayReviewSubmission" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:880px; max-height:92vh; display:flex; flex-direction:column;">
+            <div class="es-modal__header" style="border-bottom:1.5px solid var(--clr-surface-3);">
+                <div>
+                    <h2 class="es-modal__title" id="reviewModalTitle" style="display:flex; align-items:center; gap:8px;">
+                        <span>📝</span> Copie de <span id="reviewCandidateName">Stagiaire</span>
+                    </h2>
+                    <p id="reviewCandidateMeta" style="font-size:0.8rem; color:var(--clr-text-muted); margin:2px 0 0 0;"></p>
+                </div>
+                <button type="button" class="es-modal__close" id="btnCloseReviewModal"><i class="bi bi-x"></i></button>
+            </div>
+            
+            <div class="es-modal__body" style="overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:20px; flex:1;">
+                
+                <!-- Bilan Score en tête -->
+                <div id="reviewScoreHeader" style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <!-- Rempli en JS -->
+                </div>
+
+                <!-- Questions et réponses détaillées -->
+                <div id="reviewQuestionsContainer" style="display:flex; flex-direction:column; gap:16px;">
+                    <!-- Rempli dynamiquement en JS -->
+                </div>
+
+            </div>
+
+            <div class="es-modal__footer" style="display:flex; justify-content:space-between; align-items:center; border-top:1.5px solid var(--clr-surface-3); padding:14px 24px;">
+                <button type="button" class="es-btn es-btn--ghost" id="btnCloseReviewBottom">Fermer</button>
+                <button type="button" class="es-btn es-btn--primary" id="btnSaveGradingChanges">
+                    <i class="bi bi-check2-circle"></i> Enregistrer les notes formateur
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="es-toast-container" id="toastContainer"></div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="../../assets/js/firebase-config.js"></script>
+    <!-- jsPDF & AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="../../assets/js/colo/espace-auth.js?v=3.6"></script>
+    <script charset="UTF-8" src="../../assets/js/formation/espace-formation-results.js?v=1.0"></script>
+</body>
+
+</html>

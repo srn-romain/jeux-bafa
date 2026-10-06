@@ -5873,6 +5873,328 @@ body.modal-open .es-topbar {
 }
 
 /* ================================================================
+   TYPE DE QUESTION : TEXTE À TROUS (CLOZE / DRAG & DROP)
+   ================================================================ */
+.es-cloze-wrap {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Banque d'étiquettes / Tags en haut */
+.es-cloze-bank-container {
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.es-cloze-bank-container.es-cloze-bank--dragover {
+  background: rgba(39, 174, 96, 0.08);
+  border-color: var(--clr-primary);
+}
+
+.es-cloze-bank-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.es-cloze-bank-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--clr-text-muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.es-cloze-bank-hint {
+  font-size: 0.75rem;
+  color: var(--clr-text-muted);
+  font-style: italic;
+}
+
+.es-cloze-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-height: 44px;
+  align-items: center;
+}
+
+.es-cloze-bank-empty {
+  font-size: 0.8rem;
+  color: var(--clr-text-muted);
+  font-style: italic;
+  padding: 6px 0;
+}
+
+/* Étiquettes / Tags */
+.es-cloze-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #ffffff;
+  color: var(--clr-text);
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: 20px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  cursor: grab;
+  user-select: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.es-cloze-tag:hover {
+  border-color: var(--clr-primary);
+  color: var(--clr-primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(39, 174, 96, 0.15);
+}
+
+.es-cloze-tag:active {
+  cursor: grabbing;
+}
+
+.es-cloze-tag.dragging {
+  opacity: 0.45;
+  transform: scale(0.95);
+  border-style: dashed;
+}
+
+.es-cloze-tag.is-selected {
+  border-color: var(--clr-primary);
+  background: rgba(39, 174, 96, 0.1);
+  color: var(--clr-primary);
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.25);
+  animation: tagPulse 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes tagPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.04); }
+}
+
+.es-cloze-tag-handle {
+  color: var(--clr-text-muted);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  margin-right: -2px;
+}
+
+.es-cloze-tag-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  margin-right: -4px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--clr-text-muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.es-cloze-tag-remove:hover {
+  background: var(--clr-danger);
+  color: #ffffff;
+}
+
+/* Zone du texte à trous en dessous */
+.es-cloze-text-card {
+  background: #ffffff;
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: var(--radius-md);
+  padding: 20px 22px;
+  font-size: 0.98rem;
+  line-height: 2.3;
+  color: var(--clr-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+/* Emplacement du trou / Dropzone */
+.es-cloze-dropzone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+  min-height: 36px;
+  padding: 2px 8px;
+  margin: 0 5px;
+  vertical-align: middle;
+  border: 2px dashed #94a3b8;
+  border-radius: 20px;
+  background: #f1f5f9;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #64748b;
+  transition: all 0.2s ease;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+
+.es-cloze-dropzone:hover {
+  border-color: var(--clr-primary);
+  background: rgba(39, 174, 96, 0.05);
+}
+
+.es-cloze-dropzone.es-cloze-dropzone--dragover {
+  border-color: var(--clr-primary);
+  background: rgba(39, 174, 96, 0.18);
+  border-style: solid;
+  transform: scale(1.03);
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.2);
+}
+
+.es-cloze-dropzone.es-cloze-dropzone--filled {
+  border: 1.5px solid var(--clr-primary);
+  background: rgba(39, 174, 96, 0.08);
+  color: var(--clr-text);
+  padding: 2px 4px;
+}
+
+.es-cloze-dropzone.es-cloze-dropzone--filled .es-cloze-tag {
+  border: none;
+  background: var(--clr-primary);
+  color: #ffffff;
+  box-shadow: 0 2px 5px rgba(39, 174, 96, 0.3);
+  padding: 4px 10px 4px 12px;
+  font-size: 0.88rem;
+}
+
+.es-cloze-dropzone.es-cloze-dropzone--filled .es-cloze-tag .es-cloze-tag-handle {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.es-cloze-dropzone.es-cloze-dropzone--filled .es-cloze-tag-remove {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.es-cloze-dropzone.es-cloze-dropzone--filled .es-cloze-tag-remove:hover {
+  background: #ffffff;
+  color: var(--clr-danger);
+}
+
+.es-cloze-dropzone-placeholder {
+  pointer-events: none;
+  font-style: italic;
+  font-size: 0.78rem;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Corrigé & Résultats Texte à trous */
+.es-cloze-result-card {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 16px 18px;
+  font-size: 0.95rem;
+  line-height: 2.4;
+  color: var(--clr-text);
+  margin-top: 8px;
+}
+
+.es-cloze-res-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  margin: 0 4px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  vertical-align: middle;
+}
+
+.es-cloze-res-tag--correct {
+  background: rgba(39, 174, 96, 0.15);
+  color: #1e824c;
+  border: 1.5px solid #27ae60;
+}
+
+.es-cloze-res-tag--wrong {
+  background: rgba(231, 76, 60, 0.12);
+  color: #c0392b;
+  border: 1.5px solid #e74c3c;
+  text-decoration: line-through;
+}
+
+.es-cloze-res-tag--missing {
+  background: rgba(230, 126, 34, 0.12);
+  color: #d35400;
+  border: 1.5px dashed #e67e22;
+  font-style: italic;
+}
+
+.es-cloze-res-tag--expected {
+  background: rgba(39, 174, 96, 0.2);
+  color: #1e824c;
+  border: 1.5px solid #27ae60;
+  margin-left: 2px;
+}
+
+/* Éditeur Formateur / Admin Texte à trous */
+.es-cloze-builder-box {
+  margin-top: 10px;
+  background: var(--clr-surface-2);
+  padding: 14px;
+  border-radius: 6px;
+  border: 1px solid var(--clr-surface-3);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.es-cloze-builder-help {
+  font-size: 0.78rem;
+  color: var(--clr-text-muted);
+  line-height: 1.45;
+  background: #ffffff;
+  padding: 8px 12px;
+  border-left: 3px solid var(--clr-primary);
+  border-radius: 4px;
+}
+
+.es-cloze-detected-blanks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.es-cloze-detected-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--clr-primary);
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* ================================================================
    TYPE DE QUESTION : PINPOINT (PIN / REPÈRE SUR IMAGE)
    ================================================================ */
 .es-pinpoint-builder-box {

@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3WN5QK4J41"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-3WN5QK4J41');
+    </script>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion du Module – Formation BAFA</title>
+    <meta name="description" content="Espace de gestion du module de formation BAFA, édition des quiz et suivi des réponses.">
+    <link href="../../public/images/favicon.webp" rel="icon">
+    <link rel="manifest" href="../../manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../../assets/css/styleEspace.css?v=3.6">
+    <style>
+        .es-module-hub-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px 80px;
+            width: 100%;
+        }
+        .es-module-hero {
+            background: var(--clr-surface);
+            border: 1px solid var(--clr-surface-3);
+            border-radius: var(--radius-lg);
+            padding: 24px 28px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+        .es-tabs-nav {
+            display: flex;
+            gap: 10px;
+            border-bottom: 2px solid var(--clr-surface-3, rgba(255, 255, 255, 0.12));
+            margin-bottom: 24px;
+            padding-bottom: 2px;
+            overflow-x: auto;
+        }
+        .es-tab-btn {
+            background: var(--clr-surface-2, rgba(255, 255, 255, 0.05));
+            border: 1px solid var(--clr-surface-3, rgba(255, 255, 255, 0.1));
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            padding: 10px 18px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: var(--clr-text-muted, #94a3b8);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .es-tab-btn:hover {
+            color: var(--clr-text, #ffffff);
+            background: var(--clr-surface-3, rgba(255, 255, 255, 0.12));
+        }
+        .es-tab-btn.active {
+            color: #ffffff !important;
+            background: var(--clr-primary, #689f38) !important;
+            border-color: var(--clr-primary, #689f38) !important;
+            box-shadow: 0 2px 10px rgba(104, 159, 56, 0.35);
+        }
+        .es-tab-count-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #ffffff;
+            line-height: 1;
+        }
+        .es-tab-btn:not(.active) .es-tab-count-badge {
+            background: var(--clr-surface-3, rgba(255, 255, 255, 0.18));
+            color: var(--clr-text, #f1f5f9);
+        }
+        /* Style compact & lisible pour la liste déroulante des modules */
+        .es-topbar__colos-dropdown {
+            font-size: 0.82rem;
+        }
+        .es-topbar__colos-item {
+            font-size: 0.8rem !important;
+            padding: 7px 10px !important;
+            gap: 8px !important;
+        }
+        .es-topbar__colos-item-emoji {
+            font-size: 0.95rem !important;
+            width: 22px !important;
+            text-align: center;
+        }
+        .es-topbar__colos-pin {
+            font-size: 0.85rem !important;
+            padding: 4px 6px !important;
+        }
+        .es-editor-grid {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (max-width: 1024px) {
+            .es-editor-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .es-editor-panel {
+            background: var(--clr-surface);
+            border: 1px solid var(--clr-surface-3);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+        }
+        .es-editor-panel__title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--clr-text);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1.5px solid var(--clr-surface-3);
+            padding-bottom: 12px;
+        }
+        .es-qcard {
+            background: var(--clr-surface-2);
+            border: 1.5px solid var(--clr-surface-3);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            margin-bottom: 18px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+        .es-qcard:hover {
+            border-color: rgba(166, 216, 102, 0.5);
+            box-shadow: var(--shadow-sm);
+        }
+        .es-qcard__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .es-qcard__num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--clr-primary);
+            color: var(--clr-bg-deep);
+            font-weight: 800;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+        .es-stats-hero {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .es-stat-card {
+            background: var(--clr-surface);
+            border: 1px solid var(--clr-surface-3);
+            border-radius: var(--radius-lg);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+        .es-stat-card__icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+        .es-subs-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 0.9rem;
+        }
+        .es-subs-table th {
+            background: var(--clr-surface-2);
+            color: var(--clr-text-muted);
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            padding: 14px 16px;
+            border-bottom: 1.5px solid var(--clr-surface-3);
+            text-align: center;
+        }
+        .es-subs-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--clr-surface-3);
+            color: var(--clr-text);
+            vertical-align: middle;
+        }
+        .es-subs-table tr:hover td {
+            background: rgba(166, 216, 102, 0.05);
+        }
+    </style>
+</head>
+
+<body class="espace-body">
+
+    <!-- ========================================================
+     LOADER GLOBAL
+     ======================================================== -->
+    <div class="es-loader" id="pageLoader" style="height: 100vh;">
+        <div class="es-spinner"></div>
+        <span>Chargement du module de formation…</span>
+    </div>
+
+    <!-- ========================================================
+     NAVBAR IDENTIQUE ESPACE BAFA AVEC LISTE DÉROULANTE & ÉPINGLES
+     ======================================================== -->
+    <header class="es-topbar" id="formationNavbar" style="display:none;">
+        <div class="es-topbar__inner">
+            <!-- Brand avec Dropdown des modules & épingles -->
+            <div class="es-topbar__brand" id="topbarModuleDropdownWrap">
+                <div class="es-topbar__brand-trigger" id="moduleNameTopbarTrigger" style="cursor:pointer;">
+                    <div class="es-topbar__brand-icon" id="moduleIconTopbar">🎓</div>
+                    <span class="brand-label" id="moduleNameTopbar">Module de Formation</span>
+                    <i class="bi bi-chevron-down" id="moduleChevronTopbar" style="font-size: 0.7rem; margin-left: 4px; opacity: 0.6; transition: transform 0.2s ease;"></i>
+                </div>
+
+                <!-- Menu déroulant des modules avec recherche et épinglage (Exact Espace Colos) -->
+                <div class="es-topbar__colos-dropdown hidden" id="modulesDropdown">
+                    <div class="es-topbar__colos-search">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="inputSearchModuleSwitch" placeholder="Chercher un module...">
+                    </div>
+                    <div class="es-topbar__colos-list" id="modulesDropdownList">
+                        <!-- Rempli en JS avec les modules et épingles -->
+                    </div>
+                    <div class="es-topbar__colos-footer">
+                        <a href="formation.html" class="es-topbar__colos-item es-topbar__colos-item--dashboard">
+                            <span class="es-topbar__colos-item-emoji">🎓</span>
+                            <span style="flex:1; font-weight:700; color:var(--clr-text);">Tous les modules (Accueil)</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions droite -->
+            <div class="es-topbar__actions">
+                <a href="../../index.html" class="es-btn es-btn--sm es-btn--ghost" style="color:rgba(255,255,255,0.75); border-color:rgba(255,255,255,0.15);">
+                    <i class="bi bi-house"></i> <span class="brand-label">Site</span>
+                </a>
+                <a href="index.html" class="es-btn es-btn--sm es-btn--ghost" style="color:#5dade2; border-color:rgba(52,152,219,0.35);">
+                    <i class="bi bi-tree"></i> <span class="brand-label">Colos</span>
+                </a>
+                <a href="formation.html" class="es-btn es-btn--sm es-btn--ghost" style="color:var(--clr-primary); border-color:rgba(166,216,102,0.35);">
+                    <i class="bi bi-mortarboard"></i> <span class="brand-label">Formation</span>
+                </a>
+
+                <!-- Menu Profil -->
+                <div class="es-user-dropdown-wrap">
+                    <button class="es-user-chip" id="btnUserMenu">
+                        <div class="es-user-avatar" id="userAvatar">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <span class="es-user-chip__name" id="userDisplayName">…</span>
+                        <span class="es-badge" id="userBadge">…</span>
+                        <i class="bi bi-chevron-down" style="font-size:10px;opacity:0.6;"></i>
+                    </button>
+                    <div class="es-user-dropdown hidden" id="userDropdown">
+                        <button class="es-user-dropdown__item" id="btnOpenSettings">
+                            <i class="bi bi-person-gear"></i> Paramètres
+                        </button>
+                        <a href="admin.html" class="es-user-dropdown__item hidden" id="linkAdmin">
+                            <i class="bi bi-shield-lock"></i> Administration
+                        </a>
+                        <div class="es-user-dropdown__sep"></div>
+                        <button class="es-user-dropdown__item es-user-dropdown__item--danger" id="btnLogout">
+                            <i class="bi bi-box-arrow-right"></i> Déconnexion
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================================
+     CONTENEUR PRINCIPAL (HUB DU MODULE)
+     ======================================================== -->
+    <main class="es-module-hub-container" id="moduleHubMain" style="display:none;">
+
+        <!-- Alert messages -->
+        <div class="es-alert es-alert--error hidden" id="moduleEditErrorAlert" style="margin-bottom:20px;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <span id="moduleEditErrorMsg">Une erreur est survenue.</span>
+        </div>
+
+        <div class="es-alert es-alert--success hidden" id="moduleEditSuccessAlert" style="margin-bottom:20px;">
+            <i class="bi bi-check-circle-fill"></i>
+            <span id="moduleEditSuccessMsg">Le module a bien été enregistré avec succès !</span>
+        </div>
+
+        <!-- Bannière d'en-tête du Module -->
+        <div class="es-module-hero">
+            <div style="display:flex; align-items:center; gap:16px;">
+                <div id="moduleHeroIconWrap" class="es-formation-icon-wrap" style="width:52px; height:52px; font-size:24px; border-radius:14px;">
+                    <i class="bi bi-journal-bookmark" id="heroIconEl"></i>
+                </div>
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <span id="heroModuleBadge" class="es-badge es-badge--stagiaire" style="font-size:0.75rem;">Module 01</span>
+                        <span id="heroVisibilityBadge" class="es-badge es-badge--approved" style="font-size:0.75rem;">Visible</span>
+                    </div>
+                    <h1 id="heroModuleTitle" style="font-size:1.4rem; font-weight:800; color:var(--clr-text); margin:0; line-height:1.2;">Titre du module</h1>
+                    <p id="heroModuleSubtitle" style="font-size:0.88rem; color:var(--clr-text-muted); margin:4px 0 0;"></p>
+                </div>
+            </div>
+
+            <!-- Actions globales -->
+            <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <button type="button" class="es-btn es-btn--danger es-btn--sm hidden" id="btnDeleteModule">
+                    <i class="bi bi-trash-fill"></i> Supprimer
+                </button>
+                <button type="button" class="es-btn es-btn--primary" id="btnSaveModuleHeader" style="font-weight:700; padding:10px 22px;">
+                    <i class="bi bi-floppy-fill"></i> Enregistrer
+                </button>
+            </div>
+        </div>
+
+        <!-- Navigation par onglets (Tabs) -->
+        <div class="es-tabs-nav">
+            <button type="button" class="es-tab-btn active" id="tabBtnEditor">
+                <i class="bi bi-pencil-square"></i> <span>Questionnaire & Configuration</span>
+            </button>
+            <button type="button" class="es-tab-btn" id="tabBtnResults">
+                <i class="bi bi-bar-chart-line-fill"></i> <span>Réponses & Copies</span> <span class="es-tab-count-badge" id="tabCountSubmissions">0</span>
+            </button>
+        </div>
+
+        <!-- ----------------------------------------------------
+         ONGLET 1 : ÉDITION DU MODULE & DES QUESTIONS
+         ---------------------------------------------------- -->
+        <section id="tabContentEditor">
+            <form id="moduleEditForm" novalidate>
+                <input type="hidden" id="editModuleId" value="">
+
+                <div class="es-editor-grid">
+
+                    <!-- Colonne gauche : Paramètres du module & Quiz -->
+                    <div style="display:flex; flex-direction:column; gap:24px;">
+
+                        <!-- Informations générales -->
+                        <div class="es-editor-panel">
+                            <h2 class="es-editor-panel__title">
+                                <span>📦 Informations Générales</span>
+                                <div id="moduleEditIconPreview" class="es-formation-icon-wrap" style="width:32px; height:32px; font-size:16px;">
+                                    <i class="bi bi-journal-bookmark" id="iconPreviewEl"></i>
+                                </div>
+                            </h2>
+
+                            <div style="display:grid; grid-template-columns:85px 1fr; gap:12px; margin-bottom:14px;">
+                                <div class="es-field">
+                                    <label class="es-field__label" for="editModuleNum">Numéro</label>
+                                    <input class="es-input" type="number" id="editModuleNum" min="1" max="99" required placeholder="1">
+                                </div>
+                                <div class="es-field">
+                                    <label class="es-field__label" for="editModuleTitle">Titre du module</label>
+                                    <input class="es-input" type="text" id="editModuleTitle" required placeholder="Ex: PSAADRAFRA, Vie quotidienne...">
+                                </div>
+                            </div>
+
+                            <div class="es-field" style="margin-bottom:14px;">
+                                <label class="es-field__label">Icône du module :</label>
+                                <input type="hidden" id="editModuleIcon" value="bi-journal-bookmark">
+                                
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                    <div id="selectedIconBadge" style="display:inline-flex; align-items:center; gap:8px; background:var(--clr-surface-2); border:1.5px solid var(--clr-primary); padding:6px 12px; border-radius:var(--radius-md); font-weight:700; font-size:0.85rem; color:var(--clr-text); white-space:nowrap;">
+                                        <i class="bi bi-journal-bookmark" id="selectedIconPreview" style="font-size:1.15rem; color:var(--clr-primary);"></i>
+                                        <span id="selectedIconLabel">Livre & Étude</span>
+                                    </div>
+                                    <input type="text" id="iconFilterInput" class="es-input" placeholder="🔍 Filtrer icônes..." style="font-size:0.82rem; padding:6px 10px;">
+                                </div>
+
+                                <div id="iconPickerGrid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(110px, 1fr)); gap:6px; max-height:150px; overflow-y:auto; padding:8px; background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-md);">
+                                    <!-- Rempli en JS -->
+                                </div>
+                            </div>
+
+                            <div class="es-field" style="margin-bottom:14px;">
+                                <label class="es-field__label" for="editModuleSubtitle">Sous-titre / Thématique</label>
+                                <input class="es-input" type="text" id="editModuleSubtitle" placeholder="Ex: Sigles et repères fondamentaux">
+                            </div>
+
+                            <div class="es-field" style="margin-bottom:14px;">
+                                <label class="es-field__label">🖼️ Image de fond de la carte (optionnel) :</label>
+                                <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                                    <input class="es-input" type="text" id="editModuleBgImage" placeholder="https://images.unsplash.com/... ou uploader" style="flex:1; font-size:0.85rem;">
+                                    <label class="es-btn es-btn--ghost es-btn--sm" style="cursor:pointer; white-space:nowrap; padding:8px 12px;" title="Uploader une image">
+                                        <i class="bi bi-cloud-arrow-up"></i>
+                                        <input type="file" id="editModuleBgUpload" accept="image/*" style="display:none;">
+                                    </label>
+                                </div>
+                                <div id="moduleBgPreviewContainer" class="hidden" style="margin-top:6px; position:relative; width:100%; height:80px; border-radius:var(--radius-md); overflow:hidden; border:1.5px solid var(--clr-surface-3);">
+                                    <img id="moduleBgPreviewImg" src="" style="width:100%; height:100%; object-fit:cover;">
+                                    <button type="button" id="btnRemoveBgImage" style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.6); color:#fff; border:none; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                        <i class="bi bi-x" style="font-size:14px;"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="es-field" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--clr-surface-3);">
+                                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--clr-text);">
+                                    <input type="checkbox" id="editModuleVisible" checked style="width:18px; height:18px; accent-color:var(--clr-primary);">
+                                    <span>Visible pour les stagiaires</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Paramètres Quiz -->
+                        <div class="es-editor-panel">
+                            <h2 class="es-editor-panel__title">
+                                <span>⚙️ Configuration Quiz</span>
+                                <i class="bi bi-stopwatch" style="color:var(--clr-accent);"></i>
+                            </h2>
+
+                            <div class="es-field" style="margin-bottom:14px;">
+                                <label class="es-field__label" for="editQuizTitle">Titre de l'épreuve (optionnel)</label>
+                                <input class="es-input" type="text" id="editQuizTitle" placeholder="Ex: Évaluation sommative #1">
+                            </div>
+
+                            <div class="es-field" style="margin-bottom:14px;">
+                                <label class="es-field__label" for="editMaxAttempts">Tentatives autorisées :</label>
+                                <select class="es-select" id="editMaxAttempts">
+                                    <option value="0">Illimitées (Entraînement libre)</option>
+                                    <option value="1">1 tentative (Épreuve stricte)</option>
+                                    <option value="2">2 tentatives</option>
+                                    <option value="3">3 tentatives</option>
+                                    <option value="5">5 tentatives</option>
+                                </select>
+                            </div>
+
+                            <div class="es-field" style="margin-bottom:14px;">
+                                <label class="es-field__label">⏱️ Chronomètre / Limite de temps :</label>
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                    <div>
+                                        <span style="font-size:0.75rem; color:var(--clr-text-muted); display:block; margin-bottom:4px;">Minutes</span>
+                                        <input class="es-input" type="number" id="editQuizTimerMinutes" min="0" max="180" placeholder="0" value="0">
+                                    </div>
+                                    <div>
+                                        <span style="font-size:0.75rem; color:var(--clr-text-muted); display:block; margin-bottom:4px;">Secondes</span>
+                                        <input class="es-input" type="number" id="editQuizTimerSeconds" min="0" max="59" step="5" placeholder="0" value="0">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="es-field" style="margin-bottom:14px;">
+                                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--clr-text);">
+                                    <input type="checkbox" id="editShowResultsAtEnd" style="width:18px; height:18px; accent-color:var(--clr-primary);">
+                                    <span>Afficher le corrigé détaillé à la fin</span>
+                                </label>
+                            </div>
+
+                            <div class="es-field" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--clr-surface-3);">
+                                <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--clr-text);">
+                                    <input type="checkbox" id="editQuizRequirePassword" style="width:18px; height:18px; accent-color:var(--clr-primary);">
+                                    <span>Protéger par code / mot de passe</span>
+                                </label>
+                                <div id="quizPasswordInputWrap" class="hidden" style="margin-top:10px; margin-left:28px;">
+                                    <input class="es-input" type="text" id="editQuizPassword" placeholder="Ex: BAFA2026..." style="font-weight:700; letter-spacing:0.5px;">
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Colonne droite : Questions du module -->
+                    <div class="es-editor-panel" style="display:flex; flex-direction:column; gap:20px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; border-bottom:1.5px solid var(--clr-surface-3); padding-bottom:16px;">
+                            <div>
+                                <h2 style="font-size:1.15rem; font-weight:800; color:var(--clr-text); margin:0; display:flex; align-items:center; gap:8px;">
+                                    <span>📝 Questions du Quiz</span>
+                                    <span id="badgeQuestionsTotalCount" class="es-badge es-badge--stagiaire" style="font-size:0.75rem;">0 question</span>
+                                </h2>
+                                <p style="font-size:0.82rem; color:var(--clr-text-muted); margin:4px 0 0;">
+                                    QCM, Rédaction, Puzzle chronologique et Textes à trous.
+                                </p>
+                            </div>
+
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <label class="es-btn es-btn--ghost es-btn--sm" style="cursor:pointer;" title="Importer un fichier JSON de questions">
+                                    <i class="bi bi-file-earmark-arrow-up"></i> Import JSON
+                                    <input type="file" id="btnImportQuestionsJson" accept=".json" style="display:none;">
+                                </label>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnExportQuestionsJson" title="Exporter les questions en JSON">
+                                    <i class="bi bi-file-earmark-arrow-down"></i> Export JSON
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="questionsContainer" style="display:flex; flex-direction:column; gap:16px;">
+                            <!-- Rempli en JS -->
+                        </div>
+
+                        <div style="display:flex; justify-content:center; margin-top:8px; padding-top:16px; border-top:1.5px dashed var(--clr-surface-3);">
+                            <button type="button" class="es-btn es-btn--primary" id="btnAddQuestion" style="font-weight:700; padding:12px 24px;">
+                                <i class="bi bi-plus-circle-fill"></i> Ajouter une nouvelle question
+                            </button>
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:20px; padding-top:20px; border-top:1.5px solid var(--clr-surface-3);">
+                            <a href="formation.html" class="es-btn es-btn--ghost">
+                                <i class="bi bi-arrow-left"></i> Retour aux modules
+                            </a>
+                            <button type="button" class="es-btn es-btn--primary" id="btnSaveModuleBottom" style="font-weight:700; padding:12px 28px; font-size:0.95rem;">
+                                <i class="bi bi-floppy-fill"></i> Enregistrer les modifications
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </form>
+        </section>
+
+        <!-- ----------------------------------------------------
+         ONGLET 2 : RÉPONSES & STATISTIQUES DU MODULE
+         ---------------------------------------------------- -->
+        <section id="tabContentResults" class="hidden">
+            <!-- Statistiques du module -->
+            <div class="es-stats-hero">
+                <div class="es-stat-card">
+                    <div class="es-stat-card__icon" style="background:rgba(52, 152, 219, 0.15); color:#3498db;">
+                        <i class="bi bi-send-check"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Total Copies</div>
+                        <div id="statModuleTotalAttempts" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0</div>
+                    </div>
+                </div>
+
+                <div class="es-stat-card">
+                    <div class="es-stat-card__icon" style="background:rgba(166, 216, 102, 0.18); color:var(--clr-primary-xdark);">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Stagiaires Uniques</div>
+                        <div id="statModuleUniqueStagiaires" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0</div>
+                    </div>
+                </div>
+
+                <div class="es-stat-card">
+                    <div class="es-stat-card__icon" style="background:rgba(39, 174, 96, 0.15); color:#27ae60;">
+                        <i class="bi bi-award-fill"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Taux de Réussite</div>
+                        <div id="statModuleSuccessRate" style="font-size:1.6rem; font-weight:800; color:#27ae60;">0%</div>
+                    </div>
+                </div>
+
+                <div class="es-stat-card">
+                    <div class="es-stat-card__icon" style="background:rgba(243, 156, 18, 0.15); color:var(--clr-accent);">
+                        <i class="bi bi-calculator-fill"></i>
+                    </div>
+                    <div>
+                        <div style="font-size:0.8rem; color:var(--clr-text-muted); font-weight:600; text-transform:uppercase;">Moyenne Générale</div>
+                        <div id="statModuleAverageScore" style="font-size:1.6rem; font-weight:800; color:var(--clr-text);">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar & Filtres -->
+            <div style="background:var(--clr-surface); border:1px solid var(--clr-surface-3); border-radius:var(--radius-lg); padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; box-shadow:var(--shadow-sm);">
+                <div style="position:relative; width:100%; max-width:340px;">
+                    <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--clr-text-muted); font-size:0.9rem;"></i>
+                    <input type="text" id="searchModuleSubmissionsInput" class="es-input" placeholder="Rechercher un stagiaire..." style="padding-left:36px; font-size:0.88rem;">
+                </div>
+
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm module-filter-btn active" data-filter="all">Tous (<span id="countModuleFilterAll">0</span>)</button>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm module-filter-btn" data-filter="passed">Validés (<span id="countModuleFilterPassed">0</span>)</button>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm module-filter-btn" data-filter="failed">À retravailler (<span id="countModuleFilterFailed">0</span>)</button>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm module-filter-btn" data-filter="to_grade">Rédactions à noter (<span id="countModuleFilterToGrade">0</span>)</button>
+                    <div style="width:1px; height:24px; background:var(--clr-surface-3); margin:0 4px;"></div>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnExportModuleCsv" title="Exporter les réponses de ce module en CSV">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                    </button>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnExportModulePdf" title="Générer un rapport PDF de ce module">
+                        <i class="bi bi-file-earmark-pdf"></i> PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tableau des copies -->
+            <div style="background:var(--clr-surface); border:1px solid var(--clr-surface-3); border-radius:var(--radius-lg); overflow:hidden; box-shadow:var(--shadow-sm);">
+                <div style="overflow-x:auto;">
+                    <table class="es-subs-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align:center;">Stagiaire</th>
+                                <th style="text-align:center;">Tentative</th>
+                                <th style="text-align:center;">Date & Heure</th>
+                                <th style="text-align:center;">Score QCM</th>
+                                <th style="text-align:center;">Statut</th>
+                                <th style="text-align:center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="moduleSubmissionsTableBody">
+                            <!-- Rempli en JS -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="emptyModuleSubmissionsPlaceholder" class="hidden" style="text-align:center; padding:48px 20px; color:var(--clr-text-muted);">
+                    <i class="bi bi-inbox" style="font-size:2.5rem; color:var(--clr-text-light);"></i>
+                    <div style="font-weight:700; margin-top:12px; color:var(--clr-text);">Aucune réponse enregistrée</div>
+                    <div style="font-size:0.85rem; margin-top:4px;">Aucun stagiaire n'a encore passé ce quiz.</div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================================
+     MODAL : INSPECTION & NOTATION D'UNE COPIE
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlayReviewSubmission" role="dialog" aria-modal="true">
+        <div class="es-modal" style="max-width:880px; max-height:92vh; display:flex; flex-direction:column;">
+            <div class="es-modal__header" style="border-bottom:1.5px solid var(--clr-surface-3);">
+                <div>
+                    <h2 class="es-modal__title" id="reviewModalTitle" style="display:flex; align-items:center; gap:8px;">
+                        <span>📝</span> Copie de <span id="reviewCandidateName">Stagiaire</span>
+                    </h2>
+                    <p id="reviewCandidateMeta" style="font-size:0.8rem; color:var(--clr-text-muted); margin:2px 0 0 0;"></p>
+                </div>
+                <button type="button" class="es-modal__close" id="btnCloseReviewModal"><i class="bi bi-x"></i></button>
+            </div>
+            
+            <div class="es-modal__body" style="overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:20px; flex:1;">
+                <div id="reviewScoreHeader" style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:16px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                    <!-- Rempli en JS -->
+                </div>
+                <div id="reviewQuestionsContainer" style="display:flex; flex-direction:column; gap:16px;">
+                    <!-- Rempli en JS -->
+                </div>
+            </div>
+
+            <div class="es-modal__footer" style="display:flex; justify-content:space-between; align-items:center; border-top:1.5px solid var(--clr-surface-3); padding:14px 24px; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <button type="button" class="es-btn es-btn--ghost" id="btnCloseReviewBottom">Fermer</button>
+                    <button type="button" class="es-btn es-btn--danger" id="btnDeleteInspectedSubmission">
+                        <i class="bi bi-trash-fill"></i> Supprimer cette copie
+                    </button>
+                </div>
+                <button type="button" class="es-btn es-btn--primary" id="btnSaveGradingChanges">
+                    <i class="bi bi-check2-circle"></i> Enregistrer les notes formateur
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast container -->
+    <div class="es-toast-container" id="toastContainer"></div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+    <script src="../../assets/js/firebase-config.js"></script>
+    <!-- jsPDF & AutoTable -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script src="../../assets/js/colo/espace-auth.js?v=3.6"></script>
+    <script charset="UTF-8" src="../../assets/js/formation/espace-formation-edit.js?v=2.0"></script>
+</body>
+
+</html>
