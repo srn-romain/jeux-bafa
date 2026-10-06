@@ -213,9 +213,6 @@
                             </div>
 
                             <div class="es-formation-admin-banner__actions">
-                                <a href="formation-results.html" class="es-btn es-btn--secondary es-btn--sm" style="background:var(--clr-surface-2); color:var(--clr-text); border:1.5px solid var(--clr-surface-3); font-weight:700; display:inline-flex; align-items:center; gap:6px;" title="Consulter toutes les réponses et copies des stagiaires sur une page dédiée">
-                                    <i class="bi bi-bar-chart-line-fill" style="color:var(--clr-accent);"></i> <span class="brand-label">Bilan & Réponses</span>
-                                </a>
                                 <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnOpenAIAuditFormation" style="background:var(--clr-surface-2); color:var(--clr-text); border:1.5px solid var(--clr-surface-3); font-weight:700; display:inline-flex; align-items:center; gap:6px;" title="Vérifier l'orthographe et la cohérence des quiz avec l'IA">
                                     <i class="bi bi-robot" style="color:var(--clr-primary);"></i> <span class="brand-label">Audit IA Quiz</span>
                                 </button>
@@ -293,6 +290,9 @@
                                 <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportStagiaireBilanPdf" title="Télécharger mon bilan en PDF" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
                                     <i class="bi bi-file-earmark-pdf-fill"></i> Télécharger mon Bilan (PDF)
                                 </button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnExportStagiaireBilanCsv" title="Exporter mon bilan en CSV" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                                    <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                                </button>
                                 <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnRefreshBilan" title="Actualiser mon bilan" style="background: var(--clr-surface-2); color: var(--clr-text); border-color: var(--clr-surface-3); font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
                                     <i class="bi bi-arrow-clockwise" style="color: var(--clr-primary);"></i> Actualiser
                                 </button>
@@ -313,13 +313,21 @@
                          B) BILAN FORMATEUR / ADMIN (TOUS CANDIDATS & STATS)
                          ============================================ -->
                     <div id="bilanAdminContainer" class="hidden">
-                        <!-- Sous-onglets Admin Bilan -->
-                        <div class="es-admin-bilan-subtabs">
-                            <button type="button" class="es-admin-bilan-subtab active" id="btnAdminSubtabCandidates">
-                                <i class="bi bi-people-fill"></i> Bilan par Candidat
+                        <!-- Sous-onglets Admin Bilan (Pleine largeur & imbriqués) -->
+                        <div class="es-admin-bilan-subtabs" role="tablist">
+                            <button type="button" class="es-admin-bilan-subtab active" id="btnAdminSubtabCandidates" role="tab" aria-selected="true">
+                                <i class="bi bi-people-fill"></i>
+                                <div class="es-admin-bilan-subtab__text">
+                                    <span class="es-admin-bilan-subtab__title">Bilan par Candidat</span>
+                                    <span class="es-admin-bilan-subtab__subtitle">Suivi individuel, copies &amp; progression</span>
+                                </div>
                             </button>
-                            <button type="button" class="es-admin-bilan-subtab" id="btnAdminSubtabAnalytics">
-                                <i class="bi bi-bar-chart-line-fill"></i> Analyse par Question &amp; Module
+                            <button type="button" class="es-admin-bilan-subtab" id="btnAdminSubtabAnalytics" role="tab" aria-selected="false">
+                                <i class="bi bi-bar-chart-line-fill"></i>
+                                <div class="es-admin-bilan-subtab__text">
+                                    <span class="es-admin-bilan-subtab__title">Analyse par Question &amp; Module</span>
+                                    <span class="es-admin-bilan-subtab__subtitle">Taux de réussite &amp; statistiques détaillées</span>
+                                </div>
                             </button>
                         </div>
 
@@ -361,24 +369,33 @@
                                 </div>
                             </div>
 
-                            <!-- Barre de recherche & filtres candidats -->
-                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-                                <div style="display:flex; align-items:center; gap:10px; flex:1; max-width:440px;">
-                                    <div style="width:100%; position:relative;">
+                            <!-- Barre de recherche, actions & filtres candidats -->
+                            <div class="es-admin-candidate-toolbar" style="display:flex; flex-direction:column; gap:12px; margin-bottom:18px;">
+                                <!-- Ligne 1: Recherche + Actions Promo -->
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                                    <div style="flex:1; min-width:260px; max-width:440px; position:relative;">
                                         <i class="bi bi-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--clr-text-muted);"></i>
-                                        <input type="text" id="adminCandidateSearch" class="es-input" placeholder="Rechercher un candidat (nom, email)..." style="padding-left:36px;">
+                                        <input type="text" id="adminCandidateSearch" class="es-input" placeholder="Rechercher un candidat (nom, email)..." style="padding-left:36px; width:100%;">
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                        <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnAdminRefreshCandidates" title="Actualiser la liste des candidats" style="background:var(--clr-surface-2); color:var(--clr-text); border-color:var(--clr-surface-3); font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+                                            <i class="bi bi-arrow-clockwise" style="color:var(--clr-primary);"></i> Actualiser
+                                        </button>
+                                        <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportPromoPdf" title="Télécharger les résultats de toute la promotion">
+                                            <i class="bi bi-file-earmark-pdf-fill"></i> PDF Promo
+                                        </button>
+                                        <button type="button" class="es-btn es-btn--csv es-btn--sm" id="btnExportPromoCsv" title="Exporter les résultats de toute la promotion en CSV">
+                                            <i class="bi bi-file-earmark-spreadsheet-fill"></i> CSV Promo
+                                        </button>
                                     </div>
                                 </div>
+
+                                <!-- Ligne 2: Filtres par statut -->
                                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                                     <button type="button" class="es-bilan-filter-btn active" data-admin-candidate-filter="all">Tous (<span id="adminCandidateCountAll">0</span>)</button>
-                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="active">Actifs (<span id="adminCandidateCountActive">0</span>)</button>
+                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="completed">Validés (<span id="adminCandidateCountCompleted">0</span>)</button>
+                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="active">En cours (<span id="adminCandidateCountActive">0</span>)</button>
                                     <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="inactive">Non commencés (<span id="adminCandidateCountInactive">0</span>)</button>
-                                    <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportPromoPdf" title="Télécharger les résultats de toute la promotion" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
-                                        <i class="bi bi-file-earmark-pdf-fill"></i> Télécharger Promo (PDF)
-                                    </button>
-                                    <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnAdminRefreshCandidates" title="Actualiser la liste des candidats" style="background: var(--clr-surface-2); color: var(--clr-text); border-color: var(--clr-surface-3); font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                                        <i class="bi bi-arrow-clockwise" style="color: var(--clr-primary);"></i> Actualiser
-                                    </button>
                                 </div>
                             </div>
 
@@ -387,12 +404,13 @@
                                 <table class="es-admin-table">
                                     <thead>
                                         <tr>
-                                            <th>Candidat / Stagiaire</th>
-                                            <th>Progression</th>
-                                            <th>Score Moyen</th>
-                                            <th>Épreuves</th>
-                                            <th>Dernière Activité</th>
-                                            <th style="text-align:right;">Actions</th>
+                                            <th style="text-align:center;">Candidat / Stagiaire</th>
+                                            <th style="text-align:center;">Statut</th>
+                                            <th style="text-align:center;">Progression</th>
+                                            <th style="text-align:center;">Score Moyen</th>
+                                            <th style="text-align:center;">Épreuves</th>
+                                            <th style="text-align:center;">Dernière Activité</th>
+                                            <th style="text-align:center;">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="adminCandidatesTableBody">
@@ -428,12 +446,17 @@
                                             <div style="font-size:0.75rem; color:var(--clr-text-muted); font-weight:600;">Total Copies</div>
                                             <div style="font-size:1.25rem; font-weight:800; color:var(--clr-text);" id="analyticsModuleTotalAttempts">0</div>
                                         </div>
+                                        <div style="display:flex; align-items:center; border-left:1px solid var(--clr-surface-3); padding-left:12px;">
+                                            <button type="button" class="es-btn es-btn--csv es-btn--sm" id="btnExportModuleCsv" title="Exporter les copies de ce module en CSV">
+                                                <i class="bi bi-file-earmark-spreadsheet-fill"></i> CSV Module
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             <!-- Liste des questions avec statistiques de réussite -->
-                            <div style="font-size:1rem; font-weight:800; color:var(--clr-text); margin-bottom:14px; display:flex; align-items:center; gap:8px;">
+                            <div style="font-size:1rem; font-weight:800; color:#ffffff; margin-bottom:14px; display:flex; align-items:center; gap:8px;">
                                 <i class="bi bi-bar-chart-fill" style="color:var(--clr-primary);"></i> Taux de réussite &amp; statistiques par question
                             </div>
                             <div id="adminAnalyticsQuestionsContainer" style="display:flex; flex-direction:column; gap:16px;">
@@ -451,43 +474,7 @@
 
 
 
-    <!-- ========================================================
-     MODAL : Consulter les réponses Stagiaires (Admin / Formateur)
-     ======================================================== -->
-    <div class="es-overlay hidden" id="overlayFormationResults" role="dialog" aria-modal="true">
-        <div class="es-modal" style="max-width:760px; max-height:90vh; display:flex; flex-direction:column;">
-            <div class="es-modal__header" style="border-bottom:1.5px solid var(--clr-surface-3);">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div id="resultsModalIcon" class="es-formation-icon-wrap" style="width:40px; height:40px; font-size:18px;"></div>
-                    <div>
-                        <div id="resultsModalNum" class="es-formation-num">Module 01</div>
-                        <h2 class="es-modal__title" id="resultsModalTitle" style="font-size:1.1rem;">Réponses des stagiaires</h2>
-                    </div>
-                </div>
-                <button class="es-modal__close" id="btnCloseResultsModal"><i class="bi bi-x"></i></button>
-            </div>
-            <div class="es-modal__body" style="overflow-y:auto; padding:20px 24px; flex:1;">
-                <div class="es-loader" id="resultsLoader">
-                    <div class="es-spinner"></div>
-                    <span>Chargement des réponses…</span>
-                </div>
-                <div id="resultsEmptyState" class="es-empty hidden">
-                    <div class="es-empty__icon">📝</div>
-                    <div class="es-empty__title">Aucune réponse soumise</div>
-                    <p class="es-empty__text">Aucun stagiaire n'a encore envoyé de réponses pour ce module.</p>
-                </div>
-                <div id="resultsSubmissionsList" class="hidden" style="display:flex; flex-direction:column; gap:16px;"></div>
-            </div>
-            <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <div>
-                    <button type="button" class="es-btn es-btn--danger es-btn--sm hidden" id="btnAdminPurgeModulePromoSubmissions" style="font-weight:600; display:inline-flex; align-items:center; gap:6px;">
-                        <i class="bi bi-trash3-fill"></i> Supprimer toutes les réponses de la promo
-                    </button>
-                </div>
-                <button class="es-btn es-btn--ghost" id="btnCloseResultsModal2">Fermer</button>
-            </div>
-        </div>
-    </div>
+
 
     <!-- ========================================================
      MODAL : Confirmation Solennelle - Purge des réponses de la promo (Admin)
@@ -719,9 +706,14 @@
                 </div>
             </div>
             <div class="es-modal__footer" style="border-top:1.5px solid var(--clr-surface-3); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportAdminCandidatePdf" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
-                    <i class="bi bi-file-earmark-pdf-fill"></i> Télécharger ce bilan (PDF)
-                </button>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                    <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportAdminCandidatePdf" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="bi bi-file-earmark-pdf-fill"></i> Télécharger ce bilan (PDF)
+                    </button>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnExportAdminCandidateCsv" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                    </button>
+                </div>
                 <button class="es-btn es-btn--ghost" id="btnCloseAdminCandidateModal2">Fermer</button>
             </div>
         </div>

@@ -679,11 +679,18 @@ textarea {
   background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-dark));
   color: #ffffff;
   box-shadow: 0 3px 12px rgba(166, 216, 102, 0.3);
+  font-weight: 700;
 }
 
 .es-btn--primary:hover {
   transform: translateY(-1px);
   box-shadow: 0 6px 20px rgba(166, 216, 102, 0.4);
+  filter: brightness(1.08);
+}
+
+.es-btn--primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(166, 216, 102, 0.25);
 }
 
 .es-btn--accent {
@@ -752,6 +759,26 @@ textarea {
 
 .es-btn--success:hover {
   background: rgba(39, 174, 96, 0.2);
+}
+
+.es-btn--csv {
+  background: #198754;
+  color: #ffffff;
+  border: 1px solid #157347;
+  font-weight: 700;
+  box-shadow: 0 3px 12px rgba(25, 135, 84, 0.25);
+  cursor: pointer;
+}
+
+.es-btn--csv:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(25, 135, 84, 0.4);
+  filter: brightness(1.08);
+}
+
+.es-btn--csv:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(25, 135, 84, 0.25);
 }
 
 .es-btn--sm {
@@ -6986,40 +7013,102 @@ body.modal-open .es-topbar {
 }
 
 /* ================================================================
-   VUE BILAN ADMIN / FORMATEUR (CANDIDATS & ANALYTIQUES)
+   SOUS-ONGLETS BILAN ADMIN / FORMATEUR (CANDIDATS & ANALYTIQUES)
    ================================================================ */
 .es-admin-bilan-subtabs {
   display: flex;
   gap: 8px;
   background: var(--clr-surface-2);
-  border: 1.5px solid var(--clr-surface-3);
+  border: 1px solid var(--clr-surface-3);
   border-radius: var(--radius-md);
-  padding: 4px;
+  padding: 6px;
   margin-bottom: 24px;
-  max-width: 520px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .es-admin-bilan-subtab {
-  flex: 1;
-  padding: 9px 16px;
-  border: none;
-  background: transparent;
-  color: var(--clr-text-muted);
-  font-size: 0.88rem;
-  font-weight: 700;
+  flex: 1 1 0;
+  padding: 12px 18px;
+  border: 1px solid var(--clr-surface-3);
+  background: var(--clr-surface);
+  color: var(--clr-text);
+  font-size: 0.90rem;
+  font-weight: 600;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--transition);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
+  text-align: left;
+}
+
+.es-admin-bilan-subtab i {
+  font-size: 1.25rem;
+  color: var(--clr-text-muted);
+  transition: color var(--transition);
+  flex-shrink: 0;
+}
+
+.es-admin-bilan-subtab__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.es-admin-bilan-subtab__title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--clr-text);
+  line-height: 1.2;
+}
+
+.es-admin-bilan-subtab__subtitle {
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--clr-text-muted);
+  line-height: 1.2;
+}
+
+.es-admin-bilan-subtab:hover {
+  background: var(--clr-surface-2);
+  border-color: var(--clr-primary-dark);
+}
+
+.es-admin-bilan-subtab:hover i {
+  color: var(--clr-primary-dark);
 }
 
 .es-admin-bilan-subtab.active {
-  background: var(--clr-surface);
-  color: var(--clr-primary-dark);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: var(--clr-bg-dark);
+  color: #ffffff;
+  border-color: var(--clr-bg-dark);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.es-admin-bilan-subtab.active i {
+  color: var(--clr-primary);
+}
+
+.es-admin-bilan-subtab.active .es-admin-bilan-subtab__title {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.es-admin-bilan-subtab.active .es-admin-bilan-subtab__subtitle {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+@media (max-width: 768px) {
+  .es-admin-bilan-subtabs {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .es-admin-bilan-subtab {
+    padding: 12px 14px;
+  }
 }
 
 .es-admin-table-container {

@@ -2126,345 +2126,23 @@ document.getElementById('checkFormationRoleToggle')?.addEventListener('change', 
 // MODAL : RÉSULTATS DES STAGIAIRES (ADMIN)
 // ----------------------------------------------------------------
 async function openFormationResultsModal(moduleId) {
-    if (moduleId) {
-        window.location.href = `formation-results.html?module=${encodeURIComponent(moduleId)}`;
-    } else {
-        window.location.href = 'formation-results.html';
+    switchFormationTab('bilan');
+    const effectiveRole = (actualRole === 'admin' && isSimulatedStagiaireRole) ? 'stagiaire' : actualRole;
+    if (effectiveRole === 'admin' || effectiveRole === 'formateur') {
+        const btnAnalytics = document.getElementById('btnAdminSubtabAnalytics');
+        btnAnalytics?.click();
+        if (moduleId) {
+            const select = document.getElementById('adminAnalyticsModuleSelect');
+            if (select) {
+                select.value = moduleId;
+                adminAnalyticsModuleId = moduleId;
+                renderAdminModuleAnalytics(moduleId);
+            }
+        }
     }
     return;
-
-    // Charger les questions de la sous-collection
-    const questions = await fetchModuleQuestions(moduleId);
-    moduleData.questions = questions;
-
-    document.getElementById('resultsModalNum').textContent = `Module ${moduleData.num < 10 ? '0' + moduleData.num : moduleData.num}`;
-    document.getElementById('resultsModalTitle').textContent = `Réponses — ${moduleData.title}`;
-    const iconEl = document.getElementById('resultsModalIcon');
-    if (iconEl) iconEl.innerHTML = `<i class="bi ${moduleData.icon || 'bi-journal-bookmark'}"></i>`;
-
-    const loader = document.getElementById('resultsLoader');
-    const empty = document.getElementById('resultsEmptyState');
-    const list = document.getElementById('resultsSubmissionsList');
-
-    if (loader) loader.classList.remove('hidden');
-    if (empty) empty.classList.add('hidden');
-    if (list) { list.classList.add('hidden'); list.innerHTML = ''; }
-
-    openModal('overlayFormationResults');
-
-    try {
-        const snap = await db.collection('formation').doc(moduleId).collection('submissions').get();
-        if (loader) loader.classList.add('hidden');
-
-        const btnPurge = document.getElementById('btnAdminPurgeModulePromoSubmissions');
-
-        if (snap.empty) {
-            if (empty) empty.classList.remove('hidden');
-            if (btnPurge) btnPurge.classList.add('hidden');
-            return;
-        }
-
-        if (actualRole === 'admin' && btnPurge) {
-            btnPurge.classList.remove('hidden');
-            btnPurge.onclick = () => openPurgePromoSubmissionsModal(moduleData, snap.size);
-        } else if (btnPurge) {
-            btnPurge.classList.add('hidden');
-        }
-
-        const subs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        subs.sort((a, b) => {
-            const ta = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : (a.submittedAt?.seconds ? a.submittedAt.seconds * 1000 : (a.submittedAt ? new Date(a.submittedAt).getTime() : 0));
-            const tb = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : (b.submittedAt?.seconds ? b.submittedAt.seconds * 1000 : (b.submittedAt ? new Date(b.submittedAt).getTime() : 0));
-            return tb - ta;
-        });
-
-        list.innerHTML = subs.map((sub) => {
-            const answersHtml = questions.map((q, qIdx) => {
-                const ans = sub.answers ? sub.answers[q.id] : null;
-                let ansDisplay = '';
-                const imageThumbHtml = q.imageUrl ? `
-                <div style="margin-top:6px; margin-bottom:6px;">
-                    <img src="${escapeHtml(q.imageUrl)}" alt="Illustration" style="max-height:90px; max-width:100%; border-radius:4px; border:1px solid var(--clr-surface-3);" onerror="this.parentElement.style.display='none'">
-                </div>` : '';
-
-                if (q.type === 'qcm') {
-                    const ansNum = (ans !== null && ans !== undefined) ? parseInt(ans, 10) : null;
-                    const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                    const optText = (ansNum !== null && q.options && q.options[ansNum]) ? q.options[ansNum] : '<span style="color:var(--clr-danger)">Pas de réponse</span>';
-                    const isCorrect = (ansNum === correctIdx);
-                    ansDisplay = `
-                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.88rem;">
-                        <strong>Réponse choisie :</strong> ${escapeHtml(optText)}
-                        <span style="margin-left:8px; font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${isCorrect ? '✅ Exact' : '❌ Incorrect'}
-                        </span>
-                        ${!isCorrect && q.options && q.options[q.correctIndex] ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Bonne réponse attendue : <strong>${escapeHtml(q.options[q.correctIndex])}</strong>)</div>` : ''}
-                    </div>`;
-                } else if (q.type === 'boolean') {
-                    const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
-                    const hasAnswer = (ans !== null && ans !== undefined);
-                    const userBool = (ans === true || ans === 'true');
-                    const isCorrect = hasAnswer && (userBool === expectedBool);
-                    ansDisplay = `
-                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.88rem;">
-                        <strong>Réponse choisie :</strong> ${hasAnswer ? (userBool ? '👍 VRAI' : '👎 FAUX') : '<span style="color:var(--clr-danger)">Pas de réponse</span>'}
-                        <span style="margin-left:8px; font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${isCorrect ? '✅ Exact' : '❌ Incorrect'}
-                        </span>
-                        ${!isCorrect ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Réponse attendue : <strong>${expectedBool ? '👍 VRAI' : '👎 FAUX'}</strong>)</div>` : ''}
-                    </div>`;
-                } else if (q.type === 'pinpoint') {
-                    const userCoords = (ans && typeof ans === 'object') ? ans : (ans ? (typeof ans === 'string' ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null) : null);
-                    const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
-                    const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
-                    const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
-
-                    let isCorrect = false;
-                    if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
-                        const dx = userCoords.x - targetX;
-                        const dy = userCoords.y - targetY;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        isCorrect = dist <= radius;
-                    }
-
-                    ansDisplay = `
-                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:6px; font-size:0.88rem;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
-                            <div>
-                                <strong>Repère placé par le stagiaire :</strong> 
-                                ${userCoords ? `X: ${userCoords.x.toFixed(1)}%, Y: ${userCoords.y.toFixed(1)}%` : '<span style="color:var(--clr-danger)">Pas de repère placé</span>'}
-                            </div>
-                            <span style="font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                                ${isCorrect ? '✅ Cible atteinte (+1 pt)' : '❌ Hors cible attendue'}
-                            </span>
-                        </div>
-                        ${q.pinImage ? `
-                        <div style="text-align:center; background:#181c19; padding:8px; border-radius:6px; margin-top:6px;">
-                            <div class="es-pinpoint-result-zone" style="max-width:480px; margin:0 auto;">
-                                <img src="${escapeHtml(q.pinImage)}" alt="Résultat repère" class="es-pinpoint-result-img">
-                                <div class="es-pinpoint-target-zone es-pinpoint-target-zone--result" style="left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%;" title="Zone attendue (±${radius}%)"></div>
-                                <div class="es-pinpoint-pin es-pinpoint-pin--admin" style="left:${targetX}%; top:${targetY}%;" title="Cible attendue"><i class="bi bi-bullseye" style="font-size:22px; color:#2ecc71;"></i></div>
-                                ${userCoords ? `
-                                <div class="es-pinpoint-pin ${isCorrect ? 'es-pinpoint-pin--correct' : 'es-pinpoint-pin--incorrect'}" style="left:${userCoords.x}%; top:${userCoords.y}%;" title="Point stagiaire"><i class="bi bi-geo-alt-fill"></i></div>
-                                ` : ''}
-                            </div>
-                            <div style="font-size:0.75rem; color:#ffffff; margin-top:6px; opacity:0.85;">
-                                🎯 Cible attendue (vert) : X=${targetX.toFixed(1)}%, Y=${targetY.toFixed(1)}% (±${radius}%) ${q.targetLabel ? `— <em>${escapeHtml(q.targetLabel)}</em>` : ''}
-                            </div>
-                        </div>
-                        ` : ''}
-                    </div>`;
-                } else if (q.type === 'range') {
-                    const val = (ans !== null && ans !== undefined) ? parseFloat(ans) : null;
-                    const unit = q.unit || '';
-                    const hasTarget = (q.correctValue !== undefined && q.correctValue !== '' && q.correctValue !== null);
-                    let targetBadge = '';
-
-                    if (val !== null && hasTarget) {
-                        const targetVal = parseFloat(q.correctValue);
-                        const tolerance = parseFloat(q.tolerance) || 0;
-                        const isCorrectRange = Math.abs(val - targetVal) <= tolerance;
-                        targetBadge = `
-                        <span style="margin-left:8px; font-weight:700; color:${isCorrectRange ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${isCorrectRange ? '✅ Dans la cible' : '❌ Hors cible'}
-                        </span>
-                        <div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">
-                            (Cible attendue : <strong>${targetVal} ${escapeHtml(unit)}</strong> ${tolerance > 0 ? `± ${tolerance}` : ''})
-                        </div>`;
-                    }
-
-                    ansDisplay = `
-                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.88rem;">
-                        <div><strong>Valeur choisie :</strong> <span style="font-weight:700; color:var(--clr-primary);">${val !== null ? `${val} ${escapeHtml(unit)}` : '<span style="color:var(--clr-danger)">Pas de réponse</span>'}</span>
-                            ${targetBadge}
-                        </div>
-                    </div>`;
-                } else if (q.type === 'cloze') {
-                    const clozeMatches = (q.clozeText || '').match(/\[([^\]]+)\]/g) || [];
-                    const expectedBlanks = clozeMatches.map(m => m.replace(/^\[|\]$/g, '').trim());
-                    const userAnswersObj = ans && typeof ans === 'object' ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
-                    
-                    let correctBlanksCount = 0;
-                    expectedBlanks.forEach((expWord, bIdx) => {
-                        const uWord = userAnswersObj[bIdx];
-                        if (uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase()) {
-                            correctBlanksCount++;
-                        }
-                    });
-
-                    const isAllCorrect = (expectedBlanks.length > 0) && (correctBlanksCount === expectedBlanks.length);
-
-                    ansDisplay = `
-                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.88rem;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-                            <strong>Texte à trous complété :</strong>
-                            <span style="font-weight:700; color:${isAllCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                                ${isAllCorrect ? '✅ 100% Exact (+1 pt)' : `❌ ${correctBlanksCount}/${expectedBlanks.length} trou(s) correct(s)`}
-                            </span>
-                        </div>
-                        <div style="font-size:0.82rem; color:var(--clr-text); line-height:1.6;">
-                            ${expectedBlanks.map((expWord, bIdx) => {
-                                const uWord = userAnswersObj[bIdx];
-                                const isOk = uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase();
-                                return `<div>• Trou n°${bIdx + 1} : <strong style="color:${isOk ? '#27ae60' : '#e74c3c'};">${escapeHtml(uWord || 'Non rempli')}</strong> ${!isOk ? `(Attendu : <span style="color:#27ae60;">${escapeHtml(expWord)}</span>)` : '✓'}</div>`;
-                            }).join('')}
-                        </div>
-                    </div>`;
-                } else if (q.type === 'puzzle') {
-                    const candidateOrder = Array.isArray(ans) ? ans : [];
-                    const expectedOrder = q.items || [];
-                    const isExact = (candidateOrder.length === expectedOrder.length && candidateOrder.length > 0 && candidateOrder.every((it, idx) => it === expectedOrder[idx]));
-                    ansDisplay = `
-                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.88rem;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-                            <strong>Ordre proposé par le stagiaire :</strong>
-                            <span style="font-weight:700; color:${isExact ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                                ${isExact ? '✅ Ordre parfait (100%)' : '❌ Ordre incorrect'}
-                            </span>
-                        </div>
-                        <ol style="margin:4px 0 0 18px; padding:0; line-height:1.4; color:var(--clr-text);">
-                            ${candidateOrder.length > 0 ? candidateOrder.map(it => `<li>${escapeHtml(it)}</li>`).join('') : '<li style="color:var(--clr-danger)">Pas d\'ordre transmis</li>'}
-                        </ol>
-                        ${!isExact && expectedOrder.length > 0 ? `
-                        <div style="margin-top:8px; padding-top:6px; border-top:1px dashed var(--clr-surface-3); font-size:0.8rem; color:var(--clr-text-muted);">
-                            <strong style="color:var(--clr-primary);">Ordre attendu :</strong>
-                            <ol style="margin:4px 0 0 18px; padding:0; color:var(--clr-text);">
-                                ${expectedOrder.map(it => `<li>${escapeHtml(it)}</li>`).join('')}
-                            </ol>
-                        </div>` : ''}
-                    </div>`;
-                } else {
-                    const ev = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : { autoSuggested: null, isCorrect: null, status: 'auto_draft', gradedByUid: null };
-                    const isAdminUser = (actualRole === 'admin' || actualUserData?.role === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin) || (typeof isFormateurAdmin !== 'undefined' && isFormateurAdmin) || (typeof currentRole !== 'undefined' && currentRole === 'admin'));
-                    const isTranche = (ev.status === 'reviewed' && !!ev.gradedByUid);
-
-                    let autoDraftBadge = '';
-                    if (ev.autoSuggested === true) {
-                        autoDraftBadge = `<span class="es-badge" style="background:rgba(46, 204, 113, 0.14); color:#27ae60; font-size:0.75rem; padding:2px 8px; border-radius:12px;"><i class="bi bi-robot"></i> 1er jet algo : Vrai</span>`;
-                    } else if (ev.autoSuggested === false) {
-                        autoDraftBadge = `<span class="es-badge" style="background:rgba(231, 76, 60, 0.14); color:#e74c3c; font-size:0.75rem; padding:2px 8px; border-radius:12px;"><i class="bi bi-robot"></i> 1er jet algo : Faux</span>`;
-                    }
-
-                    let statusBadge = '';
-                    let metaChip = '';
-                    if (isTranche) {
-                        const isOk = (ev.isCorrect === true);
-                        statusBadge = `<span style="font-weight:700; color:${isOk ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.86rem;">${isOk ? '✅ Validé (Vrai)' : '❌ Invalidé (Faux)'}</span>`;
-                        metaChip = `
-                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3);">
-                            <i class="bi bi-shield-check" style="color:var(--clr-primary);"></i> Tranché par <strong>${escapeHtml(ev.gradedByName || 'Équipe pédagogique')}</strong> (${ev.gradedByRole || 'formateur'}) le ${formatFullDate(ev.gradedAt)}
-                        </div>`;
-                    } else {
-                        statusBadge = `<span style="font-size:0.78rem; font-weight:600; color:#e67e22; background:rgba(243,156,18,0.12); padding:2px 8px; border-radius:12px;"><i class="bi bi-hourglass-split"></i> En attente de validation</span>`;
-                    }
-
-                    let actionButtonsHtml = '';
-                    if (isAdminUser || !isTranche) {
-                        actionButtonsHtml = `
-                        <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
-                            <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === true ? 'es-btn--primary' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${moduleId}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="true" style="padding:4px 10px; font-size:0.78rem;">
-                                <i class="bi bi-check-lg"></i> Vrai (Valider)
-                            </button>
-                            <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === false ? 'es-btn--danger' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${moduleId}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="false" style="padding:4px 10px; font-size:0.78rem;">
-                                <i class="bi bi-x-lg"></i> Faux (Invalider)
-                            </button>
-                            ${isAdminUser && isTranche ? `<span style="font-size:0.72rem; color:var(--clr-text-muted);">(Admin : modifiable)</span>` : ''}
-                        </div>`;
-                    } else {
-                        actionButtonsHtml = `
-                        <div style="margin-top:8px; font-size:0.74rem; color:var(--clr-text-muted); background:rgba(0,0,0,0.03); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3);">
-                            <i class="bi bi-lock-fill" style="color:var(--clr-warning);"></i> Décision tranchée et verrouillée (seul l'administrateur peut modifier).
-                        </div>`;
-                    }
-
-                    ansDisplay = `
-                    <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:6px; font-size:0.88rem; line-height:1.5; color:var(--clr-text);">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <strong>Réponse rédigée :</strong>
-                                ${autoDraftBadge}
-                            </div>
-                            <div>${statusBadge}</div>
-                        </div>
-                        <div style="white-space:pre-wrap; color:var(--clr-text); font-size:0.88rem;">${escapeHtml(ans || 'Pas de texte rédigé.')}</div>
-                        ${q.hint ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:6px;"><i class="bi bi-lightbulb"></i> Piste attendue : ${escapeHtml(q.hint)}</div>` : ''}
-                        ${metaChip}
-                        ${actionButtonsHtml}
-                    </div>`;
-                }
-
-                let typeLabel = 'QCM';
-                if (q.type === 'cloze') typeLabel = '🔤 Texte à trous';
-                else if (q.type === 'pinpoint') typeLabel = '📍 Repère sur image';
-                else if (q.type === 'range') typeLabel = 'Curseur horizontal';
-                else if (q.type === 'boolean') typeLabel = 'Vrai / Faux';
-                else if (q.type === 'puzzle') typeLabel = 'Puzzle / Ordonnancement';
-                else if (q.type === 'text') typeLabel = 'Rédaction';
-
-                return `
-                <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
-                    <div style="font-size:0.75rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Question ${qIdx + 1} • ${typeLabel}</div>
-                    <div style="font-size:0.88rem; font-weight:600; color:var(--clr-text); margin-top:2px;">${escapeHtml(q.text)}</div>
-                    ${imageThumbHtml}
-                    ${ansDisplay}
-                </div>`;
-            }).join('');
-
-            const scoreBadge = sub.score ? `<span class="es-badge es-badge--approved">Score : ${sub.score.correct}/${sub.score.total} (${sub.score.percent}%)</span>` : '';
-            const attemptBadge = sub.attemptNumber ? `<span class="es-badge es-badge--anim"><i class="bi bi-arrow-repeat"></i> Tentative #${sub.attemptNumber}</span>` : '';
-
-            return `
-            <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:16px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                    <div>
-                        <div style="font-weight:700; font-size:0.95rem; color:var(--clr-text);">${escapeHtml(sub.userName || sub.userEmail || 'Stagiaire')}</div>
-                        <div style="font-size:0.78rem; color:var(--clr-text-muted);">${escapeHtml(sub.userEmail || '')}</div>
-                    </div>
-                    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
-                        ${attemptBadge}
-                        ${scoreBadge}
-                        ${(actualRole === 'admin') ? `
-                        <button type="button" class="es-btn es-btn--danger es-btn--sm btn-delete-single-submission" data-sub-id="${sub.id}" data-user-id="${sub.userId || ''}" data-module-id="${moduleId}" data-user-name="${escapeHtml(sub.userName || sub.userEmail)}" data-module-title="${escapeHtml(moduleData.title)}" style="padding:4px 8px; font-size:0.75rem;" title="Supprimer cette copie">
-                            <i class="bi bi-trash3"></i>
-                        </button>` : ''}
-                    </div>
-                </div>
-                ${answersHtml}
-            </div>`;
-        }).join('');
-
-        if (list) {
-            list.classList.remove('hidden');
-
-            list.querySelectorAll('.btn-grade-eval').forEach(btn => {
-                btn.addEventListener('click', async () => {
-                    const modId = btn.getAttribute('data-module-id');
-                    const subId = btn.getAttribute('data-sub-id');
-                    const qId = btn.getAttribute('data-q-id');
-                    const decision = (btn.getAttribute('data-val') === 'true');
-                    await gradeOpenQuestionAnswer(modId, subId, qId, decision, btn);
-                });
-            });
-
-            list.querySelectorAll('.btn-delete-single-submission').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const subId = btn.getAttribute('data-sub-id');
-                    const userId = btn.getAttribute('data-user-id');
-                    const modId = btn.getAttribute('data-module-id');
-                    const uName = btn.getAttribute('data-user-name');
-                    const modTitle = btn.getAttribute('data-module-title');
-                    openSingleDeleteConfirmModal({ subId, userId, moduleId: modId, userName: uName, moduleTitle: modTitle });
-                });
-            });
-        }
-
-    } catch (err) {
-        if (loader) loader.classList.add('hidden');
-        console.error("openFormationResultsModal error:", err);
-        showToast("Erreur lors de la récupération des réponses.", "error");
-    }
 }
+
 
 async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decisionBool, targetBtn) {
     if (targetBtn) btnLoading(targetBtn, true);
@@ -3080,11 +2758,195 @@ function exportPromoBilanPDF({ promoName, candidatesList, submissionsByUser, mod
 let currentFormationTab = 'modules'; // 'modules' | 'bilan'
 let currentBilanFilter = 'all'; // 'all' | 'completed' | 'pending'
 
+// ----------------------------------------------------------------
+// FONCTIONS D'EXPORT CSV POUR LE BILAN
+// ----------------------------------------------------------------
+function downloadCSV(csvContent, filename) {
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+function exportStagiaireBilanCSV() {
+    const user = (typeof actualUserData !== 'undefined' && actualUserData) ? actualUserData : (currentUser || {});
+    const userName = user.displayName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email || 'Stagiaire';
+    const promoName = document.getElementById('promoCurrentName')?.textContent.trim() || 'BAFA';
+    const modules = (currentFormationModulesList || []).filter(m => m.visible !== false);
+
+    let csv = `Bilan de formation BAFA - ${promoName}\r\n`;
+    csv += `Stagiaire : "${userName.replace(/"/g, '""')}";Email : "${(user.email || '').replace(/"/g, '""')}";Date d'export : "${new Date().toLocaleDateString('fr-FR')}"\r\n\r\n`;
+    csv += `Module N°;Titre Module;Statut;Score (%);Score QCM;Tentatives;Dernière épreuve\r\n`;
+
+    modules.forEach(m => {
+        const sub = stagiaireSubmissionsMap ? stagiaireSubmissionsMap[m.id] : null;
+        const isCompleted = !!sub;
+        const numStr = `Module ${m.num < 10 ? '0' + m.num : m.num}`;
+        const title = (m.title || '').replace(/"/g, '""');
+        const status = isCompleted ? 'Complété' : 'À réaliser';
+        const scorePct = (sub && sub.score && typeof sub.score.percent === 'number') ? `${sub.score.percent}%` : (isCompleted ? 'Transmis' : '--');
+        const scoreDetail = (sub && sub.score && typeof sub.score.correct === 'number') ? `${sub.score.correct}/${sub.score.total}` : '--';
+        const attempts = sub ? (sub.attemptsCount || 1) : 0;
+        const lastDate = sub ? formatFullDate(sub.submittedAt) : '--';
+
+        csv += `"${numStr}";"${title}";"${status}";"${scorePct}";"${scoreDetail}";"${attempts}";"${lastDate}"\r\n`;
+    });
+
+    const safeName = userName.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    downloadCSV(csv, `Bilan_${safeName}_${new Date().toISOString().slice(0, 10)}.csv`);
+    showToast("Export CSV de votre bilan téléchargé.", "success");
+}
+
+function exportPromoBilanCSV() {
+    const promoName = document.getElementById('promoCurrentName')?.textContent.trim() || 'Promo';
+    const totalModules = (currentFormationModulesList || []).length;
+    const candidates = adminAllCandidatesList || [];
+
+    let csv = `Bilan Général Promotion - ${promoName}\r\n`;
+    csv += `Date d'export : "${new Date().toLocaleDateString('fr-FR')}";Total Candidats : ${candidates.length};Total Modules : ${totalModules}\r\n\r\n`;
+    csv += `Candidat;Email;Statut;Modules Validés;Total Modules;Complétion (%);Score Moyen (%);Épreuves passées;Dernière activité\r\n`;
+
+    candidates.forEach(cand => {
+        const candData = adminAllSubmissionsByUser[cand.uid];
+        const candModulesMap = candData?.modulesMap || {};
+        const allSubs = candData?.allSubs || [];
+        const completedCount = Object.keys(candModulesMap).length;
+        const completionPct = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
+
+        let status = 'Non commencé';
+        if (completedCount >= totalModules && totalModules > 0) {
+            status = 'Validé';
+        } else if (completedCount > 0) {
+            status = 'En cours';
+        }
+
+        const candScores = [];
+        Object.values(candModulesMap).forEach(sub => {
+            if (sub.score && typeof sub.score.percent === 'number') {
+                candScores.push(sub.score.percent);
+            }
+        });
+        const avgScore = candScores.length > 0 ? `${Math.round(candScores.reduce((a, b) => a + b, 0) / candScores.length)}%` : (completedCount > 0 ? 'Transmis' : '--');
+
+        let lastDateText = '--';
+        if (allSubs.length > 0) {
+            const sorted = [...allSubs].sort((a, b) => {
+                const ta = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : (a.submittedAt?.seconds ? a.submittedAt.seconds * 1000 : 0);
+                const tb = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : (b.submittedAt?.seconds ? b.submittedAt.seconds * 1000 : 0);
+                return tb - ta;
+            });
+            lastDateText = formatFullDate(sorted[0].submittedAt);
+        }
+
+        const displayName = cand.displayName || `${cand.firstName || ''} ${cand.lastName || ''}`.trim() || 'Candidat';
+        const email = cand.email || '';
+
+        csv += `"${displayName.replace(/"/g, '""')}";"${email.replace(/"/g, '""')}";"${status}";${completedCount};${totalModules};"${completionPct}%";"${avgScore}";${allSubs.length};"${lastDateText}"\r\n`;
+    });
+
+    const safePromo = promoName.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    downloadCSV(csv, `Bilan_Promo_${safePromo}_${new Date().toISOString().slice(0, 10)}.csv`);
+    showToast("Export CSV de la promotion téléchargé.", "success");
+}
+
+async function exportModuleAnalyticsCSV(moduleId) {
+    if (!moduleId) moduleId = adminAnalyticsModuleId;
+    const mod = (currentFormationModulesList || []).find(m => m.id === moduleId);
+    if (!mod) {
+        showToast("Aucun module sélectionné pour l'export.", "warning");
+        return;
+    }
+
+    const subs = adminAllSubmissionsByModule[moduleId] || [];
+    const questions = await fetchModuleQuestions(moduleId);
+
+    let csv = `Résultats détaillés - Module ${mod.num < 10 ? '0' + mod.num : mod.num} : ${(mod.title || '').replace(/"/g, '""')}\r\n`;
+    csv += `Date d'export : "${new Date().toLocaleDateString('fr-FR')}";Total copies : ${subs.length}\r\n\r\n`;
+
+    let headers = ['Candidat', 'Email', 'Tentative #', 'Date de soumission', 'Score (%)', 'Score QCM', 'Statut'];
+    questions.forEach((q, qIdx) => {
+        headers.push(`Q${qIdx + 1} (${(q.type || 'qcm').toUpperCase()})`);
+    });
+    csv += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(';') + '\r\n';
+
+    subs.forEach(sub => {
+        const candName = sub.userName || sub.userEmail || 'Stagiaire';
+        const candEmail = sub.userEmail || '';
+        const attempt = sub.attemptNumber || 1;
+        const subDate = formatFullDate(sub.submittedAt);
+        const scorePct = (sub.score && typeof sub.score.percent === 'number') ? `${sub.score.percent}%` : 'Transmis';
+        const scoreDet = (sub.score && typeof sub.score.correct === 'number') ? `${sub.score.correct}/${sub.score.total}` : '--';
+        const status = (sub.score && typeof sub.score.percent === 'number') ? (sub.score.percent >= 50 ? 'Validé' : 'À retravailler') : 'Transmis';
+
+        let row = [candName, candEmail, attempt, subDate, scorePct, scoreDet, status];
+
+        questions.forEach(q => {
+            const ans = sub.answers ? sub.answers[q.id] : null;
+            let ansStr = '--';
+            if (ans !== null && ans !== undefined) {
+                if (q.type === 'qcm') {
+                    const ansNum = parseInt(ans, 10);
+                    ansStr = (q.options && q.options[ansNum]) ? q.options[ansNum] : `Choix #${ansNum + 1}`;
+                } else if (q.type === 'boolean') {
+                    ansStr = (ans === true || ans === 'true') ? 'VRAI' : 'FAUX';
+                } else if (typeof ans === 'object') {
+                    ansStr = JSON.stringify(ans);
+                } else {
+                    ansStr = String(ans).trim();
+                }
+            }
+            row.push(ansStr);
+        });
+
+        csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';') + '\r\n';
+    });
+
+    const safeTitle = (mod.title || `Module_${mod.num}`).replace(/[^a-zA-Z0-9_\-]/g, '_');
+    downloadCSV(csv, `Resultats_Module_${mod.num < 10 ? '0' + mod.num : mod.num}_${safeTitle}_${new Date().toISOString().slice(0, 10)}.csv`);
+    showToast("Export CSV du module téléchargé.", "success");
+}
+
+function exportCandidateAdminBilanCSV(cand, candModulesMap) {
+    if (!cand) return;
+    const displayName = cand.displayName || `${cand.firstName || ''} ${cand.lastName || ''}`.trim() || cand.email || 'Candidat';
+    const promoName = document.getElementById('promoCurrentName')?.textContent.trim() || 'BAFA';
+    const modules = currentFormationModulesList || [];
+
+    let csv = `Bilan Individuel Candidat - ${promoName}\r\n`;
+    csv += `Candidat : "${displayName.replace(/"/g, '""')}";Email : "${(cand.email || '').replace(/"/g, '""')}";Date d'export : "${new Date().toLocaleDateString('fr-FR')}"\r\n\r\n`;
+    csv += `Module N°;Titre Module;Statut;Score (%);Score QCM;Tentative #;Date de soumission\r\n`;
+
+    modules.forEach(m => {
+        const sub = candModulesMap ? candModulesMap[m.id] : null;
+        const isCompleted = !!sub;
+        const numStr = `Module ${m.num < 10 ? '0' + m.num : m.num}`;
+        const title = (m.title || '').replace(/"/g, '""');
+        const status = isCompleted ? 'Complété' : 'Non commencé';
+        const scorePct = (sub && sub.score && typeof sub.score.percent === 'number') ? `${sub.score.percent}%` : (isCompleted ? 'Transmis' : '--');
+        const scoreDetail = (sub && sub.score && typeof sub.score.correct === 'number') ? `${sub.score.correct}/${sub.score.total}` : '--';
+        const attempt = sub ? (sub.attemptNumber || 1) : '--';
+        const lastDate = sub ? formatFullDate(sub.submittedAt) : '--';
+
+        csv += `"${numStr}";"${title}";"${status}";"${scorePct}";"${scoreDetail}";"${attempt}";"${lastDate}"\r\n`;
+    });
+
+    const safeName = displayName.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    downloadCSV(csv, `Bilan_${safeName}_${new Date().toISOString().slice(0, 10)}.csv`);
+    showToast("Export CSV du candidat téléchargé.", "success");
+}
+
 function initBilanTabs() {
     const tabModules = document.getElementById('tabFormationModules');
     const tabBilan = document.getElementById('tabFormationBilan');
     const btnRefresh = document.getElementById('btnRefreshBilan');
     const btnExportStagiaire = document.getElementById('btnExportStagiaireBilanPdf');
+    const btnExportStagiaireCsv = document.getElementById('btnExportStagiaireBilanCsv');
     const filterBtns = document.querySelectorAll('#bilanFilterButtons .es-bilan-filter-btn');
 
     tabModules?.addEventListener('click', () => switchFormationTab('modules'));
@@ -3097,6 +2959,10 @@ function initBilanTabs() {
             submissionsMap: stagiaireSubmissionsMap,
             promoName: document.getElementById('promoCurrentName')?.textContent.trim()
         });
+    });
+
+    btnExportStagiaireCsv?.addEventListener('click', () => {
+        exportStagiaireBilanCSV();
     });
 
     btnRefresh?.addEventListener('click', async () => {
@@ -3538,6 +3404,8 @@ function initAdminBilanControls() {
     const filterBtns = document.querySelectorAll('[data-admin-candidate-filter]');
     const btnRefresh = document.getElementById('btnAdminRefreshCandidates');
     const btnExportPromo = document.getElementById('btnExportPromoPdf');
+    const btnExportPromoCsv = document.getElementById('btnExportPromoCsv');
+    const btnExportModuleCsv = document.getElementById('btnExportModuleCsv');
     const moduleSelect = document.getElementById('adminAnalyticsModuleSelect');
 
     btnExportPromo?.addEventListener('click', () => {
@@ -3549,10 +3417,20 @@ function initAdminBilanControls() {
         });
     });
 
+    btnExportPromoCsv?.addEventListener('click', () => {
+        exportPromoBilanCSV();
+    });
+
+    btnExportModuleCsv?.addEventListener('click', () => {
+        exportModuleAnalyticsCSV(adminAnalyticsModuleId);
+    });
+
     btnCandidates?.addEventListener('click', () => {
         adminBilanSubtab = 'candidates';
         btnCandidates.classList.add('active');
+        btnCandidates.setAttribute('aria-selected', 'true');
         btnAnalytics?.classList.remove('active');
+        btnAnalytics?.setAttribute('aria-selected', 'false');
         viewCandidates?.classList.remove('hidden');
         viewAnalytics?.classList.add('hidden');
     });
@@ -3560,7 +3438,9 @@ function initAdminBilanControls() {
     btnAnalytics?.addEventListener('click', () => {
         adminBilanSubtab = 'analytics';
         btnAnalytics.classList.add('active');
+        btnAnalytics.setAttribute('aria-selected', 'true');
         btnCandidates?.classList.remove('active');
+        btnCandidates?.setAttribute('aria-selected', 'false');
         viewAnalytics?.classList.remove('hidden');
         viewCandidates?.classList.add('hidden');
         if (adminAnalyticsModuleId) {
@@ -3660,6 +3540,7 @@ async function loadAdminBilanData() {
         // 3. Calcul des KPIs Globaux Promotion
         const totalCandidates = adminAllCandidatesList.length;
         const totalModules = modules.length;
+        let completedCandidatesCount = 0;
         let activeCandidatesCount = 0;
         let totalSubmissionsCount = 0;
         let totalCompletionRatesSum = 0;
@@ -3671,8 +3552,13 @@ async function loadAdminBilanData() {
             const completedCount = Object.keys(candModulesMap).length;
             const subsList = userData?.allSubs || [];
 
-            if (completedCount > 0) {
+            if (completedCount >= totalModules && totalModules > 0) {
+                completedCandidatesCount++;
+            } else if (completedCount > 0) {
                 activeCandidatesCount++;
+            }
+
+            if (completedCount > 0) {
                 totalSubmissionsCount += subsList.length;
             }
 
@@ -3688,6 +3574,7 @@ async function loadAdminBilanData() {
 
         const avgCompletion = totalCandidates > 0 ? Math.round(totalCompletionRatesSum / totalCandidates) : 0;
         const avgScorePromo = allScoresPromo.length > 0 ? Math.round(allScoresPromo.reduce((a, b) => a + b, 0) / allScoresPromo.length) : null;
+        const inactiveCount = Math.max(0, totalCandidates - (completedCandidatesCount + activeCandidatesCount));
 
         // Mise à jour de l'affichage des KPIs
         const kpiTotalCand = document.getElementById('adminKpiTotalCandidates');
@@ -3697,8 +3584,9 @@ async function loadAdminBilanData() {
         const kpiTotalSubs = document.getElementById('adminKpiTotalSubmissions');
         const kpiAvgCompletion = document.getElementById('adminKpiAvgCompletion');
 
+        const totalActiveOrCompleted = completedCandidatesCount + activeCandidatesCount;
         if (kpiTotalCand) kpiTotalCand.textContent = totalCandidates;
-        if (kpiActiveCand) kpiActiveCand.textContent = `${activeCandidatesCount} candidat${activeCandidatesCount > 1 ? 's' : ''} actif${activeCandidatesCount > 1 ? 's' : ''}`;
+        if (kpiActiveCand) kpiActiveCand.textContent = `${totalActiveOrCompleted} candidat${totalActiveOrCompleted > 1 ? 's' : ''} actif${totalActiveOrCompleted > 1 ? 's' : ''}`;
         if (kpiAvgScore) kpiAvgScore.textContent = avgScorePromo !== null ? `${avgScorePromo}%` : '--%';
         if (kpiAvgScoreSub) kpiAvgScoreSub.textContent = allScoresPromo.length > 0 ? `Sur ${allScoresPromo.length} copies notées` : 'Aucune note disponible';
         if (kpiTotalSubs) kpiTotalSubs.textContent = totalSubmissionsCount;
@@ -3706,11 +3594,13 @@ async function loadAdminBilanData() {
 
         // Mise à jour des compteurs filtres
         const cAll = document.getElementById('adminCandidateCountAll');
+        const cComp = document.getElementById('adminCandidateCountCompleted');
         const cAct = document.getElementById('adminCandidateCountActive');
         const cInact = document.getElementById('adminCandidateCountInactive');
         if (cAll) cAll.textContent = totalCandidates;
+        if (cComp) cComp.textContent = completedCandidatesCount;
         if (cAct) cAct.textContent = activeCandidatesCount;
-        if (cInact) cInact.textContent = Math.max(0, totalCandidates - activeCandidatesCount);
+        if (cInact) cInact.textContent = inactiveCount;
 
     } catch (err) {
         console.error("loadAdminBilanData error:", err);
@@ -3727,10 +3617,13 @@ function renderAdminCandidatesTable() {
     const filteredCandidates = adminAllCandidatesList.filter(cand => {
         const candData = adminAllSubmissionsByUser[cand.uid];
         const completedCount = Object.keys(candData?.modulesMap || {}).length;
-        const isActive = completedCount > 0;
+        const isFullyCompleted = (completedCount >= totalModules && totalModules > 0);
+        const isInProgress = (completedCount > 0 && !isFullyCompleted);
+        const isNotStarted = (completedCount === 0);
 
-        if (adminCandidateFilter === 'active' && !isActive) return false;
-        if (adminCandidateFilter === 'inactive' && isActive) return false;
+        if (adminCandidateFilter === 'completed' && !isFullyCompleted) return false;
+        if (adminCandidateFilter === 'active' && !isInProgress) return false;
+        if (adminCandidateFilter === 'inactive' && !isNotStarted) return false;
 
         if (searchTerm) {
             const name = (cand.displayName || `${cand.firstName || ''} ${cand.lastName || ''}`).toLowerCase();
@@ -3745,7 +3638,7 @@ function renderAdminCandidatesTable() {
     if (filteredCandidates.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align:center; padding:36px 16px; color:var(--clr-text-muted);">
+                <td colspan="7" style="text-align:center; padding:36px 16px; color:var(--clr-text-muted);">
                     <div style="font-size:1.8rem; margin-bottom:8px;">🔍</div>
                     <div style="font-weight:700;">Aucun candidat ne correspond aux critères</div>
                 </td>
@@ -3760,6 +3653,14 @@ function renderAdminCandidatesTable() {
         const allSubs = candData?.allSubs || [];
         const completedCount = Object.keys(candModulesMap).length;
         const completionPct = totalModules > 0 ? Math.round((completedCount / totalModules) * 100) : 0;
+
+        // Statut du candidat
+        let statusBadge = '<span class="es-badge es-badge--pending" style="font-size:0.75rem;"><i class="bi bi-dash-circle"></i> Non commencé</span>';
+        if (completedCount >= totalModules && totalModules > 0) {
+            statusBadge = '<span class="es-badge es-badge--approved" style="font-size:0.75rem; background:rgba(46,204,113,0.15); color:#27ae60; font-weight:700;"><i class="bi bi-check-circle-fill"></i> Validé</span>';
+        } else if (completedCount > 0) {
+            statusBadge = '<span class="es-badge" style="font-size:0.75rem; background:rgba(243,156,18,0.15); color:#d35400; font-weight:700;"><i class="bi bi-hourglass-split"></i> En cours</span>';
+        }
 
         // Calcul score moyen candidat
         const candScores = [];
@@ -3812,25 +3713,31 @@ function renderAdminCandidatesTable() {
                     </div>
                 </div>
             </td>
-            <td>
+            <td style="text-align:center;">${statusBadge}</td>
+            <td style="text-align:center;">
                 <div style="font-weight:700; font-size:0.88rem; color:var(--clr-text);">${completedCount} / ${totalModules} <span style="font-size:0.75rem; color:var(--clr-text-muted);">(${completionPct}%)</span></div>
-                <div class="es-progress-bar-wrap">
+                <div class="es-progress-bar-wrap" style="margin:4px auto 0 auto; max-width:140px;">
                     <div class="es-progress-bar-inner" style="width:${completionPct}%; background:${completionPct >= 100 ? '#27ae60' : 'var(--clr-primary)'};"></div>
                 </div>
             </td>
-            <td>${scoreBadge}</td>
-            <td>
+            <td style="text-align:center;">${scoreBadge}</td>
+            <td style="text-align:center;">
                 <span class="es-badge es-badge--approved" style="font-size:0.78rem;">${allSubs.length} tentative${allSubs.length > 1 ? 's' : ''}</span>
             </td>
-            <td>${lastDateText}</td>
-            <td style="text-align:right;">
-                <div style="display:inline-flex; gap:6px; align-items:center;">
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-download-candidate-pdf" data-user-id="${cand.uid}" title="Télécharger le bilan PDF de ce candidat" style="padding:6px 10px; font-size:0.8rem; border-color:rgba(231,76,60,0.3); color:#e74c3c;">
-                        <i class="bi bi-file-earmark-pdf-fill"></i> PDF
-                    </button>
-                    <button type="button" class="es-btn es-btn--primary es-btn--sm btn-open-candidate-sheet" data-user-id="${cand.uid}" style="padding:6px 12px; font-size:0.8rem; font-weight:700;">
+            <td style="text-align:center;">${lastDateText}</td>
+            <td style="text-align:center;">
+                <div style="display:inline-flex; flex-direction:column; align-items:center; gap:5px;">
+                    <button type="button" class="es-btn es-btn--primary es-btn--sm btn-open-candidate-sheet" data-user-id="${cand.uid}" style="padding:5px 12px; font-size:0.8rem; font-weight:700; width:100%; justify-content:center; white-space:nowrap;">
                         <i class="bi bi-person-lines-fill"></i> Voir le bilan
                     </button>
+                    <div style="display:inline-flex; gap:5px; width:100%; justify-content:center;">
+                        <button type="button" class="es-btn es-btn--ghost btn-download-candidate-pdf" data-user-id="${cand.uid}" title="Télécharger le bilan PDF de ce candidat" style="padding:3px 8px; font-size:0.75rem; font-weight:600; color:#e74c3c; border-color:rgba(231,76,60,0.3); background:rgba(231,76,60,0.06); border-radius:4px; display:inline-flex; align-items:center; gap:4px; flex:1; justify-content:center;">
+                            <i class="bi bi-file-earmark-pdf-fill"></i> PDF
+                        </button>
+                        <button type="button" class="es-btn es-btn--ghost btn-download-candidate-csv" data-user-id="${cand.uid}" title="Télécharger le bilan CSV de ce candidat" style="padding:3px 8px; font-size:0.75rem; font-weight:600; color:#198754; border-color:rgba(25,135,84,0.3); background:rgba(25,135,84,0.06); border-radius:4px; display:inline-flex; align-items:center; gap:4px; flex:1; justify-content:center;">
+                            <i class="bi bi-file-earmark-spreadsheet-fill"></i> CSV
+                        </button>
+                    </div>
                 </div>
             </td>
         </tr>`;
@@ -3841,6 +3748,19 @@ function renderAdminCandidatesTable() {
         btn.addEventListener('click', () => {
             const uid = btn.getAttribute('data-user-id');
             openAdminCandidateBilanModal(uid);
+        });
+    });
+
+    // Listeners pour télécharger le CSV du candidat
+    tbody.querySelectorAll('.btn-download-candidate-csv').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const uid = btn.getAttribute('data-user-id');
+            const cand = adminAllCandidatesList.find(u => u.uid === uid);
+            if (!cand) return;
+            const candData = adminAllSubmissionsByUser[uid];
+            const candModulesMap = candData?.modulesMap || {};
+            exportCandidateAdminBilanCSV(cand, candModulesMap);
         });
     });
 
@@ -4195,6 +4115,14 @@ async function openAdminCandidateBilanModal(userId) {
                 submissionsMap: candModulesMap,
                 promoName: document.getElementById('promoCurrentName')?.textContent.trim()
             });
+        };
+    }
+
+    // Bouton de téléchargement du CSV de ce candidat
+    const btnExportModalCsv = document.getElementById('btnExportAdminCandidateCsv');
+    if (btnExportModalCsv) {
+        btnExportModalCsv.onclick = () => {
+            exportCandidateAdminBilanCSV(cand, candModulesMap);
         };
     }
 
