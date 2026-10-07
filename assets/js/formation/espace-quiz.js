@@ -242,7 +242,7 @@ function renderBriefingScreen() {
     const timerPillText = document.getElementById('pillQuizTimerText');
     if (timerPill && timerPillText) {
         if (totalDurationSecs > 0) {
-            timerPillText.textContent = `⏱️ ${formatDurationText(totalDurationSecs)} max`;
+            timerPillText.textContent = `️${formatDurationText(totalDurationSecs)} max`;
             timerPill.className = 'es-quiz-pill es-quiz-pill--warning';
         } else {
             timerPillText.textContent = `Temps libre (sans chrono)`;
@@ -269,6 +269,14 @@ function renderBriefingScreen() {
         pillCorrection.textContent = "Corrigé différé par le formateur";
     }
 
+    // Pilule Points Négatifs
+    const hasNegativePoints = Boolean(qConfig.negativePoints === true || qConfig.negativePoints === 'true');
+    const pillNeg = document.getElementById('pillNegativePoints');
+    if (pillNeg) {
+        if (hasNegativePoints) pillNeg.classList.remove('hidden');
+        else pillNeg.classList.add('hidden');
+    }
+
     // Avertissement de début d'épreuve
     const warningTextEl = document.getElementById('briefingWarningText');
     if (warningTextEl) {
@@ -281,12 +289,16 @@ function renderBriefingScreen() {
             warnContent += `Ce module autorise un <strong>nombre illimité de tentatives</strong>. Notez toutefois que <strong>l'ensemble de vos essais</strong> sera enregistré. Veillez à traiter chaque tentative avec sérieux.<br>`;
         }
 
+        if (hasNegativePoints) {
+            warnContent += `<strong>Barème à points négatifs :</strong> Une bonne réponse rapporte <strong>+1 point</strong>. Une mauvaise réponse retire <strong>-0.5 point</strong>. Les questions laissées sans réponse valent <strong>0 point</strong>.<br>`;
+        }
+
         if (totalDurationSecs > 0) {
-            warnContent += `⏱️ <strong>Épreuve minutée (${formatDurationText(totalDurationSecs)}) :</strong> Le chronomètre deviendra <strong>rouge à 10% du temps</strong> puis <strong>clignotant / animé à 5% du temps restant</strong>. Vos réponses seront automatiquement transmises à l'échéance.<br>`;
+            warnContent += `<strong>Épreuve minutée (${formatDurationText(totalDurationSecs)}) :</strong> Le chronomètre deviendra <strong>rouge à 10% du temps</strong> puis <strong>clignotant / animé à 5% du temps restant</strong>. Vos réponses seront automatiquement transmises à l'échéance.<br>`;
         }
 
         if (sectionsCount > 1 && !allowPrev) {
-            warnContent += `⚠️ <strong>Navigation sans retour arrière :</strong> Ce quiz est composé de <strong>${sectionsCount} pages</strong>. Une fois passée à la page suivante, <strong>aucun retour en arrière n'est possible</strong>. Assurez-vous d'avoir validé l'ensemble de vos réponses sur chaque page avant de poursuivre.<br>`;
+            warnContent += `<strong>Navigation sans retour arrière :</strong> Ce quiz est composé de <strong>${sectionsCount} pages</strong>. Une fois passée à la page suivante, <strong>aucun retour en arrière n'est possible</strong>. Assurez-vous d'avoir validé l'ensemble de vos réponses sur chaque page avant de poursuivre.<br>`;
         }
 
         if (maxAttempts > 0) {
@@ -2186,12 +2198,15 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
     const warningLabel = document.getElementById('quizWarningLabel');
     const btn = document.getElementById('btnSubmitQuiz');
     const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
+    const qConfig = currentModuleData?.quizConfig || {};
+    const hasNegativePoints = Boolean(qConfig.negativePoints === true || qConfig.negativePoints === 'true');
 
     const answers = {};
     const evaluations = {};
     let missingCount = 0;
     let qcmTotal = 0;
     let qcmCorrect = 0;
+    let pointsTotal = 0;
 
     regularQuestions.forEach(q => {
         const savedVal = userAnswersState[q.id];
@@ -2214,7 +2229,12 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 missingCount++;
             } else {
                 const isCorrect = (userIndices.length === expectedIndices.length && userIndices.every((val, i) => val === expectedIndices[i]));
-                if (isCorrect) qcmCorrect++;
+                if (isCorrect) {
+                    qcmCorrect++;
+                    pointsTotal += 1;
+                } else if (hasNegativePoints) {
+                    pointsTotal -= 0.5;
+                }
             }
         } else if (q.type === 'image_choice') {
             qcmTotal++;
@@ -2222,7 +2242,12 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             if (savedVal !== undefined && savedVal !== null && savedVal !== '') {
                 const val = parseInt(savedVal, 10);
                 answers[q.id] = val;
-                if (val === correctIdx) qcmCorrect++;
+                if (val === correctIdx) {
+                    qcmCorrect++;
+                    pointsTotal += 1;
+                } else if (hasNegativePoints) {
+                    pointsTotal -= 0.5;
+                }
             } else {
                 answers[q.id] = null;
                 missingCount++;
@@ -2248,21 +2273,32 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 }
             });
 
-            if (!hasAnyAnswer) missingCount++;
-            if (allRowsCorrect) qcmCorrect++;
+            if (!hasAnyAnswer) {
+                missingCount++;
+            } else if (allRowsCorrect) {
+                qcmCorrect++;
+                pointsTotal += 1;
+            } else if (hasNegativePoints) {
+                pointsTotal -= 0.5;
+            }
         } else if (q.type === 'boolean') {
             qcmTotal++;
             const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
             if (savedVal === true || savedVal === false || savedVal === 'true' || savedVal === 'false') {
                 const val = (savedVal === true || savedVal === 'true');
                 answers[q.id] = val;
-                if (val === expectedBool) qcmCorrect++;
+                if (val === expectedBool) {
+                    qcmCorrect++;
+                    pointsTotal += 1;
+                } else if (hasNegativePoints) {
+                    pointsTotal -= 0.5;
+                }
             } else {
                 answers[q.id] = null;
                 missingCount++;
             }
         } else if (q.type === 'range') {
-            if (savedVal !== undefined && savedVal !== null) {
+            if (savedVal !== undefined && savedVal !== null && savedVal !== '') {
                 const val = parseFloat(savedVal);
                 answers[q.id] = val;
                 if (q.correctValue !== undefined && q.correctValue !== '' && q.correctValue !== null) {
@@ -2271,6 +2307,9 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                     const tolerance = parseFloat(q.tolerance) || 0;
                     if (Math.abs(val - targetVal) <= tolerance) {
                         qcmCorrect++;
+                        pointsTotal += 1;
+                    } else if (hasNegativePoints) {
+                        pointsTotal -= 0.5;
                     }
                 }
             } else {
@@ -2289,6 +2328,9 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 const dist = Math.sqrt(dx * dx + dy * dy);
                 if (dist <= radius) {
                     qcmCorrect++;
+                    pointsTotal += 1;
+                } else if (hasNegativePoints) {
+                    pointsTotal -= 0.5;
                 }
             } else {
                 answers[q.id] = null;
@@ -2315,6 +2357,9 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
 
             if (allCorrect) {
                 qcmCorrect++;
+                pointsTotal += 1;
+            } else if (placedCount > 0 && hasNegativePoints) {
+                pointsTotal -= 0.5;
             }
         } else if (q.type === 'cloze') {
             qcmTotal++;
@@ -2339,6 +2384,9 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
 
             if (allCorrect) {
                 qcmCorrect++;
+                pointsTotal += 1;
+            } else if (filledCount > 0 && hasNegativePoints) {
+                pointsTotal -= 0.5;
             }
         } else if (q.type === 'puzzle') {
             qcmTotal++;
@@ -2346,8 +2394,12 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             answers[q.id] = currentOrder;
             const expected = q.items || [];
             const isExact = (currentOrder.length === expected.length && currentOrder.every((it, idx) => it === expected[idx]));
+            const hasAnswered = Array.isArray(savedVal) && savedVal.length > 0;
             if (isExact) {
                 qcmCorrect++;
+                pointsTotal += 1;
+            } else if (hasAnswered && hasNegativePoints) {
+                pointsTotal -= 0.5;
             }
         } else if (q.type === 'matching') {
             qcmTotal++;
@@ -2375,6 +2427,9 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
 
             if (allCorrect) {
                 qcmCorrect++;
+                pointsTotal += 1;
+            } else if (filledCount > 0 && hasNegativePoints) {
+                pointsTotal -= 0.5;
             }
         } else {
             qcmTotal++;
@@ -2410,6 +2465,9 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
 
                 if (isSuggestedValid) {
                     qcmCorrect++;
+                    pointsTotal += 1;
+                } else if (hasNegativePoints) {
+                    pointsTotal -= 0.5;
                 }
             } else {
                 evaluations[q.id] = {
@@ -2445,7 +2503,8 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
 
     try {
         const nextAttemptCount = userPreviousSubmissions.length + 1;
-        const scorePercent = qcmTotal > 0 ? Math.round((qcmCorrect / qcmTotal) * 100) : 100;
+        const finalPoints = hasNegativePoints ? Math.max(0, Math.round(pointsTotal * 10) / 10) : qcmCorrect;
+        const scorePercent = qcmTotal > 0 ? Math.max(0, Math.min(100, Math.round((finalPoints / qcmTotal) * 100))) : 100;
         const submissionId = `${currentUser.uid}_${Date.now()}`;
 
         const submissionData = {
@@ -2463,6 +2522,9 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             timeExpired: autoSubmitByTimer === true,
             score: {
                 correct: qcmCorrect,
+                points: finalPoints,
+                rawPoints: pointsTotal,
+                negativePointsEnabled: hasNegativePoints,
                 total: qcmTotal,
                 percent: scorePercent
             },
@@ -2565,6 +2627,7 @@ function renderResultsScreen(submission = {}) {
     const qConfig = currentModuleData.quizConfig || {};
     const isAdminOrFormateur = (currentRole === 'admin' || currentRole === 'formateur');
     const showResults = isAdminOrFormateur || Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+    const hasNegativePoints = Boolean(submission?.score?.negativePointsEnabled ?? (qConfig.negativePoints === true || qConfig.negativePoints === 'true'));
     const score = submission?.score || { correct: 0, total: 0, percent: 100 };
     const answers = submission?.answers || {};
 
@@ -2581,12 +2644,24 @@ function renderResultsScreen(submission = {}) {
         attemptBadge.textContent = `Tentative #${submission?.attemptNumber || 1}${timeExpiredBadge}`;
     }
 
+    function getScoreBadge(isCorrect, isAnswered) {
+        if (isCorrect) return '<span style="font-weight:700; color:var(--clr-success);">Exact (+1 pt)</span>';
+        if (!isAnswered) return '<span style="font-weight:700; color:var(--clr-text-muted);">Non renseigné (0 pt)</span>';
+        if (hasNegativePoints) return '<span style="font-weight:700; color:var(--clr-danger);">Incorrect (-0.5 pt)</span>';
+        return '<span style="font-weight:700; color:var(--clr-danger);">❌ Incorrect (0 pt)</span>';
+    }
+
     if (showResults) {
         if (scoreCircle) {
             scoreCircle.style.display = 'flex';
+            const ratioText = score.total > 0
+                ? (hasNegativePoints && score.points !== undefined
+                    ? `${score.points} / ${score.total} pts (${score.correct} correct${score.correct > 1 ? 's' : ''})`
+                    : `${score.correct} / ${score.total} QCM corrects`)
+                : 'Épreuve complétée';
             scoreCircle.innerHTML = `
                 <span class="val" id="resultScoreVal">${score.percent}%</span>
-                <span class="max" id="resultScoreRatio">${score.total > 0 ? `${score.correct} / ${score.total} QCM corrects` : 'Épreuve complétée'}</span>
+                <span class="max" id="resultScoreRatio">${ratioText}</span>
             `;
         }
 
@@ -2672,6 +2747,7 @@ function renderResultsScreen(submission = {}) {
 
                 const sortedUser = [...userIndices].sort((a, b) => a - b);
                 const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+                const isAnswered = (sortedUser.length > 0);
                 const isCorrect = (sortedUser.length === sortedExp.length && sortedUser.length > 0 && sortedUser.every((v, i) => v === sortedExp[i]));
 
                 const options = q.options || [];
@@ -2680,10 +2756,10 @@ function renderResultsScreen(submission = {}) {
                 const expectedTexts = sortedExp.map(idx => options[idx]).filter(Boolean).join(', ');
 
                 ansDisplay = `
-                <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:12px; margin-top:8px;">
                     <div><strong>Votre sélection :</strong> ${escapeHtml(chosenDisplay)}
-                        <span style="margin-left:8px; font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect'}
+                        <span style="margin-left:8px;">
+                            ${getScoreBadge(isCorrect, isAnswered)}
                         </span>
                     </div>
                     ${!isCorrect && expectedTexts ? `
@@ -2693,25 +2769,26 @@ function renderResultsScreen(submission = {}) {
                     ` : ''}
                 </div>`;
             } else if (q.type === 'image_choice') {
-                const ansNum = (userAns !== null && userAns !== undefined) ? parseInt(userAns, 10) : null;
+                const ansNum = (userAns !== null && userAns !== undefined && userAns !== '') ? parseInt(userAns, 10) : null;
+                const isAnswered = (ansNum !== null && !isNaN(ansNum));
                 const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                const isCorrect = (ansNum === correctIdx);
+                const isCorrect = isAnswered && (ansNum === correctIdx);
                 const options = q.imageOptions || [];
                 const chosenOpt = (ansNum !== null && options[ansNum]) ? options[ansNum] : null;
                 const expectedOpt = options[correctIdx] || null;
 
                 ansDisplay = `
-                <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:12px; margin-top:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <strong>Votre choix :</strong>
-                        <span style="font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}
+                        <span>
+                            ${getScoreBadge(isCorrect, isAnswered)}
                         </span>
                     </div>
                     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-top:8px;">
-                        <div style="border:1.5px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:8px; background:rgba(0,0,0,0.02);">
-                            <div style="font-size:0.75rem; font-weight:800; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'}; margin-bottom:4px;">
-                                ${isCorrect ? '✓ Votre sélection (Correcte)' : '✗ Votre sélection'}
+                        <div style="border:1.5px solid ${isCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:8px; background:rgba(0,0,0,0.02);">
+                            <div style="font-size:0.75rem; font-weight:800; color:${isCorrect ? 'var(--clr-success)' : (isAnswered ? 'var(--clr-danger)' : 'var(--clr-text-muted)')}; margin-bottom:4px;">
+                                ${isCorrect ? '✓ Votre sélection (Correcte)' : (isAnswered ? '✗ Votre sélection' : '∅ Non renseigné')}
                             </div>
                             ${chosenOpt && chosenOpt.imageUrl ? `
                                 <div style="width:100%; height:110px; background:#181c19; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
@@ -2743,10 +2820,12 @@ function renderResultsScreen(submission = {}) {
                 const userAnsObj = (userAns && typeof userAns === 'object') ? userAns : {};
 
                 let allCorrect = (rows.length > 0);
+                let isAnswered = false;
                 const tableRowsHtml = rows.map((row, rIdx) => {
                     const userRow = userAnsObj[rIdx] || {};
                     const uCol1 = !!userRow.col1;
                     const uCol2 = !!userRow.col2;
+                    if (uCol1 || uCol2) isAnswered = true;
                     const expCol1 = !!row.correctCol1;
                     const expCol2 = !!row.correctCol2;
                     const isRowCorrect = (uCol1 === expCol1 && uCol2 === expCol2);
@@ -2783,11 +2862,11 @@ function renderResultsScreen(submission = {}) {
                 }).join('');
 
                 ansDisplay = `
-                <div style="background:#ffffff; border:1.5px solid ${allCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                <div style="background:#ffffff; border:1.5px solid ${allCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:12px; margin-top:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <strong>Bilan de la grille :</strong>
-                        <span style="font-weight:700; color:${allCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${allCorrect ? '✅ Grille exacte (+1 pt)' : '❌ Incorrect (0 pt)'}
+                        <span>
+                            ${getScoreBadge(allCorrect, isAnswered)}
                         </span>
                     </div>
                     <div style="border:1px solid #e2e8f0; border-radius:6px; overflow:hidden; margin-top:8px;">
@@ -2811,6 +2890,7 @@ function renderResultsScreen(submission = {}) {
                 const userPlacements = (userAns && typeof userAns === 'object') ? userAns : {};
 
                 let allCorrect = (rawItems.length > 0);
+                const isAnswered = rawItems.some(it => userPlacements[it.id]);
                 rawItems.forEach(it => {
                     if (userPlacements[it.id] !== it.categoryId) {
                         allCorrect = false;
@@ -2852,11 +2932,11 @@ function renderResultsScreen(submission = {}) {
                 }).join('');
 
                 ansDisplay = `
-                <div style="background:#ffffff; border:1.5px solid ${allCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                <div style="background:#ffffff; border:1.5px solid ${allCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:12px; margin-top:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                         <strong>Votre classement :</strong>
-                        <span style="font-weight:700; color:${allCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${allCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}
+                        <span>
+                            ${getScoreBadge(allCorrect, isAnswered)}
                         </span>
                     </div>
                     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-top:8px;">
@@ -2871,10 +2951,10 @@ function renderResultsScreen(submission = {}) {
                 const userChoiceText = isAnswered ? (userBool ? '👍 VRAI' : '👎 FAUX') : '<span style="color:var(--clr-text-muted); font-style:italic;">Non renseigné</span>';
 
                 ansDisplay = `
-                <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:12px; margin-top:8px;">
                     <div><strong>Votre choix :</strong> ${userChoiceText}
-                        <span style="margin-left:8px; font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect'}
+                        <span style="margin-left:8px;">
+                            ${getScoreBadge(isCorrect, isAnswered)}
                         </span>
                     </div>
                     ${!isCorrect ? `
@@ -2888,9 +2968,10 @@ function renderResultsScreen(submission = {}) {
                 const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
                 const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
                 const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+                const isAnswered = Boolean(userCoords && userCoords.x !== undefined && userCoords.y !== undefined);
 
                 let isCorrect = false;
-                if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
+                if (isAnswered) {
                     const dx = userCoords.x - targetX;
                     const dy = userCoords.y - targetY;
                     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -2898,14 +2979,14 @@ function renderResultsScreen(submission = {}) {
                 }
 
                 ansDisplay = `
-                <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:12px; margin-top:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
                         <div>
                             <strong>Votre repère :</strong> 
                             ${userCoords ? `Position X: ${userCoords.x.toFixed(1)}%, Y: ${userCoords.y.toFixed(1)}%` : '<span style="color:var(--clr-danger)">Non renseigné</span>'}
                         </div>
-                        <span style="font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${isCorrect ? '✅ Cible exacte atteinte (+1 pt)' : '❌ Hors de la zone cible'}
+                        <span>
+                            ${getScoreBadge(isCorrect, isAnswered)}
                         </span>
                     </div>
                     ${q.pinImage ? `
@@ -2925,26 +3006,30 @@ function renderResultsScreen(submission = {}) {
                     ` : ''}
                 </div>`;
             } else if (q.type === 'range') {
-                const val = (userAns !== null && userAns !== undefined) ? parseFloat(userAns) : null;
+                const val = (userAns !== null && userAns !== undefined && userAns !== '') ? parseFloat(userAns) : null;
+                const isAnswered = (val !== null && !isNaN(val));
                 const unit = q.unit || '';
                 const hasTarget = (q.correctValue !== undefined && q.correctValue !== '' && q.correctValue !== null);
                 let rangeGrade = '';
+                let isCorrectRange = false;
 
-                if (val !== null && hasTarget) {
+                if (isAnswered && hasTarget) {
                     const targetVal = parseFloat(q.correctValue);
                     const tol = parseFloat(q.tolerance) || 0;
-                    const isCorrectRange = Math.abs(val - targetVal) <= tol;
+                    isCorrectRange = Math.abs(val - targetVal) <= tol;
                     rangeGrade = `
-                    <span style="margin-left:8px; font-weight:700; color:${isCorrectRange ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                        ${isCorrectRange ? '✅ Dans la cible (+1 pt)' : '❌ Hors cible attendue'}
+                    <span style="margin-left:8px;">
+                        ${getScoreBadge(isCorrectRange, isAnswered)}
                     </span>
                     <div style="font-size:0.82rem; color:var(--clr-text-muted); margin-top:6px;">
                         Cible attendue : <strong>${targetVal} ${escapeHtml(unit)}</strong> ${tol > 0 ? `± ${tol}` : ''}
                     </div>`;
+                } else if (!isAnswered) {
+                    rangeGrade = `<span style="margin-left:8px;">${getScoreBadge(false, false)}</span>`;
                 }
 
                 ansDisplay = `
-                <div style="background:#ffffff; border:1.5px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:8px;">
+                <div style="background:#ffffff; border:1.5px solid ${isCorrectRange ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:12px; margin-top:8px;">
                     <div><strong>Position du curseur :</strong> <span style="font-weight:800; color:var(--clr-primary);">${val !== null ? `${val} ${escapeHtml(unit)}` : 'Non renseigné'}</span>
                         ${rangeGrade}
                     </div>
@@ -2954,8 +3039,10 @@ function renderResultsScreen(submission = {}) {
                 const userAnswersObj = userAns && typeof userAns === 'object' ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
                 
                 let correctBlanksCount = 0;
+                let isAnswered = false;
                 expectedBlanks.forEach((expWord, bIdx) => {
                     const uWord = userAnswersObj[bIdx];
+                    if (uWord && String(uWord).trim().length > 0) isAnswered = true;
                     if (uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase()) {
                         correctBlanksCount++;
                     }
@@ -2964,13 +3051,13 @@ function renderResultsScreen(submission = {}) {
                 const isAllCorrect = (expectedBlanks.length > 0) && (correctBlanksCount === expectedBlanks.length);
 
                 ansDisplay = `
-                <div style="background:#ffffff; border:1.5px solid ${isAllCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:14px 16px; margin-top:8px;">
+                <div style="background:#ffffff; border:1.5px solid ${isAllCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:14px 16px; margin-top:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
                         <div style="font-size:0.85rem; font-weight:700; color:var(--clr-text);">
                             Résultat : <span style="color:var(--clr-primary); font-weight:800;">${correctBlanksCount} / ${expectedBlanks.length} trou${expectedBlanks.length > 1 ? 's' : ''} correct${expectedBlanks.length > 1 ? 's' : ''}</span>
                         </div>
-                        <span style="font-weight:700; color:${isAllCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.88rem;">
-                            ${isAllCorrect ? '✅ Texte parfaitement complété (+1 pt)' : '❌ Texte incomplet ou erroné'}
+                        <span>
+                            ${getScoreBadge(isAllCorrect, isAnswered)}
                         </span>
                     </div>
 
@@ -3000,15 +3087,16 @@ function renderResultsScreen(submission = {}) {
                 </div>`;
             } else if (q.type === 'puzzle') {
                 const candidateOrder = Array.isArray(userAns) ? userAns : [];
+                const isAnswered = Array.isArray(userAns) && userAns.length > 0;
                 const expectedOrder = q.items || [];
                 const isExact = (candidateOrder.length === expectedOrder.length && candidateOrder.every((it, idx) => it === expectedOrder[idx]));
 
                 ansDisplay = `
-                <div style="background:#ffffff; border:1.5px solid ${isExact ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
+                <div style="background:#ffffff; border:1.5px solid ${isExact ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:12px; margin-top:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <strong>Votre ordre proposé :</strong>
-                        <span style="font-weight:700; color:${isExact ? 'var(--clr-success)' : 'var(--clr-danger)'};">
-                            ${isExact ? '✅ Ordre parfait (+1 pt)' : '❌ Ordre incorrect'}
+                        <span>
+                            ${getScoreBadge(isExact, isAnswered)}
                         </span>
                     </div>
                     <ol style="margin:4px 0 0 18px; padding:0; line-height:1.4; color:var(--clr-text);">
@@ -3028,8 +3116,10 @@ function renderResultsScreen(submission = {}) {
                 const userMatchesObj = userAns && typeof userAns === 'object' ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
                 
                 let correctCount = 0;
+                let isAnswered = false;
                 rawPairs.forEach(pair => {
                     const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
+                    if (uRight && String(uRight).trim().length > 0) isAnswered = true;
                     if (uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase()) {
                         correctCount++;
                     }
@@ -3038,13 +3128,13 @@ function renderResultsScreen(submission = {}) {
                 const isAllCorrect = (rawPairs.length > 0) && (correctCount === rawPairs.length);
 
                 ansDisplay = `
-                <div style="background:#ffffff; border:1.5px solid ${isAllCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:14px 16px; margin-top:8px;">
+                <div style="background:#ffffff; border:1.5px solid ${isAllCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:14px 16px; margin-top:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
                         <div style="font-size:0.85rem; font-weight:700; color:var(--clr-text);">
                             Résultat : <span style="color:var(--clr-primary-dark); font-weight:800;">${correctCount} / ${rawPairs.length} association${rawPairs.length > 1 ? 's' : ''} correcte${rawPairs.length > 1 ? 's' : ''}</span>
                         </div>
-                        <span style="font-weight:700; color:${isAllCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.88rem;">
-                            ${isAllCorrect ? '✅ Toutes les liaisons sont exactes (+1 pt)' : '❌ Liaisons incomplètes ou erronées'}
+                        <span>
+                            ${getScoreBadge(isAllCorrect, isAnswered)}
                         </span>
                     </div>
 
@@ -3073,6 +3163,7 @@ function renderResultsScreen(submission = {}) {
                 </div>`;
             } else {
                 const qEval = (submission?.evaluations && submission.evaluations[q.id]) ? submission.evaluations[q.id] : null;
+                const isAnswered = Boolean(userAns && userAns.trim().length > 0);
                 let evalBadge = '';
                 if (qEval && qEval.status === 'reviewed') {
                     evalBadge = qEval.isCorrect ? `
@@ -3080,7 +3171,7 @@ function renderResultsScreen(submission = {}) {
                             <i class="bi bi-check-circle-fill"></i> Validé (+1 pt)
                         </span>` : `
                         <span style="font-weight:700; color:var(--clr-danger); margin-left:8px; font-size:0.84rem;">
-                            <i class="bi bi-x-circle-fill"></i> Non validé (0 pt)
+                            <i class="bi bi-x-circle-fill"></i> ${isAnswered && hasNegativePoints ? 'Non validé (-0.5 pt)' : 'Non validé (0 pt)'}
                         </span>`;
                 } else {
                     evalBadge = `

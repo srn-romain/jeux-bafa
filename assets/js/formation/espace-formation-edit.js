@@ -423,6 +423,9 @@ async function loadModuleHubData() {
             document.getElementById('editQuizTimerMinutes').value = initialMins;
             document.getElementById('editQuizTimerSeconds').value = initialSecs;
             document.getElementById('editShowResultsAtEnd').checked = qConfig.showResultsAtEnd === true;
+            if (document.getElementById('editNegativePoints')) {
+                document.getElementById('editNegativePoints').checked = (qConfig.negativePoints === true || qConfig.negativePoints === 'true');
+            }
 
             const chkAllowPrev = document.getElementById('editQuizAllowPreviousPage');
             if (chkAllowPrev) {
@@ -492,6 +495,9 @@ async function loadModuleHubData() {
             document.getElementById('editQuizTimerMinutes').value = 0;
             document.getElementById('editQuizTimerSeconds').value = 0;
             document.getElementById('editShowResultsAtEnd').checked = false;
+            if (document.getElementById('editNegativePoints')) {
+                document.getElementById('editNegativePoints').checked = false;
+            }
             if (document.getElementById('editQuizAllowPreviousPage')) {
                 document.getElementById('editQuizAllowPreviousPage').checked = true;
             }
@@ -2198,7 +2204,7 @@ function renderQuestionsEditor() {
                     <div style="display:flex; align-items:center; gap:10px;">
                         <span class="es-qcard__num">${currentQNum}</span>
                         <select class="es-select q-type-select" data-qidx="${idx}" style="font-weight:700; font-size:0.85rem; padding:6px 12px; width:auto;">
-                            <option value="qcm" ${type === 'qcm' ? 'selected' : ''}>1- ☑️ QCM (Cases à cocher / Choix multiple)</option>
+                            <option value="qcm" ${type === 'qcm' ? 'selected' : ''}>1- ☑️ QCM (Choix multiple)</option>
                             <option value="image_choice" ${type === 'image_choice' ? 'selected' : ''}>2- 🖼️ QCM Choix d'images</option>
                             <option value="table_choice" ${type === 'table_choice' ? 'selected' : ''}>3- 📋 Tableau à 2 colonnes (Affirmations)</option>
                             <option value="classification" ${type === 'classification' ? 'selected' : ''}>4- 🗂️ Classement par catégories (Glisser-déposer de tags)</option>
@@ -3300,6 +3306,7 @@ async function saveModuleData(btnEl) {
     const timerSeconds = parseInt(document.getElementById('editQuizTimerSeconds').value, 10) || 0;
     const timerTotalSeconds = (timerMinutes * 60) + timerSeconds;
     const showResultsAtEnd = document.getElementById('editShowResultsAtEnd').checked;
+    const negativePoints = document.getElementById('editNegativePoints') ? document.getElementById('editNegativePoints').checked : false;
     const allowPreviousPage = document.getElementById('editQuizAllowPreviousPage') ? document.getElementById('editQuizAllowPreviousPage').checked : true;
 
     const isRequirePassword = document.getElementById('editQuizRequirePassword').checked;
@@ -3547,6 +3554,7 @@ async function saveModuleData(btnEl) {
                 timerSeconds: timerSeconds,
                 timerTotalSeconds: timerTotalSeconds,
                 showResultsAtEnd: showResultsAtEnd,
+                negativePoints: negativePoints,
                 allowPreviousPage: allowPreviousPage,
                 requirePassword: isRequirePassword,
                 password: isRequirePassword ? quizPassword : ''
