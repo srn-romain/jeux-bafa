@@ -21,7 +21,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="../../assets/css/styleEspace.css?v=3.5">
+    <link rel="stylesheet" href="../../assets/css/styleEspace.css?v=3.9">
 </head>
 
 <body class="espace-body">
@@ -282,9 +282,9 @@
                         <!-- Filtres du Bilan (Tous, Complétés, À réaliser) -->
                         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
                             <div class="es-bilan-filters" id="bilanFilterButtons">
-                                <button type="button" class="es-bilan-filter-btn active" data-filter="all">Tous les modules (<span id="bilanFilterCountAll">0</span>)</button>
-                                <button type="button" class="es-bilan-filter-btn" data-filter="completed">Complétés (<span id="bilanFilterCountCompleted">0</span>)</button>
-                                <button type="button" class="es-bilan-filter-btn" data-filter="pending">À réaliser (<span id="bilanFilterCountPending">0</span>)</button>
+                                <button type="button" class="es-bilan-filter-btn active" data-filter="all">Tous les modules <span class="es-bilan-filter-count" id="bilanFilterCountAll">0</span></button>
+                                <button type="button" class="es-bilan-filter-btn" data-filter="completed">Complétés <span class="es-bilan-filter-count" id="bilanFilterCountCompleted">0</span></button>
+                                <button type="button" class="es-bilan-filter-btn" data-filter="pending">À réaliser <span class="es-bilan-filter-count" id="bilanFilterCountPending">0</span></button>
                             </div>
                             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
                                 <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportStagiaireBilanPdf" title="Télécharger mon bilan en PDF" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
@@ -392,10 +392,10 @@
 
                                 <!-- Ligne 2: Filtres par statut -->
                                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                                    <button type="button" class="es-bilan-filter-btn active" data-admin-candidate-filter="all">Tous (<span id="adminCandidateCountAll">0</span>)</button>
-                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="completed">Validés (<span id="adminCandidateCountCompleted">0</span>)</button>
-                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="active">En cours (<span id="adminCandidateCountActive">0</span>)</button>
-                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="inactive">Non commencés (<span id="adminCandidateCountInactive">0</span>)</button>
+                                    <button type="button" class="es-bilan-filter-btn active" data-admin-candidate-filter="all">Tous <span class="es-bilan-filter-count" id="adminCandidateCountAll">0</span></button>
+                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="completed">Validés <span class="es-bilan-filter-count" id="adminCandidateCountCompleted">0</span></button>
+                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="active">En cours <span class="es-bilan-filter-count" id="adminCandidateCountActive">0</span></button>
+                                    <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="inactive">Non commencés <span class="es-bilan-filter-count" id="adminCandidateCountInactive">0</span></button>
                                 </div>
                             </div>
 

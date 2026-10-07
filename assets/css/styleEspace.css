@@ -6860,7 +6860,7 @@ body.modal-open .es-topbar {
 
 .es-bilan-filter-btn {
   padding: 6px 14px;
-  border-radius: 20px;
+  border-radius: var(--radius-full, 20px);
   border: 1.5px solid var(--clr-surface-3);
   background: var(--clr-surface);
   color: var(--clr-text-muted);
@@ -6868,17 +6868,106 @@ body.modal-open .es-topbar {
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .es-bilan-filter-btn:hover {
   border-color: var(--clr-primary);
   color: var(--clr-primary);
+  background: var(--clr-surface-2);
 }
 
 .es-bilan-filter-btn.active {
   background: var(--clr-primary);
   border-color: var(--clr-primary);
   color: #ffffff;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.es-bilan-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--clr-surface-3);
+  color: var(--clr-text);
+  transition: all var(--transition);
+}
+
+.es-bilan-filter-btn:hover .es-bilan-filter-count {
+  background: rgba(104, 159, 56, 0.15);
+  color: var(--clr-primary);
+}
+
+.es-bilan-filter-btn.active .es-bilan-filter-count {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.module-filter-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-full, 20px);
+  border: 1.5px solid var(--clr-surface-3);
+  background: var(--clr-surface);
+  color: var(--clr-text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.module-filter-btn:hover {
+  border-color: var(--clr-primary);
+  color: var(--clr-primary);
+  background: var(--clr-surface-2);
+}
+
+.module-filter-btn.active {
+  background: var(--clr-primary);
+  border-color: var(--clr-primary);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.module-filter-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--clr-surface-3);
+  color: var(--clr-text);
+  transition: all var(--transition);
+}
+
+.module-filter-btn:hover .module-filter-count {
+  background: rgba(104, 159, 56, 0.15);
+  color: var(--clr-primary);
+}
+
+.module-filter-btn.active .module-filter-count {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  font-weight: 800;
 }
 
 .es-bilan-modules-list {
