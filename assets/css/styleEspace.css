@@ -5572,12 +5572,21 @@ body.modal-open .es-topbar {
   background: rgba(155, 89, 182, 0.03);
 }
 
-.es-quiz-option-label input[type="radio"] {
+.es-quiz-option-label input[type="radio"],
+.es-quiz-option-label input[type="checkbox"] {
   margin-top: 3px;
   accent-color: #8e44ad;
-  width: 17px;
-  height: 17px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
+  cursor: pointer;
+}
+
+.es-quiz-option-label.selected,
+.es-quiz-option-label:has(input:checked) {
+  border-color: #8e44ad;
+  background: rgba(155, 89, 182, 0.08);
+  font-weight: 600;
 }
 
 .es-quiz-textarea-wrap {

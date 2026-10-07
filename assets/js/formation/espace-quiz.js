@@ -517,7 +517,10 @@ function saveCurrentPageAnswersToState() {
 
     const currentSecQuestions = quizSections[currentSectionIndex].questions;
     currentSecQuestions.forEach(q => {
-        if (q.type === 'qcm' || q.type === 'image_choice') {
+        if (q.type === 'qcm') {
+            const selBoxes = form.querySelectorAll(`input[name="question_${q.id}"]:checked`);
+            userAnswersState[q.id] = Array.from(selBoxes).map(cb => parseInt(cb.value, 10));
+        } else if (q.type === 'image_choice') {
             const sel = form.querySelector(`input[name="question_${q.id}"]:checked`);
             userAnswersState[q.id] = sel ? parseInt(sel.value, 10) : (userAnswersState[q.id] !== undefined ? userAnswersState[q.id] : null);
         } else if (q.type === 'boolean') {
@@ -788,15 +791,19 @@ function renderActiveSectionPage() {
                 </div>` : '';
 
             if (q.type === 'qcm') {
-                const chosenIdx = (savedVal !== undefined && savedVal !== null) ? parseInt(savedVal, 10) : -1;
+                const chosenIndices = Array.isArray(savedVal)
+                    ? savedVal.map(n => parseInt(n, 10))
+                    : (savedVal !== undefined && savedVal !== null && savedVal !== '' ? [parseInt(savedVal, 10)] : []);
                 inputHtml = `
                 <div class="es-quiz-options">
-                    ${(q.options || []).map((opt, optIdx) => `
-                        <label class="es-quiz-option-label ${chosenIdx === optIdx ? 'selected' : ''}">
-                            <input type="radio" name="question_${q.id}" value="${optIdx}" class="quiz-track-input" ${chosenIdx === optIdx ? 'checked' : ''}>
+                    ${(q.options || []).map((opt, optIdx) => {
+                        const isChecked = chosenIndices.includes(optIdx);
+                        return `
+                        <label class="es-quiz-option-label ${isChecked ? 'selected' : ''}">
+                            <input type="checkbox" name="question_${q.id}" value="${optIdx}" class="quiz-track-input" ${isChecked ? 'checked' : ''}>
                             <span>${escapeHtml(opt)}</span>
-                        </label>
-                    `).join('')}
+                        </label>`;
+                    }).join('')}
                 </div>`;
             } else if (q.type === 'image_choice') {
                 const chosenIdx = (savedVal !== undefined && savedVal !== null) ? parseInt(savedVal, 10) : -1;
@@ -2085,7 +2092,11 @@ function updatePuzzleNumbers(listEl) {
 
 function isQuestionAnswered(q, val) {
     if (val === undefined || val === null) return false;
-    if (q.type === 'qcm' || q.type === 'image_choice') {
+    if (q.type === 'qcm') {
+        if (Array.isArray(val)) return val.length > 0;
+        return (val !== '' && val !== null && !isNaN(val));
+    }
+    if (q.type === 'image_choice') {
         return (val !== '' && val !== null && !isNaN(val));
     }
     if (q.type === 'boolean') {
@@ -2185,7 +2196,27 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
     regularQuestions.forEach(q => {
         const savedVal = userAnswersState[q.id];
 
-        if (q.type === 'qcm' || q.type === 'image_choice') {
+        if (q.type === 'qcm') {
+            qcmTotal++;
+            const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                ? q.correctIndexes.map(n => parseInt(n, 10)).sort((a, b) => a - b)
+                : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+
+            let userIndices = [];
+            if (Array.isArray(savedVal)) {
+                userIndices = savedVal.map(n => parseInt(n, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b);
+            } else if (savedVal !== undefined && savedVal !== null && savedVal !== '') {
+                userIndices = [parseInt(savedVal, 10)];
+            }
+
+            answers[q.id] = userIndices;
+            if (userIndices.length === 0) {
+                missingCount++;
+            } else {
+                const isCorrect = (userIndices.length === expectedIndices.length && userIndices.every((val, i) => val === expectedIndices[i]));
+                if (isCorrect) qcmCorrect++;
+            }
+        } else if (q.type === 'image_choice') {
             qcmTotal++;
             const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
             if (savedVal !== undefined && savedVal !== null && savedVal !== '') {
@@ -2632,21 +2663,32 @@ function renderResultsScreen(submission = {}) {
             </div>` : '';
 
             if (q.type === 'qcm') {
-                const ansNum = (userAns !== null && userAns !== undefined) ? parseInt(userAns, 10) : null;
-                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                const isCorrect = (ansNum === correctIdx);
-                const optText = (ansNum !== null && q.options && q.options[ansNum]) ? q.options[ansNum] : 'Pas de réponse';
+                const userIndices = Array.isArray(userAns)
+                    ? userAns.map(n => parseInt(n, 10))
+                    : (userAns !== null && userAns !== undefined && userAns !== '' ? [parseInt(userAns, 10)] : []);
+                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                    ? q.correctIndexes.map(n => parseInt(n, 10))
+                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+
+                const sortedUser = [...userIndices].sort((a, b) => a - b);
+                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+                const isCorrect = (sortedUser.length === sortedExp.length && sortedUser.length > 0 && sortedUser.every((v, i) => v === sortedExp[i]));
+
+                const options = q.options || [];
+                const chosenTexts = sortedUser.map(idx => options[idx]).filter(Boolean);
+                const chosenDisplay = chosenTexts.length > 0 ? chosenTexts.join(', ') : 'Pas de réponse';
+                const expectedTexts = sortedExp.map(idx => options[idx]).filter(Boolean).join(', ');
 
                 ansDisplay = `
                 <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:8px;">
-                    <div><strong>Votre choix :</strong> ${escapeHtml(optText)}
+                    <div><strong>Votre sélection :</strong> ${escapeHtml(chosenDisplay)}
                         <span style="margin-left:8px; font-weight:700; color:${isCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
                             ${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect'}
                         </span>
                     </div>
-                    ${!isCorrect && q.options && q.options[correctIdx] ? `
+                    ${!isCorrect && expectedTexts ? `
                         <div style="font-size:0.82rem; color:var(--clr-text-muted); margin-top:6px; padding-top:4px; border-top:1px dashed var(--clr-surface-3);">
-                            Bonne réponse attendue : <strong style="color:#27ae60;">${escapeHtml(q.options[correctIdx])}</strong>
+                            Bonne(s) réponse(s) attendue(s) : <strong style="color:#27ae60;">${escapeHtml(expectedTexts)}</strong>
                         </div>
                     ` : ''}
                 </div>`;

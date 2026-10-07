@@ -276,7 +276,11 @@ async function saveFormationModule(moduleData, questionsList = []) {
 
             if (q.type === 'qcm') {
                 qDoc.options = q.options || [];
-                qDoc.correctIndex = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+                const cIdxs = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                    ? q.correctIndexes.map(n => parseInt(n, 10))
+                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+                qDoc.correctIndexes = cIdxs;
+                qDoc.correctIndex = cIdxs[0];
             } else if (q.type === 'pinpoint') {
                 qDoc.pinImage = q.pinImage || '';
                 qDoc.targetX = (q.targetX !== undefined && q.targetX !== null) ? parseFloat(q.targetX) : 50;
@@ -909,20 +913,27 @@ function renderQuestionsEditor() {
     container.innerHTML = currentEditingQuestions.map((q, qIdx) => {
         let typeBody = '';
         if (q.type === 'qcm') {
-            const optionsHtml = (q.options || []).map((opt, optIdx) => `
+            const correctIndexes = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                ? q.correctIndexes.map(n => parseInt(n, 10))
+                : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+
+            const optionsHtml = (q.options || []).map((opt, optIdx) => {
+                const isChecked = correctIndexes.includes(optIdx);
+                return `
                 <div class="es-option-builder-row">
-                    <input type="radio" name="correct_q_${q.id}" value="${optIdx}" ${q.correctIndex === optIdx ? 'checked' : ''} title="Cocher pour définir comme bonne réponse">
+                    <input type="checkbox" name="correct_q_${q.id}" value="${optIdx}" ${isChecked ? 'checked' : ''} title="Cocher pour définir comme bonne réponse">
                     <input type="text" class="es-input opt-text-input" data-q-idx="${qIdx}" data-opt-idx="${optIdx}" value="${escapeHtml(opt)}" placeholder="Texte de l'option ${optIdx + 1}" required style="font-size:0.88rem; padding:6px 10px;">
                     <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-remove-option" data-q-idx="${qIdx}" data-opt-idx="${optIdx}" title="Supprimer cette option" style="color:var(--clr-danger); padding:4px 8px;">
                         <i class="bi bi-x-lg"></i>
                     </button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             typeBody = `
             <div style="margin-top:10px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <label style="font-size:0.8rem; font-weight:700; color:var(--clr-text);">Choix de réponses (cochez le bouton radio de la bonne réponse) :</label>
+                    <label style="font-size:0.8rem; font-weight:700; color:var(--clr-text);">Choix de réponses (cochez la ou les bonnes réponses) :</label>
                     <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-option" data-q-idx="${qIdx}" style="font-size:0.75rem; padding:2px 8px;">
                         <i class="bi bi-plus"></i> Option
                     </button>
@@ -1177,7 +1188,7 @@ function renderQuestionsEditor() {
                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                     <span style="font-weight:700; font-size:0.82rem; color:var(--clr-primary); text-transform:uppercase;">Question ${qIdx + 1}</span>
                     <select class="es-input q-type-select" data-q-idx="${qIdx}" style="width:245px; font-size:0.8rem; padding:4px 8px;">
-                        <option value="qcm" ${q.type === 'qcm' ? 'selected' : ''}>🔘 QCM (Choix multiple)</option>
+                        <option value="qcm" ${q.type === 'qcm' ? 'selected' : ''}>☑️ QCM (Cases à cocher / Choix multiple)</option>
                         <option value="cloze" ${q.type === 'cloze' ? 'selected' : ''}>🔤 Texte à trous (Drag & Drop)</option>
                         <option value="pinpoint" ${q.type === 'pinpoint' ? 'selected' : ''}>📍 Placer un repère (Pin sur image)</option>
                         <option value="puzzle" ${q.type === 'puzzle' ? 'selected' : ''}>🧩 Puzzle / Ordonnancement</option>
@@ -1374,12 +1385,15 @@ function renderQuestionsEditor() {
         });
     });
 
-    container.querySelectorAll('input[name^="correct_q_"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
+    container.querySelectorAll('input[name^="correct_q_"]').forEach(cb => {
+        cb.addEventListener('change', (e) => {
             const qId = e.target.name.replace('correct_q_', '');
             const qIdx = currentEditingQuestions.findIndex(q => q.id === qId);
             if (qIdx >= 0) {
-                currentEditingQuestions[qIdx].correctIndex = parseInt(e.target.value, 10);
+                const checked = container.querySelectorAll(`input[name="correct_q_${qId}"]:checked`);
+                const indexes = Array.from(checked).map(c => parseInt(c.value, 10)).filter(n => !isNaN(n));
+                currentEditingQuestions[qIdx].correctIndexes = indexes.length > 0 ? indexes : [0];
+                currentEditingQuestions[qIdx].correctIndex = currentEditingQuestions[qIdx].correctIndexes[0];
             }
         });
     });
@@ -1581,7 +1595,15 @@ function renderQuestionsEditor() {
             const optIdx = parseInt(btn.getAttribute('data-opt-idx'), 10);
             if (currentEditingQuestions[qIdx] && currentEditingQuestions[qIdx].options.length > 2) {
                 currentEditingQuestions[qIdx].options.splice(optIdx, 1);
-                if (currentEditingQuestions[qIdx].correctIndex >= currentEditingQuestions[qIdx].options.length) {
+                if (Array.isArray(currentEditingQuestions[qIdx].correctIndexes)) {
+                    currentEditingQuestions[qIdx].correctIndexes = currentEditingQuestions[qIdx].correctIndexes
+                        .filter(i => i !== optIdx)
+                        .map(i => i > optIdx ? i - 1 : i);
+                    if (currentEditingQuestions[qIdx].correctIndexes.length === 0) {
+                        currentEditingQuestions[qIdx].correctIndexes = [0];
+                    }
+                    currentEditingQuestions[qIdx].correctIndex = currentEditingQuestions[qIdx].correctIndexes[0];
+                } else if (currentEditingQuestions[qIdx].correctIndex >= currentEditingQuestions[qIdx].options.length) {
                     currentEditingQuestions[qIdx].correctIndex = 0;
                 }
                 renderQuestionsEditor();
@@ -1693,7 +1715,11 @@ document.getElementById('btnExportJsonQuestions')?.addEventListener('click', () 
 
         if (q.type === 'qcm') {
             item.options = q.options || ['Option 1', 'Option 2'];
-            item.correctIndex = q.correctIndex !== undefined ? q.correctIndex : 0;
+            const cIdxs = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                ? q.correctIndexes.map(n => parseInt(n, 10))
+                : [(q.correctIndex !== undefined ? parseInt(q.correctIndex, 10) : 0)];
+            item.correctIndexes = cIdxs;
+            item.correctIndex = cIdxs[0];
         } else if (q.type === 'cloze') {
             item.clozeText = q.clozeText || '';
             if (Array.isArray(q.distractors) && q.distractors.length > 0) item.distractors = q.distractors;
@@ -1804,14 +1830,23 @@ document.getElementById('btnApplyJsonImport')?.addEventListener('click', () => {
                 } else if (Array.isArray(item.choices) && item.choices.length > 0) {
                     options = item.choices.map(opt => String(opt).trim()).filter(Boolean);
                 }
-                let correctIndex = 0;
-                if (typeof item.correctIndex === 'number') correctIndex = item.correctIndex;
-                else if (typeof item.answer === 'number') correctIndex = item.answer;
-                else if (typeof item.correctAnswer === 'number') correctIndex = item.correctAnswer;
-                if (correctIndex < 0 || correctIndex >= options.length) correctIndex = 0;
+                let correctIndexes = [];
+                if (Array.isArray(item.correctIndexes)) {
+                    correctIndexes = item.correctIndexes.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 0 && n < options.length);
+                } else if (Array.isArray(item.correctAnswers)) {
+                    correctIndexes = item.correctAnswers.map(n => parseInt(n, 10)).filter(n => !isNaN(n) && n >= 0 && n < options.length);
+                } else if (typeof item.correctIndex === 'number' && item.correctIndex >= 0 && item.correctIndex < options.length) {
+                    correctIndexes = [item.correctIndex];
+                } else if (typeof item.answer === 'number' && item.answer >= 0 && item.answer < options.length) {
+                    correctIndexes = [item.answer];
+                } else if (typeof item.correctAnswer === 'number' && item.correctAnswer >= 0 && item.correctAnswer < options.length) {
+                    correctIndexes = [item.correctAnswer];
+                }
+                if (correctIndexes.length === 0) correctIndexes = [0];
 
                 resQ.options = options;
-                resQ.correctIndex = correctIndex;
+                resQ.correctIndexes = correctIndexes;
+                resQ.correctIndex = correctIndexes[0];
             } else if (type === 'cloze') {
                 resQ.clozeText = item.clozeText || item.textWithBlanks || item.template || '';
                 if (Array.isArray(item.distractors)) {
@@ -2186,9 +2221,17 @@ async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decis
             totalScore++;
             const ans = subData.answers ? subData.answers[q.id] : null;
             if (q.type === 'qcm') {
-                const ansNum = (ans !== null && ans !== undefined) ? parseInt(ans, 10) : null;
-                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                if (ansNum === correctIdx) correctCount++;
+                const userIndices = Array.isArray(ans)
+                    ? ans.map(n => parseInt(n, 10))
+                    : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                    ? q.correctIndexes.map(n => parseInt(n, 10))
+                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+
+                const sortedUser = [...userIndices].sort((a, b) => a - b);
+                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+                const isCorrect = (sortedUser.length === sortedExp.length && sortedUser.length > 0 && sortedUser.every((v, i) => v === sortedExp[i]));
+                if (isCorrect) correctCount++;
             } else if (q.type === 'boolean') {
                 const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
                 const userBool = (ans === true || ans === 'true');
@@ -2891,8 +2934,11 @@ async function exportModuleAnalyticsCSV(moduleId) {
             let ansStr = '--';
             if (ans !== null && ans !== undefined) {
                 if (q.type === 'qcm') {
-                    const ansNum = parseInt(ans, 10);
-                    ansStr = (q.options && q.options[ansNum]) ? q.options[ansNum] : `Choix #${ansNum + 1}`;
+                    const userIndices = Array.isArray(ans)
+                        ? ans.map(n => parseInt(n, 10))
+                        : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+                    const texts = userIndices.map(idx => (q.options && q.options[idx]) ? q.options[idx] : `Choix #${idx + 1}`);
+                    ansStr = texts.length > 0 ? texts.join(', ') : '--';
                 } else if (q.type === 'boolean') {
                     ansStr = (ans === true || ans === 'true') ? 'VRAI' : 'FAUX';
                 } else if (typeof ans === 'object') {
@@ -3282,14 +3328,27 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
             let ansDisplay = '';
 
             if (q.type === 'qcm') {
-                const ansNum = (userAns !== null && userAns !== undefined) ? parseInt(userAns, 10) : null;
-                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                const isCorrect = (ansNum === correctIdx);
-                const optText = (ansNum !== null && q.options && q.options[ansNum]) ? q.options[ansNum] : 'Pas de réponse';
+                const userIndices = Array.isArray(userAns)
+                    ? userAns.map(n => parseInt(n, 10))
+                    : (userAns !== null && userAns !== undefined && userAns !== '' ? [parseInt(userAns, 10)] : []);
+                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                    ? q.correctIndexes.map(n => parseInt(n, 10))
+                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+
+                const sortedUser = [...userIndices].sort((a, b) => a - b);
+                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+                const isCorrect = (sortedUser.length === sortedExp.length && sortedUser.length > 0 && sortedUser.every((v, i) => v === sortedExp[i]));
+
+                const options = q.options || [];
+                const chosenTexts = sortedUser.map(idx => options[idx]).filter(Boolean);
+                const chosenDisplay = chosenTexts.length > 0 ? chosenTexts.join(', ') : 'Pas de réponse';
+                const expectedTexts = sortedExp.map(idx => options[idx]).filter(Boolean).join(', ');
+
                 ansDisplay = `
                 <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
-                    <strong>Votre choix :</strong> ${escapeHtml(optText)}
+                    <strong>Votre choix :</strong> ${escapeHtml(chosenDisplay)}
                     <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}</span>
+                    ${!isCorrect && expectedTexts ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Bonne(s) réponse(s) : <strong>${escapeHtml(expectedTexts)}</strong>)</div>` : ''}
                 </div>`;
             } else if (q.type === 'boolean') {
                 const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
@@ -3879,10 +3938,20 @@ async function renderAdminModuleAnalytics(moduleId) {
                 answeredCount++;
 
                 if (q.type === 'qcm') {
-                    const ansNum = parseInt(ans, 10);
-                    choiceDistribution[ansNum] = (choiceDistribution[ansNum] || 0) + 1;
-                    const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                    if (ansNum === correctIdx) correctCount++;
+                    const userIndices = Array.isArray(ans)
+                        ? ans.map(n => parseInt(n, 10))
+                        : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+                    userIndices.forEach(idx => {
+                        choiceDistribution[idx] = (choiceDistribution[idx] || 0) + 1;
+                    });
+                    const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                        ? q.correctIndexes.map(n => parseInt(n, 10))
+                        : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+
+                    const sortedUser = [...userIndices].sort((a, b) => a - b);
+                    const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+                    const isCorrect = (sortedUser.length === sortedExp.length && sortedUser.length > 0 && sortedUser.every((v, i) => v === sortedExp[i]));
+                    if (isCorrect) correctCount++;
                 } else if (q.type === 'boolean') {
                     const userBool = (ans === true || ans === 'true');
                     if (userBool) booleanTrueCount++;
@@ -3945,13 +4014,15 @@ async function renderAdminModuleAnalytics(moduleId) {
             let breakdownHtml = '';
             if (q.type === 'qcm') {
                 const options = q.options || [];
-                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+                const correctIndexes = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                    ? q.correctIndexes.map(n => parseInt(n, 10))
+                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
                 breakdownHtml = `
                 <div class="es-distribution-legend">
                     ${options.map((opt, optIdx) => {
                         const count = choiceDistribution[optIdx] || 0;
                         const pct = answeredCount > 0 ? Math.round((count / answeredCount) * 100) : 0;
-                        const isCorrectOpt = optIdx === correctIdx;
+                        const isCorrectOpt = correctIndexes.includes(optIdx);
                         return `
                         <div class="es-distribution-item" style="border-left:4px solid ${isCorrectOpt ? '#27ae60' : 'var(--clr-surface-3)'};">
                             <div>
@@ -4147,15 +4218,27 @@ async function openAdminCandidateBilanModal(userId) {
                     let ansDisplay = '';
 
                     if (q.type === 'qcm') {
-                        const ansNum = (userAns !== null && userAns !== undefined) ? parseInt(userAns, 10) : null;
-                        const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                        const isCorrect = (ansNum === correctIdx);
-                        const optText = (ansNum !== null && q.options && q.options[ansNum]) ? q.options[ansNum] : 'Pas de réponse';
+                        const userIndices = Array.isArray(userAns)
+                            ? userAns.map(n => parseInt(n, 10))
+                            : (userAns !== null && userAns !== undefined && userAns !== '' ? [parseInt(userAns, 10)] : []);
+                        const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                            ? q.correctIndexes.map(n => parseInt(n, 10))
+                            : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+
+                        const sortedUser = [...userIndices].sort((a, b) => a - b);
+                        const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+                        const isCorrect = (sortedUser.length === sortedExp.length && sortedUser.length > 0 && sortedUser.every((v, i) => v === sortedExp[i]));
+
+                        const options = q.options || [];
+                        const chosenTexts = sortedUser.map(idx => options[idx]).filter(Boolean);
+                        const chosenDisplay = chosenTexts.length > 0 ? chosenTexts.join(', ') : 'Pas de réponse';
+                        const expectedTexts = sortedExp.map(idx => options[idx]).filter(Boolean).join(', ');
+
                         ansDisplay = `
                         <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
-                            <strong>Choix candidat :</strong> ${escapeHtml(optText)}
+                            <strong>Choix candidat :</strong> ${escapeHtml(chosenDisplay)}
                             <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact' : '❌ Faux'}</span>
-                            ${!isCorrect && q.options && q.options[correctIdx] ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Bonne réponse : <strong>${escapeHtml(q.options[correctIdx])}</strong>)</div>` : ''}
+                            ${!isCorrect && expectedTexts ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Bonne(s) réponse(s) : <strong>${escapeHtml(expectedTexts)}</strong>)</div>` : ''}
                         </div>`;
                     } else if (q.type === 'boolean') {
                         const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
