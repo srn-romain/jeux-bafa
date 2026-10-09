@@ -7940,3 +7940,190 @@ body.modal-open .es-topbar {
   color: var(--clr-danger);
   background: rgba(231, 76, 60, 0.1);
 }
+
+/* ================================================================
+   Éditeur de texte enrichi pour énoncé de question de quiz
+   ================================================================ */
+.q-editor-container {
+  border: 1.5px solid var(--clr-surface-3);
+  border-radius: var(--radius-md, 8px);
+  background: var(--clr-surface);
+  overflow: hidden;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.q-editor-container:focus-within {
+  border-color: var(--clr-primary, #689f38);
+  box-shadow: 0 0 0 2px rgba(104, 159, 56, 0.2);
+}
+
+.q-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  background: var(--clr-surface-2);
+  border-bottom: 1px solid var(--clr-surface-3);
+}
+
+.q-tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--clr-text-muted, #94a3b8);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.q-tb-btn:hover {
+  background: rgba(125, 125, 125, 0.12);
+  color: var(--clr-text, #ffffff);
+  border-color: var(--clr-surface-3);
+}
+
+.q-tb-btn:active, .q-tb-btn.active {
+  background: var(--clr-primary, #689f38) !important;
+  color: #ffffff !important;
+  border-color: var(--clr-primary, #689f38) !important;
+  box-shadow: 0 1px 4px rgba(104, 159, 56, 0.35);
+}
+
+.q-tb-separator {
+  width: 1px;
+  height: 16px;
+  background: var(--clr-surface-3);
+  margin: 0 4px;
+}
+
+.q-tb-hl-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(125, 125, 125, 0.3);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  padding: 0;
+}
+
+.q-tb-hl-btn:hover {
+  transform: scale(1.22);
+  border-color: var(--clr-primary, #689f38);
+  box-shadow: 0 0 6px rgba(104, 159, 56, 0.3);
+}
+
+.q-tb-hl-btn.active {
+  transform: scale(1.18);
+  border: 2px solid var(--clr-primary, #689f38) !important;
+  box-shadow: 0 0 0 2px rgba(104, 159, 56, 0.35), 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.q-text-editor {
+  min-height: 64px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 10px 13px;
+  color: var(--clr-text);
+  font-size: 0.93rem;
+  font-weight: 500;
+  line-height: 1.55;
+  outline: none;
+  word-break: break-word;
+  background: var(--clr-surface);
+  border: none;
+  border-radius: 0;
+}
+
+.q-text-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--clr-text-muted, #64748b);
+  pointer-events: none;
+  font-weight: 400;
+}
+
+/* Rendu et styles de texte enrichi pour questions (éditeur & quiz) */
+.q-text-editor b, .q-text-editor strong,
+.es-quiz-q-text b, .es-quiz-q-text strong,
+.es-q-rich-text b, .es-q-rich-text strong {
+  font-weight: 700 !important;
+  color: inherit;
+}
+
+.q-text-editor i, .q-text-editor em,
+.es-quiz-q-text i, .es-quiz-q-text em,
+.es-q-rich-text i, .es-q-rich-text em {
+  font-style: italic !important;
+  color: inherit;
+}
+
+.q-text-editor u,
+.es-quiz-q-text u,
+.es-q-rich-text u,
+.q-text-editor span[style*="underline"],
+.es-quiz-q-text span[style*="underline"],
+.es-q-rich-text span[style*="underline"] {
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+  color: inherit;
+}
+
+.q-text-editor mark,
+.es-quiz-q-text mark,
+.es-q-rich-text mark,
+.q-text-editor span[style*="background"],
+.es-quiz-q-text span[style*="background"],
+.es-q-rich-text span[style*="background"] {
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #111827 !important;
+  font-weight: 600;
+  display: inline-block;
+  line-height: 1.35;
+}
+
+.q-text-editor ul,
+.es-quiz-q-text ul,
+.es-q-rich-text ul {
+  list-style-type: disc;
+  padding-left: 24px;
+  margin: 6px 0;
+}
+
+.q-text-editor ol,
+.es-quiz-q-text ol,
+.es-q-rich-text ol {
+  list-style-type: decimal;
+  padding-left: 24px;
+  margin: 6px 0;
+}
+
+.q-text-editor li,
+.es-quiz-q-text li,
+.es-q-rich-text li {
+  margin-bottom: 4px;
+}
+
+.es-quiz-q-text,
+.es-q-rich-text {
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.es-quiz-q-text p,
+.es-q-rich-text p {
+  margin: 0 0 6px 0;
+}
+
+.es-quiz-q-text p:last-child,
+.es-q-rich-text p:last-child {
+  margin-bottom: 0;
+}

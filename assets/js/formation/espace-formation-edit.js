@@ -102,6 +102,250 @@ function escapeHtml(str) {
         .replace(/'/g, "&#039;");
 }
 
+function isRichTextEmpty(html) {
+    if (!html) return true;
+    const temp = document.createElement('div');
+    temp.innerHTML = html;
+    return !temp.textContent.trim();
+}
+
+function formatQuestionRichText(str) {
+    if (!str) return '';
+    const text = String(str);
+    const hasHtmlTags = /<[a-z][\s\S]*>/i.test(text);
+    if (!hasHtmlTags) {
+        return escapeHtml(text).replace(/\r?\n/g, '<br>');
+    }
+
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'MARK', 'SPAN', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'SMALL', 'SUB', 'SUP']);
+
+        function sanitizeNode(node) {
+            const children = Array.from(node.childNodes);
+            for (const child of children) {
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    const tag = child.tagName.toUpperCase();
+                    if (!allowedTags.has(tag)) {
+                        const textNode = document.createTextNode(child.textContent);
+                        node.replaceChild(textNode, child);
+                    } else {
+                        const attrs = Array.from(child.attributes);
+                        for (const attr of attrs) {
+                            const name = attr.name.toLowerCase();
+                            if (name === 'style') {
+                                const styleVal = attr.value;
+                                const safeStyles = [];
+                                const bgMatch = styleVal.match(/background(?:-color)?\s*:\s*([^;]+)/i);
+                                if (bgMatch && !/expression|javascript|url/i.test(bgMatch[1])) {
+                                    safeStyles.push(`background-color:${bgMatch[1].trim()}`);
+                                }
+                                const colMatch = styleVal.match(/(?:^|;)\s*color\s*:\s*([^;]+)/i);
+                                if (colMatch && !/expression|javascript|url/i.test(colMatch[1])) {
+                                    safeStyles.push(`color:${colMatch[1].trim()}`);
+                                }
+                                const tdMatch = styleVal.match(/text-decoration(?:-line)?\s*:\s*([^;]+)/i);
+                                if (tdMatch && !/expression|javascript|url/i.test(tdMatch[1])) {
+                                    safeStyles.push(`text-decoration:${tdMatch[1].trim()}`);
+                                }
+                                const fwMatch = styleVal.match(/font-weight\s*:\s*([^;]+)/i);
+                                if (fwMatch && !/expression|javascript|url/i.test(fwMatch[1])) {
+                                    safeStyles.push(`font-weight:${fwMatch[1].trim()}`);
+                                }
+                                const fsMatch = styleVal.match(/font-style\s*:\s*([^;]+)/i);
+                                if (fsMatch && !/expression|javascript|url/i.test(fsMatch[1])) {
+                                    safeStyles.push(`font-style:${fsMatch[1].trim()}`);
+                                }
+                                if (safeStyles.length > 0) {
+                                    child.setAttribute('style', safeStyles.join('; '));
+                                } else {
+                                    child.removeAttribute('style');
+                                }
+                            } else if (name === 'class') {
+                                const classVal = attr.value;
+                                if (/^[a-zA-Z0-9_\-\s]+$/.test(classVal)) {
+                                    child.setAttribute('class', classVal);
+                                } else {
+                                    child.removeAttribute('class');
+                                }
+                            } else {
+                                child.removeAttribute(attr.name);
+                            }
+                        }
+                        sanitizeNode(child);
+                    }
+                }
+            }
+        }
+        sanitizeNode(doc.body);
+        return doc.body.innerHTML;
+    } catch (e) {
+        return escapeHtml(text).replace(/\r?\n/g, '<br>');
+    }
+}
+
+function getSelectedHighlightInQuestionEditor(editor) {
+    let bgCol = '';
+    try {
+        bgCol = document.queryCommandValue('backColor') || document.queryCommandValue('hiliteColor') || '';
+    } catch (e) {}
+
+    const isOurColor = (str) => {
+        if (!str || str === 'transparent' || str === 'rgba(0, 0, 0, 0)') return false;
+        const clean = str.replace(/\s+/g, '').toLowerCase();
+        return clean.includes('254,240,138') || clean.includes('fef08a') ||
+               clean.includes('187,247,208') || clean.includes('bbf7d0') ||
+               clean.includes('254,202,202') || clean.includes('fecaca') ||
+               clean.includes('186,230,253') || clean.includes('bae6fd');
+    };
+
+    if (isOurColor(bgCol)) {
+        return bgCol.replace(/\s+/g, '').toLowerCase();
+    }
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+        let node = sel.anchorNode;
+        while (node && node !== editor) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                const styleBg = node.style.backgroundColor || window.getComputedStyle(node).backgroundColor;
+                if (isOurColor(styleBg)) {
+                    return styleBg.replace(/\s+/g, '').toLowerCase();
+                }
+                if (node.tagName === 'MARK') {
+                    return 'fef08a';
+                }
+            }
+            node = node.parentNode;
+        }
+
+        try {
+            const range = sel.getRangeAt(0);
+            const container = range.commonAncestorContainer;
+            if (container && container.nodeType === Node.ELEMENT_NODE) {
+                const styleBg = container.style.backgroundColor || window.getComputedStyle(container).backgroundColor;
+                if (isOurColor(styleBg)) return styleBg.replace(/\s+/g, '').toLowerCase();
+                const spans = container.querySelectorAll('mark, span');
+                for (const span of spans) {
+                    if (range.intersectsNode(span)) {
+                        const bg = span.style.backgroundColor || window.getComputedStyle(span).backgroundColor;
+                        if (isOurColor(bg)) return bg.replace(/\s+/g, '').toLowerCase();
+                        if (span.tagName === 'MARK') return 'fef08a';
+                    }
+                }
+            }
+        } catch (ignored) {}
+    }
+    return '';
+}
+
+function updateQuestionToolbarActiveStates(editor, toolbar) {
+    if (!editor || !toolbar) return;
+
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+        const anchor = sel.anchorNode;
+        if (anchor && !editor.contains(anchor) && anchor !== editor && document.activeElement !== editor) {
+            toolbar.querySelectorAll('.btn-tb-cmd, .btn-tb-hl').forEach(b => b.classList.remove('active'));
+            return;
+        }
+    }
+
+    // Gras
+    let isBold = false;
+    try { isBold = document.queryCommandState('bold'); } catch (e) {}
+    if (!isBold && sel && sel.rangeCount > 0) {
+        let node = sel.anchorNode;
+        while (node && node !== editor) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.tagName === 'B' || node.tagName === 'STRONG' || (node.style && (node.style.fontWeight === 'bold' || parseInt(node.style.fontWeight) >= 600))) {
+                    isBold = true;
+                    break;
+                }
+            }
+            node = node.parentNode;
+        }
+    }
+    toolbar.querySelector('.btn-tb-cmd[data-cmd="bold"]')?.classList.toggle('active', !!isBold);
+
+    // Italique
+    let isItalic = false;
+    try { isItalic = document.queryCommandState('italic'); } catch (e) {}
+    if (!isItalic && sel && sel.rangeCount > 0) {
+        let node = sel.anchorNode;
+        while (node && node !== editor) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.tagName === 'I' || node.tagName === 'EM' || (node.style && node.style.fontStyle === 'italic')) {
+                    isItalic = true;
+                    break;
+                }
+            }
+            node = node.parentNode;
+        }
+    }
+    toolbar.querySelector('.btn-tb-cmd[data-cmd="italic"]')?.classList.toggle('active', !!isItalic);
+
+    // Souligné
+    let isUnderline = false;
+    try { isUnderline = document.queryCommandState('underline'); } catch (e) {}
+    if (!isUnderline && sel && sel.rangeCount > 0) {
+        let node = sel.anchorNode;
+        while (node && node !== editor) {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+                if (node.tagName === 'U' || (node.style && node.style.textDecoration && node.style.textDecoration.includes('underline'))) {
+                    isUnderline = true;
+                    break;
+                }
+            }
+            node = node.parentNode;
+        }
+    }
+    toolbar.querySelector('.btn-tb-cmd[data-cmd="underline"]')?.classList.toggle('active', !!isUnderline);
+
+    // Puces
+    let isUl = false;
+    try { isUl = document.queryCommandState('insertUnorderedList'); } catch (e) {}
+    if (!isUl && sel && sel.rangeCount > 0) {
+        let node = sel.anchorNode;
+        while (node && node !== editor) {
+            if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'UL') {
+                isUl = true;
+                break;
+            }
+            node = node.parentNode;
+        }
+    }
+    toolbar.querySelector('.btn-tb-cmd[data-cmd="insertUnorderedList"]')?.classList.toggle('active', !!isUl);
+
+    // Numérotation
+    let isOl = false;
+    try { isOl = document.queryCommandState('insertOrderedList'); } catch (e) {}
+    if (!isOl && sel && sel.rangeCount > 0) {
+        let node = sel.anchorNode;
+        while (node && node !== editor) {
+            if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'OL') {
+                isOl = true;
+                break;
+            }
+            node = node.parentNode;
+        }
+    }
+    toolbar.querySelector('.btn-tb-cmd[data-cmd="insertOrderedList"]')?.classList.toggle('active', !!isOl);
+
+    // Surlignage
+    const hlCol = getSelectedHighlightInQuestionEditor(editor);
+    toolbar.querySelectorAll('.btn-tb-hl').forEach(hlBtn => {
+        const color = (hlBtn.getAttribute('data-color') || '').toLowerCase();
+        let match = false;
+        if (color.includes('fef08a') && (hlCol.includes('254,240,138') || hlCol.includes('fef08a'))) match = true;
+        else if (color.includes('bbf7d0') && (hlCol.includes('187,247,208') || hlCol.includes('bbf7d0'))) match = true;
+        else if (color.includes('fecaca') && (hlCol.includes('254,202,202') || hlCol.includes('fecaca'))) match = true;
+        else if (color.includes('bae6fd') && (hlCol.includes('186,230,253') || hlCol.includes('bae6fd'))) match = true;
+        hlBtn.classList.toggle('active', match);
+    });
+}
+
 function formatDate(timestamp) {
     if (!timestamp) return 'Date inconnue';
     let date = null;
@@ -485,15 +729,15 @@ let picsumSeedOffset = 1;
 let themedOffset = 0;
 let isBgGalleryInitialized = false;
 
-function renderBgSuggestions(selectedUrl = '') {
+function renderBgSuggestions(selectedUrl = '', forceAutoDetect = false) {
     const grid = document.getElementById('bgGalleryGrid');
     const tabsContainer = document.getElementById('bgGalleryCategoryTabs');
     if (!grid) return;
 
     const currentSelected = (selectedUrl || document.getElementById('editModuleBgImage')?.value || '').trim();
 
-    // Auto-détection de la catégorie correspondant à l'image courante
-    if (currentSelected) {
+    // Auto-détection de la catégorie et de l'offset SEULEMENT lors du premier chargement / forceAutoDetect
+    if (forceAutoDetect && currentSelected) {
         if (currentSelected.includes('random') || currentSelected === 'https://picsum.photos/800/500') {
             currentBgGalleryCategory = 'picsum';
         } else if (currentSelected.includes('picsum.photos/seed/bafa_')) {
@@ -529,6 +773,7 @@ function renderBgSuggestions(selectedUrl = '') {
                     currentBgGalleryCategory = btn.getAttribute('data-category') || 'picsum';
                     tabsContainer.querySelectorAll('.es-bg-cat-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
+                    themedOffset = 0;
                     buildGalleryGrid();
                 });
             });
@@ -660,9 +905,11 @@ function initBgGalleryEvents() {
             if (currentBgGalleryCategory === 'picsum') {
                 picsumSeedOffset += 4;
             } else {
-                themedOffset = (themedOffset + 2) % 10;
+                const list = THEMED_BG_IMAGES[currentBgGalleryCategory] || [];
+                const step = 4;
+                themedOffset = (themedOffset + step) % Math.max(1, list.length);
             }
-            renderBgSuggestions();
+            renderBgSuggestions('', false);
             btnRandom.style.transition = 'transform 0.2s ease';
             btnRandom.style.transform = 'rotate(180deg)';
             setTimeout(() => { btnRandom.style.transform = ''; }, 200);
@@ -1007,7 +1254,7 @@ async function loadModuleHubData() {
         renderIconPicker(chosenIcon);
         updateIconPreview(chosenIcon);
         const currentBgUrl = document.getElementById('editModuleBgImage')?.value || '';
-        renderBgSuggestions(currentBgUrl);
+        renderBgSuggestions(currentBgUrl, true);
         renderQuestionsEditor();
         initTopbarDropdown();
 
@@ -1713,7 +1960,7 @@ function renderInspectionQuestions(questions, sub) {
                     <span style="font-weight:700; font-size:0.85rem; color:var(--clr-primary-xdark);">Question ${idx + 1}</span>
                     <span class="es-badge es-badge--stagiaire" style="font-size:0.68rem;">${type.toUpperCase()}</span>
                 </div>
-                <div style="font-weight:700; font-size:0.92rem; color:var(--clr-text);">${escapeHtml(q.text || '')}</div>
+                <div style="font-weight:700; font-size:0.92rem; color:var(--clr-text);" class="es-q-rich-text">${formatQuestionRichText(q.text || '')}</div>
                 ${contentHtml}
             </div>
         `;
@@ -1898,7 +2145,14 @@ function syncQuestionsFromDOM() {
 
         // Énoncé
         const textInput = card.querySelector('.q-text-input');
-        if (textInput) q.text = textInput.value;
+        if (textInput) {
+            if (textInput.isContentEditable) {
+                const rawHtml = textInput.innerHTML;
+                q.text = isRichTextEmpty(rawHtml) ? '' : rawHtml.trim();
+            } else {
+                q.text = textInput.value;
+            }
+        }
 
         // Image
         const imgInput = card.querySelector('.q-image-input');
@@ -2716,9 +2970,61 @@ function renderQuestionsEditor() {
                     </div>
                 </div>
 
-                <div class="es-field" style="margin-bottom:10px;">
-                    <label class="es-field__label">Énoncé de la question :</label>
-                    <input class="es-input q-text-input" type="text" data-qidx="${idx}" value="${escapeHtml(q.text || '')}" placeholder="Ex: Que signifie le sigle PSAADRAFRA ?" required style="font-weight:600; font-size:0.92rem;">
+                <div class="es-field" style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+                        <label class="es-field__label" style="margin-bottom:0; font-weight:700;">
+                            <i class="bi bi-chat-left-quote-fill" style="color:var(--clr-primary);"></i> Énoncé de la question :
+                        </label>
+                        <span style="font-size:0.75rem; color:var(--clr-text-muted);">
+                            💡 Retour à la ligne libre (Entrée), Gras, Italique, Souligné, Listes & Surlignage
+                        </span>
+                    </div>
+
+                    <div class="q-editor-container">
+                        <div class="q-editor-toolbar" data-qidx="${idx}">
+                            <div style="display:flex; align-items:center; gap:2px;">
+                                <button type="button" class="q-tb-btn btn-tb-cmd" data-cmd="bold" title="Gras (Ctrl+B)">
+                                    <i class="bi bi-type-bold"></i>
+                                </button>
+                                <button type="button" class="q-tb-btn btn-tb-cmd" data-cmd="italic" title="Italique (Ctrl+I)">
+                                    <i class="bi bi-type-italic"></i>
+                                </button>
+                                <button type="button" class="q-tb-btn btn-tb-cmd" data-cmd="underline" title="Souligné (Ctrl+U)">
+                                    <i class="bi bi-type-underline"></i>
+                                </button>
+                            </div>
+
+                            <div class="q-tb-separator"></div>
+
+                            <div style="display:flex; align-items:center; gap:2px;">
+                                <button type="button" class="q-tb-btn btn-tb-cmd" data-cmd="insertUnorderedList" title="Liste à puces">
+                                    <i class="bi bi-list-ul"></i>
+                                </button>
+                                <button type="button" class="q-tb-btn btn-tb-cmd" data-cmd="insertOrderedList" title="Liste numérotée">
+                                    <i class="bi bi-list-ol"></i>
+                                </button>
+                            </div>
+
+                            <div class="q-tb-separator"></div>
+
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <span style="font-size:0.72rem; color:var(--clr-text-muted); display:inline-flex; align-items:center; gap:2px;">
+                                    <i class="bi bi-highlighter"></i> Surligner :
+                                </span>
+                                <button type="button" class="q-tb-hl-btn btn-tb-hl" data-color="#fef08a" style="background-color:#fef08a;" title="Surligner en jaune"></button>
+                                <button type="button" class="q-tb-hl-btn btn-tb-hl" data-color="#bbf7d0" style="background-color:#bbf7d0;" title="Surligner en vert"></button>
+                                <button type="button" class="q-tb-hl-btn btn-tb-hl" data-color="#fecaca" style="background-color:#fecaca;" title="Surligner en rose"></button>
+                                <button type="button" class="q-tb-hl-btn btn-tb-hl" data-color="#bae6fd" style="background-color:#bae6fd;" title="Surligner en bleu"></button>
+                            </div>
+
+                            <div class="q-tb-separator"></div>
+
+                            <button type="button" class="q-tb-btn btn-tb-clear" title="Effacer le surlignage / formatage">
+                                <i class="bi bi-eraser"></i>
+                            </button>
+                        </div>
+                        <div class="es-input q-text-input q-text-editor" contenteditable="true" data-qidx="${idx}" data-placeholder="Ex: Que signifie le sigle PSAADRAFRA ? (Appuyez sur Entrée pour aller à la ligne...)" style="font-weight:600; font-size:0.92rem;">${formatQuestionRichText(q.text || '')}</div>
+                    </div>
                 </div>
 
                 <div class="es-field" style="margin-bottom:10px;">
@@ -2784,6 +3090,12 @@ function applyPermissionsToUI() {
                 el.disabled = true;
                 el.style.pointerEvents = 'none';
                 el.style.cursor = 'default';
+            });
+            form.querySelectorAll('.q-text-editor').forEach(el => {
+                el.setAttribute('contenteditable', 'false');
+            });
+            form.querySelectorAll('.q-editor-toolbar').forEach(el => {
+                el.style.display = 'none';
             });
         }
 
@@ -2927,13 +3239,235 @@ function bindQuestionsEvents() {
         });
     });
 
-    container.querySelectorAll('.q-text-input').forEach(input => {
-        input.addEventListener('input', (e) => {
-            const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
-            if (currentEditingQuestions[idx]) {
-                currentEditingQuestions[idx].text = e.target.value;
+    // Barre d'outils d'édition d'énoncé de question
+    container.querySelectorAll('.q-editor-toolbar').forEach(toolbar => {
+        const card = toolbar.closest('.es-qcard');
+        const editor = card?.querySelector('.q-text-editor');
+        if (!editor) return;
+
+        const updateStates = () => {
+            updateQuestionToolbarActiveStates(editor, toolbar);
+        };
+
+        const prepareSelectionForEditor = () => {
+            const sel = window.getSelection();
+            if (!sel || !sel.rangeCount) {
+                if (editor._lastRange) {
+                    try {
+                        sel.removeAllRanges();
+                        sel.addRange(editor._lastRange);
+                    } catch (e) {}
+                }
+            }
+
+            const currentSel = window.getSelection();
+            if (currentSel && currentSel.rangeCount > 0) {
+                const anchor = currentSel.anchorNode;
+                if (!editor.contains(anchor) && anchor !== editor) {
+                    if (editor._lastRange) {
+                        try {
+                            currentSel.removeAllRanges();
+                            currentSel.addRange(editor._lastRange);
+                        } catch (e) {}
+                    }
+                }
+            }
+
+            const activeSel = window.getSelection();
+            if (activeSel && activeSel.rangeCount > 0 && activeSel.isCollapsed) {
+                const range = activeSel.getRangeAt(0);
+                const node = range.startContainer;
+                const offset = range.startOffset;
+
+                if (node.nodeType === Node.TEXT_NODE) {
+                    const text = node.textContent || '';
+                    let start = offset;
+                    while (start > 0 && /\S/.test(text[start - 1])) start--;
+                    let end = offset;
+                    while (end < text.length && /\S/.test(text[end])) end++;
+                    if (start < end) {
+                        const wordRange = document.createRange();
+                        wordRange.setStart(node, start);
+                        wordRange.setEnd(node, end);
+                        activeSel.removeAllRanges();
+                        activeSel.addRange(wordRange);
+                    } else if (editor.textContent.trim().length > 0) {
+                        const allRange = document.createRange();
+                        allRange.selectNodeContents(editor);
+                        activeSel.removeAllRanges();
+                        activeSel.addRange(allRange);
+                    }
+                } else if (node === editor || editor.contains(node)) {
+                    if (editor.textContent.trim().length > 0) {
+                        const allRange = document.createRange();
+                        allRange.selectNodeContents(editor);
+                        activeSel.removeAllRanges();
+                        activeSel.addRange(allRange);
+                    }
+                }
+            }
+        };
+
+        // Empêcher la perte de focus lors du clic sur un bouton de la barre d'outils
+        toolbar.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
+        });
+
+        toolbar.querySelectorAll('.btn-tb-cmd').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const cmd = btn.getAttribute('data-cmd');
+
+                prepareSelectionForEditor();
+
+                try {
+                    document.execCommand('styleWithCSS', false, false);
+                } catch (e) {}
+
+                const res = document.execCommand(cmd, false, null);
+                const selectedText = window.getSelection()?.toString();
+                console.log(`[QuizEditor] Commande "${cmd}" exécutée (succès: ${res}) sur la sélection: "${selectedText}"`);
+
+                const newSel = window.getSelection();
+                if (newSel && newSel.rangeCount > 0) {
+                    editor._lastRange = newSel.getRangeAt(0).cloneRange();
+                }
+
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+                updateStates();
+            });
+        });
+
+        toolbar.querySelectorAll('.btn-tb-hl').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const color = btn.getAttribute('data-color');
+                const isAlreadyActive = btn.classList.contains('active');
+
+                prepareSelectionForEditor();
+
+                try {
+                    document.execCommand('styleWithCSS', false, true);
+                } catch (e) {}
+
+                if (isAlreadyActive) {
+                    document.execCommand('hiliteColor', false, 'transparent');
+                    document.execCommand('backColor', false, 'transparent');
+                } else {
+                    document.execCommand('hiliteColor', false, color);
+                }
+
+                const newSel = window.getSelection();
+                if (newSel && newSel.rangeCount > 0) {
+                    editor._lastRange = newSel.getRangeAt(0).cloneRange();
+                }
+
+                const selectedText = window.getSelection()?.toString();
+                console.log(`[QuizEditor] Surlignage "${color}" (retrait: ${isAlreadyActive}) sur la sélection: "${selectedText}"`);
+
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+                updateStates();
+            });
+        });
+
+        toolbar.querySelectorAll('.btn-tb-clear').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                prepareSelectionForEditor();
+
+                try {
+                    document.execCommand('styleWithCSS', false, true);
+                } catch (e) {}
+
+                document.execCommand('removeFormat', false, null);
+                document.execCommand('hiliteColor', false, 'transparent');
+                document.execCommand('backColor', false, 'transparent');
+
+                const newSel = window.getSelection();
+                if (newSel && newSel.rangeCount > 0) {
+                    editor._lastRange = newSel.getRangeAt(0).cloneRange();
+                }
+
+                const selectedText = window.getSelection()?.toString();
+                console.log(`[QuizEditor] Gomme / Effacer formatage sur la sélection: "${selectedText}"`);
+
+                editor.dispatchEvent(new Event('input', { bubbles: true }));
+                updateStates();
+            });
+        });
+
+        // Mise à jour de l'état actif des boutons en direct lors de la sélection ou du déplacement du curseur
+        editor.addEventListener('keyup', () => {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                editor._lastRange = sel.getRangeAt(0).cloneRange();
+            }
+            updateStates();
+        });
+        editor.addEventListener('mouseup', () => {
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                editor._lastRange = sel.getRangeAt(0).cloneRange();
+            }
+            updateStates();
+        });
+        editor.addEventListener('focus', updateStates);
+        editor.addEventListener('blur', () => {
+            setTimeout(() => {
+                if (document.activeElement !== editor) {
+                    toolbar.querySelectorAll('.btn-tb-cmd, .btn-tb-hl').forEach(b => b.classList.remove('active'));
+                }
+            }, 180);
+        });
+    });
+
+    if (!window._questionSelectionChangeListenerAttached) {
+        window._questionSelectionChangeListenerAttached = true;
+        document.addEventListener('selectionchange', () => {
+            const activeEl = document.activeElement;
+            if (activeEl && activeEl.classList && activeEl.classList.contains('q-text-editor')) {
+                const card = activeEl.closest('.es-qcard');
+                const tb = card?.querySelector('.q-editor-toolbar');
+                if (tb) {
+                    const sel = window.getSelection();
+                    if (sel && sel.rangeCount > 0) {
+                        const range = sel.getRangeAt(0);
+                        if (activeEl.contains(range.commonAncestorContainer) || activeEl === range.commonAncestorContainer) {
+                            activeEl._lastRange = range.cloneRange();
+                        }
+                    }
+                    updateQuestionToolbarActiveStates(activeEl, tb);
+                }
             }
         });
+    }
+
+    container.querySelectorAll('.q-text-input').forEach(input => {
+        if (input.isContentEditable) {
+            const syncText = () => {
+                const idx = parseInt(input.getAttribute('data-qidx'), 10);
+                if (currentEditingQuestions[idx]) {
+                    const rawHtml = input.innerHTML;
+                    currentEditingQuestions[idx].text = isRichTextEmpty(rawHtml) ? '' : rawHtml.trim();
+                }
+            };
+            input.addEventListener('input', syncText);
+            input.addEventListener('blur', syncText);
+            input.addEventListener('keyup', syncText);
+            input.addEventListener('paste', () => {
+                setTimeout(syncText, 10);
+            });
+        } else {
+            input.addEventListener('input', (e) => {
+                const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
+                if (currentEditingQuestions[idx]) {
+                    currentEditingQuestions[idx].text = e.target.value;
+                }
+            });
+        }
     });
 
     container.querySelectorAll('.q-image-input').forEach(input => {
@@ -3911,7 +4445,7 @@ async function saveModuleData(btnEl) {
         validQuestionNum++;
         const qNum = validQuestionNum;
 
-        if (!q.text || !q.text.trim()) {
+        if (!q.text || isRichTextEmpty(q.text)) {
             if (errorAlert && errorMsg) {
                 errorMsg.textContent = `L'énoncé de la question ${qNum} est vide.`;
                 errorAlert.classList.remove('hidden');

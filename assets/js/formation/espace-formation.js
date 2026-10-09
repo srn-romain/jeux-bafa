@@ -40,7 +40,82 @@ function invalidateFormationCache() {
         }
     } catch (e) {}
 }
-window.invalidateFormationCache = invalidateFormationCache;
+function formatQuestionRichText(str) {
+    if (!str) return '';
+    const text = String(str);
+    const hasHtmlTags = /<[a-z][\s\S]*>/i.test(text);
+    if (!hasHtmlTags) {
+        return (typeof escapeHtml === 'function' ? escapeHtml(text) : text).replace(/\r?\n/g, '<br>');
+    }
+
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'MARK', 'SPAN', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'SMALL', 'SUB', 'SUP']);
+
+        function sanitizeNode(node) {
+            const children = Array.from(node.childNodes);
+            for (const child of children) {
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    const tag = child.tagName.toUpperCase();
+                    if (!allowedTags.has(tag)) {
+                        const textNode = document.createTextNode(child.textContent);
+                        node.replaceChild(textNode, child);
+                    } else {
+                        const attrs = Array.from(child.attributes);
+                        for (const attr of attrs) {
+                            const name = attr.name.toLowerCase();
+                            if (name === 'style') {
+                                const styleVal = attr.value;
+                                const safeStyles = [];
+                                const bgMatch = styleVal.match(/background(?:-color)?\s*:\s*([^;]+)/i);
+                                if (bgMatch && !/expression|javascript|url/i.test(bgMatch[1])) {
+                                    safeStyles.push(`background-color:${bgMatch[1].trim()}`);
+                                }
+                                const colMatch = styleVal.match(/(?:^|;)\s*color\s*:\s*([^;]+)/i);
+                                if (colMatch && !/expression|javascript|url/i.test(colMatch[1])) {
+                                    safeStyles.push(`color:${colMatch[1].trim()}`);
+                                }
+                                const tdMatch = styleVal.match(/text-decoration(?:-line)?\s*:\s*([^;]+)/i);
+                                if (tdMatch && !/expression|javascript|url/i.test(tdMatch[1])) {
+                                    safeStyles.push(`text-decoration:${tdMatch[1].trim()}`);
+                                }
+                                const fwMatch = styleVal.match(/font-weight\s*:\s*([^;]+)/i);
+                                if (fwMatch && !/expression|javascript|url/i.test(fwMatch[1])) {
+                                    safeStyles.push(`font-weight:${fwMatch[1].trim()}`);
+                                }
+                                const fsMatch = styleVal.match(/font-style\s*:\s*([^;]+)/i);
+                                if (fsMatch && !/expression|javascript|url/i.test(fsMatch[1])) {
+                                    safeStyles.push(`font-style:${fsMatch[1].trim()}`);
+                                }
+                                if (safeStyles.length > 0) {
+                                    child.setAttribute('style', safeStyles.join('; '));
+                                } else {
+                                    child.removeAttribute('style');
+                                }
+                            } else if (name === 'class') {
+                                const classVal = attr.value;
+                                if (/^[a-zA-Z0-9_\-\s]+$/.test(classVal)) {
+                                    child.setAttribute('class', classVal);
+                                } else {
+                                    child.removeAttribute('class');
+                                }
+                            } else {
+                                child.removeAttribute(attr.name);
+                            }
+                        }
+                        sanitizeNode(child);
+                    }
+                }
+            }
+        }
+        sanitizeNode(doc.body);
+        return doc.body.innerHTML;
+    } catch (e) {
+        return (typeof escapeHtml === 'function' ? escapeHtml(text) : text).replace(/\r?\n/g, '<br>');
+    }
+}
+window.formatQuestionRichText = formatQuestionRichText;
 
 // ----------------------------------------------------------------
 // BANDEAU COMPTE À REBOURS SYNCHRONISATION FIRESTORE (30s)
@@ -3569,7 +3644,7 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
             return `
             <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
                 <div style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Question ${qIdx + 1} • ${q.type}</div>
-                <div style="font-size:0.88rem; font-weight:600; color:var(--clr-text); margin-top:2px;">${escapeHtml(q.text)}</div>
+                <div style="font-size:0.88rem; font-weight:600; color:var(--clr-text); margin-top:2px;" class="es-q-rich-text">${formatQuestionRichText(q.text)}</div>
                 ${ansDisplay}
             </div>`;
         }).join('');
@@ -4253,8 +4328,8 @@ async function renderAdminModuleAnalytics(moduleId) {
                         <div style="font-size:0.75rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">
                             Question ${qIdx + 1} • ${typeLabel}
                         </div>
-                        <h4 style="font-size:0.95rem; font-weight:800; color:var(--clr-text); margin:4px 0 0;">
-                            ${escapeHtml(q.text)}
+                        <h4 style="font-size:0.95rem; font-weight:800; color:var(--clr-text); margin:4px 0 0;" class="es-q-rich-text">
+                            ${formatQuestionRichText(q.text)}
                         </h4>
                     </div>
                     <div class="es-analytics-gauge">
@@ -4502,7 +4577,7 @@ async function openAdminCandidateBilanModal(userId) {
                     return `
                     <div style="margin-top:10px; padding-top:8px; border-top:1px dashed var(--clr-surface-3);">
                         <div style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Q${qIdx + 1} • ${q.type}</div>
-                        <div style="font-size:0.88rem; font-weight:600; color:var(--clr-text);">${escapeHtml(q.text)}</div>
+                        <div style="font-size:0.88rem; font-weight:600; color:var(--clr-text);" class="es-q-rich-text">${formatQuestionRichText(q.text)}</div>
                         ${ansDisplay}
                     </div>`;
                 }).join('');

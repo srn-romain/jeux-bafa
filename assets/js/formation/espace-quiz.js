@@ -51,6 +51,82 @@ function escapeHtml(str) {
         .replace(/'/g, "&#039;");
 }
 
+function formatQuestionRichText(str) {
+    if (!str) return '';
+    const text = String(str);
+    const hasHtmlTags = /<[a-z][\s\S]*>/i.test(text);
+    if (!hasHtmlTags) {
+        return escapeHtml(text).replace(/\r?\n/g, '<br>');
+    }
+
+    try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const allowedTags = new Set(['B', 'STRONG', 'I', 'EM', 'U', 'MARK', 'SPAN', 'P', 'DIV', 'BR', 'UL', 'OL', 'LI', 'SMALL', 'SUB', 'SUP']);
+
+        function sanitizeNode(node) {
+            const children = Array.from(node.childNodes);
+            for (const child of children) {
+                if (child.nodeType === Node.ELEMENT_NODE) {
+                    const tag = child.tagName.toUpperCase();
+                    if (!allowedTags.has(tag)) {
+                        const textNode = document.createTextNode(child.textContent);
+                        node.replaceChild(textNode, child);
+                    } else {
+                        const attrs = Array.from(child.attributes);
+                        for (const attr of attrs) {
+                            const name = attr.name.toLowerCase();
+                            if (name === 'style') {
+                                const styleVal = attr.value;
+                                const safeStyles = [];
+                                const bgMatch = styleVal.match(/background(?:-color)?\s*:\s*([^;]+)/i);
+                                if (bgMatch && !/expression|javascript|url/i.test(bgMatch[1])) {
+                                    safeStyles.push(`background-color:${bgMatch[1].trim()}`);
+                                }
+                                const colMatch = styleVal.match(/(?:^|;)\s*color\s*:\s*([^;]+)/i);
+                                if (colMatch && !/expression|javascript|url/i.test(colMatch[1])) {
+                                    safeStyles.push(`color:${colMatch[1].trim()}`);
+                                }
+                                const tdMatch = styleVal.match(/text-decoration(?:-line)?\s*:\s*([^;]+)/i);
+                                if (tdMatch && !/expression|javascript|url/i.test(tdMatch[1])) {
+                                    safeStyles.push(`text-decoration:${tdMatch[1].trim()}`);
+                                }
+                                const fwMatch = styleVal.match(/font-weight\s*:\s*([^;]+)/i);
+                                if (fwMatch && !/expression|javascript|url/i.test(fwMatch[1])) {
+                                    safeStyles.push(`font-weight:${fwMatch[1].trim()}`);
+                                }
+                                const fsMatch = styleVal.match(/font-style\s*:\s*([^;]+)/i);
+                                if (fsMatch && !/expression|javascript|url/i.test(fsMatch[1])) {
+                                    safeStyles.push(`font-style:${fsMatch[1].trim()}`);
+                                }
+                                if (safeStyles.length > 0) {
+                                    child.setAttribute('style', safeStyles.join('; '));
+                                } else {
+                                    child.removeAttribute('style');
+                                }
+                            } else if (name === 'class') {
+                                const classVal = attr.value;
+                                if (/^[a-zA-Z0-9_\-\s]+$/.test(classVal)) {
+                                    child.setAttribute('class', classVal);
+                                } else {
+                                    child.removeAttribute('class');
+                                }
+                            } else {
+                                child.removeAttribute(attr.name);
+                            }
+                        }
+                        sanitizeNode(child);
+                    }
+                }
+            }
+        }
+        sanitizeNode(doc.body);
+        return doc.body.innerHTML;
+    } catch (e) {
+        return escapeHtml(text).replace(/\r?\n/g, '<br>');
+    }
+}
+
 function formatTimerDisplay(totalSeconds) {
     if (totalSeconds < 0) totalSeconds = 0;
     const mins = Math.floor(totalSeconds / 60);
@@ -1226,7 +1302,7 @@ function renderActiveSectionPage() {
             return `
             <div class="es-quiz-question-box" id="q_box_${q.id}">
                 <div class="es-quiz-q-num">Question ${qNum} sur ${regularQuestions.length} • ${typeBadgeLabel}</div>
-                <div class="es-quiz-q-text">${escapeHtml(q.text)}</div>
+                <div class="es-quiz-q-text">${formatQuestionRichText(q.text)}</div>
                 ${imageHtml}
                 ${inputHtml}
             </div>`;
@@ -3210,7 +3286,7 @@ function renderResultsScreen(submission = {}) {
             return `
             <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:16px;">
                 <div style="font-size:0.75rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Question ${qNum} • ${typeBadgeLabel}</div>
-                <div style="font-size:0.92rem; font-weight:700; color:var(--clr-text); margin-top:2px;">${escapeHtml(q.text)}</div>
+                <div style="font-size:0.92rem; font-weight:700; color:var(--clr-text); margin-top:2px;" class="es-q-rich-text">${formatQuestionRichText(q.text)}</div>
                 ${imageThumb}
                 ${ansDisplay}
             </div>`;
