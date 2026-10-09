@@ -100,6 +100,13 @@ function formatQuestionRichText(str) {
                                 } else {
                                     child.removeAttribute('class');
                                 }
+                            } else if (name === 'type' && (child.tagName === 'OL' || child.tagName === 'UL' || child.tagName === 'LI')) {
+                                const typeVal = attr.value;
+                                if (['1', 'a', 'A', 'i', 'I', 'disc', 'circle', 'square'].includes(typeVal)) {
+                                    child.setAttribute('type', typeVal);
+                                } else {
+                                    child.removeAttribute('type');
+                                }
                             } else {
                                 child.removeAttribute(attr.name);
                             }

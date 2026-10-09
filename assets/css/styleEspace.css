@@ -8034,7 +8034,7 @@ body.modal-open .es-topbar {
   padding: 10px 13px;
   color: var(--clr-text);
   font-size: 0.93rem;
-  font-weight: 500;
+  font-weight: 400;
   line-height: 1.55;
   outline: none;
   word-break: break-word;
@@ -8104,6 +8104,36 @@ body.modal-open .es-topbar {
   list-style-type: decimal;
   padding-left: 24px;
   margin: 6px 0;
+}
+
+.q-text-editor ol[type="A"],
+.es-quiz-q-text ol[type="A"],
+.es-q-rich-text ol[type="A"] {
+  list-style-type: upper-alpha !important;
+}
+
+.q-text-editor ol[type="a"],
+.es-quiz-q-text ol[type="a"],
+.es-q-rich-text ol[type="a"] {
+  list-style-type: lower-alpha !important;
+}
+
+.q-text-editor ol[type="I"],
+.es-quiz-q-text ol[type="I"],
+.es-q-rich-text ol[type="I"] {
+  list-style-type: upper-roman !important;
+}
+
+.q-text-editor ol[type="i"],
+.es-quiz-q-text ol[type="i"],
+.es-q-rich-text ol[type="i"] {
+  list-style-type: lower-roman !important;
+}
+
+.q-text-editor ol[type="1"],
+.es-quiz-q-text ol[type="1"],
+.es-q-rich-text ol[type="1"] {
+  list-style-type: decimal !important;
 }
 
 .q-text-editor li,

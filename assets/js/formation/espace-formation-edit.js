@@ -169,6 +169,13 @@ function formatQuestionRichText(str) {
                                 } else {
                                     child.removeAttribute('class');
                                 }
+                            } else if (name === 'type' && (child.tagName === 'OL' || child.tagName === 'UL' || child.tagName === 'LI')) {
+                                const typeVal = attr.value;
+                                if (['1', 'a', 'A', 'i', 'I', 'disc', 'circle', 'square'].includes(typeVal)) {
+                                    child.setAttribute('type', typeVal);
+                                } else {
+                                    child.removeAttribute('type');
+                                }
                             } else {
                                 child.removeAttribute(attr.name);
                             }
@@ -259,7 +266,7 @@ function updateQuestionToolbarActiveStates(editor, toolbar) {
         let node = sel.anchorNode;
         while (node && node !== editor) {
             if (node.nodeType === Node.ELEMENT_NODE) {
-                if (node.tagName === 'B' || node.tagName === 'STRONG' || (node.style && (node.style.fontWeight === 'bold' || parseInt(node.style.fontWeight) >= 600))) {
+                if (node.tagName === 'B' || node.tagName === 'STRONG' || (node.style && (node.style.fontWeight === 'bold' || parseInt(node.style.fontWeight) >= 700))) {
                     isBold = true;
                     break;
                 }
@@ -318,20 +325,36 @@ function updateQuestionToolbarActiveStates(editor, toolbar) {
     }
     toolbar.querySelector('.btn-tb-cmd[data-cmd="insertUnorderedList"]')?.classList.toggle('active', !!isUl);
 
-    // Numérotation
+    // Numérotation / Alphabet / Romain
     let isOl = false;
+    let olType = '1';
     try { isOl = document.queryCommandState('insertOrderedList'); } catch (e) {}
-    if (!isOl && sel && sel.rangeCount > 0) {
+    if (sel && sel.rangeCount > 0) {
         let node = sel.anchorNode;
         while (node && node !== editor) {
             if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'OL') {
                 isOl = true;
+                olType = node.getAttribute('type') || '1';
                 break;
             }
             node = node.parentNode;
         }
     }
-    toolbar.querySelector('.btn-tb-cmd[data-cmd="insertOrderedList"]')?.classList.toggle('active', !!isOl);
+    const olBtn = toolbar.querySelector('.btn-tb-cmd[data-cmd="insertOrderedList"]');
+    if (olBtn) {
+        olBtn.classList.toggle('active', !!isOl);
+        if (isOl) {
+            if (olType === 'A') {
+                olBtn.title = "Liste alphabétique (A, B, C...) — Recliquer pour chiffres romains (I, II, III...)";
+            } else if (olType === 'I') {
+                olBtn.title = "Liste chiffres romains (I, II, III...) — Recliquer pour désactiver la liste";
+            } else {
+                olBtn.title = "Liste numérotée (1, 2, 3...) — Recliquer pour lettres (A, B, C...)";
+            }
+        } else {
+            olBtn.title = "Liste numérotée (1, 2, 3...) / Lettres / Chiffres romains";
+        }
+    }
 
     // Surlignage
     const hlCol = getSelectedHighlightInQuestionEditor(editor);
@@ -2309,6 +2332,12 @@ function syncQuestionsFromDOM() {
 
 function moveQuestion(fromIdx, toIdx) {
     if (toIdx < 0 || toIdx >= currentEditingQuestions.length || fromIdx === toIdx) return;
+    
+    const hasSectionAtTop = (currentEditingQuestions[0]?.type === 'section');
+    if (hasSectionAtTop) {
+        if (fromIdx === 0 || toIdx === 0) return; // La Section 1 reste ancrée au sommet (Page 1)
+    }
+
     syncQuestionsFromDOM();
     const [movedItem] = currentEditingQuestions.splice(fromIdx, 1);
     currentEditingQuestions.splice(toIdx, 0, movedItem);
@@ -2355,13 +2384,16 @@ function renderQuestionsEditor() {
 
     let runningQuestionNum = 0;
     let runningSectionNum = 0;
+    const hasSectionAtTop = (currentEditingQuestions[0]?.type === 'section');
 
     container.innerHTML = currentEditingQuestions.map((q, idx) => {
         const type = q.type || 'qcm';
-        const isFirst = (idx === 0);
+        const isSection = (type === 'section');
+        const isSection1 = isSection && (idx === 0);
+        const isFirst = (idx === 0) || (hasSectionAtTop && idx === 1);
         const isLast = (idx === currentEditingQuestions.length - 1);
 
-        if (type === 'section') {
+        if (isSection) {
             runningSectionNum++;
             const sTitle = q.title || q.text || `Section ${runningSectionNum}`;
             const sDesc = q.description || '';
@@ -2376,16 +2408,22 @@ function renderQuestionsEditor() {
                                 <span style="font-size:0.95rem; font-weight:800; color:var(--clr-primary-dark);">
                                     Section ${runningSectionNum} (Page ${runningSectionNum})
                                 </span>
-                                <span style="font-size:0.8rem; font-weight:600; color:var(--clr-text-muted);">— Nouvelle page</span>
+                                <span style="font-size:0.8rem; font-weight:600; color:var(--clr-text-muted);">${isSection1 ? '- En-tête Page 1 (Sommet)' : '- Nouvelle page'}</span>
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:4px;">
-                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-up" data-qidx="${idx}" ${isFirst ? 'disabled' : ''} style="padding:6px 10px; ${isFirst ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isFirst ? 'Première position' : 'Monter d\'un rang'}">
-                                <i class="bi bi-arrow-up" style="font-weight:800; font-size:1rem;"></i>
-                            </button>
-                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-down" data-qidx="${idx}" ${isLast ? 'disabled' : ''} style="padding:6px 10px; ${isLast ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isLast ? 'Dernière position' : 'Descendre d\'un rang'}">
-                                <i class="bi bi-arrow-down" style="font-weight:800; font-size:1rem;"></i>
-                            </button>
+                            ${isSection1 ? `
+                                <span class="es-badge es-badge--info" style="font-size:0.75rem; padding:4px 8px; font-weight:700;" title="La Section 1 est ancrée au tout début du quiz (Page 1)">
+                                    <i class="bi bi-pin-angle-fill"></i> Fixe (Page 1)
+                                </span>
+                            ` : `
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-up" data-qidx="${idx}" ${isFirst ? 'disabled' : ''} style="padding:6px 10px; ${isFirst ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isFirst ? 'Première position autorisée' : 'Monter d\'un rang (flèche haut)'}">
+                                    <i class="bi bi-arrow-up" style="font-weight:800; font-size:1rem;"></i>
+                                </button>
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-down" data-qidx="${idx}" ${isLast ? 'disabled' : ''} style="padding:6px 10px; ${isLast ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isLast ? 'Dernière position' : 'Descendre d\'un rang (flèche bas)'}">
+                                    <i class="bi bi-arrow-down" style="font-weight:800; font-size:1rem;"></i>
+                                </button>
+                            `}
                             <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-duplicate-q" data-qidx="${idx}" title="Dupliquer la section" style="padding:6px 10px;">
                                 <i class="bi bi-copy"></i>
                             </button>
@@ -2976,7 +3014,7 @@ function renderQuestionsEditor() {
                             <i class="bi bi-chat-left-quote-fill" style="color:var(--clr-primary);"></i> Énoncé de la question :
                         </label>
                         <span style="font-size:0.75rem; color:var(--clr-text-muted);">
-                            💡 Retour à la ligne libre (Entrée), Gras, Italique, Souligné, Listes & Surlignage
+                            💡 Retour à la ligne libre (Entrée)
                         </span>
                     </div>
 
@@ -3023,12 +3061,12 @@ function renderQuestionsEditor() {
                                 <i class="bi bi-eraser"></i>
                             </button>
                         </div>
-                        <div class="es-input q-text-input q-text-editor" contenteditable="true" data-qidx="${idx}" data-placeholder="Ex: Que signifie le sigle PSAADRAFRA ? (Appuyez sur Entrée pour aller à la ligne...)" style="font-weight:600; font-size:0.92rem;">${formatQuestionRichText(q.text || '')}</div>
+                        <div class="es-input q-text-input q-text-editor" contenteditable="true" data-qidx="${idx}" data-placeholder="Ex: Que signifie le sigle PSAADRAFRA ? (Appuyez sur Entrée pour aller à la ligne...)" style="font-weight:400; font-size:0.92rem;">${formatQuestionRichText(q.text || '')}</div>
                     </div>
                 </div>
 
                 <div class="es-field" style="margin-bottom:10px;">
-                    <label class="es-field__label">🖼️ Image illustrative (URL optionnelle) :</label>
+                    <label class="es-field__label">🖼️ Image (URL optionnelle) :</label>
                     <input class="es-input q-image-input" type="text" data-qidx="${idx}" value="${escapeHtml(q.imageUrl || '')}" placeholder="https://..." style="font-size:0.85rem;">
                 </div>
 
@@ -3322,13 +3360,60 @@ function bindQuestionsEvents() {
 
                 prepareSelectionForEditor();
 
-                try {
-                    document.execCommand('styleWithCSS', false, false);
-                } catch (e) {}
+                if (cmd === 'insertOrderedList') {
+                    // Vérifier si la sélection est déjà dans un <ol>
+                    let currentOl = null;
+                    const sel = window.getSelection();
+                    if (sel && sel.rangeCount > 0) {
+                        let node = sel.anchorNode;
+                        while (node && node !== editor) {
+                            if (node.nodeType === Node.ELEMENT_NODE && node.tagName === 'OL') {
+                                currentOl = node;
+                                break;
+                            }
+                            node = node.parentNode;
+                        }
+                    }
 
-                const res = document.execCommand(cmd, false, null);
+                    if (!currentOl) {
+                        // 1er clic : création liste numérotée standard (1, 2, 3...)
+                        try { document.execCommand('styleWithCSS', false, false); } catch (e) {}
+                        document.execCommand('insertOrderedList', false, null);
+                        const selAfter = window.getSelection();
+                        if (selAfter && selAfter.rangeCount > 0) {
+                            let n = selAfter.anchorNode;
+                            while (n && n !== editor) {
+                                if (n.nodeType === Node.ELEMENT_NODE && n.tagName === 'OL') {
+                                    n.setAttribute('type', '1');
+                                    break;
+                                }
+                                n = n.parentNode;
+                            }
+                        }
+                    } else {
+                        // Reclic : cycle 1 -> A -> I -> désactivation
+                        const curType = currentOl.getAttribute('type') || '1';
+                        if (curType === '1') {
+                            // Passer en lettres majuscules (A, B, C...)
+                            currentOl.setAttribute('type', 'A');
+                        } else if (curType === 'A') {
+                            // Passer en chiffres romains (I, II, III...)
+                            currentOl.setAttribute('type', 'I');
+                        } else {
+                            // Désactiver la liste
+                            try { document.execCommand('styleWithCSS', false, false); } catch (e) {}
+                            document.execCommand('insertOrderedList', false, null);
+                        }
+                    }
+                } else {
+                    try {
+                        document.execCommand('styleWithCSS', false, false);
+                    } catch (e) {}
+                    document.execCommand(cmd, false, null);
+                }
+
                 const selectedText = window.getSelection()?.toString();
-                console.log(`[QuizEditor] Commande "${cmd}" exécutée (succès: ${res}) sur la sélection: "${selectedText}"`);
+                console.log(`[QuizEditor] Commande "${cmd}" exécutée sur la sélection: "${selectedText}"`);
 
                 const newSel = window.getSelection();
                 if (newSel && newSel.rangeCount > 0) {
@@ -4243,7 +4328,9 @@ function bindQuestionsEvents() {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
-            if (qidx > 0) {
+            const hasSectionAtTop = (currentEditingQuestions[0]?.type === 'section');
+            const minIdx = hasSectionAtTop ? 1 : 0;
+            if (qidx > minIdx) {
                 moveQuestion(qidx, qidx - 1);
             }
         });
@@ -4285,9 +4372,31 @@ function bindQuestionsEvents() {
             syncQuestionsFromDOM();
             const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
             const q = currentEditingQuestions[qidx];
-            const confirmMsg = (q && q.type === 'section') ? "Supprimer cette section / page ? Les questions situées en dessous ne seront pas supprimées mais intégrées à la section précédente." : "Supprimer cette question ?";
+            const isSection = (q && q.type === 'section');
+            const confirmMsg = isSection ? "Supprimer cette section / page ? Les questions associées ne seront pas supprimées mais intégrées au questionnaire." : "Supprimer cette question ?";
             if (confirm(confirmMsg)) {
                 currentEditingQuestions.splice(qidx, 1);
+
+                if (isSection) {
+                    const remainingSections = currentEditingQuestions.filter(item => item.type === 'section');
+                    if (remainingSections.length === 1 && currentEditingQuestions[0]?.type === 'section') {
+                        // Il ne reste qu'une seule section résiduelle sans page suivante, on désactive le découpage
+                        currentEditingQuestions = currentEditingQuestions.filter(item => item.type !== 'section');
+                        showToast("Toutes les sous-sections ont été supprimées. Le quiz repasse sur une page unique.", "info");
+                    } else if (remainingSections.length > 0 && currentEditingQuestions[0]?.type !== 'section') {
+                        // Si la Section 1 a été supprimée, repositionner la première section restante en tête
+                        const firstSecIdx = currentEditingQuestions.findIndex(item => item.type === 'section');
+                        if (firstSecIdx > 0) {
+                            const [sec] = currentEditingQuestions.splice(firstSecIdx, 1);
+                            if (/^Section\s+\d+/i.test(sec.title || '')) {
+                                sec.title = sec.title.replace(/^Section\s+\d+/i, 'Section 1');
+                                sec.text = sec.title;
+                            }
+                            currentEditingQuestions.unshift(sec);
+                        }
+                    }
+                }
+
                 renderQuestionsEditor();
             }
         });
@@ -4845,58 +4954,39 @@ document.getElementById('btnAddSectionHeader')?.addEventListener('click', () => 
     const existingSections = currentEditingQuestions.filter(q => q.type === 'section');
 
     if (existingSections.length === 0) {
-        if (currentEditingQuestions.length === 0) {
-            // Quiz vide : on place Section 1 au sommet
-            currentEditingQuestions.push({
-                id: 'sec_' + Date.now() + '_1',
-                type: 'section',
-                title: 'Section 1',
-                description: '',
-                text: 'Section 1'
-            });
-            showToast("Section 1 créée en haut du quiz.", "success");
-        } else {
-            // Quiz avec des questions existantes : Section 1 est automatiquement placée tout en haut
-            // et la nouvelle section créée devient Section 2
-            currentEditingQuestions.unshift({
-                id: 'sec_' + Date.now() + '_1',
-                type: 'section',
-                title: 'Section 1',
-                description: '',
-                text: 'Section 1'
-            });
-            currentEditingQuestions.push({
-                id: 'sec_' + (Date.now() + 50) + '_2',
-                type: 'section',
-                title: 'Section 2',
-                description: '',
-                text: 'Section 2'
-            });
-            showToast("Section 1 insérée tout en haut du quiz et Section 2 ajoutée.", "success");
-        }
-    } else {
-        // Des sections existent déjà : si la première n'est pas tout en haut, on s'assure que Section 1 est au sommet
-        if (currentEditingQuestions[0]?.type !== 'section') {
-            currentEditingQuestions.unshift({
-                id: 'sec_' + Date.now() + '_top',
-                type: 'section',
-                title: 'Section 1',
-                description: '',
-                text: 'Section 1'
-            });
-        }
-        const updatedSecCount = currentEditingQuestions.filter(q => q.type === 'section').length + 1;
-        currentEditingQuestions.push({
-            id: 'sec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        // Aucune section n'existe : activer le découpage en pages
+        // Section 1 est automatiquement créée tout en haut du quiz (Page 1)
+        // et la section ajoutée est la Section 2 (Page 2)
+        currentEditingQuestions.unshift({
+            id: 'sec_' + Date.now() + '_1',
             type: 'section',
-            title: `Section ${updatedSecCount}`,
+            title: 'Section 1',
             description: '',
-            text: `Section ${updatedSecCount}`
+            text: 'Section 1'
         });
-        showToast(`Section ${updatedSecCount} ajoutée.`, "info");
+        currentEditingQuestions.push({
+            id: 'sec_' + (Date.now() + 50) + '_2',
+            type: 'section',
+            title: 'Section 2',
+            description: '',
+            text: 'Section 2'
+        });
+        renderQuestionsEditor();
+        showToast("Section 1 positionnée en haut et Section 2 ajoutée.", "success");
+    } else {
+        // Des sections existent déjà : ajouter la section suivante
+        const nextSecNum = existingSections.length + 1;
+        currentEditingQuestions.push({
+            id: 'sec_' + Date.now() + '_' + nextSecNum,
+            type: 'section',
+            title: `Section ${nextSecNum}`,
+            description: '',
+            text: `Section ${nextSecNum}`
+        });
+        renderQuestionsEditor();
+        showToast(`Section ${nextSecNum} ajoutée.`, "success");
     }
 
-    renderQuestionsEditor();
     const container = document.getElementById('questionsContainer');
     if (container && container.lastElementChild) {
         container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'center' });
