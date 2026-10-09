@@ -228,6 +228,134 @@
             border-radius: 6px;
             flex-shrink: 0;
         }
+        /* Outil discret d'aide / suggestions images */
+        #btnToggleBgGallery {
+            background: transparent;
+            border: none;
+            color: var(--clr-text-muted, #94a3b8);
+            cursor: pointer;
+            font-size: 0.95rem;
+            padding: 0 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s, transform 0.15s;
+            line-height: 1;
+        }
+        #btnToggleBgGallery:hover {
+            color: var(--clr-primary, #689f38) !important;
+            transform: scale(1.18);
+        }
+        .es-bg-gallery-box {
+            background: var(--clr-surface-2, rgba(255, 255, 255, 0.04));
+            border: 1px dashed var(--clr-surface-3, rgba(255, 255, 255, 0.18));
+            border-radius: var(--radius-md, 8px);
+            padding: 8px 10px;
+            margin-top: 6px;
+            transition: all 0.2s ease;
+        }
+        .es-bg-gallery-box.collapsed {
+            display: none;
+        }
+        .es-bg-gallery-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 0.76rem;
+        }
+        .es-bg-cat-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            margin-bottom: 8px;
+        }
+        .es-bg-cat-btn {
+            border: 1px solid var(--clr-surface-3, rgba(255, 255, 255, 0.12));
+            background: var(--clr-surface, rgba(255, 255, 255, 0.06));
+            color: var(--clr-text-muted, #94a3b8);
+            padding: 3px 8px;
+            border-radius: var(--radius-full, 999px);
+            font-size: 0.72rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+        }
+        .es-bg-cat-btn:hover {
+            color: var(--clr-text, #ffffff);
+            border-color: var(--clr-primary, #689f38);
+            background: rgba(104, 159, 56, 0.12);
+        }
+        .es-bg-cat-btn.active {
+            background: var(--clr-primary, #689f38) !important;
+            color: #ffffff !important;
+            border-color: var(--clr-primary, #689f38) !important;
+            font-weight: 700;
+        }
+        .es-bg-gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+        @media (max-width: 480px) {
+            .es-bg-gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        .es-bg-thumb-card {
+            position: relative;
+            border-radius: var(--radius-sm, 6px);
+            overflow: hidden;
+            aspect-ratio: 16/10;
+            cursor: pointer;
+            border: 2px solid transparent;
+            background: var(--clr-surface-3, #222);
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .es-bg-thumb-card:hover {
+            transform: scale(1.03);
+            border-color: var(--clr-primary, #689f38);
+        }
+        .es-bg-thumb-card.selected {
+            border-color: var(--clr-primary, #689f38) !important;
+            box-shadow: 0 0 0 1px var(--clr-primary);
+        }
+        .es-bg-thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .es-bg-thumb-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 1px 3px;
+            background: linear-gradient(transparent, rgba(0, 0, 0, 0.85) 60%);
+            font-size: 0.60rem;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: center;
+        }
+        .es-bg-thumb-check {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: var(--clr-primary, #689f38);
+            color: #ffffff;
+            border-radius: 50%;
+            width: 15px;
+            height: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            z-index: 1;
+        }
         .es-stats-hero {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -332,11 +460,14 @@
                 <a href="../../index.html" class="es-btn es-btn--sm es-btn--ghost" style="color:rgba(255,255,255,0.75); border-color:rgba(255,255,255,0.15);">
                     <i class="bi bi-house"></i> <span class="brand-label">Site</span>
                 </a>
-                <a href="index.html" class="es-btn es-btn--sm es-btn--ghost" style="color:#5dade2; border-color:rgba(52,152,219,0.35);">
+                <a href="index.html" id="btnColosLink" class="es-btn es-btn--sm es-btn--ghost" style="color:#5dade2; border-color:rgba(52,152,219,0.35);">
                     <i class="bi bi-tree"></i> <span class="brand-label">Colos</span>
                 </a>
-                <a href="formation.html" class="es-btn es-btn--sm es-btn--ghost" style="color:var(--clr-primary); border-color:rgba(166,216,102,0.35);">
+                <a href="formation.html" id="btnFormationLink" class="es-btn es-btn--sm es-btn--ghost hidden" style="color:var(--clr-primary); border-color:rgba(166,216,102,0.35);">
                     <i class="bi bi-mortarboard"></i> <span class="brand-label">Formation</span>
+                </a>
+                <a href="admin.html" id="btnAdminLink" class="es-btn es-btn--sm es-btn--ghost hidden" style="color:var(--clr-primary); border-color:rgba(166,216,102,0.3);">
+                    <i class="bi bi-shield-lock"></i> <span class="brand-label">Admin</span>
                 </a>
 
                 <!-- Menu Profil -->
@@ -353,6 +484,12 @@
                         <button class="es-user-dropdown__item" id="btnOpenSettings">
                             <i class="bi bi-person-gear"></i> Paramètres
                         </button>
+                        <a href="formation.html" class="es-user-dropdown__item" id="linkFormationDropdown">
+                            <i class="bi bi-mortarboard"></i> Espace Formation
+                        </a>
+                        <a href="index.html" class="es-user-dropdown__item" id="linkColosDropdown">
+                            <i class="bi bi-tree"></i> Espace Colos
+                        </a>
                         <a href="admin.html" class="es-user-dropdown__item hidden" id="linkAdmin">
                             <i class="bi bi-shield-lock"></i> Administration
                         </a>
@@ -474,19 +611,55 @@
                             </div>
 
                             <div class="es-field" style="margin-bottom:14px;">
-                                <label class="es-field__label">🖼️ Image de fond de la carte (optionnel) :</label>
+                                <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                                    <label class="es-field__label" style="margin:0;">Image de fond</label>
+                                    <button type="button" id="btnToggleBgGallery" title="Idées & suggestions d'images aléatoires" aria-label="Aide images aléatoires">
+                                        <i class="bi bi-question-circle"></i>
+                                    </button>
+                                </div>
                                 <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-                                    <input class="es-input" type="text" id="editModuleBgImage" placeholder="https://images.unsplash.com/... ou uploader" style="flex:1; font-size:0.85rem;">
+                                    <input class="es-input" type="text" id="editModuleBgImage" placeholder="https://picsum.photos/... ou https://images.unsplash.com/..." style="flex:1; font-size:0.85rem;">
                                     <label class="es-btn es-btn--ghost es-btn--sm" style="cursor:pointer; white-space:nowrap; padding:8px 12px;" title="Uploader une image">
                                         <i class="bi bi-cloud-arrow-up"></i>
                                         <input type="file" id="editModuleBgUpload" accept="image/*" style="display:none;">
                                     </label>
                                 </div>
-                                <div id="moduleBgPreviewContainer" class="hidden" style="margin-top:6px; position:relative; width:100%; height:80px; border-radius:var(--radius-md); overflow:hidden; border:1.5px solid var(--clr-surface-3);">
+                                <div id="moduleBgPreviewContainer" class="hidden" style="margin-top:6px; margin-bottom:8px; position:relative; width:100%; height:85px; border-radius:var(--radius-md); overflow:hidden; border:1.5px solid var(--clr-surface-3);">
                                     <img id="moduleBgPreviewImg" src="" style="width:100%; height:100%; object-fit:cover;">
-                                    <button type="button" id="btnRemoveBgImage" style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.6); color:#fff; border:none; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
+                                    <div style="position:absolute; bottom:0; left:0; right:0; padding:4px 8px; background:linear-gradient(transparent, rgba(0,0,0,0.75)); font-size:0.72rem; color:#fff; display:flex; justify-content:space-between; align-items:center;">
+                                        <span>Fond actif de la carte</span>
+                                    </div>
+                                    <button type="button" id="btnRemoveBgImage" title="Supprimer l'image" style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.65); color:#fff; border:none; border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; cursor:pointer;">
                                         <i class="bi bi-x" style="font-size:14px;"></i>
                                     </button>
+                                </div>
+
+                                <!-- Mini boîte discrète de suggestions d'images aléatoires & thématiques -->
+                                <div id="bgGalleryContainer" class="es-bg-gallery-box collapsed">
+                                    <div class="es-bg-gallery-header">
+                                        <div style="display:flex; align-items:center; gap:5px; font-weight:700; font-size:0.75rem; color:var(--clr-text-muted);">
+                                            <i class="bi bi-images" style="color:var(--clr-primary);"></i>
+                                            <span>Suggestions :</span>
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:5px;">
+                                            <button type="button" id="btnRandomBgPreset" class="es-btn es-btn--ghost es-btn--sm" style="padding:2px 8px; font-size:0.70rem; height:24px; display:inline-flex; align-items:center; gap:4px; border:1px solid var(--clr-surface-3); background:var(--clr-surface-2); color:var(--clr-text-muted);" title="Générer d'autres propositions fixes">
+                                                <i class="bi bi-arrow-clockwise"></i> <span>Nouveau lot</span>
+                                            </button>
+                                            <button type="button" id="btnDynamicRandomBg" class="es-btn es-btn--ghost es-btn--sm" style="width:24px; height:24px; padding:0; display:inline-flex; align-items:center; justify-content:center; border:1px solid var(--clr-surface-3); background:var(--clr-surface-2); color:var(--clr-text-muted); border-radius:var(--radius-sm, 6px);" title="Image toujours aléatoire (change automatiquement à chaque affichage)">
+                                                <i class="bi bi-dice-5" style="font-size:0.85rem;"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Catégories rapides -->
+                                    <div id="bgGalleryCategoryTabs" class="es-bg-cat-tabs">
+                                        <!-- Rempli en JS -->
+                                    </div>
+
+                                    <!-- Grille compacte des vignettes (4 images) -->
+                                    <div id="bgGalleryGrid" class="es-bg-gallery-grid">
+                                        <!-- Rempli en JS -->
+                                    </div>
                                 </div>
                             </div>
 
@@ -751,6 +924,39 @@
         </div>
     </div>
 
+    <!-- ========================================================
+     MODAL : CONFIRMATION MODIFICATIONS NON ENREGISTRÉES
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlayUnsavedChanges" role="dialog" aria-modal="true" style="z-index:9999;">
+        <div class="es-modal" style="max-width:440px; box-shadow:0 20px 40px rgba(0,0,0,0.5);">
+            <div class="es-modal__header" style="border-bottom:1.5px solid var(--clr-surface-3);">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:36px; height:36px; border-radius:50%; background:rgba(231, 76, 60, 0.15); color:#e74c3c; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">
+                        <i class="bi bi-exclamation-triangle-fill"></i>
+                    </div>
+                    <div>
+                        <h2 class="es-modal__title" style="font-size:1.05rem; margin:0; color:var(--clr-text);">Modifications non enregistrées</h2>
+                        <p style="font-size:0.78rem; color:var(--clr-text-muted); margin:2px 0 0 0;">Attention, vos changements seront perdus</p>
+                    </div>
+                </div>
+                <button type="button" class="es-modal__close" id="btnCloseUnsavedModal"><i class="bi bi-x"></i></button>
+            </div>
+            
+            <div class="es-modal__body" style="padding:20px; font-size:0.88rem; color:var(--clr-text); line-height:1.5;">
+                Vous avez apporté des modifications à ce quiz qui n'ont pas encore été enregistrées. Si vous quittez maintenant, tous vos ajouts et modifications en cours seront perdus.
+            </div>
+
+            <div class="es-modal__footer" style="display:flex; justify-content:flex-end; gap:10px; border-top:1.5px solid var(--clr-surface-3); padding:14px 20px;">
+                <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnStayOnPage">
+                    Continuer l'édition
+                </button>
+                <button type="button" class="es-btn es-btn--danger es-btn--sm" id="btnDiscardAndLeave" style="background:#e74c3c; color:#fff; border:none; padding:8px 14px;">
+                    <i class="bi bi-arrow-right-circle"></i> Quitter sans enregistrer
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast container -->
     <div class="es-toast-container" id="toastContainer"></div>
 
@@ -764,7 +970,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="../../assets/js/colo/espace-auth.js?v=3.6"></script>
-    <script charset="UTF-8" src="../../assets/js/formation/espace-formation-edit.js?v=2.0"></script>
+    <script charset="UTF-8" src="../../assets/js/formation/espace-formation-edit.js?v=2.9"></script>
 </body>
 
 </html>

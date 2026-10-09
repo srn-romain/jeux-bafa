@@ -332,18 +332,228 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark') {
     }
 }
 
+// ----------------------------------------------------------------
+// BANQUE & GÉNÉRATEUR D'IMAGES ALÉATOIRES (FOND DE CARTE DU MODULE)
+// ----------------------------------------------------------------
+const BG_IMAGE_PRESET_CATEGORIES = [
+    { id: 'picsum', label: 'Aléatoire' },
+    { id: 'societe', label: 'Société & Jeux' },
+    { id: 'nature', label: 'Nature' },
+    { id: 'veillee', label: 'Veillée & Feu' },
+    { id: 'montagne', label: 'Montagne' },
+    { id: 'mer', label: 'Mer' },
+    { id: 'creativite', label: 'Arts & Brico' }
+];
+
+const THEMED_BG_IMAGES = {
+    societe: [
+        { title: 'Jeux de plateau', url: 'https://images.unsplash.com/photo-1610890716171-6b1bb98ffd09?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Dés & Pions', url: 'https://images.unsplash.com/photo-1563941402622-4e7a488bcc57?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Cartes & Ambiance', url: 'https://images.unsplash.com/photo-1511193311914-0346f16efe90?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Échecs & Stratégie', url: 'https://images.unsplash.com/photo-1585504198199-20277593b94f?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Cartes de jeu', url: 'https://images.unsplash.com/photo-1606167668584-78701c57f13d?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Dés d’aventure', url: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80' }
+    ],
+    nature: [
+        { title: 'Forêt verdoyante', url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Soleil sous-bois', url: 'https://images.unsplash.com/photo-1511497584788-87676104235f?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Brume & Pins', url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Forêt dorée', url: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Sous-bois moussu', url: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Canopée & Sentier', url: 'https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?w=800&auto=format&fit=crop&q=80' }
+    ],
+    veillee: [
+        { title: 'Feu de camp', url: 'https://images.unsplash.com/photo-1508873696983-2df5293cb395?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Marshmallows au feu', url: 'https://images.unsplash.com/photo-1517824806704-9040b037703b?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Flammes vives', url: 'https://images.unsplash.com/photo-1496545672447-f699b503d270?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Bivouac étoilé', url: 'https://images.unsplash.com/photo-1510312305653-8ed496efae75?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Coin du feu', url: 'https://images.unsplash.com/photo-1475483768296-6163e08872a1?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Feu sous les étoiles', url: 'https://images.unsplash.com/photo-1506535995048-638aa1b62b77?w=800&auto=format&fit=crop&q=80' }
+    ],
+    montagne: [
+        { title: 'Lac de montagne', url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Sommets alpins', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Sentier de crête', url: 'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Pics rocheux', url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=800&auto=format&fit=crop&q=80' }
+    ],
+    mer: [
+        { title: 'Mer turquoise', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Coucher de soleil', url: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Plage estivale', url: 'https://images.unsplash.com/photo-1519046904884-53103b34b206?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Littoral sauvage', url: 'https://images.unsplash.com/photo-1473496169904-658ba7c44d8a?w=800&auto=format&fit=crop&q=80' }
+    ],
+    creativite: [
+        { title: 'Peinture & Pinceaux', url: 'https://images.unsplash.com/photo-1472162072942-cd5147eb3902?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Couleurs & Dessin', url: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Palette d’art', url: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&auto=format&fit=crop&q=80' },
+        { title: 'Bricolage manuel', url: 'https://images.unsplash.com/photo-1501612780327-45045538702b?w=800&auto=format&fit=crop&q=80' }
+    ]
+};
+
+let currentBgGalleryCategory = 'picsum';
+let picsumSeedOffset = 1;
+let themedOffset = 0;
+let isBgGalleryInitialized = false;
+
+function renderBgSuggestions(selectedUrl = '') {
+    const grid = document.getElementById('bgGalleryGrid');
+    const tabsContainer = document.getElementById('bgGalleryCategoryTabs');
+    if (!grid) return;
+
+    // Construction des onglets de catégories
+    if (tabsContainer && tabsContainer.children.length === 0) {
+        tabsContainer.innerHTML = BG_IMAGE_PRESET_CATEGORIES.map(cat => `
+            <button type="button" class="es-bg-cat-btn ${cat.id === currentBgGalleryCategory ? 'active' : ''}" data-category="${cat.id}">
+                ${cat.label}
+            </button>
+        `).join('');
+
+        tabsContainer.querySelectorAll('.es-bg-cat-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentBgGalleryCategory = btn.getAttribute('data-category') || 'picsum';
+                tabsContainer.querySelectorAll('.es-bg-cat-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                buildGalleryGrid();
+            });
+        });
+    }
+
+    function buildGalleryGrid() {
+        const currentSelected = (document.getElementById('editModuleBgImage')?.value || selectedUrl || '').trim();
+        let items = [];
+
+        if (currentBgGalleryCategory === 'picsum') {
+            for (let i = 0; i < 4; i++) {
+                const seed = picsumSeedOffset + i;
+                items.push({
+                    title: `Photo #${seed}`,
+                    url: `https://picsum.photos/seed/bafa_${seed}/800/500`
+                });
+            }
+        } else {
+            const list = THEMED_BG_IMAGES[currentBgGalleryCategory] || [];
+            if (list.length > 0) {
+                for (let i = 0; i < Math.min(4, list.length); i++) {
+                    const idx = (themedOffset + i) % list.length;
+                    items.push(list[idx]);
+                }
+            }
+        }
+
+        grid.innerHTML = items.map(item => {
+            const isSelected = item.url.trim() === currentSelected;
+            return `
+                <div class="es-bg-thumb-card ${isSelected ? 'selected' : ''}" data-url="${escapeHtml(item.url)}" title="${escapeHtml(item.title)}">
+                    <img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.title)}" class="es-bg-thumb-img" loading="lazy" onerror="this.onerror=null; this.src='https://picsum.photos/600/400?random=42';">
+                    <div class="es-bg-thumb-label">${escapeHtml(item.title)}</div>
+                    ${isSelected ? `<div class="es-bg-thumb-check"><i class="bi bi-check-lg"></i></div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        grid.querySelectorAll('.es-bg-thumb-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const url = card.getAttribute('data-url');
+                const input = document.getElementById('editModuleBgImage');
+                if (input) {
+                    input.value = url;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                updateModuleBgPreview(url);
+                showToast(`Image fixe appliquée : ${card.getAttribute('title')}`, 'success');
+            });
+        });
+    }
+
+    buildGalleryGrid();
+
+    if (!isBgGalleryInitialized) {
+        initBgGalleryEvents();
+        isBgGalleryInitialized = true;
+    }
+}
+
+function updateBgGallerySelection(url = '') {
+    const grid = document.getElementById('bgGalleryGrid');
+    if (!grid) return;
+    const cleanUrl = (url || '').trim();
+    grid.querySelectorAll('.es-bg-thumb-card').forEach(card => {
+        const cardUrl = (card.getAttribute('data-url') || '').trim();
+        const isSelected = cleanUrl !== '' && cardUrl === cleanUrl;
+        if (isSelected) {
+            card.classList.add('selected');
+            if (!card.querySelector('.es-bg-thumb-check')) {
+                const check = document.createElement('div');
+                check.className = 'es-bg-thumb-check';
+                check.innerHTML = '<i class="bi bi-check-lg"></i>';
+                card.appendChild(check);
+            }
+        } else {
+            card.classList.remove('selected');
+            const check = card.querySelector('.es-bg-thumb-check');
+            if (check) check.remove();
+        }
+    });
+}
+
+function initBgGalleryEvents() {
+    // Bouton Toggle (?) discret
+    const btnToggle = document.getElementById('btnToggleBgGallery');
+    const galleryBox = document.getElementById('bgGalleryContainer');
+    if (btnToggle && galleryBox) {
+        btnToggle.addEventListener('click', (e) => {
+            e.preventDefault();
+            galleryBox.classList.toggle('collapsed');
+        });
+    }
+
+    // Bouton "Toujours aléatoire" (URL dynamique)
+    const btnDynamic = document.getElementById('btnDynamicRandomBg');
+    if (btnDynamic) {
+        btnDynamic.addEventListener('click', (e) => {
+            e.preventDefault();
+            const dynamicUrl = 'https://picsum.photos/800/500?random';
+            const input = document.getElementById('editModuleBgImage');
+            if (input) {
+                input.value = dynamicUrl;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            updateModuleBgPreview(dynamicUrl);
+            showToast("🎲 Mode 'Toujours aléatoire' activé (l'image changera à chaque chargement) !", "info", 3500);
+        });
+    }
+
+    // Bouton Nouveau lot / Régénérer
+    const btnRandom = document.getElementById('btnRandomBgPreset');
+    if (btnRandom) {
+        btnRandom.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentBgGalleryCategory === 'picsum') {
+                picsumSeedOffset += 4;
+            } else {
+                themedOffset = (themedOffset + 2) % 10;
+            }
+            renderBgSuggestions();
+            btnRandom.style.transition = 'transform 0.2s ease';
+            btnRandom.style.transform = 'rotate(180deg)';
+            setTimeout(() => { btnRandom.style.transform = ''; }, 200);
+        });
+    }
+}
+
 function updateModuleBgPreview(url) {
     const container = document.getElementById('moduleBgPreviewContainer');
     const img = document.getElementById('moduleBgPreviewImg');
-    if (!container || !img) return;
-
-    if (url && url.trim() !== '') {
-        img.src = url.trim();
-        container.classList.remove('hidden');
-    } else {
-        img.src = '';
-        container.classList.add('hidden');
+    if (container && img) {
+        if (url && url.trim() !== '') {
+            img.src = url.trim();
+            container.classList.remove('hidden');
+        } else {
+            img.src = '';
+            container.classList.add('hidden');
+        }
     }
+    updateBgGallerySelection(url || '');
 }
 
 // ----------------------------------------------------------------
@@ -355,10 +565,143 @@ async function fetchModuleQuestions(moduleId) {
         if (!snap.empty) {
             return snap.docs.map(d => ({ id: d.id, ...d.data() }));
         }
+        return [];
     } catch (e) {
-        console.warn("fetchModuleQuestions subcollection error:", e);
+        console.warn("fetchModuleQuestions error:", e);
+        return [];
     }
-    return [];
+}
+
+// ----------------------------------------------------------------
+// GESTION DE LA PROTECTION CONTRE LA PERTE DE MODIFICATIONS NON ENREGISTRÉES
+// ----------------------------------------------------------------
+let initialModuleStateSnapshot = null;
+let pendingNavigationAction = null;
+let isBypassingUnsavedCheck = false;
+let isUnsavedProtectionInitialized = false;
+
+function getModuleStateSnapshot() {
+    try {
+        if (typeof syncQuestionsFromDOM === 'function') {
+            syncQuestionsFromDOM();
+        }
+    } catch (e) {}
+
+    const state = {
+        num: document.getElementById('editModuleNum')?.value || '',
+        title: (document.getElementById('editModuleTitle')?.value || '').trim(),
+        subtitle: (document.getElementById('editModuleSubtitle')?.value || '').trim(),
+        icon: document.getElementById('editModuleIcon')?.value || '',
+        bgImage: (document.getElementById('editModuleBgImage')?.value || '').trim(),
+        visible: document.getElementById('editModuleVisible') ? document.getElementById('editModuleVisible').checked : true,
+        maxAttempts: document.getElementById('editMaxAttempts')?.value || '0',
+        timerMinutes: document.getElementById('editQuizTimerMinutes')?.value || '0',
+        timerSeconds: document.getElementById('editQuizTimerSeconds')?.value || '0',
+        showResultsAtEnd: document.getElementById('editShowResultsAtEnd')?.checked || false,
+        negativePoints: document.getElementById('editNegativePoints')?.checked || false,
+        allowPreviousPage: document.getElementById('editQuizAllowPreviousPage')?.checked || false,
+        requirePassword: document.getElementById('editQuizRequirePassword')?.checked || false,
+        password: (document.getElementById('editQuizPassword')?.value || '').trim(),
+        questions: currentEditingQuestions || []
+    };
+    return JSON.stringify(state);
+}
+
+function hasUnsavedChanges() {
+    if (isBypassingUnsavedCheck) return false;
+    if (!initialModuleStateSnapshot) return false;
+    const current = getModuleStateSnapshot();
+    return current !== initialModuleStateSnapshot;
+}
+
+function markModuleSaved() {
+    initialModuleStateSnapshot = getModuleStateSnapshot();
+}
+
+function showUnsavedModal(onConfirmCallback) {
+    pendingNavigationAction = onConfirmCallback;
+    const modal = document.getElementById('overlayUnsavedChanges');
+    if (modal) {
+        modal.classList.remove('hidden');
+    } else if (typeof onConfirmCallback === 'function') {
+        if (confirm("Attention : vous avez des modifications non enregistrées. Voulez-vous vraiment quitter ?")) {
+            onConfirmCallback();
+        }
+    }
+}
+
+function closeUnsavedModal() {
+    pendingNavigationAction = null;
+    const modal = document.getElementById('overlayUnsavedChanges');
+    if (modal) modal.classList.add('hidden');
+}
+
+function initUnsavedChangesProtection() {
+    if (isUnsavedProtectionInitialized) return;
+    isUnsavedProtectionInitialized = true;
+
+    // Boutons de la modale
+    document.getElementById('btnCloseUnsavedModal')?.addEventListener('click', closeUnsavedModal);
+    document.getElementById('btnStayOnPage')?.addEventListener('click', closeUnsavedModal);
+    
+    document.getElementById('btnDiscardAndLeave')?.addEventListener('click', () => {
+        isBypassingUnsavedCheck = true;
+        initialModuleStateSnapshot = null;
+        const action = pendingNavigationAction;
+        closeUnsavedModal();
+        if (typeof action === 'function') {
+            action();
+        } else if (typeof action === 'string') {
+            window.location.href = action;
+        }
+    });
+
+    // Interception des clics sur TOUS les liens <a> (Navbar, dropdown de changement de module, boutons de navigation)
+    document.addEventListener('click', (e) => {
+        if (isBypassingUnsavedCheck) return;
+        const link = e.target.closest('a[href]');
+        if (!link) return;
+
+        const href = link.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.hasAttribute('download') || link.target === '_blank') {
+            return;
+        }
+
+        if (hasUnsavedChanges()) {
+            e.preventDefault();
+            e.stopPropagation();
+            showUnsavedModal(() => {
+                isBypassingUnsavedCheck = true;
+                window.location.href = link.href;
+            });
+        }
+    }, true);
+
+    // Alerte native fermeture d'onglet / rechargement navigateur
+    window.addEventListener('beforeunload', (e) => {
+        if (isBypassingUnsavedCheck) return;
+        if (hasUnsavedChanges()) {
+            e.preventDefault();
+            e.returnValue = 'Vous avez des modifications non enregistrées.';
+            return 'Vous avez des modifications non enregistrées.';
+        }
+    });
+
+    // Protection flèche retour du navigateur (popstate)
+    try {
+        window.history.pushState({ page: 'edit-module' }, '', window.location.href);
+    } catch (e) {}
+
+    window.addEventListener('popstate', (e) => {
+        if (isBypassingUnsavedCheck) return;
+        if (hasUnsavedChanges()) {
+            window.history.pushState({ page: 'edit-module' }, '', window.location.href);
+            showUnsavedModal(() => {
+                isBypassingUnsavedCheck = true;
+                window.history.back();
+            });
+        }
+    });
 }
 
 async function loadModuleHubData() {
@@ -534,6 +877,8 @@ async function loadModuleHubData() {
         const chosenIcon = document.getElementById('editModuleIcon').value || 'bi-journal-bookmark';
         renderIconPicker(chosenIcon);
         updateIconPreview(chosenIcon);
+        const currentBgUrl = document.getElementById('editModuleBgImage')?.value || '';
+        renderBgSuggestions(currentBgUrl);
         renderQuestionsEditor();
         initTopbarDropdown();
 
@@ -545,6 +890,10 @@ async function loadModuleHubData() {
         if (loader) loader.classList.add('hidden');
         if (navbar) navbar.style.display = 'block';
         if (mainView) mainView.style.display = 'block';
+
+        // Initialiser la protection contre les modifications non enregistrées
+        markModuleSaved();
+        initUnsavedChangesProtection();
 
     } catch (err) {
         if (loader) loader.classList.add('hidden');
@@ -3648,6 +3997,9 @@ async function saveModuleData(btnEl) {
 
         await batch.commit();
 
+        // Mettre à jour le snapshot pour marquer comme enregistré
+        markModuleSaved();
+
         try {
             sessionStorage.removeItem('cached_formation_modules');
             sessionStorage.removeItem('cached_formation_modules_ts');
@@ -3707,6 +4059,8 @@ document.getElementById('btnDeleteModule')?.addEventListener('click', async () =
         qSnap.docs.forEach(d => batch.delete(d.ref));
         batch.delete(db.collection('formation').doc(currentEditingModuleId));
         await batch.commit();
+
+        isBypassingUnsavedCheck = true;
 
         try {
             sessionStorage.removeItem('cached_formation_modules');
@@ -3895,14 +4249,27 @@ auth.onAuthStateChanged(async (user) => {
     if (nameEl) nameEl.textContent = actualUserData?.displayName || `${actualUserData?.firstName || ''} ${actualUserData?.lastName || ''}`.trim() || user.email;
 
     const badgeEl = document.getElementById('userBadge');
-    if (badgeEl) {
-        if (currentRole === 'admin') {
+    const btnAdminLink = document.getElementById('btnAdminLink');
+    const btnFormationLink = document.getElementById('btnFormationLink');
+    const linkAdminInDropdown = document.getElementById('linkAdmin');
+
+    if (currentRole === 'admin') {
+        if (badgeEl) {
             badgeEl.className = 'es-badge es-badge--admin';
             badgeEl.textContent = '⚡ Admin';
-        } else if (currentRole === 'formateur') {
+        }
+        btnAdminLink?.classList.remove('hidden');
+        btnFormationLink?.classList.add('hidden');
+        linkAdminInDropdown?.classList.remove('hidden');
+    } else {
+        // Formateur ou autre rôle autorisé
+        if (badgeEl) {
             badgeEl.className = 'es-badge es-badge--formateur';
             badgeEl.textContent = '👨‍🏫 Formateur';
         }
+        btnAdminLink?.classList.add('hidden');
+        btnFormationLink?.classList.remove('hidden');
+        linkAdminInDropdown?.classList.add('hidden');
     }
 
     const avatarEl = document.getElementById('userAvatar');
