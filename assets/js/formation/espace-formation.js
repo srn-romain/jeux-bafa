@@ -4899,7 +4899,7 @@ auth.onAuthStateChanged(async (user) => {
 // ----------------------------------------------------------------
 // SYSTÈME DE PROMOTION DE FORMATION (Synchronisation Espace Colos & Firestore)
 // ----------------------------------------------------------------
-let currentSelectedPromoId = localStorage.getItem('formation_selected_promo_id') || '';
+let currentSelectedPromoId = '';
 let globalActivePromoId = '';
 let globalActivePromoNom = '';
 let globalActivePromoEmoji = '🎓';
@@ -4961,7 +4961,7 @@ async function loadFormationPromos() {
         } catch (e) {}
     }
 
-    // Récupérer la promo globale définie par le formateur dans Firestore
+    // Récupérer la promo globale définie par le formateur dans Firestore (Administration)
     try {
         const setDoc = await db.collection('globalSettings').doc('formation').get();
         if (setDoc.exists) {
@@ -4995,6 +4995,16 @@ async function loadFormationPromos() {
         }
     }
 
+    // Initialisation du filtre d'affichage local :
+    // Si l'utilisateur a choisi un filtre dans sa session, le respecter
+    // Sinon, sélectionner par défaut la promotion active globale (ou 'Toutes les promos' si aucune n'est active)
+    const storedFilter = sessionStorage.getItem('formation_filter_promo_id');
+    if (storedFilter !== null) {
+        currentSelectedPromoId = storedFilter;
+    } else {
+        currentSelectedPromoId = globalActivePromoId || '';
+    }
+
     // Si rôle stagiaire, vérifier s'il est inscrit et approuvé dans une session précise
     if (actualRole === 'stagiaire' && currentUser) {
         try {
@@ -5004,7 +5014,6 @@ async function loadFormationPromos() {
             if (!reqSnap.empty) {
                 for (const reqDoc of reqSnap.docs) {
                     const eId = reqDoc.data().espaceId;
-                    // Chercher d'abord dans les formations puis dans tous les espaces
                     const matched = allEspacesList.find(p => p.id === eId);
                     if (matched) {
                         userApprovedPromo = matched;
@@ -5038,24 +5047,18 @@ function updatePromoHeaderUI() {
         btnChange.classList.toggle('hidden', !canEditPromo);
     }
 
-    // Déterminer quelle promotion afficher :
+    // Déterminer quelle promotion afficher dans l'en-tête :
     // 1. Session approuvée spécifique du stagiaire
-    // 2. Promotion globale synchronisée (objet complet)
-    // 3. Promotion globale par ID
-    // 4. Choix manuel local (admin)
-    // 5. Si une seule promotion existe sur la plateforme
+    // 2. Choix du filtre d'affichage local (admin/formateur)
     let activePromoObj = null;
 
     if (userApprovedPromo) {
         activePromoObj = userApprovedPromo;
-    } else if (globalActivePromoData && (globalActivePromoData.nom || globalActivePromoData.id)) {
-        activePromoObj = globalActivePromoData;
-    } else if (globalActivePromoId) {
-        activePromoObj = formationPromosList.find(p => p.id === globalActivePromoId) || null;
     } else if (currentSelectedPromoId) {
         activePromoObj = formationPromosList.find(p => p.id === currentSelectedPromoId) || null;
-    } else if (formationPromosList.length === 1) {
-        activePromoObj = formationPromosList[0];
+    } else {
+        // currentSelectedPromoId est vide => "Toutes les promotions (Vue globale)"
+        activePromoObj = null;
     }
 
     if (activePromoObj && activePromoObj.nom) {
@@ -5176,10 +5179,11 @@ function initPromoModalEvents() {
             formationPromosList.forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.id;
-                opt.textContent = `${p.emoji || '🎓'} ${p.nom} ${p.organisme ? `(${p.organisme})` : ''}`;
+                const isGlobalActive = (p.id === globalActivePromoId) ? ' [Active]' : '';
+                opt.textContent = `${p.emoji || '🎓'} ${p.nom} ${p.organisme ? `(${p.organisme})` : ''}${isGlobalActive}`;
                 select.appendChild(opt);
             });
-            select.value = globalActivePromoId || currentSelectedPromoId || '';
+            select.value = currentSelectedPromoId || '';
         }
         openModal('overlayChangePromo');
     });
@@ -5187,56 +5191,16 @@ function initPromoModalEvents() {
     btnClose?.addEventListener('click', () => closeModal('overlayChangePromo'));
     btnCancel?.addEventListener('click', () => closeModal('overlayChangePromo'));
 
-    btnSave?.addEventListener('click', async () => {
+    btnSave?.addEventListener('click', () => {
         const val = select ? select.value : '';
         currentSelectedPromoId = val;
-        globalActivePromoId = val;
+        sessionStorage.setItem('formation_filter_promo_id', val);
 
         const promo = formationPromosList.find(p => p.id === val);
-        globalActivePromoNom = promo ? (promo.nom || '') : '';
-        globalActivePromoEmoji = promo ? (promo.emoji || '🎓') : '🎓';
-        globalActivePromoData = promo ? {
-            id: promo.id,
-            nom: promo.nom || '',
-            emoji: promo.emoji || '🎓',
-            organisme: promo.organisme || '',
-            lieu: promo.lieu || '',
-            ville: promo.ville || '',
-            dateDebut: promo.dateDebut || '',
-            dateFin: promo.dateFin || '',
-            nbParticipants: promo.nbParticipants || '',
-            directeur: promo.directeur || promo.createurNom || '',
-            stageType: promo.stageType || ''
-        } : null;
-
-        if (val) {
-            localStorage.setItem('formation_selected_promo_id', val);
-            showToast(`Promotion active : ${globalActivePromoNom || 'Session sélectionnée'}`, "success");
+        if (val && promo) {
+            showToast(`Affichage filtré sur : ${promo.nom || 'Promotion'}`, "info");
         } else {
-            localStorage.removeItem('formation_selected_promo_id');
             showToast("Affichage global (Toutes les promotions)", "info");
-        }
-
-        // Sauvegarder dans Firestore pour synchroniser tous les comptes stagiaires en temps réel
-        if (actualRole === 'admin' && navigator.onLine) {
-            try {
-                await db.collection('globalSettings').doc('formation').set({
-                    activePromoId: val || '',
-                    activePromoNom: globalActivePromoNom,
-                    activePromoEmoji: globalActivePromoEmoji,
-                    activePromoOrganisme: promo?.organisme || '',
-                    activePromoLieu: promo?.lieu || '',
-                    activePromoVille: promo?.ville || '',
-                    activePromoDateDebut: promo?.dateDebut || '',
-                    activePromoDateFin: promo?.dateFin || '',
-                    activePromoNbParticipants: promo?.nbParticipants || '',
-                    activePromoDirecteur: promo?.directeur || promo?.createurNom || '',
-                    activePromoStageType: promo?.stageType || '',
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
-            } catch (err) {
-                console.error("Erreur enregistrement activePromoId Firestore:", err);
-            }
         }
 
         updatePromoHeaderUI();
