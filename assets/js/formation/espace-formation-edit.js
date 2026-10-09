@@ -400,26 +400,57 @@ function renderBgSuggestions(selectedUrl = '') {
     const tabsContainer = document.getElementById('bgGalleryCategoryTabs');
     if (!grid) return;
 
-    // Construction des onglets de catégories
-    if (tabsContainer && tabsContainer.children.length === 0) {
-        tabsContainer.innerHTML = BG_IMAGE_PRESET_CATEGORIES.map(cat => `
-            <button type="button" class="es-bg-cat-btn ${cat.id === currentBgGalleryCategory ? 'active' : ''}" data-category="${cat.id}">
-                ${cat.label}
-            </button>
-        `).join('');
+    const currentSelected = (selectedUrl || document.getElementById('editModuleBgImage')?.value || '').trim();
 
-        tabsContainer.querySelectorAll('.es-bg-cat-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                currentBgGalleryCategory = btn.getAttribute('data-category') || 'picsum';
-                tabsContainer.querySelectorAll('.es-bg-cat-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                buildGalleryGrid();
+    // Auto-détection de la catégorie correspondant à l'image courante
+    if (currentSelected) {
+        if (currentSelected.includes('random') || currentSelected === 'https://picsum.photos/800/500') {
+            currentBgGalleryCategory = 'picsum';
+        } else if (currentSelected.includes('picsum.photos/seed/bafa_')) {
+            currentBgGalleryCategory = 'picsum';
+            const match = currentSelected.match(/seed\/bafa_(\d+)/);
+            if (match) {
+                const seedNum = parseInt(match[1], 10);
+                picsumSeedOffset = Math.max(1, seedNum - (seedNum % 4));
+            }
+        } else {
+            for (const [catId, list] of Object.entries(THEMED_BG_IMAGES)) {
+                const foundIdx = list.findIndex(it => it.url.trim() === currentSelected || (it.url.includes('unsplash.com') && currentSelected.includes(it.url.split('?')[0])));
+                if (foundIdx !== -1) {
+                    currentBgGalleryCategory = catId;
+                    themedOffset = Math.floor(foundIdx / 4) * 4;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Construction ou mise à jour des onglets de catégories
+    if (tabsContainer) {
+        if (tabsContainer.children.length === 0) {
+            tabsContainer.innerHTML = BG_IMAGE_PRESET_CATEGORIES.map(cat => `
+                <button type="button" class="es-bg-cat-btn ${cat.id === currentBgGalleryCategory ? 'active' : ''}" data-category="${cat.id}">
+                    ${cat.label}
+                </button>
+            `).join('');
+
+            tabsContainer.querySelectorAll('.es-bg-cat-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentBgGalleryCategory = btn.getAttribute('data-category') || 'picsum';
+                    tabsContainer.querySelectorAll('.es-bg-cat-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    buildGalleryGrid();
+                });
             });
-        });
+        } else {
+            tabsContainer.querySelectorAll('.es-bg-cat-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-category') === currentBgGalleryCategory);
+            });
+        }
     }
 
     function buildGalleryGrid() {
-        const currentSelected = (document.getElementById('editModuleBgImage')?.value || selectedUrl || '').trim();
+        const activeUrl = (document.getElementById('editModuleBgImage')?.value || currentSelected || '').trim();
         let items = [];
 
         if (currentBgGalleryCategory === 'picsum') {
@@ -441,7 +472,7 @@ function renderBgSuggestions(selectedUrl = '') {
         }
 
         grid.innerHTML = items.map(item => {
-            const isSelected = item.url.trim() === currentSelected;
+            const isSelected = item.url.trim() === activeUrl;
             return `
                 <div class="es-bg-thumb-card ${isSelected ? 'selected' : ''}" data-url="${escapeHtml(item.url)}" title="${escapeHtml(item.title)}">
                     <img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.title)}" class="es-bg-thumb-img" loading="lazy" onerror="this.onerror=null; this.src='https://picsum.photos/600/400?random=42';">
@@ -475,11 +506,19 @@ function renderBgSuggestions(selectedUrl = '') {
 
 function updateBgGallerySelection(url = '') {
     const grid = document.getElementById('bgGalleryGrid');
-    if (!grid) return;
     const cleanUrl = (url || '').trim();
+
+    // Détection si l'URL courante est le mode dynamique aléatoire
+    const isDynamic = cleanUrl !== '' && (cleanUrl.includes('random') || cleanUrl === 'https://picsum.photos/800/500') && !cleanUrl.includes('/seed/');
+    const btnDynamic = document.getElementById('btnDynamicRandomBg');
+    if (btnDynamic) {
+        btnDynamic.classList.toggle('active', isDynamic);
+    }
+
+    if (!grid) return;
     grid.querySelectorAll('.es-bg-thumb-card').forEach(card => {
         const cardUrl = (card.getAttribute('data-url') || '').trim();
-        const isSelected = cleanUrl !== '' && cardUrl === cleanUrl;
+        const isSelected = cleanUrl !== '' && !isDynamic && cardUrl === cleanUrl;
         if (isSelected) {
             card.classList.add('selected');
             if (!card.querySelector('.es-bg-thumb-check')) {
