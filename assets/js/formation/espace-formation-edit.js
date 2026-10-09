@@ -337,6 +337,34 @@ function updateIconPreview(iconClass) {
     }
 }
 
+function scrollIconPickerToActive(smooth = true) {
+    const grid = document.getElementById('iconPickerGrid');
+    if (!grid) return;
+
+    const attemptScroll = (retryCount = 0) => {
+        const activeBtn = grid.querySelector('.es-icon-picker-btn.active, .btn-select-icon-item.active');
+        if (!activeBtn) return;
+
+        // If grid or parent is still hidden (e.g. during page loading), retry
+        if (grid.clientHeight === 0 && retryCount < 10) {
+            setTimeout(() => attemptScroll(retryCount + 1), 60);
+            return;
+        }
+
+        const gridRect = grid.getBoundingClientRect();
+        const btnRect = activeBtn.getBoundingClientRect();
+        const relativeTop = btnRect.top - gridRect.top + grid.scrollTop;
+        const targetScroll = relativeTop - (grid.clientHeight / 2) + (activeBtn.clientHeight / 2);
+
+        grid.scrollTo({
+            top: Math.max(0, targetScroll),
+            behavior: smooth ? 'smooth' : 'auto'
+        });
+    };
+
+    setTimeout(() => attemptScroll(0), 40);
+}
+
 function renderIconPicker(selectedIcon = 'bi-journal-bookmark') {
     const grid = document.getElementById('iconPickerGrid');
     const filterInput = document.getElementById('iconFilterInput');
@@ -344,7 +372,7 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark') {
 
     let currentSelected = normalizeIconClass(selectedIcon);
 
-    function buildGrid(query = '') {
+    function buildGrid(query = '', shouldScroll = true) {
         const q = query.toLowerCase().trim();
         const filtered = AVAILABLE_FORMATION_ICONS.filter(item => {
             if (!q) return true;
@@ -378,15 +406,19 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark') {
                 }
                 currentSelected = normalizeIconClass(icon);
                 updateIconPreview(icon);
-                buildGrid(filterInput ? filterInput.value : '');
+                buildGrid(filterInput ? filterInput.value : '', false);
             });
         });
+
+        if (shouldScroll) {
+            scrollIconPickerToActive();
+        }
     }
 
-    buildGrid();
+    buildGrid('', true);
 
     if (filterInput) {
-        filterInput.oninput = () => buildGrid(filterInput.value);
+        filterInput.oninput = () => buildGrid(filterInput.value, true);
     }
 }
 
@@ -987,6 +1019,8 @@ async function loadModuleHubData() {
         if (loader) loader.classList.add('hidden');
         if (navbar) navbar.style.display = 'block';
         if (mainView) mainView.style.display = 'block';
+
+        scrollIconPickerToActive();
 
         // Initialiser la protection contre les modifications non enregistrées
         markModuleSaved();

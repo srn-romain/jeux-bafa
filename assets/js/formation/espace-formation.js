@@ -802,7 +802,34 @@ function normalizeIconClass(rawIcon) {
     return clean;
 }
 
-function renderIconPicker(selectedIcon = 'bi-journal-bookmark', filter = '') {
+function scrollIconPickerToActive(smooth = true) {
+    const grid = document.getElementById('iconPickerGrid');
+    if (!grid) return;
+
+    const attemptScroll = (retryCount = 0) => {
+        const activeBtn = grid.querySelector('.btn-select-icon-item.active, .es-icon-picker-btn.active');
+        if (!activeBtn) return;
+
+        if (grid.clientHeight === 0 && retryCount < 10) {
+            setTimeout(() => attemptScroll(retryCount + 1), 60);
+            return;
+        }
+
+        const gridRect = grid.getBoundingClientRect();
+        const btnRect = activeBtn.getBoundingClientRect();
+        const relativeTop = btnRect.top - gridRect.top + grid.scrollTop;
+        const targetScroll = relativeTop - (grid.clientHeight / 2) + (activeBtn.clientHeight / 2);
+
+        grid.scrollTo({
+            top: Math.max(0, targetScroll),
+            behavior: smooth ? 'smooth' : 'auto'
+        });
+    };
+
+    setTimeout(() => attemptScroll(0), 40);
+}
+
+function renderIconPicker(selectedIcon = 'bi-journal-bookmark', filter = '', shouldScroll = true) {
     const grid = document.getElementById('iconPickerGrid');
     if (!grid) return;
 
@@ -825,7 +852,7 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark', filter = '') {
         const itemClean = normalizeIconClass(item.icon);
         const isSelected = itemClean === currentSelected;
         return `
-        <button type="button" class="btn-select-icon-item" data-icon="${itemClean}" data-label="${escapeHtml(item.label)}" style="
+        <button type="button" class="btn-select-icon-item ${isSelected ? 'active' : ''}" data-icon="${itemClean}" data-label="${escapeHtml(item.label)}" style="
             display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
             padding:8px 4px; border-radius:6px; font-size:0.75rem; text-align:center; cursor:pointer; transition:all 0.15s ease;
             background:${isSelected ? 'rgba(39,174,96,0.14)' : '#ffffff'};
@@ -847,6 +874,10 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark', filter = '') {
             selectModuleIcon(iconClass, iconLabel);
         });
     });
+
+    if (shouldScroll) {
+        scrollIconPickerToActive();
+    }
 }
 
 function selectModuleIcon(iconClass, iconLabel) {
@@ -863,7 +894,7 @@ function selectModuleIcon(iconClass, iconLabel) {
     updateIconPreview(cleanIcon);
 
     const filter = document.getElementById('iconFilterInput')?.value || '';
-    renderIconPicker(cleanIcon, filter);
+    renderIconPicker(cleanIcon, filter, false);
 }
 
 function updateIconPreview(iconClass) {
@@ -886,7 +917,7 @@ function updateIconPreview(iconClass) {
 
 document.getElementById('iconFilterInput')?.addEventListener('input', (e) => {
     const currentIcon = normalizeIconClass(document.getElementById('editModuleIcon')?.value || 'bi-journal-bookmark');
-    renderIconPicker(currentIcon, e.target.value);
+    renderIconPicker(currentIcon, e.target.value, true);
 });
 
 async function compressImageToBase64(file, maxWidth = 1200, maxHeight = 900, quality = 0.82) {
