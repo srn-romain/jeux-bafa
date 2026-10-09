@@ -26,25 +26,71 @@ const AVAILABLE_FORMATION_ICONS = [
     { icon: 'bi-building', label: 'ACM & Structures', tags: 'acm centre batiment mairie caf ddcs sdjes' },
     { icon: 'bi-people', label: 'Enfants & Public', tags: 'enfants public groupe animateurs colos' },
     { icon: 'bi-shield-check', label: 'Réglementation', tags: 'regles securite loi conformite protection' },
-    { icon: 'bi-bank', label: 'Responsabilité', tags: 'loi justice penale civile tribunal sanction' },
+    { icon: 'bi-bank', label: 'Responsabilité & Droit', tags: 'loi justice penale civile tribunal sanction' },
     { icon: 'bi-clock-history', label: 'Vie quotidienne', tags: 'quotidien rythme repas coucher lever douche temps' },
-    { icon: 'bi-heart-half', label: 'Handicap & Inclusion', tags: 'handicap inclusion difference bienveillance accueil' },
+    { icon: 'bi-heart-half', label: 'Bienveillance & Écoute', tags: 'bienveillance ecoute affectif attention soin accueil' },
+    { icon: 'bi-person-wheelchair', label: 'Handicap & Accessibilité', tags: 'handicap inclusion psh accessibilite fauteuil difference bonhomme' },
+    { icon: 'bi-universal-access', label: 'Inclusion Universelle', tags: 'inclusion accessibilite universel accueil difference psh bonhomme' },
     { icon: 'bi-shield-exclamation', label: 'Harcèlement & VSS', tags: 'harcelement maltraitance vss protection prevention' },
     { icon: 'bi-chat-heart', label: 'Relationnel & Équipe', tags: 'relations equipe conflits communication dialogue' },
     { icon: 'bi-peace', label: 'Laïcité & Valeurs', tags: 'laicite valeurs republique liberte vivre ensemble' },
     { icon: 'bi-signpost-split', label: 'Autorité & Cadre', tags: 'regles sanction autorite cadre limite' },
     { icon: 'bi-file-earmark-text', label: 'Contrats & Droits', tags: 'contrat cee droit travail salaire fiche' },
     { icon: 'bi-stars', label: 'Grands-Jeux & Veillées', tags: 'jeu veillée imaginaire fete spectacle animation' },
-    { icon: 'bi-newspaper', label: 'Blog & Infos', tags: 'blog communication journal nouvelles photos' },
+    { icon: 'bi-newspaper', label: 'Blog & Communication', tags: 'blog communication journal nouvelles photos' },
     { icon: 'bi-bus-front', label: 'Transport & Sorties', tags: 'transport bus car velo trajet deplacement' },
     { icon: 'bi-chat-dots', label: 'Réunion & Débrief', tags: 'reunion bilan debrief equipe point' },
     { icon: 'bi-palette', label: 'Activités manuelles', tags: 'activites brico dessin art creation atelier' },
+    { icon: 'bi-brush', label: 'Peinture & Fresque', tags: 'peinture deco brico couleur fresque atelier dessin' },
+    { icon: 'bi-scissors', label: 'Bricolage & Ateliers', tags: 'brico ciseaux decoupage atelier manuel fabrication' },
     { icon: 'bi-tree', label: 'Nature & Forêt', tags: 'nature foret arbre sortie environnement' },
-    { icon: 'bi-cup-hot', label: 'Temps Calme & Pause', tags: 'pause repos cafe sieste calme' },
-    { icon: 'bi-award', label: 'Évaluation & Bilan', tags: 'bilan note appreciation validation grille' },
-    { icon: 'bi-lightbulb', label: 'Créativité & Idées', tags: 'idee innovation projet animation creation' },
-    { icon: 'bi-music-note-beamed', label: 'Chants & Musique', tags: 'chant danse musique guitare spectacle' }
+    { icon: 'bi-sun', label: 'Journée & Plein air', tags: 'soleil meteo plein air exterieur plage' },
+    { icon: 'bi-moon-stars', label: 'Nuit & Coucher', tags: 'nuit sommeil coucher chambre tente dortoir' },
+    { icon: 'bi-cup-hot', label: 'Repas & Rythme', tags: 'repas alimentation cuisine cantine gouter pause repos cafe' },
+    { icon: 'bi-bandaid', label: 'Santé & Bobologie', tags: 'soins sante infirmier bobo blessure psc1' },
+    { icon: 'bi-person-lines-fill', label: 'Fiches Sanitaires & Suivi', tags: 'fiche sanitaire dossier suivi administratif fiche inscription bonhomme' },
+    { icon: 'bi-trophy', label: 'Sport & Tournoi', tags: 'sport tournoi jeu olympiades defi coupe' },
+    { icon: 'bi-dice-5', label: 'Jeux de société', tags: 'jeu plateau regles ludique cartes' },
+    { icon: 'bi-flag', label: 'Prise de Drapeau & Jeux', tags: 'grand jeu drapeau capture equipes tournoi strategie' },
+    { icon: 'bi-music-note-beamed', label: 'Chants & Musique', tags: 'chants musique guitare danse spectacle son' },
+    { icon: 'bi-compass', label: 'Orientation & Rando', tags: 'orientation boussole course carte rando marche' },
+    { icon: 'bi-fire', label: 'Feu de camp & Bivouac', tags: 'feu camp bivouac secours pompier' },
+    { icon: 'bi-megaphone', label: 'Lancement de jeu', tags: 'lancement appel rassemblement animateur' },
+    { icon: 'bi-bullseye', label: 'Objectifs & Pédagogie', tags: 'objectifs cible pedagogie evaluation projet' },
+    { icon: 'bi-lightbulb', label: 'Créativité & Idée', tags: 'idee pedagogie astuce reflexion concept innovation projet' },
+    { icon: 'bi-check2-circle', label: 'Évaluation & Validation', tags: 'bilan validation check grille reussite note appreciation' },
+    { icon: 'bi-water', label: 'Baignade & Piscine', tags: 'eau baignade piscine mer lac surveillant ssb noyade nager' },
+    { icon: 'bi-life-preserver', label: 'Surveillance & Eau', tags: 'eau bouee sauveteur surveillant ssb baignade secours' },
+    { icon: 'bi-backpack', label: 'Sac à dos & Bivouac', tags: 'sac rando bagages marche bivouac materiel trek' },
+    { icon: 'bi-geo-alt', label: 'Lieu & Découverte', tags: 'lieu geographie visite excursion camp voyage repere' },
+    { icon: 'bi-balloon', label: 'Fête & Célébration', tags: 'ballon fete boom kermesse anniversaire celebration joie' },
+    { icon: 'bi-bicycle', label: 'Vélo & Mobilité', tags: 'velo vtt deux roues route casque balade piste cyclable' },
+    { icon: 'bi-film', label: 'Cinéma & Vidéo', tags: 'cinema film video tournage projection pop corn ecran' },
+    { icon: 'bi-controller', label: 'Jeux vidéo & Numérique', tags: 'jeux console manette gaming e-sport ecrans digital' },
+    { icon: 'bi-magic', label: 'Magie & Imaginaire', tags: 'magie imaginaire conte sorcier illusion theatre univers' },
+    { icon: 'bi-puzzle', label: 'Énigme & Escape Game', tags: 'enigme escape game puzzle recherche indice mystere' },
+    { icon: 'bi-umbrella', label: 'Météo & Repli', tags: 'pluie repli parapluie tempete meteo orage activites interieur' },
+    { icon: 'bi-camera', label: 'Photo & Souvenirs', tags: 'photo appareil image reportage souvenirs album' },
+    { icon: 'bi-award', label: 'Diplôme & Récompense', tags: 'recompense medaille trophee reussite badge' },
+    { icon: 'bi-shield-shaded', label: 'Sécurité & Prévention', tags: 'securite vigilance regles alerte prevention secours psc1' },
+    { icon: 'bi-stopwatch', label: 'Chrono & Rythme', tags: 'chrono temps epreuve timer rapidite echeance' },
+    { icon: 'bi-cash-coin', label: 'Budget & Trésorerie', tags: 'budget argent comptabilite achat courses tresorerie econome' },
+    { icon: 'bi-cart4', label: 'Courses & Intendance', tags: 'courses intendance repas approvisionnement logistique cantine' },
+    { icon: 'bi-person-raised-hand', label: 'Participation & Parole', tags: 'parole expression question vote regle enfant animateur bonhomme' },
+    { icon: 'bi-person-arms-up', label: 'Éveil & Motricité', tags: 'eveil corps expression motricite danse enfant bonhomme' },
+    { icon: 'bi-chat-square-quote', label: 'Parole d\'Enfant & Bilan', tags: 'expression avis debrief discussion forum parole' },
+    { icon: 'bi-signpost', label: 'Projet Pédagogique', tags: 'projet pedagogique direction animateur intention orientations' }
 ];
+
+function normalizeIconClass(rawIcon) {
+    if (!rawIcon || typeof rawIcon !== 'string') return 'bi-journal-bookmark';
+    let clean = rawIcon.trim();
+    clean = clean.replace(/^(bi\s+)+/, '').trim();
+    if (!clean.startsWith('bi-') && !clean.startsWith('fa-')) {
+        clean = 'bi-' + clean;
+    }
+    return clean;
+}
 
 function escapeHtml(str) {
     if (!str) return '';
@@ -273,15 +319,19 @@ async function togglePinModule(moduleId) {
 // GESTION DU SÉLECTEUR D'ICÔNES & FOND DE CARTE
 // ----------------------------------------------------------------
 function updateIconPreview(iconClass) {
+    const cleanIcon = normalizeIconClass(iconClass);
     const previewEl = document.getElementById('iconPreviewEl');
     const heroIconEl = document.getElementById('heroIconEl');
     const selectedIconPreview = document.getElementById('selectedIconPreview');
     const selectedIconLabel = document.getElementById('selectedIconLabel');
-    if (previewEl) previewEl.className = `bi ${iconClass}`;
-    if (heroIconEl) heroIconEl.className = `bi ${iconClass}`;
-    if (selectedIconPreview) selectedIconPreview.className = `bi ${iconClass}`;
+    const topbarIcon = document.getElementById('moduleIconTopbar');
 
-    const match = AVAILABLE_FORMATION_ICONS.find(item => item.icon === iconClass);
+    if (previewEl) previewEl.className = `bi ${cleanIcon}`;
+    if (heroIconEl) heroIconEl.className = `bi ${cleanIcon}`;
+    if (selectedIconPreview) selectedIconPreview.className = `bi ${cleanIcon}`;
+    if (topbarIcon) topbarIcon.innerHTML = `<i class="bi ${cleanIcon}"></i>`;
+
+    const match = AVAILABLE_FORMATION_ICONS.find(item => normalizeIconClass(item.icon) === cleanIcon || item.icon === iconClass);
     if (selectedIconLabel) {
         selectedIconLabel.textContent = match ? match.label : 'Personnalisée';
     }
@@ -291,6 +341,8 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark') {
     const grid = document.getElementById('iconPickerGrid');
     const filterInput = document.getElementById('iconFilterInput');
     if (!grid) return;
+
+    let currentSelected = normalizeIconClass(selectedIcon);
 
     function buildGrid(query = '') {
         const q = query.toLowerCase().trim();
@@ -305,10 +357,11 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark') {
         }
 
         grid.innerHTML = filtered.map(item => {
-            const isSelected = item.icon === selectedIcon;
+            const itemClean = normalizeIconClass(item.icon);
+            const isSelected = itemClean === currentSelected;
             return `
-                <button type="button" class="es-icon-picker-btn ${isSelected ? 'active' : ''}" data-icon="${item.icon}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 4px; background: ${isSelected ? 'rgba(166, 216, 102, 0.2)' : 'var(--clr-surface)'}; border: 1.5px solid ${isSelected ? 'var(--clr-primary)' : 'var(--clr-surface-3)'}; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s;">
-                    <i class="bi ${item.icon}" style="font-size: 1.25rem; color: ${isSelected ? 'var(--clr-primary-dark)' : 'var(--clr-text)'};"></i>
+                <button type="button" class="es-icon-picker-btn ${isSelected ? 'active' : ''}" data-icon="${itemClean}" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 6px 4px; background: ${isSelected ? 'rgba(166, 216, 102, 0.2)' : 'var(--clr-surface)'}; border: 1.5px solid ${isSelected ? 'var(--clr-primary)' : 'var(--clr-surface-3)'}; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s;">
+                    <i class="bi ${itemClean}" style="font-size: 1.25rem; color: ${isSelected ? 'var(--clr-primary-dark)' : 'var(--clr-text)'};"></i>
                     <span style="font-size: 0.68rem; font-weight: 600; color: var(--clr-text); text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 95%;">${escapeHtml(item.label)}</span>
                 </button>
             `;
@@ -317,8 +370,13 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark') {
         grid.querySelectorAll('.es-icon-picker-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 const icon = btn.getAttribute('data-icon');
-                document.getElementById('editModuleIcon').value = icon;
-                selectedIcon = icon;
+                const input = document.getElementById('editModuleIcon');
+                if (input) {
+                    input.value = icon;
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                currentSelected = normalizeIconClass(icon);
                 updateIconPreview(icon);
                 buildGrid(filterInput ? filterInput.value : '');
             });
@@ -780,7 +838,7 @@ async function loadModuleHubData() {
             document.getElementById('editModuleNum').value = moduleData.num || 1;
             document.getElementById('editModuleTitle').value = moduleData.title || '';
             document.getElementById('editModuleSubtitle').value = moduleData.subtitle || '';
-            document.getElementById('editModuleIcon').value = moduleData.icon || 'bi-journal-bookmark';
+            document.getElementById('editModuleIcon').value = normalizeIconClass(moduleData.icon || 'bi-journal-bookmark');
             document.getElementById('editModuleBgImage').value = moduleData.bgImage || '';
             updateModuleBgPreview(moduleData.bgImage || '');
             
@@ -913,7 +971,7 @@ async function loadModuleHubData() {
             applyModuleFiltersAndRender();
         }
 
-        const chosenIcon = document.getElementById('editModuleIcon').value || 'bi-journal-bookmark';
+        const chosenIcon = normalizeIconClass(document.getElementById('editModuleIcon').value || 'bi-journal-bookmark');
         renderIconPicker(chosenIcon);
         updateIconPreview(chosenIcon);
         const currentBgUrl = document.getElementById('editModuleBgImage')?.value || '';
@@ -933,6 +991,9 @@ async function loadModuleHubData() {
         // Initialiser la protection contre les modifications non enregistrées
         markModuleSaved();
         initUnsavedChangesProtection();
+
+        // Appliquer les permissions de rôle (lecture seule pour formateur)
+        applyPermissionsToUI();
 
     } catch (err) {
         if (loader) loader.classList.add('hidden');
@@ -2637,6 +2698,76 @@ function renderQuestionsEditor() {
     }).join('');
 
     bindQuestionsEvents();
+    applyPermissionsToUI();
+}
+
+function applyPermissionsToUI() {
+    const isReadOnly = (currentRole !== 'admin');
+
+    // 1. Bannière d'information
+    const bannerReadOnly = document.getElementById('bannerReadOnlyMode');
+    if (bannerReadOnly) {
+        bannerReadOnly.classList.toggle('hidden', !isReadOnly);
+    }
+
+    // 2. Badge de rôle dans l'en-tête
+    const rolePermBadge = document.getElementById('heroRolePermissionsBadge');
+    if (rolePermBadge) {
+        if (currentRole === 'admin') {
+            rolePermBadge.className = 'es-badge es-badge--admin';
+            rolePermBadge.innerHTML = '<i class="bi bi-shield-lock-fill"></i> Admin';
+            rolePermBadge.title = 'Accès complet administrateur';
+        } else {
+            rolePermBadge.className = 'es-badge es-badge--formateur';
+            rolePermBadge.innerHTML = '<i class="bi bi-eye-fill"></i> Formateur (Lecture seule)';
+            rolePermBadge.title = 'Consultation en lecture seule : vous pouvez voir le quiz et les réponses';
+        }
+    }
+
+    // 3. Boutons d'action globaux
+    const btnSaveHeader = document.getElementById('btnSaveModuleHeader');
+    const btnSaveBottom = document.getElementById('btnSaveModuleBottom');
+    const btnDelete = document.getElementById('btnDeleteModule');
+    const btnAddQ = document.getElementById('btnAddQuestion');
+    const btnAddSec = document.getElementById('btnAddSection');
+    const btnShuffle = document.getElementById('btnShuffleAllQuestions');
+    const importWrap = document.getElementById('btnImportQuestionsJson')?.parentElement;
+
+    if (isReadOnly) {
+        btnSaveHeader?.classList.add('hidden');
+        btnSaveBottom?.classList.add('hidden');
+        btnDelete?.classList.add('hidden');
+        btnAddQ?.classList.add('hidden');
+        btnAddSec?.classList.add('hidden');
+        btnShuffle?.classList.add('hidden');
+        if (importWrap) importWrap.style.display = 'none';
+
+        // Désactiver tous les formulaires dans l'onglet éditeur
+        const form = document.getElementById('moduleEditForm');
+        if (form) {
+            form.querySelectorAll('input, select, textarea, button:not(#tabBtnEditor):not(#tabBtnResults):not(#btnCloseUnsavedModal):not(#btnStayOnPage):not(#btnDiscardAndLeave)').forEach(el => {
+                if (el.id === 'tabBtnEditor' || el.id === 'tabBtnResults' || el.classList.contains('es-modal__close')) return;
+                el.disabled = true;
+                el.style.pointerEvents = 'none';
+                el.style.cursor = 'default';
+            });
+        }
+
+        // Masquer les boutons d'actions d'édition de questions et d'images
+        document.querySelectorAll('.btn-delete-q, .btn-duplicate-q, .btn-move-q-up, .btn-move-q-down, .btn-add-option, .btn-remove-option, .btn-add-cat, .btn-remove-cat, .btn-add-item, .btn-remove-item, .btn-add-pair, .btn-remove-pair, #btnToggleBgGallery, #btnRandomBgPreset, #btnDynamicRandomBg').forEach(btn => {
+            btn.style.display = 'none';
+        });
+    } else {
+        btnSaveHeader?.classList.remove('hidden');
+        btnSaveBottom?.classList.remove('hidden');
+        btnAddQ?.classList.remove('hidden');
+        btnAddSec?.classList.remove('hidden');
+        btnShuffle?.classList.remove('hidden');
+        if (importWrap) importWrap.style.display = '';
+        if (currentEditingModuleId) {
+            btnDelete?.classList.remove('hidden');
+        }
+    }
 }
 
 async function processAndSetImageChoiceOption(qidx, oidx, file) {
@@ -3685,7 +3816,7 @@ async function saveModuleData(btnEl) {
     const num = parseInt(document.getElementById('editModuleNum').value, 10);
     const title = document.getElementById('editModuleTitle').value.trim();
     const subtitle = document.getElementById('editModuleSubtitle').value.trim();
-    const icon = document.getElementById('editModuleIcon').value.trim() || 'bi-journal-bookmark';
+    const icon = normalizeIconClass(document.getElementById('editModuleIcon').value.trim() || 'bi-journal-bookmark');
     const bgImage = document.getElementById('editModuleBgImage').value.trim();
     const isVisible = document.getElementById('editModuleVisible') ? document.getElementById('editModuleVisible').checked : true;
 
@@ -4075,11 +4206,16 @@ async function saveModuleData(btnEl) {
     } catch (err) {
         btnLoading(btnEl, false);
         console.error("Save module error:", err);
-        if (errorAlert && errorMsg) {
-            errorMsg.textContent = "Erreur lors de l'enregistrement : " + err.message;
-            errorAlert.classList.remove('hidden');
+        let message = "Erreur lors de l'enregistrement : " + (err.message || err);
+        if (err.code === 'permission-denied' || (err.message && err.message.toLowerCase().includes('permission'))) {
+            message = "⚠️ Permissions insuffisantes : vos règles de compte ne permettent pas d'enregistrer ces modifications. Veuillez contacter l'administrateur.";
         }
-        showToast("Erreur lors de l'enregistrement.", "error");
+        if (errorAlert && errorMsg) {
+            errorMsg.textContent = message;
+            errorAlert.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        showToast(message, "error", 5000);
     }
 }
 
@@ -4288,6 +4424,7 @@ auth.onAuthStateChanged(async (user) => {
     if (nameEl) nameEl.textContent = actualUserData?.displayName || `${actualUserData?.firstName || ''} ${actualUserData?.lastName || ''}`.trim() || user.email;
 
     const badgeEl = document.getElementById('userBadge');
+    const rolePermBadge = document.getElementById('heroRolePermissionsBadge');
     const btnAdminLink = document.getElementById('btnAdminLink');
     const btnFormationLink = document.getElementById('btnFormationLink');
     const linkAdminInDropdown = document.getElementById('linkAdmin');
@@ -4310,6 +4447,8 @@ auth.onAuthStateChanged(async (user) => {
         btnFormationLink?.classList.remove('hidden');
         linkAdminInDropdown?.classList.add('hidden');
     }
+
+    applyPermissionsToUI();
 
     const avatarEl = document.getElementById('userAvatar');
     if (avatarEl && (actualUserData?.photoURL || user.photoURL)) {

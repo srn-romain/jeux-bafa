@@ -572,6 +572,12 @@ textarea {
   color: #ffffff;
 }
 
+.es-badge--formateur {
+  background: rgba(52, 152, 219, 0.18);
+  color: #5dade2;
+  border: 1px solid rgba(52, 152, 219, 0.35);
+}
+
 .es-badge--stagiaire {
   background: rgba(155, 89, 182, 0.18);
   color: #c39bd3;

@@ -736,51 +736,77 @@ const AVAILABLE_FORMATION_ICONS = [
     { icon: 'bi-building', label: 'ACM & Structures', tags: 'acm centre batiment mairie caf ddcs sdjes' },
     { icon: 'bi-people', label: 'Enfants & Public', tags: 'enfants public groupe animateurs colos' },
     { icon: 'bi-shield-check', label: 'Réglementation', tags: 'regles securite loi conformite protection' },
-    { icon: 'bi-bank', label: 'Responsabilité', tags: 'loi justice penale civile tribunal sanction' },
+    { icon: 'bi-bank', label: 'Responsabilité & Droit', tags: 'loi justice penale civile tribunal sanction' },
     { icon: 'bi-clock-history', label: 'Vie quotidienne', tags: 'quotidien rythme repas coucher lever douche temps' },
-    { icon: 'bi-heart-half', label: 'Handicap & Inclusion', tags: 'handicap inclusion difference bienveillance accueil' },
+    { icon: 'bi-heart-half', label: 'Bienveillance & Écoute', tags: 'bienveillance ecoute affectif attention soin accueil' },
+    { icon: 'bi-person-wheelchair', label: 'Handicap & Accessibilité', tags: 'handicap inclusion psh accessibilite fauteuil difference bonhomme' },
+    { icon: 'bi-universal-access', label: 'Inclusion Universelle', tags: 'inclusion accessibilite universel accueil difference psh bonhomme' },
     { icon: 'bi-shield-exclamation', label: 'Harcèlement & VSS', tags: 'harcelement maltraitance vss protection prevention' },
     { icon: 'bi-chat-heart', label: 'Relationnel & Équipe', tags: 'relations equipe conflits communication dialogue' },
     { icon: 'bi-peace', label: 'Laïcité & Valeurs', tags: 'laicite valeurs republique liberte vivre ensemble' },
     { icon: 'bi-signpost-split', label: 'Autorité & Cadre', tags: 'regles sanction autorite cadre limite' },
     { icon: 'bi-file-earmark-text', label: 'Contrats & Droits', tags: 'contrat cee droit travail salaire fiche' },
     { icon: 'bi-stars', label: 'Grands-Jeux & Veillées', tags: 'jeu veillée imaginaire fete spectacle animation' },
-    { icon: 'bi-newspaper', label: 'Blog & Infos', tags: 'blog communication journal nouvelles photos' },
+    { icon: 'bi-newspaper', label: 'Blog & Communication', tags: 'blog communication journal nouvelles photos' },
     { icon: 'bi-bus-front', label: 'Transport & Sorties', tags: 'transport bus car velo trajet deplacement' },
     { icon: 'bi-chat-dots', label: 'Réunion & Débrief', tags: 'reunion bilan debrief equipe point' },
     { icon: 'bi-palette', label: 'Activités manuelles', tags: 'activites brico dessin art creation atelier' },
+    { icon: 'bi-brush', label: 'Peinture & Fresque', tags: 'peinture deco brico couleur fresque atelier dessin' },
+    { icon: 'bi-scissors', label: 'Bricolage & Ateliers', tags: 'brico ciseaux decoupage atelier manuel fabrication' },
     { icon: 'bi-tree', label: 'Nature & Forêt', tags: 'nature foret arbre sortie environnement' },
     { icon: 'bi-sun', label: 'Journée & Plein air', tags: 'soleil meteo plein air exterieur plage' },
     { icon: 'bi-moon-stars', label: 'Nuit & Coucher', tags: 'nuit sommeil coucher chambre tente dortoir' },
-    { icon: 'bi-cup-hot', label: 'Repas & Rythme', tags: 'repas alimentation cuisine cantine gouter' },
+    { icon: 'bi-cup-hot', label: 'Repas & Rythme', tags: 'repas alimentation cuisine cantine gouter pause repos cafe' },
     { icon: 'bi-bandaid', label: 'Santé & Bobologie', tags: 'soins sante infirmier bobo blessure psc1' },
+    { icon: 'bi-person-lines-fill', label: 'Fiches Sanitaires & Suivi', tags: 'fiche sanitaire dossier suivi administratif fiche inscription bonhomme' },
     { icon: 'bi-trophy', label: 'Sport & Tournoi', tags: 'sport tournoi jeu olympiades defi coupe' },
     { icon: 'bi-dice-5', label: 'Jeux de société', tags: 'jeu plateau regles ludique cartes' },
+    { icon: 'bi-flag', label: 'Prise de Drapeau & Jeux', tags: 'grand jeu drapeau capture equipes tournoi strategie' },
     { icon: 'bi-music-note-beamed', label: 'Chants & Musique', tags: 'chants musique guitare danse spectacle son' },
     { icon: 'bi-compass', label: 'Orientation & Rando', tags: 'orientation boussole course carte rando marche' },
     { icon: 'bi-fire', label: 'Feu de camp & Bivouac', tags: 'feu camp bivouac secours pompier' },
     { icon: 'bi-megaphone', label: 'Lancement de jeu', tags: 'lancement appel rassemblement animateur' },
-    { icon: 'bi-lightbulb', label: 'Pédagogie & Idée', tags: 'idee pedagogie astuce reflexion concept' },
-    { icon: 'bi-check2-circle', label: 'Évaluation & Bilan', tags: 'bilan validation check grille reussite' },
+    { icon: 'bi-bullseye', label: 'Objectifs & Pédagogie', tags: 'objectifs cible pedagogie evaluation projet' },
+    { icon: 'bi-lightbulb', label: 'Créativité & Idée', tags: 'idee pedagogie astuce reflexion concept innovation projet' },
+    { icon: 'bi-check2-circle', label: 'Évaluation & Validation', tags: 'bilan validation check grille reussite note appreciation' },
     { icon: 'bi-water', label: 'Baignade & Piscine', tags: 'eau baignade piscine mer lac surveillant ssb noyade nager' },
-    { icon: 'bi-backpack', label: 'Sac à dos & Randonnée', tags: 'sac rando bagages marche bivouac materiel trek' },
+    { icon: 'bi-life-preserver', label: 'Surveillance & Eau', tags: 'eau bouee sauveteur surveillant ssb baignade secours' },
+    { icon: 'bi-backpack', label: 'Sac à dos & Bivouac', tags: 'sac rando bagages marche bivouac materiel trek' },
     { icon: 'bi-geo-alt', label: 'Lieu & Découverte', tags: 'lieu geographie visite excursion camp voyage repere' },
-    { icon: 'bi-balloon', label: 'Fête & Anniversaire', tags: 'ballon fete boom kermesse anniversaire celebration joie' },
-    { icon: 'bi-bicycle', label: 'Vélo & VTT', tags: 'velo vtt deux roues route casque balade piste cyclable' },
+    { icon: 'bi-balloon', label: 'Fête & Célébration', tags: 'ballon fete boom kermesse anniversaire celebration joie' },
+    { icon: 'bi-bicycle', label: 'Vélo & Mobilité', tags: 'velo vtt deux roues route casque balade piste cyclable' },
     { icon: 'bi-film', label: 'Cinéma & Vidéo', tags: 'cinema film video tournage projection pop corn ecran' },
     { icon: 'bi-controller', label: 'Jeux vidéo & Numérique', tags: 'jeux console manette gaming e-sport ecrans digital' },
     { icon: 'bi-magic', label: 'Magie & Imaginaire', tags: 'magie imaginaire conte sorcier illusion theatre univers' },
     { icon: 'bi-puzzle', label: 'Énigme & Escape Game', tags: 'enigme escape game puzzle recherche indice mystere' },
-    { icon: 'bi-umbrella', label: 'Météo & Pluie', tags: 'pluie repli parapluie tempete meteo orage activites interieur' },
+    { icon: 'bi-umbrella', label: 'Météo & Repli', tags: 'pluie repli parapluie tempete meteo orage activites interieur' },
     { icon: 'bi-camera', label: 'Photo & Souvenirs', tags: 'photo appareil image reportage souvenirs album' },
     { icon: 'bi-award', label: 'Diplôme & Récompense', tags: 'recompense medaille trophee reussite badge' },
-    { icon: 'bi-shield-shaded', label: 'Sécurité & Prévention', tags: 'securite vigilance regles alerte prevention secours psc1' }
+    { icon: 'bi-shield-shaded', label: 'Sécurité & Prévention', tags: 'securite vigilance regles alerte prevention secours psc1' },
+    { icon: 'bi-stopwatch', label: 'Chrono & Rythme', tags: 'chrono temps epreuve timer rapidite echeance' },
+    { icon: 'bi-cash-coin', label: 'Budget & Trésorerie', tags: 'budget argent comptabilite achat courses tresorerie econome' },
+    { icon: 'bi-cart4', label: 'Courses & Intendance', tags: 'courses intendance repas approvisionnement logistique cantine' },
+    { icon: 'bi-person-raised-hand', label: 'Participation & Parole', tags: 'parole expression question vote regle enfant animateur bonhomme' },
+    { icon: 'bi-person-arms-up', label: 'Éveil & Motricité', tags: 'eveil corps expression motricite danse enfant bonhomme' },
+    { icon: 'bi-chat-square-quote', label: 'Parole d\'Enfant & Bilan', tags: 'expression avis debrief discussion forum parole' },
+    { icon: 'bi-signpost', label: 'Projet Pédagogique', tags: 'projet pedagogique direction animateur intention orientations' }
 ];
+
+function normalizeIconClass(rawIcon) {
+    if (!rawIcon || typeof rawIcon !== 'string') return 'bi-journal-bookmark';
+    let clean = rawIcon.trim();
+    clean = clean.replace(/^(bi\s+)+/, '').trim();
+    if (!clean.startsWith('bi-') && !clean.startsWith('fa-')) {
+        clean = 'bi-' + clean;
+    }
+    return clean;
+}
 
 function renderIconPicker(selectedIcon = 'bi-journal-bookmark', filter = '') {
     const grid = document.getElementById('iconPickerGrid');
     if (!grid) return;
 
+    const currentSelected = normalizeIconClass(selectedIcon);
     const term = (filter || '').toLowerCase().trim();
     const filtered = AVAILABLE_FORMATION_ICONS.filter(item => {
         if (!term) return true;
@@ -796,9 +822,10 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark', filter = '') {
     }
 
     grid.innerHTML = filtered.map(item => {
-        const isSelected = item.icon === selectedIcon;
+        const itemClean = normalizeIconClass(item.icon);
+        const isSelected = itemClean === currentSelected;
         return `
-        <button type="button" class="btn-select-icon-item" data-icon="${item.icon}" data-label="${escapeHtml(item.label)}" style="
+        <button type="button" class="btn-select-icon-item" data-icon="${itemClean}" data-label="${escapeHtml(item.label)}" style="
             display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
             padding:8px 4px; border-radius:6px; font-size:0.75rem; text-align:center; cursor:pointer; transition:all 0.15s ease;
             background:${isSelected ? 'rgba(39,174,96,0.14)' : '#ffffff'};
@@ -806,7 +833,7 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark', filter = '') {
             color:${isSelected ? 'var(--clr-primary)' : 'var(--clr-text)'};
             font-weight:${isSelected ? '700' : '500'};
         ">
-            <i class="bi ${item.icon}" style="font-size:1.35rem; color:${isSelected ? 'var(--clr-primary)' : 'inherit'};"></i>
+            <i class="bi ${itemClean}" style="font-size:1.35rem; color:${isSelected ? 'var(--clr-primary)' : 'inherit'};"></i>
             <span style="line-height:1.2; font-size:0.72rem; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
                 ${escapeHtml(item.label)}
             </span>
@@ -823,40 +850,42 @@ function renderIconPicker(selectedIcon = 'bi-journal-bookmark', filter = '') {
 }
 
 function selectModuleIcon(iconClass, iconLabel) {
+    const cleanIcon = normalizeIconClass(iconClass);
     const input = document.getElementById('editModuleIcon');
-    if (input) input.value = iconClass;
+    if (input) input.value = cleanIcon;
 
     const preview = document.getElementById('selectedIconPreview');
-    if (preview) preview.className = `bi ${iconClass}`;
+    if (preview) preview.className = `bi ${cleanIcon}`;
 
     const labelEl = document.getElementById('selectedIconLabel');
     if (labelEl) labelEl.textContent = iconLabel || 'Icône sélectionnée';
 
-    updateIconPreview(iconClass);
+    updateIconPreview(cleanIcon);
 
     const filter = document.getElementById('iconFilterInput')?.value || '';
-    renderIconPicker(iconClass, filter);
+    renderIconPicker(cleanIcon, filter);
 }
 
 function updateIconPreview(iconClass) {
+    const cleanIcon = normalizeIconClass(iconClass);
     const iconEl = document.getElementById('iconPreviewEl');
     if (iconEl) {
-        iconEl.className = `bi ${iconClass || 'bi-journal-bookmark'}`;
+        iconEl.className = `bi ${cleanIcon}`;
     }
 
-    const found = AVAILABLE_FORMATION_ICONS.find(item => item.icon === iconClass);
+    const found = AVAILABLE_FORMATION_ICONS.find(item => normalizeIconClass(item.icon) === cleanIcon || item.icon === iconClass);
     const labelEl = document.getElementById('selectedIconLabel');
-    if (labelEl && found) {
-        labelEl.textContent = found.label;
+    if (labelEl) {
+        labelEl.textContent = found ? found.label : 'Personnalisée';
     }
     const selPrev = document.getElementById('selectedIconPreview');
     if (selPrev) {
-        selPrev.className = `bi ${iconClass || 'bi-journal-bookmark'}`;
+        selPrev.className = `bi ${cleanIcon}`;
     }
 }
 
 document.getElementById('iconFilterInput')?.addEventListener('input', (e) => {
-    const currentIcon = document.getElementById('editModuleIcon')?.value || 'bi-journal-bookmark';
+    const currentIcon = normalizeIconClass(document.getElementById('editModuleIcon')?.value || 'bi-journal-bookmark');
     renderIconPicker(currentIcon, e.target.value);
 });
 
