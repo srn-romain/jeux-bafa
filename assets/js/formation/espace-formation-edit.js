@@ -1664,17 +1664,16 @@ function computeQuestionAlgoCorrect(q, ans) {
         const userPlacements = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
         const placedItemIds = Object.keys(userPlacements).filter(id => userPlacements[id]);
         const drawCount = parseInt(q.drawItemsCount, 10) || 0;
-        const expectedCount = (drawCount > 0 && drawCount < allItems.length) ? drawCount : allItems.length;
+        const isDrawnSubset = (drawCount > 0 && drawCount < allItems.length);
+        const expectedCount = isDrawnSubset ? drawCount : allItems.length;
 
         isAnswered = placedItemIds.length > 0;
-        if (drawCount > 0 && drawCount < allItems.length) {
-            isCorrect = isAnswered && (placedItemIds.length === expectedCount) && placedItemIds.every(id => {
-                const it = allItems.find(item => item.id === id);
-                return it && userPlacements[id] === it.categoryId;
-            });
-        } else {
-            isCorrect = isAnswered && (allItems.length > 0) && allItems.every(it => userPlacements[it.id] === it.categoryId);
-        }
+        const allPlacedCorrect = isAnswered && placedItemIds.every(id => {
+            const it = allItems.find(item => item.id === id);
+            return it && userPlacements[id] === it.categoryId;
+        });
+
+        isCorrect = allPlacedCorrect && (placedItemIds.length === expectedCount);
     } else if (type === 'cloze') {
         const { blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
         const userAnswersObj = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
@@ -1961,6 +1960,8 @@ function renderInspectionQuestions(questions, sub) {
             const categories = q.categories || [];
             const items = q.items || [];
             const userPlacements = (ans && typeof ans === 'object') ? ans : {};
+            const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+            const isDrawnSubset = (drawCount > 0 && drawCount < items.length);
 
             const catBoxesHtml = categories.map(cat => {
                 const placedItems = items.filter(it => userPlacements[it.id] === cat.id);
@@ -1976,7 +1977,7 @@ function renderInspectionQuestions(questions, sub) {
                     `;
                 }).join('');
 
-                const unplacedExpected = items.filter(it => it.categoryId === cat.id && userPlacements[it.id] !== cat.id);
+                const unplacedExpected = isDrawnSubset ? [] : items.filter(it => it.categoryId === cat.id && userPlacements[it.id] !== cat.id);
                 const missingBadges = unplacedExpected.map(it => `
                     <span class="es-badge" style="background:rgba(243, 156, 18, 0.1); color:#d68910; border:1px dashed rgba(243, 156, 18, 0.4); padding:4px 8px; font-size:0.75rem;">
                         <i class="bi bi-dash-circle"></i> Non placé : ${escapeHtml(it.text || '')}

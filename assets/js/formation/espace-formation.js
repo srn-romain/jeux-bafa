@@ -210,17 +210,16 @@ function computeQuestionAlgoCorrect(q, ans) {
         const userPlacements = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
         const placedItemIds = Object.keys(userPlacements).filter(id => userPlacements[id]);
         const drawCount = parseInt(q.drawItemsCount, 10) || 0;
-        const expectedCount = (drawCount > 0 && drawCount < allItems.length) ? drawCount : allItems.length;
+        const isDrawnSubset = (drawCount > 0 && drawCount < allItems.length);
+        const expectedCount = isDrawnSubset ? drawCount : allItems.length;
 
         isAnswered = placedItemIds.length > 0;
-        if (drawCount > 0 && drawCount < allItems.length) {
-            isCorrect = isAnswered && (placedItemIds.length === expectedCount) && placedItemIds.every(id => {
-                const it = allItems.find(item => item.id === id);
-                return it && userPlacements[id] === it.categoryId;
-            });
-        } else {
-            isCorrect = isAnswered && (allItems.length > 0) && allItems.every(it => userPlacements[it.id] === it.categoryId);
-        }
+        const allPlacedCorrect = isAnswered && placedItemIds.every(id => {
+            const it = allItems.find(item => item.id === id);
+            return it && userPlacements[id] === it.categoryId;
+        });
+
+        isCorrect = allPlacedCorrect && (placedItemIds.length === expectedCount);
     } else if (type === 'cloze') {
         const { blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
         const userAnswersObj = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
@@ -4851,6 +4850,57 @@ async function openAdminCandidateBilanModal(userId) {
                                     const isPairOk = u && String(u).trim().toLowerCase() === String(p.right).trim().toLowerCase();
                                     return `<div><span style="font-weight:600;">${escapeHtml(p.left)}</span> ➔ <span style="color:${isPairOk ? '#27ae60' : '#e74c3c'}; font-weight:700;">${escapeHtml(u || '— (Non relié)')}</span> ${!isPairOk ? `<small style="color:var(--clr-text-muted);">(Attendu: ${escapeHtml(p.right)})</small>` : ''}</div>`;
                                 }).join('')}
+                            </div>
+                        </div>`;
+                    } else if (q.type === 'classification') {
+                        const categories = q.categories || [];
+                        const items = q.items || [];
+                        const userPlacements = (userAns && typeof userAns === 'object') ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
+                        const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+                        const isDrawnSubset = (drawCount > 0 && drawCount < items.length);
+
+                        const catBoxesHtml = categories.map(cat => {
+                            const placedItems = items.filter(it => userPlacements[it.id] === cat.id);
+                            const itemsBadges = placedItems.map(it => {
+                                const isCorrect = (it.categoryId === cat.id);
+                                const expectedCat = categories.find(c => c.id === it.categoryId);
+                                return `
+                                    <span class="es-badge" style="background:${isCorrect ? 'rgba(39, 174, 96, 0.15)' : 'rgba(231, 76, 60, 0.15)'}; color:${isCorrect ? '#27ae60' : '#e74c3c'}; border:1px solid ${isCorrect ? 'rgba(39, 174, 96, 0.3)' : 'rgba(231, 76, 60, 0.3)'}; padding:4px 8px; font-size:0.8rem; font-weight:700;">
+                                        <i class="bi ${isCorrect ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}"></i>
+                                        ${escapeHtml(it.text || '')}
+                                        ${!isCorrect ? `<small style="font-size:0.7rem; opacity:0.85; margin-left:4px;">(attendu : ${escapeHtml(expectedCat?.title || 'autre')})</small>` : ''}
+                                    </span>
+                                `;
+                            }).join('');
+
+                            const unplacedExpected = isDrawnSubset ? [] : items.filter(it => it.categoryId === cat.id && userPlacements[it.id] !== cat.id);
+                            const missingBadges = unplacedExpected.map(it => `
+                                <span class="es-badge" style="background:rgba(243, 156, 18, 0.1); color:#d68910; border:1px dashed rgba(243, 156, 18, 0.4); padding:4px 8px; font-size:0.75rem;">
+                                    <i class="bi bi-dash-circle"></i> Non placé : ${escapeHtml(it.text || '')}
+                                </span>
+                            `).join('');
+
+                            return `
+                                <div style="background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); padding:10px; display:flex; flex-direction:column; gap:6px;">
+                                    <div style="font-size:0.82rem; font-weight:800; color:var(--clr-text); border-bottom:1px solid var(--clr-surface-3); padding-bottom:4px;">
+                                        📁 ${escapeHtml(cat.title || 'Catégorie')}
+                                    </div>
+                                    <div style="display:flex; flex-wrap:wrap; gap:6px; min-height:28px; align-items:center;">
+                                        ${itemsBadges || '<span style="font-size:0.75rem; color:var(--clr-text-muted); font-style:italic;">Aucune étiquette</span>'}
+                                        ${missingBadges}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+
+                        previewHtml = `
+                        <div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                <strong>Classement candidat :</strong>
+                                ${isDrawnSubset ? `<span style="font-size:0.75rem; color:var(--clr-text-muted);"><i class="bi bi-dice-5"></i> Tirage au sort : ${drawCount} étiquettes</span>` : ''}
+                            </div>
+                            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:8px;">
+                                ${catBoxesHtml}
                             </div>
                         </div>`;
                     } else if (q.type === 'text') {
