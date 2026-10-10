@@ -996,7 +996,8 @@ function getModuleStateSnapshot() {
         maxAttempts: document.getElementById('editMaxAttempts')?.value || '0',
         timerMinutes: document.getElementById('editQuizTimerMinutes')?.value || '0',
         timerSeconds: document.getElementById('editQuizTimerSeconds')?.value || '0',
-        showResultsAtEnd: document.getElementById('editShowResultsAtEnd')?.checked || false,
+        resultsDisplayMode: document.getElementById('editQuizResultsDisplayMode')?.value || 'all',
+        showResultsAtEnd: (document.getElementById('editQuizResultsDisplayMode')?.value || 'all') !== 'none',
         negativePoints: document.getElementById('editNegativePoints')?.checked || false,
         allowPreviousPage: document.getElementById('editQuizAllowPreviousPage')?.checked || false,
         shuffleQuestions: document.getElementById('editQuizShuffleQuestions')?.checked || false,
@@ -1166,7 +1167,15 @@ async function loadModuleHubData() {
             }
             document.getElementById('editQuizTimerMinutes').value = initialMins;
             document.getElementById('editQuizTimerSeconds').value = initialSecs;
-            document.getElementById('editShowResultsAtEnd').checked = qConfig.showResultsAtEnd === true;
+            
+            const displayMode = qConfig.resultsDisplayMode || (qConfig.showResultsAtEnd === true ? 'all' : (qConfig.showResultsAtEnd === false ? 'none' : 'all'));
+            if (document.getElementById('editQuizResultsDisplayMode')) {
+                document.getElementById('editQuizResultsDisplayMode').value = displayMode;
+            }
+            if (document.getElementById('editShowResultsAtEnd')) {
+                document.getElementById('editShowResultsAtEnd').checked = (displayMode !== 'none');
+            }
+
             if (document.getElementById('editNegativePoints')) {
                 document.getElementById('editNegativePoints').checked = (qConfig.negativePoints === true || qConfig.negativePoints === 'true');
             }
@@ -1247,7 +1256,12 @@ async function loadModuleHubData() {
             document.getElementById('editMaxAttempts').value = 1;
             document.getElementById('editQuizTimerMinutes').value = 0;
             document.getElementById('editQuizTimerSeconds').value = 0;
-            document.getElementById('editShowResultsAtEnd').checked = false;
+            if (document.getElementById('editQuizResultsDisplayMode')) {
+                document.getElementById('editQuizResultsDisplayMode').value = 'all';
+            }
+            if (document.getElementById('editShowResultsAtEnd')) {
+                document.getElementById('editShowResultsAtEnd').checked = true;
+            }
             if (document.getElementById('editNegativePoints')) {
                 document.getElementById('editNegativePoints').checked = false;
             }
@@ -4852,7 +4866,8 @@ async function saveModuleData(btnEl) {
     const timerMinutes = parseInt(document.getElementById('editQuizTimerMinutes').value, 10) || 0;
     const timerSeconds = parseInt(document.getElementById('editQuizTimerSeconds').value, 10) || 0;
     const timerTotalSeconds = (timerMinutes * 60) + timerSeconds;
-    const showResultsAtEnd = document.getElementById('editShowResultsAtEnd').checked;
+    const resultsDisplayMode = document.getElementById('editQuizResultsDisplayMode')?.value || 'all';
+    const showResultsAtEnd = (resultsDisplayMode === 'all' || resultsDisplayMode === 'score_only');
     const negativePoints = document.getElementById('editNegativePoints') ? document.getElementById('editNegativePoints').checked : false;
     const allowPreviousPage = document.getElementById('editQuizAllowPreviousPage') ? document.getElementById('editQuizAllowPreviousPage').checked : true;
     const shuffleQuestions = document.getElementById('editQuizShuffleQuestions') ? document.getElementById('editQuizShuffleQuestions').checked : false;
@@ -5102,6 +5117,7 @@ async function saveModuleData(btnEl) {
                 timerMinutes: timerMinutes,
                 timerSeconds: timerSeconds,
                 timerTotalSeconds: timerTotalSeconds,
+                resultsDisplayMode: resultsDisplayMode,
                 showResultsAtEnd: showResultsAtEnd,
                 negativePoints: negativePoints,
                 allowPreviousPage: allowPreviousPage,
@@ -5211,7 +5227,7 @@ async function saveModuleData(btnEl) {
         } catch (cErr) {}
 
         btnLoading(btnEl, false);
-        showToast("🎉 Module et questions enregistrés !", "success", 4000);
+        showToast("Module et questions enregistrés !", "success", 4000);
 
         if (successAlert) {
             successAlert.classList.remove('hidden');

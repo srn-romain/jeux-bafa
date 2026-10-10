@@ -828,12 +828,14 @@
                             </div>
 
                             <div class="es-field" style="margin-bottom:14px;">
-                                <label
-                                    style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--clr-text);">
-                                    <input type="checkbox" id="editShowResultsAtEnd"
-                                        style="width:18px; height:18px; accent-color:var(--clr-primary);">
-                                    <span><i class="bi bi-file-earmark-check" style="color:var(--clr-primary); margin-right:4px;"></i> Afficher le corrigé détaillé à la fin</span>
+                                <label class="es-field__label" for="editQuizResultsDisplayMode" style="display:flex; align-items:center; gap:6px; font-weight:700; margin-bottom:4px;">
+                                    <i class="bi bi-eye-fill" style="color:var(--clr-primary);"></i> Type de correction :
                                 </label>
+                                <select id="editQuizResultsDisplayMode" class="es-input" style="font-size:0.88rem; font-weight:600;">
+                                    <option value="all">📝 Note et corrigé détaillé</option>
+                                    <option value="score_only">📊 Note uniquement (sans revoir les questions)</option>
+                                    <option value="none">🔒 Corrigé différé (Ni note ni questions affichées)</option>
+                                </select>
                             </div>
 
                             <div class="es-field" style="margin-bottom:14px;">

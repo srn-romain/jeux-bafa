@@ -574,7 +574,9 @@ async function loadFormationModules(forceRefresh = false) {
             const hasSubmitted = !!existingSub;
             const adminStats = adminCountsMap[m.id] || { totalAttempts: 0, uniqueStagiaires: 0 };
             const qConfig = m.quizConfig || {};
-            const showResultsAtEnd = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+            const displayMode = qConfig.resultsDisplayMode || (Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1) ? 'all' : 'none');
+            const showScore = (displayMode === 'all' || displayMode === 'score_only');
+            const showCorrection = (displayMode === 'all');
             const maxAttempts = parseInt(qConfig.maxAttempts, 10) || 0;
             const attemptsCount = existingSub?.attemptsCount || 0;
             const isAttemptsExceeded = (maxAttempts > 0 && attemptsCount >= maxAttempts);
@@ -622,7 +624,7 @@ async function loadFormationModules(forceRefresh = false) {
             // 5. Info Statut du Quiz (Disponible / Verrouillé / Répondu) placé dans l'en-tête
             let statusInfoHtml = '';
             if (hasSubmitted) {
-                const scoreText = (showResultsAtEnd && existingSub.score) ? ` (${existingSub.score.correct}/${existingSub.score.total})` : '';
+                const scoreText = (showScore && existingSub.score) ? ` (${existingSub.score.correct}/${existingSub.score.total})` : '';
                 statusInfoHtml = `<span class="es-badge es-badge--approved" style="font-size:0.75rem;"><i class="bi bi-check-circle"></i> Répondu${scoreText}</span>`;
             } else if (isEnabled) {
                 statusInfoHtml = `<span class="es-badge es-badge--approved" style="font-size:0.75rem;"><i class="bi bi-play-fill"></i> Disponible</span>`;
@@ -637,12 +639,12 @@ async function loadFormationModules(forceRefresh = false) {
                     if (isAttemptsExceeded) {
                         actionBtn = `
                         <button type="button" class="es-btn es-btn--ghost es-btn--sm es-btn--full btn-open-quiz" data-module-id="${m.id}">
-                            <i class="bi bi-check2-circle"></i> ${showResultsAtEnd ? 'Résultats & corrigé' : 'Quiz complété'}
+                            <i class="bi bi-check2-circle"></i> ${showCorrection ? 'Résultats & corrigé' : (showScore ? 'Voir ma note' : 'Quiz complété')}
                         </button>`;
                     } else {
                         actionBtn = `
                         <button type="button" class="es-btn es-btn--primary es-btn--sm es-btn--full btn-open-quiz" data-module-id="${m.id}">
-                            <i class="bi bi-pencil-square"></i> ${hasSubmitted ? (showResultsAtEnd ? 'Corrigé / Repasser' : 'Repasser le quiz') : 'Faire le quiz'}
+                            <i class="bi bi-pencil-square"></i> ${hasSubmitted ? (showCorrection ? 'Corrigé / Repasser' : (showScore ? 'Ma note / Repasser' : 'Repasser le quiz')) : 'Faire le quiz'}
                         </button>`;
                     }
                 } else {
@@ -2782,7 +2784,8 @@ function exportStagiaireBilanPDF({ candidateUser, modulesList, submissionsMap, p
             const sub = subMap[m.id];
             const isCompleted = !!sub;
             const qConfig = m.quizConfig || {};
-            const showResultsAtEnd = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+            const displayMode = qConfig.resultsDisplayMode || (Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1) ? 'all' : 'none');
+            const showScore = (displayMode === 'all' || displayMode === 'score_only');
 
             let statusText = 'Non commencé';
             let resultText = '—';
@@ -2791,7 +2794,7 @@ function exportStagiaireBilanPDF({ candidateUser, modulesList, submissionsMap, p
 
             if (isCompleted) {
                 statusText = 'Validé';
-                if (showResultsAtEnd && sub.score) {
+                if (showScore && sub.score) {
                     resultText = `${sub.score.percent}% (${sub.score.correct || 0}/${sub.score.total || 0} QCM)`;
                 } else {
                     resultText = 'Transmis au formateur';
@@ -3321,10 +3324,11 @@ function renderStagiaireBilan() {
             completedCount++;
             totalAttemptsCount += (sub.attemptsCount || 1);
 
-            // Vérifier si le score est autorisé à être vu par l'admin
+            // Vérifier si le score est autorisé à être vu
             const qConfig = m.quizConfig || {};
-            const showResultsAtEnd = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
-            if (showResultsAtEnd && sub.score && sub.score.percent !== undefined) {
+            const displayMode = qConfig.resultsDisplayMode || (Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1) ? 'all' : 'none');
+            const showScore = (displayMode === 'all' || displayMode === 'score_only');
+            if (showScore && sub.score && sub.score.percent !== undefined) {
                 scoredSubmissions.push({
                     moduleId: m.id,
                     score: sub.score
@@ -3414,24 +3418,21 @@ function renderStagiaireBilan() {
         const sub = stagiaireSubmissionsMap[m.id];
         const isCompleted = !!sub;
         const qConfig = m.quizConfig || {};
-        const showResultsAtEnd = Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+        const displayMode = qConfig.resultsDisplayMode || (Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1) ? 'all' : 'none');
+        const showScore = (displayMode === 'all' || displayMode === 'score_only');
+        const showCorrection = (displayMode === 'all');
         const cardClass = isCompleted ? 'es-bilan-card es-bilan-card--completed' : 'es-bilan-card es-bilan-card--pending';
 
         let statusBadgeHtml = '';
         let actionBtnHtml = '';
 
         if (isCompleted) {
-            if (showResultsAtEnd) {
+            if (showScore) {
                 const percent = sub.score?.percent ?? 100;
                 statusBadgeHtml = `
                     <span class="es-bilan-badge-score">
                         <i class="bi bi-award-fill"></i> Score : ${percent}% (${sub.score?.correct || 0}/${sub.score?.total || 0} QCM)
                     </span>
-                `;
-                actionBtnHtml = `
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-toggle-bilan-accordion" data-module-id="${m.id}">
-                        <i class="bi bi-card-checklist"></i> <span class="accordion-text">Consulter mes réponses &amp; corrigé</span> <i class="bi bi-chevron-down accordion-arrow" style="font-size:11px; margin-left:4px; transition:transform 0.2s ease;"></i>
-                    </button>
                 `;
             } else {
                 statusBadgeHtml = `
@@ -3439,6 +3440,15 @@ function renderStagiaireBilan() {
                         <i class="bi bi-shield-check"></i> Réponses transmises au formateur
                     </span>
                 `;
+            }
+
+            if (showCorrection) {
+                actionBtnHtml = `
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-toggle-bilan-accordion" data-module-id="${m.id}">
+                        <i class="bi bi-card-checklist"></i> <span class="accordion-text">Consulter mes réponses &amp; corrigé</span> <i class="bi bi-chevron-down accordion-arrow" style="font-size:11px; margin-left:4px; transition:transform 0.2s ease;"></i>
+                    </button>
+                `;
+            } else if (!showScore) {
                 actionBtnHtml = `
                     <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-toggle-bilan-accordion" data-module-id="${m.id}">
                         <i class="bi bi-eye"></i> <span class="accordion-text">Consulter ma copie transmise</span> <i class="bi bi-chevron-down accordion-arrow" style="font-size:11px; margin-left:4px; transition:transform 0.2s ease;"></i>
@@ -3543,8 +3553,25 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
         return;
     }
 
+    const mod = (currentFormationModulesList || []).find(m => m.id === moduleId);
+    const qConfig = mod?.quizConfig || {};
+    const displayMode = qConfig.resultsDisplayMode || (Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1) ? 'all' : 'none');
+    const isAdminOrFormateur = (effectiveRole === 'admin' || effectiveRole === 'formateur');
+
+    if (!isAdminOrFormateur && displayMode === 'score_only') {
+        acc.innerHTML = `
+            <div style="padding:16px 20px; text-align:center; color:var(--clr-text-muted); font-size:0.88rem; background:var(--clr-surface-2); border-radius:var(--radius-sm);">
+                <i class="bi bi-info-circle-fill" style="color:var(--clr-primary); margin-right:6px;"></i>
+                Pour ce module, seul votre score final est communiqué (${sub.score?.percent ?? 100}%). Le détail des questions n'est pas consultable.
+            </div>
+        `;
+        return;
+    }
+
     try {
-        const questions = await fetchModuleQuestions(moduleId);
+        const rawQuestions = await fetchModuleQuestions(moduleId);
+        const drawnIds = Array.isArray(sub.drawnQuestionIds) && sub.drawnQuestionIds.length > 0 ? new Set(sub.drawnQuestionIds) : null;
+        const questions = drawnIds ? rawQuestions.filter(q => q.type === 'section' || drawnIds.has(q.id)) : rawQuestions;
         const answers = sub.answers || {};
 
         acc.innerHTML = questions.map((q, qIdx) => {

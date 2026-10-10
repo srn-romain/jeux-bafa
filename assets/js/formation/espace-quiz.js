@@ -352,11 +352,16 @@ function renderBriefingScreen() {
         attemptsText.textContent = `Tentative #${prevAttempts + 1} (Illimitées)`;
     }
 
+    const displayMode = qConfig.resultsDisplayMode || (Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1) ? 'all' : 'none');
     const pillCorrection = document.getElementById('pillCorrectionText');
-    if (showResults) {
-        pillCorrection.textContent = "Corrigé immédiat à la fin";
-    } else {
-        pillCorrection.textContent = "Corrigé différé par le formateur";
+    if (pillCorrection) {
+        if (displayMode === 'all') {
+            pillCorrection.textContent = "Note & corrigé complets à la fin";
+        } else if (displayMode === 'score_only') {
+            pillCorrection.textContent = "Note immédiate (sans corrigé)";
+        } else {
+            pillCorrection.textContent = "Corrigé différé par le formateur";
+        }
     }
 
     // Pilule Points Négatifs
@@ -2781,7 +2786,9 @@ document.getElementById('btnPrevSection')?.addEventListener('click', () => {
 function renderResultsScreen(submission = {}) {
     const qConfig = currentModuleData.quizConfig || {};
     const isAdminOrFormateur = (currentRole === 'admin' || currentRole === 'formateur');
-    const showResults = isAdminOrFormateur || Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
+    const displayMode = qConfig.resultsDisplayMode || (Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1) ? 'all' : 'none');
+    const showScore = isAdminOrFormateur || displayMode === 'all' || displayMode === 'score_only';
+    const showCorrection = isAdminOrFormateur || displayMode === 'all';
     const hasNegativePoints = Boolean(submission?.score?.negativePointsEnabled ?? (qConfig.negativePoints === true || qConfig.negativePoints === 'true'));
     const score = submission?.score || { correct: 0, total: 0, percent: 100 };
     const answers = submission?.answers || {};
@@ -2806,7 +2813,7 @@ function renderResultsScreen(submission = {}) {
         return '<span style="font-weight:700; color:var(--clr-danger);">❌ Incorrect (0 pt)</span>';
     }
 
-    if (showResults) {
+    if (showScore) {
         if (scoreCircle) {
             scoreCircle.style.display = 'flex';
             const ratioText = score.total > 0
@@ -2827,17 +2834,17 @@ function renderResultsScreen(submission = {}) {
             subEl.textContent = "Le chronomètre est arrivé à terme. Vos réponses enregistrées jusqu'à l'échéance ont été transmises avec succès à l'équipe pédagogique.";
         } else if (score.percent >= 80) {
             titleEl.textContent = "🎉 Excellent résultat !";
-            subEl.textContent = "Vous avez brillamment validé l'évaluation de ce module. Vos résultats ont été transmis aux formateurs.";
+            subEl.textContent = showCorrection 
+                ? "Vous avez brillamment validé l'évaluation de ce module. Vos résultats ont été transmis aux formateurs."
+                : "Vous avez brillamment complété ce module. Votre note a bien été enregistrée.";
         } else if (score.percent >= 50) {
             titleEl.textContent = "👍 Épreuve complétée avec succès !";
-            subEl.textContent = "Vos réponses ont bien été enregistrées. Prenez le temps d'analyser le corrigé ci-dessous pour consolider vos acquis.";
+            subEl.textContent = showCorrection
+                ? "Vos réponses ont bien été enregistrées. Prenez le temps d'analyser le corrigé ci-dessous pour consolider vos acquis."
+                : "Vos réponses ont bien été enregistrées et votre note a été transmise à l'équipe pédagogique.";
         } else {
             titleEl.textContent = "📝 Épreuve transmise !";
             subEl.textContent = "Vos réponses ont été envoyées à l'équipe pédagogique. Vous pourrez retravailler les points abordés avec votre formateur.";
-        }
-
-        if (correctionSection) {
-            correctionSection.classList.remove('hidden');
         }
     } else {
         // Mode sans diffusion directe des résultats/notes
@@ -2860,14 +2867,10 @@ function renderResultsScreen(submission = {}) {
         if (deferredInfo) {
             deferredInfo.classList.remove('hidden');
         }
-
-        if (correctionSection) {
-            correctionSection.classList.add('hidden');
-        }
     }
 
-    if (showResults) {
-        correctionSection.classList.remove('hidden');
+    if (showCorrection) {
+        if (correctionSection) correctionSection.classList.remove('hidden');
 
         let questionsToRender = currentQuestions;
         if (Array.isArray(submission?.drawnQuestionIds) && submission.drawnQuestionIds.length > 0) {
