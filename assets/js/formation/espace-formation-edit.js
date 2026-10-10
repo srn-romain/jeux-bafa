@@ -5500,6 +5500,7 @@ async function saveModuleData(btnEl) {
             } else if (q.type === 'classification') {
                 qData.categories = q.categories || [];
                 qData.items = q.items || [];
+                qData.drawItemsCount = (q.drawItemsCount !== undefined && q.drawItemsCount !== null) ? (parseInt(q.drawItemsCount, 10) || 0) : 0;
             } else if (q.type === 'boolean') {
                 qData.correctAnswer = q.correctAnswer !== undefined ? (q.correctAnswer === true || q.correctAnswer === 'true') : true;
             } else if (q.type === 'pinpoint') {

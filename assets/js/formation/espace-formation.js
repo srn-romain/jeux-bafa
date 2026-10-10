@@ -626,6 +626,13 @@ async function saveFormationModule(moduleData, questionsList = []) {
                 }
             } else if (q.type === 'puzzle') {
                 qDoc.items = q.items || [];
+            } else if (q.type === 'classification') {
+                qDoc.categories = q.categories || [];
+                qDoc.items = q.items || [];
+                qDoc.drawItemsCount = (q.drawItemsCount !== undefined && q.drawItemsCount !== null) ? (parseInt(q.drawItemsCount, 10) || 0) : 0;
+            } else if (q.type === 'matching') {
+                qDoc.pairs = q.pairs || [];
+                qDoc.rightDistractors = q.rightDistractors || '';
             } else if (q.type === 'cloze') {
                 qDoc.clozeText = q.clozeText || '';
                 qDoc.distractors = Array.isArray(q.distractors) ? q.distractors : [];
