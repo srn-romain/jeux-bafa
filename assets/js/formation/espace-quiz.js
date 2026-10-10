@@ -628,6 +628,13 @@ function parseQuizSections(questions, shouldShuffle = false) {
     let currentSec = null;
 
     questions.forEach((q, idx) => {
+        // Mélanger aléatoirement les propositions de réponses pour les stagiaires (QCM et QCM images)
+        if (q.type === 'qcm' && Array.isArray(q.options)) {
+            q._shuffledOptions = shuffleArray(q.options.map((text, originalIndex) => ({ text, originalIndex })));
+        } else if (q.type === 'image_choice' && Array.isArray(q.imageOptions)) {
+            q._shuffledImageOptions = shuffleArray(q.imageOptions.map((opt, originalIndex) => ({ ...opt, originalIndex })));
+        }
+
         if (q.type === 'section') {
             currentSec = {
                 id: q.id || `sec_${idx}`,
@@ -680,8 +687,8 @@ function saveCurrentPageAnswersToState() {
             const selBoxes = form.querySelectorAll(`input[name="question_${q.id}"]:checked`);
             userAnswersState[q.id] = Array.from(selBoxes).map(cb => parseInt(cb.value, 10));
         } else if (q.type === 'image_choice') {
-            const sel = form.querySelector(`input[name="question_${q.id}"]:checked`);
-            userAnswersState[q.id] = sel ? parseInt(sel.value, 10) : (userAnswersState[q.id] !== undefined ? userAnswersState[q.id] : null);
+            const selBoxes = form.querySelectorAll(`input[name="question_${q.id}"]:checked`);
+            userAnswersState[q.id] = Array.from(selBoxes).map(cb => parseInt(cb.value, 10));
         } else if (q.type === 'boolean') {
             const sel = form.querySelector(`input[name="question_${q.id}"]:checked`);
             userAnswersState[q.id] = sel ? (sel.value === 'true') : (userAnswersState[q.id] !== undefined ? userAnswersState[q.id] : null);
@@ -918,6 +925,54 @@ function shuffleArray(array) {
     return arr;
 }
 
+function openQuizImageZoom(imageUrl, title = '') {
+    if (!imageUrl) return;
+    let modal = document.getElementById('quizImageZoomModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'quizImageZoomModal';
+        modal.className = 'es-img-zoom-modal';
+        modal.innerHTML = `
+            <div class="es-img-zoom-overlay"></div>
+            <div class="es-img-zoom-content">
+                <button type="button" class="es-img-zoom-close" title="Fermer (Échap)">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+                <div class="es-img-zoom-img-container">
+                    <img src="" alt="Agrandissement" class="es-img-zoom-img">
+                </div>
+                <div class="es-img-zoom-title"></div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const closeModal = () => {
+            modal.classList.remove('active');
+            document.removeEventListener('keydown', modal._handleEsc);
+        };
+
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') closeModal();
+        };
+
+        modal.querySelector('.es-img-zoom-overlay').addEventListener('click', closeModal);
+        modal.querySelector('.es-img-zoom-close').addEventListener('click', closeModal);
+        modal._close = closeModal;
+        modal._handleEsc = handleEsc;
+    }
+
+    const imgEl = modal.querySelector('.es-img-zoom-img');
+    const titleEl = modal.querySelector('.es-img-zoom-title');
+    if (imgEl) imgEl.src = imageUrl;
+    if (titleEl) {
+        titleEl.textContent = title || '';
+        titleEl.style.display = title ? 'block' : 'none';
+    }
+
+    modal.classList.add('active');
+    document.addEventListener('keydown', modal._handleEsc);
+}
+
 function renderActiveSectionPage() {
     if (!quizSections || quizSections.length === 0) return;
     if (currentSectionIndex < 0) currentSectionIndex = 0;
@@ -965,44 +1020,53 @@ function renderActiveSectionPage() {
 
             let inputHtml = '';
             const imageHtml = q.imageUrl ? `
-                <div class="es-quiz-image-box">
+                <div class="es-quiz-image-box btn-zoom-image" data-img-src="${escapeHtml(q.imageUrl)}" data-title="Illustration Question ${qNum}" style="cursor:zoom-in; position:relative;" title="Cliquer pour agrandir l'illustration">
                     <img src="${escapeHtml(q.imageUrl)}" alt="Illustration question ${qNum}" onerror="this.parentElement.style.display='none'">
+                    <span class="es-image-zoom-badge" title="Agrandir"><i class="bi bi-arrows-fullscreen"></i></span>
                 </div>` : '';
 
             if (q.type === 'qcm') {
                 const chosenIndices = Array.isArray(savedVal)
                     ? savedVal.map(n => parseInt(n, 10))
                     : (savedVal !== undefined && savedVal !== null && savedVal !== '' ? [parseInt(savedVal, 10)] : []);
+                const optionsList = q._shuffledOptions || (q.options || []).map((text, originalIndex) => ({ text, originalIndex }));
                 inputHtml = `
                 <div class="es-quiz-options">
-                    ${(q.options || []).map((opt, optIdx) => {
+                    ${optionsList.map(optObj => {
+                        const optIdx = optObj.originalIndex;
                         const isChecked = chosenIndices.includes(optIdx);
                         return `
                         <label class="es-quiz-option-label ${isChecked ? 'selected' : ''}">
                             <input type="checkbox" name="question_${q.id}" value="${optIdx}" class="quiz-track-input" ${isChecked ? 'checked' : ''}>
-                            <span>${escapeHtml(opt)}</span>
+                            <span>${escapeHtml(optObj.text)}</span>
                         </label>`;
                     }).join('')}
                 </div>`;
             } else if (q.type === 'image_choice') {
-                const chosenIdx = (savedVal !== undefined && savedVal !== null) ? parseInt(savedVal, 10) : -1;
+                const chosenIndices = Array.isArray(savedVal)
+                    ? savedVal.map(n => parseInt(n, 10))
+                    : (savedVal !== undefined && savedVal !== null && savedVal !== '' ? [parseInt(savedVal, 10)] : []);
+                const imageOptionsList = q._shuffledImageOptions || (q.imageOptions || []).map((opt, originalIndex) => ({ ...opt, originalIndex }));
                 inputHtml = `
                 <div class="es-image-choice-grid">
-                    ${(q.imageOptions || []).map((opt, optIdx) => {
-                        const isSelected = (chosenIdx === optIdx);
+                    ${imageOptionsList.map(opt => {
+                        const optIdx = opt.originalIndex;
+                        const isSelected = chosenIndices.includes(optIdx);
+                        const labelText = opt.label || ('Option ' + (optIdx + 1));
                         return `
-                        <label class="es-image-choice-label ${isSelected ? 'selected' : ''}" data-q-id="${q.id}" data-oidx="${optIdx}">
-                            <input type="radio" name="question_${q.id}" value="${optIdx}" class="quiz-track-input" ${isSelected ? 'checked' : ''} style="position:absolute; opacity:0; pointer-events:none;">
-                            <div class="es-image-choice-img-box">
-                                <img src="${escapeHtml(opt.imageUrl || '')}" alt="${escapeHtml(opt.label || ('Option ' + (optIdx + 1)))}" class="es-image-choice-img" draggable="false">
+                        <div class="es-image-choice-card ${isSelected ? 'selected' : ''}" data-q-id="${q.id}" data-oidx="${optIdx}">
+                            <div class="es-image-choice-img-box btn-zoom-image" data-img-src="${escapeHtml(opt.imageUrl || '')}" data-title="${escapeHtml(labelText)}" title="Cliquer pour agrandir l'image">
+                                <img src="${escapeHtml(opt.imageUrl || '')}" alt="${escapeHtml(labelText)}" class="es-image-choice-img" draggable="false">
+                                <span class="es-image-zoom-badge" title="Agrandir"><i class="bi bi-arrows-fullscreen"></i></span>
                             </div>
-                            <div class="es-image-choice-footer">
-                                <div class="es-radio-custom" style="width:20px; height:20px; border-radius:50%; border:2px solid ${isSelected ? 'var(--clr-primary)' : 'var(--clr-surface-3)'}; background:${isSelected ? 'var(--clr-primary)' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                    ${isSelected ? '<div style="width:8px; height:8px; border-radius:50%; background:#fff;"></div>' : ''}
+                            <div class="es-image-choice-footer es-image-choice-label-toggle">
+                                <input type="checkbox" name="question_${q.id}" value="${optIdx}" class="quiz-track-input es-image-choice-cb" ${isSelected ? 'checked' : ''} style="position:absolute; opacity:0; pointer-events:none;">
+                                <div class="es-checkbox-custom" style="width:20px; height:20px; border-radius:4px; border:2px solid ${isSelected ? 'var(--clr-primary)' : 'var(--clr-surface-3)'}; background:${isSelected ? 'var(--clr-primary)' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:#fff; transition:all 0.15s ease;">
+                                    ${isSelected ? '<i class="bi bi-check-lg" style="font-size:12px; line-height:1; font-weight:800;"></i>' : ''}
                                 </div>
-                                <span style="flex:1;">${escapeHtml(opt.label || ('Option ' + (optIdx + 1)))}</span>
+                                <span style="flex:1;">${escapeHtml(labelText)}</span>
                             </div>
-                        </label>
+                        </div>
                     `}).join('')}
                 </div>`;
             } else if (q.type === 'table_choice') {
@@ -1468,33 +1532,47 @@ function attachQuizInteractions(container) {
         });
     });
 
+    // Image zoom for illustrations and option images
+    container.querySelectorAll('.btn-zoom-image').forEach(box => {
+        box.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const imgSrc = box.getAttribute('data-img-src');
+            const title = box.getAttribute('data-title') || '';
+            if (imgSrc) {
+                openQuizImageZoom(imgSrc, title);
+            }
+        });
+    });
+
     // Image choice candidate selection
-    container.querySelectorAll('.es-image-choice-label').forEach(label => {
-        label.addEventListener('click', (e) => {
-            const qId = label.getAttribute('data-q-id');
-            const oIdx = parseInt(label.getAttribute('data-oidx'), 10);
-            const parent = label.closest('.es-image-choice-grid');
-            if (parent) {
-                parent.querySelectorAll('.es-image-choice-label').forEach(lbl => {
-                    lbl.classList.remove('selected');
-                    const radioBox = lbl.querySelector('.es-radio-custom');
-                    if (radioBox) {
-                        radioBox.style.borderColor = 'var(--clr-surface-3)';
-                        radioBox.style.background = 'transparent';
-                        radioBox.innerHTML = '';
-                    }
-                });
+    container.querySelectorAll('.es-image-choice-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            if (e.target.closest('.btn-zoom-image')) return;
+
+            const qId = card.getAttribute('data-q-id');
+            const checkbox = card.querySelector('.es-image-choice-cb');
+            
+            const isCurrentlySelected = card.classList.contains('selected');
+            const willBeSelected = !isCurrentlySelected;
+
+            card.classList.toggle('selected', willBeSelected);
+            if (checkbox) checkbox.checked = willBeSelected;
+
+            const customBox = card.querySelector('.es-checkbox-custom');
+            if (customBox) {
+                customBox.style.borderColor = willBeSelected ? 'var(--clr-primary)' : 'var(--clr-surface-3)';
+                customBox.style.background = willBeSelected ? 'var(--clr-primary)' : 'transparent';
+                customBox.innerHTML = willBeSelected ? '<i class="bi bi-check-lg" style="font-size:12px; line-height:1; font-weight:800; color:#fff;"></i>' : '';
             }
-            label.classList.add('selected');
-            const radio = label.querySelector('input[type="radio"]');
-            if (radio) radio.checked = true;
-            const radioBox = label.querySelector('.es-radio-custom');
-            if (radioBox) {
-                radioBox.style.borderColor = 'var(--clr-primary)';
-                radioBox.style.background = 'var(--clr-primary)';
-                radioBox.innerHTML = '<div style="width:8px; height:8px; border-radius:50%; background:#fff;"></div>';
+
+            const grid = card.closest('.es-image-choice-grid');
+            if (grid) {
+                const checkedBoxes = grid.querySelectorAll('.es-image-choice-cb:checked');
+                const selectedIndexes = Array.from(checkedBoxes).map(cb => parseInt(cb.value, 10)).filter(n => !isNaN(n));
+                userAnswersState[qId] = selectedIndexes;
             }
-            userAnswersState[qId] = oIdx;
+
             updateProgress();
         });
     });
@@ -2274,11 +2352,8 @@ function updatePuzzleNumbers(listEl) {
 
 function isQuestionAnswered(q, val) {
     if (val === undefined || val === null) return false;
-    if (q.type === 'qcm') {
+    if (q.type === 'qcm' || q.type === 'image_choice') {
         if (Array.isArray(val)) return val.length > 0;
-        return (val !== '' && val !== null && !isNaN(val));
-    }
-    if (q.type === 'image_choice') {
         return (val !== '' && val !== null && !isNaN(val));
     }
     if (q.type === 'boolean') {
@@ -2412,19 +2487,28 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             }
         } else if (q.type === 'image_choice') {
             qcmTotal++;
-            const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-            if (savedVal !== undefined && savedVal !== null && savedVal !== '') {
-                const val = parseInt(savedVal, 10);
-                answers[q.id] = val;
-                if (val === correctIdx) {
+            const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                ? q.correctIndexes.map(n => parseInt(n, 10)).sort((a, b) => a - b)
+                : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+
+            let userIndices = [];
+            if (Array.isArray(savedVal)) {
+                userIndices = savedVal.map(n => parseInt(n, 10)).filter(n => !isNaN(n)).sort((a, b) => a - b);
+            } else if (savedVal !== undefined && savedVal !== null && savedVal !== '') {
+                userIndices = [parseInt(savedVal, 10)];
+            }
+
+            answers[q.id] = userIndices;
+            if (userIndices.length === 0) {
+                missingCount++;
+            } else {
+                const isCorrect = (userIndices.length === expectedIndices.length && userIndices.every((val, i) => val === expectedIndices[i]));
+                if (isCorrect) {
                     qcmCorrect++;
                     pointsTotal += 1;
                 } else if (hasNegativePoints) {
                     pointsTotal -= 0.5;
                 }
-            } else {
-                answers[q.id] = null;
-                missingCount++;
             }
         } else if (q.type === 'table_choice') {
             qcmTotal++;
@@ -2964,47 +3048,60 @@ function renderResultsScreen(submission = {}) {
                     ` : ''}
                 </div>`;
             } else if (q.type === 'image_choice') {
-                const ansNum = (userAns !== null && userAns !== undefined && userAns !== '') ? parseInt(userAns, 10) : null;
-                const isAnswered = (ansNum !== null && !isNaN(ansNum));
-                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                const isCorrect = isAnswered && (ansNum === correctIdx);
+                const userIndices = Array.isArray(userAns)
+                    ? userAns.map(n => parseInt(n, 10))
+                    : (userAns !== null && userAns !== undefined && userAns !== '' ? [parseInt(userAns, 10)] : []);
+                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                    ? q.correctIndexes.map(n => parseInt(n, 10))
+                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+
+                const sortedUser = [...userIndices].sort((a, b) => a - b);
+                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+                const isAnswered = (sortedUser.length > 0);
+                const isCorrect = (sortedUser.length === sortedExp.length && sortedUser.length > 0 && sortedUser.every((v, i) => v === sortedExp[i]));
                 const options = q.imageOptions || [];
-                const chosenOpt = (ansNum !== null && options[ansNum]) ? options[ansNum] : null;
-                const expectedOpt = options[correctIdx] || null;
 
                 ansDisplay = `
                 <div style="background:#ffffff; border:1.5px solid ${isCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:12px; margin-top:8px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <strong>Votre choix :</strong>
+                        <strong>Votre sélection (${sortedUser.length}) :</strong>
                         <span>
                             ${getScoreBadge(isCorrect, isAnswered)}
                         </span>
                     </div>
                     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:12px; margin-top:8px;">
-                        <div style="border:1.5px solid ${isCorrect ? '#27ae60' : (isAnswered ? '#e74c3c' : 'var(--clr-surface-3)')}; border-radius:6px; padding:8px; background:rgba(0,0,0,0.02);">
-                            <div style="font-size:0.75rem; font-weight:800; color:${isCorrect ? 'var(--clr-success)' : (isAnswered ? 'var(--clr-danger)' : 'var(--clr-text-muted)')}; margin-bottom:4px;">
-                                ${isCorrect ? '✓ Votre sélection (Correcte)' : (isAnswered ? '✗ Votre sélection' : '∅ Non renseigné')}
-                            </div>
-                            ${chosenOpt && chosenOpt.imageUrl ? `
-                                <div style="width:100%; height:110px; background:#181c19; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
-                                    <img src="${escapeHtml(chosenOpt.imageUrl)}" alt="Votre choix" style="max-width:100%; max-height:100%; object-fit:contain;">
-                                </div>
-                                <div style="font-size:0.82rem; font-weight:700; text-align:center;">${escapeHtml(chosenOpt.label || ('Option ' + (ansNum + 1)))}</div>
-                            ` : '<div style="font-size:0.82rem; color:var(--clr-text-muted); font-style:italic; padding:20px 0; text-align:center;">Aucune réponse</div>'}
-                        </div>
+                        ${options.map((opt, oIdx) => {
+                            const isUser = sortedUser.includes(oIdx);
+                            const isExp = sortedExp.includes(oIdx);
+                            if (!isUser && !isExp) return '';
 
-                        ${!isCorrect && expectedOpt ? `
-                            <div style="border:1.5px dashed #27ae60; border-radius:6px; padding:8px; background:rgba(39,174,96,0.04);">
-                                <div style="font-size:0.75rem; font-weight:800; color:var(--clr-success); margin-bottom:4px;">
-                                    ⭐ Réponse attendue
-                                </div>
-                                ${expectedOpt.imageUrl ? `
-                                    <div style="width:100%; height:110px; background:#181c19; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center; margin-bottom:6px;">
-                                        <img src="${escapeHtml(expectedOpt.imageUrl)}" alt="Bonne réponse" style="max-width:100%; max-height:100%; object-fit:contain;">
+                            let borderCol = 'var(--clr-surface-3)';
+                            let badge = '';
+                            if (isUser && isExp) {
+                                borderCol = '#27ae60';
+                                badge = '<span style="color:#27ae60; font-weight:800; font-size:0.75rem;">✓ Choisie & Correcte</span>';
+                            } else if (isUser && !isExp) {
+                                borderCol = '#e74c3c';
+                                badge = '<span style="color:#e74c3c; font-weight:800; font-size:0.75rem;">✗ Choisie (Incorrecte)</span>';
+                            } else if (!isUser && isExp) {
+                                borderCol = '#27ae60';
+                                badge = '<span style="color:#27ae60; font-weight:800; font-size:0.75rem;">⭐ Réponse attendue</span>';
+                            }
+
+                            return `
+                            <div style="border:1.5px solid ${borderCol}; border-radius:6px; padding:8px; background:rgba(0,0,0,0.02); display:flex; flex-direction:column; gap:4px;">
+                                <div style="margin-bottom:2px;">${badge}</div>
+                                ${opt.imageUrl ? `
+                                    <div style="width:100%; height:100px; background:#181c19; border-radius:4px; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                                        <img src="${escapeHtml(opt.imageUrl)}" alt="${escapeHtml(opt.label || ('Option ' + (oIdx + 1)))}" style="max-width:100%; max-height:100%; object-fit:contain;">
                                     </div>
-                                    <div style="font-size:0.82rem; font-weight:700; color:#27ae60; text-align:center;">${escapeHtml(expectedOpt.label || ('Option ' + (correctIdx + 1)))}</div>
                                 ` : ''}
+                                <div style="font-size:0.82rem; font-weight:700; text-align:center;">${escapeHtml(opt.label || ('Option ' + (oIdx + 1)))}</div>
                             </div>
+                            `;
+                        }).join('')}
+                        ${!isAnswered ? `
+                            <div style="font-size:0.82rem; color:var(--clr-text-muted); font-style:italic; padding:10px 0;">Aucune réponse sélectionnée</div>
                         ` : ''}
                     </div>
                 </div>`;

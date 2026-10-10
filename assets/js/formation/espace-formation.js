@@ -2403,10 +2403,17 @@ async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decis
                 isAnswered = sortedUser.length > 0;
                 isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
             } else if (q.type === 'image_choice') {
-                const ansNum = (ans !== null && ans !== undefined && ans !== '') ? parseInt(ans, 10) : null;
-                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                isAnswered = (ansNum !== null && !isNaN(ansNum));
-                isCorrect = isAnswered && (ansNum === correctIdx);
+                const userIndices = Array.isArray(ans)
+                    ? ans.map(n => parseInt(n, 10))
+                    : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                    ? q.correctIndexes.map(n => parseInt(n, 10))
+                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+
+                const sortedUser = [...userIndices].sort((a, b) => a - b);
+                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+                isAnswered = sortedUser.length > 0;
+                isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
             } else if (q.type === 'table_choice') {
                 const rows = q.tableRows || [];
                 const userAnsObj = (ans && typeof ans === 'object') ? ans : {};

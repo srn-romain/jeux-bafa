@@ -1669,14 +1669,18 @@ function renderInspectionQuestions(questions, sub) {
                 </div>
             `;
         } else if (type === 'image_choice') {
-            const chosenIdx = ans !== undefined && ans !== null && ans !== '' ? parseInt(ans, 10) : -1;
-            const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
-            const isCorrect = (chosenIdx === correctIdx);
+            const chosenIndices = Array.isArray(ans)
+                ? ans.map(n => parseInt(n, 10))
+                : (ans !== undefined && ans !== null && ans !== '' ? [parseInt(ans, 10)] : []);
+            const correctIndexes = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                ? q.correctIndexes.map(n => parseInt(n, 10))
+                : [(q.correctIndex !== undefined ? parseInt(q.correctIndex, 10) : 0)];
+
             const options = q.imageOptions || [];
 
             const optionsHtml = options.map((opt, oIdx) => {
-                const isSelected = (chosenIdx === oIdx);
-                const isExpected = (correctIdx === oIdx);
+                const isSelected = chosenIndices.includes(oIdx);
+                const isExpected = correctIndexes.includes(oIdx);
                 let borderStyle = 'border:1.5px solid var(--clr-surface-3); background:var(--clr-surface);';
                 let badge = '';
 
@@ -2153,10 +2157,16 @@ document.getElementById('btnSaveGradingChanges')?.addEventListener('click', asyn
                 isAnswered = sortedUser.length > 0;
                 isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
             } else if (q.type === 'image_choice') {
-                const ansNum = (ans !== null && ans !== undefined && ans !== '') ? parseInt(ans, 10) : null;
-                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
-                isAnswered = (ansNum !== null && !isNaN(ansNum));
-                isCorrect = isAnswered && (ansNum === correctIdx);
+                const userIndices = Array.isArray(ans)
+                    ? ans.map(n => parseInt(n, 10))
+                    : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                    ? q.correctIndexes.map(n => parseInt(n, 10))
+                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+                const sortedUser = [...userIndices].sort((a, b) => a - b);
+                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+                isAnswered = sortedUser.length > 0;
+                isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
             } else if (q.type === 'table_choice') {
                 const rows = q.tableRows || [];
                 const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
@@ -2460,10 +2470,10 @@ function syncQuestionsFromDOM() {
             });
             if (imgOpts.length > 0) q.imageOptions = imgOpts;
 
-            const checkedRadio = card.querySelector('input[name^="q_imgchoice_correct_"]:checked');
-            if (checkedRadio) {
-                q.correctIndex = parseInt(checkedRadio.value, 10);
-            }
+            const checkedBoxes = card.querySelectorAll('input[name^="q_imgchoice_correct_"]:checked');
+            const cIdxs = Array.from(checkedBoxes).map(cb => parseInt(cb.value, 10)).filter(n => !isNaN(n));
+            q.correctIndexes = cIdxs.length > 0 ? cIdxs : [0];
+            q.correctIndex = q.correctIndexes[0];
         } else if (q.type === 'table_choice') {
             const col1Inp = card.querySelector('.q-tablechoice-col1-label');
             const col2Inp = card.querySelector('.q-tablechoice-col2-label');
@@ -2755,15 +2765,18 @@ function renderQuestionsEditor() {
                 { imageUrl: '', label: 'Option 1' },
                 { imageUrl: '', label: 'Option 2' }
             ];
-            const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
+            const correctIndexes = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                ? q.correctIndexes.map(n => parseInt(n, 10))
+                : [(q.correctIndex !== undefined ? parseInt(q.correctIndex, 10) : 0)];
+
             const optionsHtml = options.map((opt, oIdx) => {
                 const optImg = opt.imageUrl || '';
-                const isChecked = (correctIdx === oIdx);
+                const isChecked = correctIndexes.includes(oIdx);
                 return `
                     <div class="image-choice-opt-card" data-qidx="${idx}" data-oidx="${oIdx}" data-img-src="${escapeHtml(optImg)}" style="background:var(--clr-surface); border:2px solid ${isChecked ? 'var(--clr-primary)' : 'var(--clr-surface-3)'}; border-radius:var(--radius-sm); padding:12px; display:flex; flex-direction:column; gap:8px; position:relative; box-shadow:0 2px 6px rgba(0,0,0,0.03);">
                         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
                             <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; font-size:0.85rem; color:${isChecked ? 'var(--clr-primary)' : 'var(--clr-text)'};">
-                                <input type="radio" name="q_imgchoice_correct_${idx}" value="${oIdx}" ${isChecked ? 'checked' : ''} style="accent-color:var(--clr-primary); width:18px; height:18px; cursor:pointer;">
+                                <input type="checkbox" name="q_imgchoice_correct_${idx}" class="q-imgchoice-correct-cb" value="${oIdx}" ${isChecked ? 'checked' : ''} style="accent-color:var(--clr-primary); width:18px; height:18px; cursor:pointer;" title="Cocher pour définir comme bonne réponse">
                                 <span>Bonne réponse (${oIdx + 1})</span>
                             </label>
                             ${options.length > 2 ? `
@@ -2803,11 +2816,11 @@ function renderQuestionsEditor() {
 
             specificFields = `
                 <div style="margin-top:12px;">
-                    <label class="es-field__label">🖼️ Options sous forme d'images (Cochez l'image correcte) :</label>
+                    <label class="es-field__label">🖼️ Options sous forme d'images (Cochez la ou les bonnes réponses) :</label>
                     <div style="font-size:0.78rem; color:var(--clr-text-muted); margin-bottom:10px;">
-                        💡 Vous pouvez glisser-déposer des images ou faire Ctrl+V directement sur les cartes d'options.
+                        💡 Vous pouvez cocher une ou plusieurs réponses correctes, glisser-déposer des images ou faire Ctrl+V directement sur les cartes d'options.
                     </div>
-                    <div class="image-choice-options-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:12px; margin-bottom:10px;">
+                    <div class="image-choice-options-grid" style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; margin-bottom:10px;">
                         ${optionsHtml}
                     </div>
                     ${options.length < 8 ? `
@@ -3553,6 +3566,7 @@ function bindQuestionsEvents() {
                     { imageUrl: '', label: 'Option 1' },
                     { imageUrl: '', label: 'Option 2' }
                 ];
+                currentEditingQuestions[idx].correctIndexes = [0];
                 currentEditingQuestions[idx].correctIndex = 0;
             } else if (newType === 'table_choice' && (!currentEditingQuestions[idx].tableRows || currentEditingQuestions[idx].tableRows.length === 0)) {
                 currentEditingQuestions[idx].col1Label = 'VRAI';
@@ -4250,17 +4264,20 @@ function bindQuestionsEvents() {
     });
 
     // Image choice events
-    container.querySelectorAll('input[name^="q_imgchoice_correct_"]').forEach(radio => {
-        radio.addEventListener('change', (e) => {
+    container.querySelectorAll('input[name^="q_imgchoice_correct_"]').forEach(cb => {
+        cb.addEventListener('change', (e) => {
             const name = e.target.name;
             const qidx = parseInt(name.replace('q_imgchoice_correct_', ''), 10);
             if (currentEditingQuestions[qidx]) {
-                currentEditingQuestions[qidx].correctIndex = parseInt(e.target.value, 10);
+                const checkedBoxes = container.querySelectorAll(`input[name="q_imgchoice_correct_${qidx}"]:checked`);
+                const indexes = Array.from(checkedBoxes).map(b => parseInt(b.value, 10)).filter(n => !isNaN(n));
+                currentEditingQuestions[qidx].correctIndexes = indexes.length > 0 ? indexes : [0];
+                currentEditingQuestions[qidx].correctIndex = currentEditingQuestions[qidx].correctIndexes[0];
                 // Update active borders
-                const card = radio.closest('.es-qcard');
+                const card = cb.closest('.es-qcard');
                 if (card) {
                     card.querySelectorAll('.image-choice-opt-card').forEach((optCard, oIdx) => {
-                        const isMatch = (oIdx === parseInt(e.target.value, 10));
+                        const isMatch = indexes.includes(oIdx);
                         optCard.style.borderColor = isMatch ? 'var(--clr-primary)' : 'var(--clr-surface-3)';
                     });
                 }
@@ -4325,9 +4342,12 @@ function bindQuestionsEvents() {
             const oidx = parseInt(btn.getAttribute('data-oidx'), 10);
             if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].imageOptions) {
                 currentEditingQuestions[qidx].imageOptions.splice(oidx, 1);
-                if (currentEditingQuestions[qidx].correctIndex >= currentEditingQuestions[qidx].imageOptions.length) {
-                    currentEditingQuestions[qidx].correctIndex = 0;
-                }
+                const oldIdxs = currentEditingQuestions[qidx].correctIndexes || [currentEditingQuestions[qidx].correctIndex || 0];
+                const newIdxs = oldIdxs
+                    .filter(i => i !== oidx)
+                    .map(i => (i > oidx ? i - 1 : i));
+                currentEditingQuestions[qidx].correctIndexes = newIdxs.length > 0 ? newIdxs : [0];
+                currentEditingQuestions[qidx].correctIndex = currentEditingQuestions[qidx].correctIndexes[0];
                 renderQuestionsEditor();
             }
         });
@@ -5233,7 +5253,11 @@ async function saveModuleData(btnEl) {
                 qData.correctIndex = cIdxs[0];
             } else if (q.type === 'image_choice') {
                 qData.imageOptions = q.imageOptions || [];
-                qData.correctIndex = q.correctIndex !== undefined ? q.correctIndex : 0;
+                const cIdxs = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                    ? q.correctIndexes.map(n => parseInt(n, 10))
+                    : [(q.correctIndex !== undefined ? parseInt(q.correctIndex, 10) : 0)];
+                qData.correctIndexes = cIdxs;
+                qData.correctIndex = cIdxs[0];
             } else if (q.type === 'table_choice') {
                 qData.col1Label = q.col1Label || 'VRAI';
                 qData.col2Label = q.col2Label || 'FAUX';
