@@ -1600,23 +1600,24 @@ function computeQuestionAlgoCorrect(q, ans) {
     let isAnswered = false;
     const type = q.type || 'qcm';
 
-    if (type === 'qcm') {
-        const userIndices = Array.isArray(ans)
-            ? ans.map(n => parseInt(n, 10))
-            : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+    let parsedAns = ans;
+    if (typeof ans === 'string') {
+        const trimmed = ans.trim();
+        if ((trimmed.startsWith('[') && trimmed.endsWith(']')) || (trimmed.startsWith('{') && trimmed.endsWith('}'))) {
+            try { parsedAns = JSON.parse(trimmed); } catch (e) {}
+        }
+    }
+
+    if (type === 'qcm' || type === 'image_choice') {
+        let userIndices = [];
+        if (Array.isArray(parsedAns)) {
+            userIndices = parsedAns.map(n => parseInt(n, 10)).filter(n => !isNaN(n));
+        } else if (parsedAns !== null && parsedAns !== undefined && parsedAns !== '') {
+            const parsedNum = parseInt(parsedAns, 10);
+            if (!isNaN(parsedNum)) userIndices = [parsedNum];
+        }
         const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
-            ? q.correctIndexes.map(n => parseInt(n, 10))
-            : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
-        const sortedUser = [...userIndices].sort((a, b) => a - b);
-        const sortedExp = [...expectedIndices].sort((a, b) => a - b);
-        isAnswered = sortedUser.length > 0;
-        isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
-    } else if (type === 'image_choice') {
-        const userIndices = Array.isArray(ans)
-            ? ans.map(n => parseInt(n, 10))
-            : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
-        const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
-            ? q.correctIndexes.map(n => parseInt(n, 10))
+            ? q.correctIndexes.map(n => parseInt(n, 10)).filter(n => !isNaN(n))
             : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
         const sortedUser = [...userIndices].sort((a, b) => a - b);
         const sortedExp = [...expectedIndices].sort((a, b) => a - b);
@@ -1624,7 +1625,7 @@ function computeQuestionAlgoCorrect(q, ans) {
         isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
     } else if (type === 'table_choice') {
         const rows = q.tableRows || [];
-        const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
+        const userAnsObj = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
         let allRowsCorrect = (rows.length > 0);
         rows.forEach((row, rIdx) => {
             const userRow = userAnsObj[rIdx] || {};
@@ -1640,7 +1641,7 @@ function computeQuestionAlgoCorrect(q, ans) {
         isAnswered = (ans !== null && ans !== undefined && ans !== '');
         isCorrect = isAnswered && (userBool === expectedBool);
     } else if (type === 'pinpoint') {
-        const userCoords = (ans && typeof ans === 'object') ? ans : (ans ? (typeof ans === 'string' ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null) : null);
+        const userCoords = (parsedAns && typeof parsedAns === 'object') ? parsedAns : null;
         const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
         const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
         const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
@@ -1659,26 +1660,37 @@ function computeQuestionAlgoCorrect(q, ans) {
             isCorrect = Math.abs(val - targetVal) <= tol;
         }
     } else if (type === 'classification') {
-        const rawItems = q.items || [];
-        const userPlacements = (ans && typeof ans === 'object') ? ans : {};
-        isAnswered = rawItems.some(it => userPlacements[it.id]);
-        isCorrect = isAnswered && (rawItems.length > 0) && rawItems.every(it => userPlacements[it.id] === it.categoryId);
+        const allItems = q.items || [];
+        const userPlacements = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
+        const placedItemIds = Object.keys(userPlacements).filter(id => userPlacements[id]);
+        const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+        const expectedCount = (drawCount > 0 && drawCount < allItems.length) ? drawCount : allItems.length;
+
+        isAnswered = placedItemIds.length > 0;
+        if (drawCount > 0 && drawCount < allItems.length) {
+            isCorrect = isAnswered && (placedItemIds.length === expectedCount) && placedItemIds.every(id => {
+                const it = allItems.find(item => item.id === id);
+                return it && userPlacements[id] === it.categoryId;
+            });
+        } else {
+            isCorrect = isAnswered && (allItems.length > 0) && allItems.every(it => userPlacements[it.id] === it.categoryId);
+        }
     } else if (type === 'cloze') {
         const { blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
-        const userAnswersObj = (ans && typeof ans === 'object') ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
+        const userAnswersObj = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
         isAnswered = Object.values(userAnswersObj).some(v => v !== null && v !== undefined && String(v).trim().length > 0);
         isCorrect = isAnswered && (expectedBlanks.length > 0) && expectedBlanks.every((expWord, bIdx) => {
             const uWord = userAnswersObj[bIdx];
             return uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase();
         });
     } else if (type === 'puzzle') {
-        const cOrder = Array.isArray(ans) ? ans : [];
+        const cOrder = Array.isArray(parsedAns) ? parsedAns : [];
         const expOrder = q.items || [];
         isAnswered = cOrder.length > 0;
         isCorrect = isAnswered && (cOrder.length === expOrder.length) && cOrder.every((it, idx) => it === expOrder[idx]);
     } else if (type === 'matching') {
         const rawPairs = q.pairs || [];
-        const userMatchesObj = (ans && typeof ans === 'object') ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
+        const userMatchesObj = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
         isAnswered = Object.values(userMatchesObj).some(v => v && String(v).trim().length > 0);
         isCorrect = isAnswered && (rawPairs.length > 0) && rawPairs.every(pair => {
             const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
