@@ -2906,10 +2906,10 @@ function renderResultsScreen(submission = {}) {
     }
 
     function getScoreBadge(isCorrect, isAnswered) {
-        if (isCorrect) return '<span style="font-weight:700; color:var(--clr-success);">Exact (+1 pt)</span>';
+        if (isCorrect) return '<span style="font-weight:700; color:var(--clr-success);"><i class="bi bi-check-circle-fill"></i> Validé (+1 pt)</span>';
         if (!isAnswered) return '<span style="font-weight:700; color:var(--clr-text-muted);">Non renseigné (0 pt)</span>';
-        if (hasNegativePoints) return '<span style="font-weight:700; color:var(--clr-danger);">Incorrect (-0.5 pt)</span>';
-        return '<span style="font-weight:700; color:var(--clr-danger);">❌ Incorrect (0 pt)</span>';
+        if (hasNegativePoints) return '<span style="font-weight:700; color:var(--clr-danger);"><i class="bi bi-x-circle-fill"></i> Non validé (-0.5 pt)</span>';
+        return '<span style="font-weight:700; color:var(--clr-danger);"><i class="bi bi-x-circle-fill"></i> Non validé (0 pt)</span>';
     }
 
     if (showScore) {
@@ -3010,6 +3010,9 @@ function renderResultsScreen(submission = {}) {
             questionCounter++;
             const qNum = questionCounter;
             const userAns = answers[q.id];
+            const qEval = (submission?.evaluations && submission.evaluations[q.id]) ? submission.evaluations[q.id] : null;
+            const isGraded = Boolean(qEval && (qEval.status === 'graded' || qEval.status === 'reviewed' || qEval.gradedByName || qEval.status !== 'auto_draft' || typeof qEval.isCorrect === 'boolean'));
+            const hasManualOverride = Boolean(qEval && typeof qEval.isCorrect === 'boolean');
             let ansDisplay = '';
             const imageThumb = q.imageUrl ? `
             <div style="margin:8px 0;">
@@ -3453,11 +3456,8 @@ function renderResultsScreen(submission = {}) {
                         }).join('')}
                     </div>
                 </div>`;
-            } else {
-                const qEval = (submission?.evaluations && submission.evaluations[q.id]) ? submission.evaluations[q.id] : null;
+            } else if (q.type === 'text') {
                 const isAnswered = Boolean(userAns && String(userAns).trim().length > 0);
-                const isGraded = Boolean(qEval && (qEval.status === 'graded' || qEval.status === 'reviewed' || qEval.gradedByName || qEval.status !== 'auto_draft'));
-
                 let evalBadge = '';
                 if (isGraded) {
                     if (qEval.isCorrect === true) {
@@ -3500,21 +3500,6 @@ function renderResultsScreen(submission = {}) {
                         `}
                     </div>
 
-                    ${(qEval && (qEval.comment || isGraded)) ? `
-                        <div style="margin-top:10px; padding:10px 12px; background:rgba(52, 152, 219, 0.08); border-left:3.5px solid #3498db; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
-                            <div style="font-weight:700; color:#2980b9; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-                                <i class="bi bi-person-workspace"></i> Évaluation Formateur :
-                            </div>
-                            <div style="white-space:pre-wrap; word-break:break-word; line-height:1.5;">${qEval.comment && qEval.comment.trim() ? escapeHtml(qEval.comment.trim()) : (qEval.isCorrect ? '✅ Réponse validée par le formateur.' : '❌ Réponse non validée par le formateur.')}</div>
-                            ${(isAdminOrFormateur && (qEval.gradedByName || qEval.gradedAt)) ? `
-                                <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
-                                    <i class="bi bi-shield-check" style="color:${qEval.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)'};"></i>
-                                    <span>${qEval.isCorrect ? 'Validé' : (qEval.isCorrect === false ? 'Invalidé' : 'Évalué')} par <strong>${escapeHtml(qEval.gradedByName || 'Formateur')}</strong> (${qEval.gradedByRole === 'admin' ? 'Admin' : 'Formateur'}) le ${typeof formatFullDate === 'function' ? formatFullDate(qEval.gradedAt) : (typeof formatDate === 'function' ? formatDate(qEval.gradedAt) : (qEval.gradedAt || ''))}</span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    ` : ''}
-
                     ${q.sampleAnswer && q.sampleAnswer.trim() ? `
                         <div style="margin-top:10px; padding:10px 12px; background:rgba(39, 174, 96, 0.08); border-left:3.5px solid #27ae60; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
                             <div style="font-weight:700; color:#27ae60; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
@@ -3524,7 +3509,28 @@ function renderResultsScreen(submission = {}) {
                         </div>
                     ` : ''}
                 </div>`;
+            } else {
+                ansDisplay = `
+                <div style="background:#ffffff; border:1.5px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:8px; font-size:0.88rem; color:var(--clr-text);">
+                    <div><strong>Votre réponse :</strong> ${userAns !== null && userAns !== undefined ? escapeHtml(String(userAns)) : 'Non renseigné'}</div>
+                </div>`;
             }
+
+            // Bloc Feedback & Remarques Formateur (disponible pour TOUS les types de questions)
+            const trainerFeedbackHtml = (qEval && (qEval.comment || isGraded || qEval.gradedByName || qEval.gradedAt)) ? `
+                <div style="margin-top:10px; padding:10px 12px; background:rgba(52, 152, 219, 0.08); border-left:3.5px solid #3498db; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
+                    <div style="font-weight:700; color:#2980b9; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                        <i class="bi bi-person-workspace"></i> Évaluation &amp; Remarque Formateur :
+                    </div>
+                    <div style="white-space:pre-wrap; word-break:break-word; line-height:1.5;">${qEval.comment && qEval.comment.trim() ? escapeHtml(qEval.comment.trim()) : (qEval.isCorrect ? '✅ Réponse validée par le formateur.' : (qEval.isCorrect === false ? '❌ Réponse invalidée par le formateur.' : 'Évalué par l\'équipe pédagogique.'))}</div>
+                    ${(qEval.gradedByName || qEval.gradedAt) ? `
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
+                            <i class="bi bi-shield-check" style="color:${qEval.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)'};"></i>
+                            <span>${qEval.isCorrect ? 'Validé' : (qEval.isCorrect === false ? 'Invalidé' : 'Évalué')} par <strong>${escapeHtml(qEval.gradedByName || 'Formateur')}</strong> (${qEval.gradedByRole === 'admin' ? 'Admin' : 'Formateur'})${qEval.gradedAt ? ` le ${typeof formatFullDate === 'function' ? formatFullDate(qEval.gradedAt) : (typeof formatDate === 'function' ? formatDate(qEval.gradedAt) : qEval.gradedAt)}` : ''}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            ` : '';
 
             let typeBadgeLabel = 'QCM';
             if (q.type === 'cloze') typeBadgeLabel = '🔤 Texte à trous';
@@ -3540,6 +3546,7 @@ function renderResultsScreen(submission = {}) {
                 <div style="font-size:0.92rem; font-weight:400; color:var(--clr-text); margin-top:2px;" class="es-q-rich-text">${formatQuestionRichText(q.text)}</div>
                 ${imageThumb}
                 ${ansDisplay}
+                ${trainerFeedbackHtml}
             </div>`;
         }).join('');
     } else {

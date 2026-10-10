@@ -1592,17 +1592,125 @@ async function openSubmissionInspectionModal(sub) {
     modal.classList.remove('hidden');
 
     const questions = currentEditingQuestions.length > 0 ? currentEditingQuestions : await fetchModuleQuestions(sub.moduleId);
-    renderInspectionQuestions(questions, activeInspectingSubmission);
+    renderInspectionQuestions(questions, sub);
+}
+
+function computeQuestionAlgoCorrect(q, ans) {
+    let isCorrect = false;
+    let isAnswered = false;
+    const type = q.type || 'qcm';
+
+    if (type === 'qcm') {
+        const userIndices = Array.isArray(ans)
+            ? ans.map(n => parseInt(n, 10))
+            : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+        const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+            ? q.correctIndexes.map(n => parseInt(n, 10))
+            : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+        const sortedUser = [...userIndices].sort((a, b) => a - b);
+        const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+        isAnswered = sortedUser.length > 0;
+        isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
+    } else if (type === 'image_choice') {
+        const userIndices = Array.isArray(ans)
+            ? ans.map(n => parseInt(n, 10))
+            : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+        const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+            ? q.correctIndexes.map(n => parseInt(n, 10))
+            : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+        const sortedUser = [...userIndices].sort((a, b) => a - b);
+        const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+        isAnswered = sortedUser.length > 0;
+        isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
+    } else if (type === 'table_choice') {
+        const rows = q.tableRows || [];
+        const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
+        let allRowsCorrect = (rows.length > 0);
+        rows.forEach((row, rIdx) => {
+            const userRow = userAnsObj[rIdx] || {};
+            const uCol1 = !!userRow.col1;
+            const uCol2 = !!userRow.col2;
+            if (uCol1 || uCol2) isAnswered = true;
+            if (uCol1 !== !!row.correctCol1 || uCol2 !== !!row.correctCol2) allRowsCorrect = false;
+        });
+        isCorrect = isAnswered && allRowsCorrect;
+    } else if (type === 'boolean') {
+        const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+        const userBool = (ans === true || ans === 'true');
+        isAnswered = (ans !== null && ans !== undefined && ans !== '');
+        isCorrect = isAnswered && (userBool === expectedBool);
+    } else if (type === 'pinpoint') {
+        const userCoords = (ans && typeof ans === 'object') ? ans : (ans ? (typeof ans === 'string' ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null) : null);
+        const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+        const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+        const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+        isAnswered = Boolean(userCoords && userCoords.x !== undefined && userCoords.y !== undefined);
+        if (isAnswered) {
+            const dx = userCoords.x - targetX;
+            const dy = userCoords.y - targetY;
+            isCorrect = Math.sqrt(dx * dx + dy * dy) <= radius;
+        }
+    } else if (type === 'range') {
+        const val = (ans !== null && ans !== undefined && ans !== '') ? parseFloat(ans) : null;
+        isAnswered = (val !== null && !isNaN(val));
+        if (isAnswered && q.correctValue !== undefined) {
+            const targetVal = parseFloat(q.correctValue);
+            const tol = parseFloat(q.tolerance) || 0;
+            isCorrect = Math.abs(val - targetVal) <= tol;
+        }
+    } else if (type === 'classification') {
+        const rawItems = q.items || [];
+        const userPlacements = (ans && typeof ans === 'object') ? ans : {};
+        isAnswered = rawItems.some(it => userPlacements[it.id]);
+        isCorrect = isAnswered && (rawItems.length > 0) && rawItems.every(it => userPlacements[it.id] === it.categoryId);
+    } else if (type === 'cloze') {
+        const { blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
+        const userAnswersObj = (ans && typeof ans === 'object') ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
+        isAnswered = Object.values(userAnswersObj).some(v => v !== null && v !== undefined && String(v).trim().length > 0);
+        isCorrect = isAnswered && (expectedBlanks.length > 0) && expectedBlanks.every((expWord, bIdx) => {
+            const uWord = userAnswersObj[bIdx];
+            return uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase();
+        });
+    } else if (type === 'puzzle') {
+        const cOrder = Array.isArray(ans) ? ans : [];
+        const expOrder = q.items || [];
+        isAnswered = cOrder.length > 0;
+        isCorrect = isAnswered && (cOrder.length === expOrder.length) && cOrder.every((it, idx) => it === expOrder[idx]);
+    } else if (type === 'matching') {
+        const rawPairs = q.pairs || [];
+        const userMatchesObj = (ans && typeof ans === 'object') ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
+        isAnswered = Object.values(userMatchesObj).some(v => v && String(v).trim().length > 0);
+        isCorrect = isAnswered && (rawPairs.length > 0) && rawPairs.every(pair => {
+            const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
+            return uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
+        });
+    } else {
+        // text
+        isAnswered = Boolean(ans && String(ans).trim().length > 0);
+        isCorrect = false;
+    }
+    return { isCorrect, isAnswered };
+}
+
+function parseClozeQuestion(clozeText) {
+    if (!clozeText) return { parts: [], blanks: [] };
+    const parts = [];
+    const blanks = [];
+    const regex = /\[([^\]]+)\]/g;
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(clozeText)) !== null) {
+        parts.push(clozeText.substring(lastIndex, match.index));
+        blanks.push(match[1].trim());
+        lastIndex = regex.lastIndex;
+    }
+    parts.push(clozeText.substring(lastIndex));
+    return { parts, blanks };
 }
 
 function renderInspectionQuestions(questions, sub) {
     const container = document.getElementById('reviewQuestionsContainer');
     if (!container) return;
-
-    if (!questions || questions.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--clr-text-muted);">Aucune question enregistrée.</div>`;
-        return;
-    }
 
     const answers = sub.answers || {};
     const evaluations = sub.evaluations || {};
@@ -1610,9 +1718,71 @@ function renderInspectionQuestions(questions, sub) {
         ? new Set(sub.drawnQuestionIds)
         : (Object.keys(answers).length > 0 ? new Set(Object.keys(answers)) : null);
 
-    const questionsToDisplay = drawnIds ? questions.filter(q => q.type === 'section' || drawnIds.has(q.id)) : questions;
+    const existingQMap = new Map((questions || []).map(q => [q.id, q]));
+    const allCandidateQIds = new Set([
+        ...(Array.isArray(sub.drawnQuestionIds) ? sub.drawnQuestionIds : []),
+        ...Object.keys(answers),
+        ...Object.keys(evaluations)
+    ]);
 
-    container.innerHTML = questionsToDisplay.map((q, idx) => {
+    const orphanQIds = Array.from(allCandidateQIds).filter(id => id && !existingQMap.has(id));
+    const orphanQuestions = orphanQIds.map(id => {
+        const ev = evaluations[id] || {};
+        const ans = answers[id];
+        const isText = Boolean((ev && (ev.status || ev.autoSuggested !== undefined || ev.comment)) || (typeof ans === 'string' && ans.trim().length > 0));
+        return {
+            id: id,
+            type: isText ? 'text' : (Array.isArray(ans) || typeof ans === 'number' ? 'qcm' : 'text'),
+            text: ev.questionText || (ans ? `Question archivée / modifiée (Réf: ${id})` : `Question supprimée (${id})`),
+            isOrphaned: true
+        };
+    });
+
+    let questionsToDisplay = [];
+    if (drawnIds) {
+        questionsToDisplay = (questions || []).filter(q => q.type === 'section' || drawnIds.has(q.id));
+        orphanQuestions.forEach(oq => {
+            if (drawnIds.has(oq.id) || evaluations[oq.id] || answers[oq.id] !== undefined) {
+                if (!questionsToDisplay.some(q => q.id === oq.id)) {
+                    questionsToDisplay.push(oq);
+                }
+            }
+        });
+    } else {
+        questionsToDisplay = [...(questions || [])];
+        orphanQuestions.forEach(oq => {
+            if (!questionsToDisplay.some(q => q.id === oq.id)) {
+                questionsToDisplay.push(oq);
+            }
+        });
+    }
+
+    if (questionsToDisplay.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--clr-text-muted);">Aucune question enregistrée pour cette copie.</div>`;
+        return;
+    }
+
+    const orphanDrafts = orphanQuestions.filter(q => evaluations[q.id]?.status === 'auto_draft');
+    let orphanBannerHtml = '';
+    if (orphanDrafts.length > 0) {
+        orphanBannerHtml = `
+            <div style="background:rgba(243, 156, 18, 0.12); border:1.5px solid rgba(243, 156, 18, 0.35); border-radius:var(--radius-md); padding:14px 18px; margin-bottom:18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <div style="font-weight:800; font-size:0.92rem; color:#d68910; display:flex; align-items:center; gap:8px;">
+                        <i class="bi bi-exclamation-diamond-fill" style="font-size:1.1rem;"></i> Question(s) modifiée(s) en attente de notation (${orphanDrafts.length})
+                    </div>
+                    <div style="font-size:0.8rem; color:var(--clr-text-muted); margin-top:3px;">
+                        Les questions du module ont été modifiées après la réponse du candidat. Les réponses de l'ancienne version sont affichées ci-dessous.
+                    </div>
+                </div>
+                <button type="button" class="es-btn es-btn--primary es-btn--sm btn-dismiss-orphan-drafts" style="font-size:0.82rem; font-weight:700; white-space:nowrap;">
+                    <i class="bi bi-check2-all"></i> Tout valider et clôturer (${orphanDrafts.length})
+                </button>
+            </div>
+        `;
+    }
+
+    container.innerHTML = orphanBannerHtml + questionsToDisplay.map((q, idx) => {
         const ans = answers[q.id];
         const type = q.type || 'qcm';
 
@@ -1979,66 +2149,6 @@ function renderInspectionQuestions(questions, sub) {
         } else if (type === 'text') {
             const rawUserText = typeof ans === 'string' ? ans : '';
             const userText = rawUserText.trim();
-            const evalObj = evaluations[q.id] || {};
-            const isAwarded = (evalObj.isCorrect === true);
-            const isAdminUser = (currentRole === 'admin' || actualUserData?.role === 'admin');
-            const isLockedByAdmin = (evalObj.gradedByRole === 'admin' && !isAdminUser);
-
-            let evalMetaHtml = '';
-            if (evalObj.gradedByName || evalObj.gradedAt) {
-                const isOk = (evalObj.isCorrect === true);
-                const actionLabel = isOk ? 'Validé' : (evalObj.isCorrect === false ? 'Invalidé' : 'Évalué');
-                const roleLabel = evalObj.gradedByRole === 'admin' ? 'Admin' : 'Formateur';
-                const roleColor = evalObj.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)';
-                const dateFormatted = typeof formatDate === 'function' ? formatDate(evalObj.gradedAt) : (typeof formatFullDate === 'function' ? formatFullDate(evalObj.gradedAt) : (evalObj.gradedAt || ''));
-
-                evalMetaHtml = `
-                    <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:8px; padding:6px 10px; background:rgba(0,0,0,0.03); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
-                        <i class="bi bi-shield-check" style="color:${roleColor}; font-size:0.85rem;"></i>
-                        <span>${actionLabel} par <strong>${escapeHtml(evalObj.gradedByName || 'Formateur')}</strong> (${roleLabel}) le ${dateFormatted}</span>
-                        ${isLockedByAdmin ? `<span style="margin-left:auto; color:var(--clr-warning, #d35400); font-weight:600; font-size:0.74rem;"><i class="bi bi-lock-fill"></i> Verrouillé par l'Admin</span>` : ''}
-                    </div>
-                `;
-            }
-
-            let actionControlsHtml = '';
-            if (isLockedByAdmin) {
-                actionControlsHtml = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-                        <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text);">
-                            👨‍🏫 Évaluation Formateur :
-                        </span>
-                        <div style="display:flex; gap:8px;">
-                            <button type="button" class="es-btn es-btn--sm ${isAwarded ? 'es-btn--primary' : 'es-btn--ghost'}" disabled style="font-size:0.78rem; padding:4px 10px; opacity:0.6; cursor:not-allowed;" title="Verrouillé : décision validée par l'administrateur">
-                                <i class="bi bi-check2"></i> Valider (1 pt)
-                            </button>
-                            <button type="button" class="es-btn es-btn--sm ${!isAwarded ? 'es-btn--danger' : 'es-btn--ghost'}" disabled style="font-size:0.78rem; padding:4px 10px; opacity:0.6; cursor:not-allowed;" title="Verrouillé : décision invalidée par l'administrateur">
-                                <i class="bi bi-x"></i> Refuser (0 pt)
-                            </button>
-                        </div>
-                    </div>
-                    <input type="text" class="es-input input-eval-comment" data-qid="${q.id}" value="${escapeHtml(evalObj.comment || '')}" placeholder="Commentaire du formateur..." disabled style="font-size:0.82rem; padding:6px 10px; opacity:0.7; cursor:not-allowed;" title="Verrouillé : décision prise par l'administrateur">
-                    ${evalMetaHtml}
-                `;
-            } else {
-                actionControlsHtml = `
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-                        <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text);">
-                            👨‍🏫 Évaluation Formateur :
-                        </span>
-                        <div style="display:flex; gap:8px;">
-                            <button type="button" class="es-btn es-btn--sm btn-toggle-eval-award ${isAwarded ? 'es-btn--primary' : 'es-btn--ghost'}" data-qid="${q.id}" data-award="true" style="font-size:0.78rem; padding:4px 10px;">
-                                <i class="bi bi-check2"></i> Valider (1 pt)
-                            </button>
-                            <button type="button" class="es-btn es-btn--sm btn-toggle-eval-award ${!isAwarded ? 'es-btn--danger' : 'es-btn--ghost'}" data-qid="${q.id}" data-award="false" style="font-size:0.78rem; padding:4px 10px;">
-                                <i class="bi bi-x"></i> Refuser (0 pt)
-                            </button>
-                        </div>
-                    </div>
-                    <input type="text" class="es-input input-eval-comment" data-qid="${q.id}" value="${escapeHtml(evalObj.comment || '')}" placeholder="Commentaire du formateur..." style="font-size:0.82rem; padding:6px 10px;">
-                    ${evalMetaHtml}
-                `;
-            }
 
             contentHtml = `
                 <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
@@ -2061,11 +2171,94 @@ function renderInspectionQuestions(questions, sub) {
                             💡 <strong>Piste pédagogique :</strong> ${escapeHtml(q.hint)}
                         </div>
                     ` : ''}
+                </div>
+            `;
+        }
 
-                    <div style="background:var(--clr-surface-2); border:1.5px solid rgba(52, 152, 219, 0.3); border-radius:var(--radius-sm); padding:12px 14px;">
-                        ${actionControlsHtml}
+        const evalObj = evaluations[q.id] || {};
+        const { isCorrect: isAlgoCorrect, isAnswered } = computeQuestionAlgoCorrect(q, ans);
+        const isExplicitlyEvaluated = (evalObj.isCorrect !== undefined && evalObj.isCorrect !== null);
+        const isAwarded = isExplicitlyEvaluated ? (evalObj.isCorrect === true) : (type === 'text' ? false : isAlgoCorrect);
+        const isAdminUser = (currentRole === 'admin' || actualUserData?.role === 'admin');
+        const isLockedByAdmin = (evalObj.gradedByRole === 'admin' && !isAdminUser);
+
+        let evalMetaHtml = '';
+        if (evalObj.gradedByName || evalObj.gradedAt) {
+            const isOk = (evalObj.isCorrect === true);
+            const actionLabel = isOk ? 'Validé' : (evalObj.isCorrect === false ? 'Invalidé' : 'Évalué');
+            const roleLabel = evalObj.gradedByRole === 'admin' ? 'Admin' : 'Formateur';
+            const roleColor = evalObj.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)';
+            const dateFormatted = typeof formatDate === 'function' ? formatDate(evalObj.gradedAt) : (typeof formatFullDate === 'function' ? formatFullDate(evalObj.gradedAt) : (evalObj.gradedAt || ''));
+
+            evalMetaHtml = `
+                <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:8px; padding:6px 10px; background:rgba(0,0,0,0.03); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
+                    <i class="bi bi-shield-check" style="color:${roleColor}; font-size:0.85rem;"></i>
+                    <span>${actionLabel} par <strong>${escapeHtml(evalObj.gradedByName || 'Formateur')}</strong> (${roleLabel}) le ${dateFormatted}</span>
+                    ${isLockedByAdmin ? `<span style="margin-left:auto; color:var(--clr-warning, #d35400); font-weight:600; font-size:0.74rem;"><i class="bi bi-lock-fill"></i> Verrouillé par l'Admin</span>` : ''}
+                </div>
+            `;
+        }
+
+        let actionControlsHtml = '';
+        if (isLockedByAdmin) {
+            actionControlsHtml = `
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text);">
+                            👨‍🏫 Évaluation Formateur :
+                        </span>
+                        ${type !== 'text' ? `
+                            <span class="es-badge" style="font-size:0.7rem; background:${isAlgoCorrect ? 'rgba(39, 174, 96, 0.12)' : 'rgba(231, 76, 60, 0.12)'}; color:${isAlgoCorrect ? '#27ae60' : '#e74c3c'};">
+                                <i class="bi bi-robot"></i> Algo : ${isAlgoCorrect ? 'Juste (+1)' : 'Faux (0)'}
+                            </span>
+                        ` : ''}
+                        ${isExplicitlyEvaluated ? `
+                            <span class="es-badge ${isAwarded ? 'es-badge--success' : 'es-badge--rejected'}" style="font-size:0.7rem;">
+                                <i class="bi ${isAwarded ? 'bi-check2' : 'bi-x'}"></i> Décision : ${isAwarded ? '1 pt' : '0 pt'}
+                            </span>
+                        ` : ''}
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="es-btn es-btn--sm ${isAwarded ? 'es-btn--primary' : 'es-btn--ghost'}" disabled style="font-size:0.78rem; padding:4px 10px; opacity:0.6; cursor:not-allowed;" title="Verrouillé : décision validée par l'administrateur">
+                            <i class="bi bi-check2"></i> Valider (1 pt)
+                        </button>
+                        <button type="button" class="es-btn es-btn--sm ${!isAwarded ? 'es-btn--danger' : 'es-btn--ghost'}" disabled style="font-size:0.78rem; padding:4px 10px; opacity:0.6; cursor:not-allowed;" title="Verrouillé : décision invalidée par l'administrateur">
+                            <i class="bi bi-x"></i> Refuser (0 pt)
+                        </button>
                     </div>
                 </div>
+                <input type="text" class="es-input input-eval-comment" data-qid="${q.id}" value="${escapeHtml(evalObj.comment || '')}" placeholder="Commentaire du formateur..." disabled style="font-size:0.82rem; padding:6px 10px; opacity:0.7; cursor:not-allowed;" title="Verrouillé : décision prise par l'administrateur">
+                ${evalMetaHtml}
+            `;
+        } else {
+            actionControlsHtml = `
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                    <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text);">
+                            👨‍🏫 Évaluation Formateur :
+                        </span>
+                        ${type !== 'text' ? `
+                            <span class="es-badge" style="font-size:0.7rem; background:${isAlgoCorrect ? 'rgba(39, 174, 96, 0.12)' : 'rgba(231, 76, 60, 0.12)'}; color:${isAlgoCorrect ? '#27ae60' : '#e74c3c'};">
+                                <i class="bi bi-robot"></i> Algo : ${isAlgoCorrect ? 'Juste (+1)' : 'Faux (0)'}
+                            </span>
+                        ` : ''}
+                        ${isExplicitlyEvaluated ? `
+                            <span class="es-badge ${isAwarded ? 'es-badge--success' : 'es-badge--rejected'}" style="font-size:0.7rem;">
+                                <i class="bi ${isAwarded ? 'bi-check2' : 'bi-x'}"></i> Décision : ${isAwarded ? '1 pt' : '0 pt'}
+                            </span>
+                        ` : ''}
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" class="es-btn es-btn--sm btn-toggle-eval-award ${isAwarded ? 'es-btn--primary' : 'es-btn--ghost'}" data-qid="${q.id}" data-award="true" style="font-size:0.78rem; padding:4px 10px;">
+                            <i class="bi bi-check2"></i> Valider (1 pt)
+                        </button>
+                        <button type="button" class="es-btn es-btn--sm btn-toggle-eval-award ${!isAwarded ? 'es-btn--danger' : 'es-btn--ghost'}" data-qid="${q.id}" data-award="false" style="font-size:0.78rem; padding:4px 10px;">
+                            <i class="bi bi-x"></i> Refuser (0 pt)
+                        </button>
+                    </div>
+                </div>
+                <input type="text" class="es-input input-eval-comment" data-qid="${q.id}" value="${escapeHtml(evalObj.comment || '')}" placeholder="Commentaire du formateur..." style="font-size:0.82rem; padding:6px 10px;">
+                ${evalMetaHtml}
             `;
         }
 
@@ -2073,11 +2266,22 @@ function renderInspectionQuestions(questions, sub) {
             <div style="background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:16px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:6px;">
                     <span style="font-weight:700; font-size:0.85rem; color:var(--clr-primary-xdark);">Question ${idx + 1}</span>
-                    <span class="es-badge es-badge--stagiaire" style="font-size:0.68rem;">${type.toUpperCase()}</span>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        ${q.isOrphaned ? '<span class="es-badge es-badge--warning" style="font-size:0.68rem;"><i class="bi bi-archive"></i> QUESTION MODIFIÉE/SUPPRIMÉE</span>' : ''}
+                        <span class="es-badge es-badge--stagiaire" style="font-size:0.68rem;">${type.toUpperCase()}</span>
+                    </div>
                 </div>
+                ${q.isOrphaned ? `
+                    <div style="margin-top:4px; margin-bottom:8px; font-size:0.78rem; color:var(--clr-text-muted); background:rgba(243, 156, 18, 0.08); border-left:3px solid #f39c12; padding:6px 10px; border-radius:4px;">
+                        ℹ️ Cette question a été modifiée ou supprimée du module après la soumission du candidat, mais sa réponse a été conservée.
+                    </div>
+                ` : ''}
                 <div style="font-weight:400; font-size:0.92rem; color:var(--clr-text);" class="es-q-rich-text">${formatQuestionRichText(q.text || '')}</div>
                 ${q.imageUrl ? `<div style="margin:8px 0;"><img src="${escapeHtml(q.imageUrl)}" alt="Illustration question" style="max-height:120px; max-width:100%; object-fit:contain; border-radius:6px; border:1px solid var(--clr-surface-3);" onerror="this.parentElement.style.display='none'"></div>` : ''}
                 ${contentHtml}
+                <div style="background:var(--clr-surface-2); border:1.5px solid rgba(52, 152, 219, 0.3); border-radius:var(--radius-sm); padding:12px 14px; margin-top:10px;">
+                    ${actionControlsHtml}
+                </div>
                 ${q.trainerNote && q.trainerNote.trim() ? `
                     <div style="margin-top:10px; font-size:0.82rem; color:var(--clr-text); background:rgba(234, 179, 8, 0.08); border-left:3.5px solid #eab308; padding:8px 12px; border-radius:4px;">
                         <strong style="color:#ca8a04; display:flex; align-items:center; gap:6px;"><i class="bi bi-person-workspace"></i> Note / Pense-bête formateur :</strong>
@@ -2087,6 +2291,27 @@ function renderInspectionQuestions(questions, sub) {
             </div>
         `;
     }).join('');
+
+    container.querySelectorAll('.btn-dismiss-orphan-drafts').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!activeInspectingSubmission.evaluations) activeInspectingSubmission.evaluations = {};
+            orphanDrafts.forEach(oq => {
+                const cur = activeInspectingSubmission.evaluations[oq.id] || {};
+                activeInspectingSubmission.evaluations[oq.id] = {
+                    ...cur,
+                    status: 'graded',
+                    isCorrect: cur.autoSuggested !== null && cur.autoSuggested !== undefined ? Boolean(cur.autoSuggested) : true,
+                    gradedByName: actualUserData?.displayName || `${actualUserData?.firstName || ''} ${actualUserData?.lastName || ''}`.trim() || currentUser?.email || 'Formateur',
+                    gradedByRole: (currentRole === 'admin' || actualUserData?.role === 'admin') ? 'admin' : 'formateur',
+                    gradedByUid: currentUser?.uid || null,
+                    gradedAt: new Date().toISOString(),
+                    comment: cur.comment || 'Validé (question archivée du module).'
+                };
+            });
+            showToast("Questions modifiées validées ! N'oubliez pas d'enregistrer pour finaliser.", "info", 5000);
+            renderInspectionQuestions(questions, activeInspectingSubmission);
+        });
+    });
 
     container.querySelectorAll('.btn-toggle-eval-award').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -2135,11 +2360,43 @@ document.getElementById('btnSaveGradingChanges')?.addEventListener('click', asyn
         const hasNegativePoints = Boolean(sub.score?.negativePointsEnabled);
 
         const allQuestions = currentEditingQuestions.length > 0 ? currentEditingQuestions : await fetchModuleQuestions(sub.moduleId);
+        const existingQMap = new Map((allQuestions || []).map(q => [q.id, q]));
         const drawnIds = Array.isArray(sub.drawnQuestionIds) && sub.drawnQuestionIds.length > 0
             ? new Set(sub.drawnQuestionIds)
             : (Object.keys(answers).length > 0 ? new Set(Object.keys(answers)) : null);
 
-        const subQuestions = drawnIds ? allQuestions.filter(q => q.type !== 'section' && drawnIds.has(q.id)) : allQuestions.filter(q => q.type !== 'section');
+        let subQuestions = [];
+        if (drawnIds) {
+            drawnIds.forEach(id => {
+                if (existingQMap.has(id)) {
+                    const q = existingQMap.get(id);
+                    if (q.type !== 'section') subQuestions.push(q);
+                } else {
+                    subQuestions.push({
+                        id: id,
+                        type: (evals[id] || typeof answers[id] === 'string') ? 'text' : 'qcm',
+                        text: evals[id]?.questionText || `Question archivée (${id})`,
+                        isOrphaned: true
+                    });
+                }
+            });
+        } else {
+            subQuestions = allQuestions.filter(q => q.type !== 'section');
+            Object.keys(evals).forEach(id => {
+                if (!existingQMap.has(id) && !subQuestions.some(sq => sq.id === id)) {
+                    subQuestions.push({
+                        id: id,
+                        type: 'text',
+                        text: evals[id]?.questionText || `Question archivée (${id})`,
+                        isOrphaned: true
+                    });
+                }
+            });
+        }
+
+        if (subQuestions.length === 0) {
+            subQuestions = allQuestions.filter(q => q.type !== 'section');
+        }
 
         let totalScore = 0;
         let correctCount = 0;
@@ -2148,101 +2405,12 @@ document.getElementById('btnSaveGradingChanges')?.addEventListener('click', asyn
         subQuestions.forEach(q => {
             totalScore++;
             const ans = answers[q.id];
-            let isCorrect = false;
-            let isAnswered = false;
+            const { isCorrect: isAlgoCorrect, isAnswered } = computeQuestionAlgoCorrect(q, ans);
+            const qEv = evals[q.id];
+            const isManuallyEvaluated = (qEv && qEv.isCorrect !== undefined && qEv.isCorrect !== null);
+            const finalIsCorrect = isManuallyEvaluated ? (qEv.isCorrect === true) : (q.type === 'text' ? false : isAlgoCorrect);
 
-            if (q.type === 'qcm') {
-                const userIndices = Array.isArray(ans)
-                    ? ans.map(n => parseInt(n, 10))
-                    : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
-                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
-                    ? q.correctIndexes.map(n => parseInt(n, 10))
-                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
-                const sortedUser = [...userIndices].sort((a, b) => a - b);
-                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
-                isAnswered = sortedUser.length > 0;
-                isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
-            } else if (q.type === 'image_choice') {
-                const userIndices = Array.isArray(ans)
-                    ? ans.map(n => parseInt(n, 10))
-                    : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
-                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
-                    ? q.correctIndexes.map(n => parseInt(n, 10))
-                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
-                const sortedUser = [...userIndices].sort((a, b) => a - b);
-                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
-                isAnswered = sortedUser.length > 0;
-                isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
-            } else if (q.type === 'table_choice') {
-                const rows = q.tableRows || [];
-                const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
-                let allRowsCorrect = (rows.length > 0);
-                rows.forEach((row, rIdx) => {
-                    const userRow = userAnsObj[rIdx] || {};
-                    const uCol1 = !!userRow.col1;
-                    const uCol2 = !!userRow.col2;
-                    if (uCol1 || uCol2) isAnswered = true;
-                    if (uCol1 !== !!row.correctCol1 || uCol2 !== !!row.correctCol2) allRowsCorrect = false;
-                });
-                isCorrect = isAnswered && allRowsCorrect;
-            } else if (q.type === 'boolean') {
-                const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
-                const userBool = (ans === true || ans === 'true');
-                isAnswered = (ans !== null && ans !== undefined && ans !== '');
-                isCorrect = isAnswered && (userBool === expectedBool);
-            } else if (q.type === 'pinpoint') {
-                const userCoords = (ans && typeof ans === 'object') ? ans : null;
-                const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
-                const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
-                const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
-                isAnswered = Boolean(userCoords && userCoords.x !== undefined && userCoords.y !== undefined);
-                if (isAnswered) {
-                    const dx = userCoords.x - targetX;
-                    const dy = userCoords.y - targetY;
-                    isCorrect = Math.sqrt(dx * dx + dy * dy) <= radius;
-                }
-            } else if (q.type === 'range') {
-                const val = (ans !== null && ans !== undefined && ans !== '') ? parseFloat(ans) : null;
-                isAnswered = (val !== null && !isNaN(val));
-                if (isAnswered && q.correctValue !== undefined) {
-                    const targetVal = parseFloat(q.correctValue);
-                    const tol = parseFloat(q.tolerance) || 0;
-                    isCorrect = Math.abs(val - targetVal) <= tol;
-                }
-            } else if (q.type === 'classification') {
-                const rawItems = q.items || [];
-                const userPlacements = (ans && typeof ans === 'object') ? ans : {};
-                isAnswered = rawItems.some(it => userPlacements[it.id]);
-                isCorrect = isAnswered && (rawItems.length > 0) && rawItems.every(it => userPlacements[it.id] === it.categoryId);
-            } else if (q.type === 'cloze') {
-                const { blanks: expectedBlanks } = (typeof parseClozeQuestion === 'function') ? parseClozeQuestion(q.clozeText || '') : { blanks: [] };
-                const userAnswersObj = (ans && typeof ans === 'object') ? ans : {};
-                isAnswered = Object.values(userAnswersObj).some(v => v !== null && v !== undefined && String(v).trim().length > 0);
-                isCorrect = isAnswered && (expectedBlanks.length > 0) && expectedBlanks.every((expWord, bIdx) => {
-                    const uWord = userAnswersObj[bIdx];
-                    return uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase();
-                });
-            } else if (q.type === 'puzzle') {
-                const cOrder = Array.isArray(ans) ? ans : [];
-                const expOrder = q.items || [];
-                isAnswered = cOrder.length > 0;
-                isCorrect = isAnswered && (cOrder.length === expOrder.length) && cOrder.every((it, idx) => it === expOrder[idx]);
-            } else if (q.type === 'matching') {
-                const rawPairs = q.pairs || [];
-                const userMatchesObj = (ans && typeof ans === 'object') ? ans : {};
-                isAnswered = Object.values(userMatchesObj).some(v => v && String(v).trim().length > 0);
-                isCorrect = isAnswered && (rawPairs.length > 0) && rawPairs.every(pair => {
-                    const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
-                    return uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
-                });
-            } else {
-                // Question text
-                const qEv = evals[q.id];
-                isAnswered = Boolean(ans && String(ans).trim().length > 0);
-                isCorrect = (qEv && qEv.isCorrect === true);
-            }
-
-            if (isCorrect) {
+            if (finalIsCorrect) {
                 correctCount++;
                 pointsTotal += 1;
             } else if (isAnswered && hasNegativePoints) {

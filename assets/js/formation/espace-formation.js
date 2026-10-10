@@ -124,6 +124,237 @@ function formatQuestionRichText(str) {
 }
 window.formatQuestionRichText = formatQuestionRichText;
 
+function parseClozeQuestion(clozeText) {
+    if (!clozeText) return { parts: [], blanks: [] };
+    const parts = [];
+    const blanks = [];
+    const regex = /\[([^\]]+)\]/g;
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(clozeText)) !== null) {
+        parts.push(clozeText.substring(lastIndex, match.index));
+        blanks.push(match[1].trim());
+        lastIndex = regex.lastIndex;
+    }
+    parts.push(clozeText.substring(lastIndex));
+    return { parts, blanks };
+}
+window.parseClozeQuestion = parseClozeQuestion;
+
+function computeQuestionAlgoCorrect(q, ans) {
+    let isCorrect = false;
+    let isAnswered = false;
+    const type = q.type || 'qcm';
+
+    if (type === 'qcm') {
+        const userIndices = Array.isArray(ans)
+            ? ans.map(n => parseInt(n, 10))
+            : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+        const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+            ? q.correctIndexes.map(n => parseInt(n, 10))
+            : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+        const sortedUser = [...userIndices].sort((a, b) => a - b);
+        const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+        isAnswered = sortedUser.length > 0;
+        isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
+    } else if (type === 'image_choice') {
+        const userIndices = Array.isArray(ans)
+            ? ans.map(n => parseInt(n, 10))
+            : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+        const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+            ? q.correctIndexes.map(n => parseInt(n, 10))
+            : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+        const sortedUser = [...userIndices].sort((a, b) => a - b);
+        const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+        isAnswered = sortedUser.length > 0;
+        isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
+    } else if (type === 'table_choice') {
+        const rows = q.tableRows || [];
+        const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
+        let allRowsCorrect = (rows.length > 0);
+        rows.forEach((row, rIdx) => {
+            const userRow = userAnsObj[rIdx] || {};
+            const uCol1 = !!userRow.col1;
+            const uCol2 = !!userRow.col2;
+            if (uCol1 || uCol2) isAnswered = true;
+            if (uCol1 !== !!row.correctCol1 || uCol2 !== !!row.correctCol2) allRowsCorrect = false;
+        });
+        isCorrect = isAnswered && allRowsCorrect;
+    } else if (type === 'boolean') {
+        const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+        const userBool = (ans === true || ans === 'true');
+        isAnswered = (ans !== null && ans !== undefined && ans !== '');
+        isCorrect = isAnswered && (userBool === expectedBool);
+    } else if (type === 'pinpoint') {
+        const userCoords = (ans && typeof ans === 'object') ? ans : (ans ? (typeof ans === 'string' ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null) : null);
+        const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+        const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+        const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+        isAnswered = Boolean(userCoords && userCoords.x !== undefined && userCoords.y !== undefined);
+        if (isAnswered) {
+            const dx = userCoords.x - targetX;
+            const dy = userCoords.y - targetY;
+            isCorrect = Math.sqrt(dx * dx + dy * dy) <= radius;
+        }
+    } else if (type === 'range') {
+        const val = (ans !== null && ans !== undefined && ans !== '') ? parseFloat(ans) : null;
+        isAnswered = (val !== null && !isNaN(val));
+        if (isAnswered && q.correctValue !== undefined) {
+            const targetVal = parseFloat(q.correctValue);
+            const tol = parseFloat(q.tolerance) || 0;
+            isCorrect = Math.abs(val - targetVal) <= tol;
+        }
+    } else if (type === 'classification') {
+        const rawItems = q.items || [];
+        const userPlacements = (ans && typeof ans === 'object') ? ans : {};
+        isAnswered = rawItems.some(it => userPlacements[it.id]);
+        isCorrect = isAnswered && (rawItems.length > 0) && rawItems.every(it => userPlacements[it.id] === it.categoryId);
+    } else if (type === 'cloze') {
+        const { blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
+        const userAnswersObj = (ans && typeof ans === 'object') ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
+        isAnswered = Object.values(userAnswersObj).some(v => v !== null && v !== undefined && String(v).trim().length > 0);
+        isCorrect = isAnswered && (expectedBlanks.length > 0) && expectedBlanks.every((expWord, bIdx) => {
+            const uWord = userAnswersObj[bIdx];
+            return uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase();
+        });
+    } else if (type === 'puzzle') {
+        const cOrder = Array.isArray(ans) ? ans : [];
+        const expOrder = q.items || [];
+        isAnswered = cOrder.length > 0;
+        isCorrect = isAnswered && (cOrder.length === expOrder.length) && cOrder.every((it, idx) => it === expOrder[idx]);
+    } else if (type === 'matching') {
+        const rawPairs = q.pairs || [];
+        const userMatchesObj = (ans && typeof ans === 'object') ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
+        isAnswered = Object.values(userMatchesObj).some(v => v && String(v).trim().length > 0);
+        isCorrect = isAnswered && (rawPairs.length > 0) && rawPairs.every(pair => {
+            const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
+            return uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
+        });
+    } else {
+        isAnswered = Boolean(ans && String(ans).trim().length > 0);
+        isCorrect = false;
+    }
+    return { isCorrect, isAnswered };
+}
+window.computeQuestionAlgoCorrect = computeQuestionAlgoCorrect;
+
+async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decisionBool, targetBtn, commentText = null) {
+    if (!moduleId || !submissionId || !questionId) return;
+
+    const currentUserName = (typeof actualUserData !== 'undefined' && actualUserData?.displayName) || 
+                            (currentUser ? (currentUser.displayName || currentUser.email) : 'Formateur');
+    const isAdminUser = (actualRole === 'admin' || actualUserData?.role === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin) || (typeof isFormateurAdmin !== 'undefined' && isFormateurAdmin) || (typeof currentRole !== 'undefined' && currentRole === 'admin'));
+    const graderRole = isAdminUser ? 'admin' : 'formateur';
+
+    try {
+        if (targetBtn) {
+            targetBtn.disabled = true;
+            targetBtn.dataset.origHtml = targetBtn.innerHTML;
+            targetBtn.innerHTML = '<span class="es-spinner" style="width:12px;height:12px;display:inline-block;"></span>';
+        }
+
+        const subRef = db.collection('formation').doc(moduleId).collection('submissions').doc(submissionId);
+        const subDoc = await subRef.get();
+        if (!subDoc.exists) {
+            showToast("Copie introuvable.", "error");
+            return;
+        }
+
+        const subData = subDoc.data();
+        const evals = subData.evaluations || {};
+        const existingEv = evals[questionId] || {};
+
+        if (existingEv.gradedByRole === 'admin' && !isAdminUser) {
+            showToast("Cette question a été verrouillée par un administrateur.", "warning");
+            return;
+        }
+
+        if (commentText === null) {
+            const commentInput = document.getElementById(`candEvalComment_${submissionId}_${questionId}`) || 
+                                 targetBtn?.closest('.es-bilan-q-card, [style*="border-top:1px dashed"], [style*="border-top: 1px dashed"]')?.querySelector('.cand-eval-comment-input');
+            if (commentInput) {
+                commentText = commentInput.value.trim();
+            }
+        }
+
+        evals[questionId] = {
+            ...existingEv,
+            isCorrect: decisionBool,
+            status: 'graded',
+            comment: commentText !== null ? commentText : (existingEv.comment || ''),
+            gradedByName: currentUserName,
+            gradedByRole: graderRole,
+            gradedByUid: currentUser?.uid || null,
+            gradedAt: new Date().toISOString()
+        };
+
+        const questions = await fetchModuleQuestions(moduleId);
+        const answers = subData.answers || {};
+        const drawnIds = Array.isArray(subData.drawnQuestionIds) && subData.drawnQuestionIds.length > 0
+            ? new Set(subData.drawnQuestionIds)
+            : null;
+        const relevantQuestions = drawnIds 
+            ? questions.filter(q => q.type !== 'section' && drawnIds.has(q.id))
+            : questions.filter(q => q.type !== 'section');
+
+        let totalPoints = 0;
+        let earnedPoints = 0;
+        const hasNegativePoints = Boolean(subData.score?.negativePointsEnabled);
+
+        relevantQuestions.forEach(q => {
+            totalPoints += 1;
+            const qEv = evals[q.id];
+            const ans = answers[q.id];
+
+            if (qEv && typeof qEv.isCorrect === 'boolean') {
+                if (qEv.isCorrect) {
+                    earnedPoints += 1;
+                } else if (hasNegativePoints && ans !== null && ans !== undefined && String(ans).trim().length > 0) {
+                    earnedPoints -= 0.5;
+                }
+            } else {
+                const { isCorrect, isAnswered } = computeQuestionAlgoCorrect(q, ans);
+                if (isCorrect) {
+                    earnedPoints += 1;
+                } else if (hasNegativePoints && isAnswered) {
+                    earnedPoints -= 0.5;
+                }
+            }
+        });
+
+        earnedPoints = Math.max(0, earnedPoints);
+        const percent = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0;
+
+        const updatePayload = {
+            evaluations: evals,
+            score: {
+                ...(subData.score || {}),
+                correct: Math.round(earnedPoints * 10) / 10,
+                total: totalPoints,
+                percent: percent
+            },
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+
+        await subRef.update(updatePayload);
+        showToast("Évaluation enregistrée !", "success");
+
+        if (subData.userId) {
+            await loadAdminBilanData();
+            await openAdminCandidateBilanModal(subData.userId);
+        }
+    } catch (err) {
+        console.error("gradeOpenQuestionAnswer error:", err);
+        showToast("Erreur lors de l'enregistrement de l'évaluation.", "error");
+    } finally {
+        if (targetBtn) {
+            targetBtn.disabled = false;
+            if (targetBtn.dataset.origHtml) targetBtn.innerHTML = targetBtn.dataset.origHtml;
+        }
+    }
+}
+window.gradeOpenQuestionAnswer = gradeOpenQuestionAnswer;
+
 // ----------------------------------------------------------------
 // BANDEAU COMPTE À REBOURS SYNCHRONISATION FIRESTORE (30s)
 // ----------------------------------------------------------------
@@ -2369,7 +2600,120 @@ async function openFormationResultsModal(moduleId) {
 }
 
 
-async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decisionBool, targetBtn) {
+function computeQuestionAlgoCorrect(q, ans) {
+    let isCorrect = false;
+    let isAnswered = false;
+    const type = q.type || 'qcm';
+
+    if (type === 'qcm') {
+        const userIndices = Array.isArray(ans)
+            ? ans.map(n => parseInt(n, 10))
+            : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+        const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+            ? q.correctIndexes.map(n => parseInt(n, 10))
+            : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+        const sortedUser = [...userIndices].sort((a, b) => a - b);
+        const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+        isAnswered = sortedUser.length > 0;
+        isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
+    } else if (type === 'image_choice') {
+        const userIndices = Array.isArray(ans)
+            ? ans.map(n => parseInt(n, 10))
+            : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+        const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+            ? q.correctIndexes.map(n => parseInt(n, 10))
+            : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+        const sortedUser = [...userIndices].sort((a, b) => a - b);
+        const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+        isAnswered = sortedUser.length > 0;
+        isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
+    } else if (type === 'table_choice') {
+        const rows = q.tableRows || [];
+        const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
+        let allRowsCorrect = (rows.length > 0);
+        rows.forEach((row, rIdx) => {
+            const userRow = userAnsObj[rIdx] || {};
+            const uCol1 = !!userRow.col1;
+            const uCol2 = !!userRow.col2;
+            if (uCol1 || uCol2) isAnswered = true;
+            if (uCol1 !== !!row.correctCol1 || uCol2 !== !!row.correctCol2) allRowsCorrect = false;
+        });
+        isCorrect = isAnswered && allRowsCorrect;
+    } else if (type === 'boolean') {
+        const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+        const userBool = (ans === true || ans === 'true');
+        isAnswered = (ans !== null && ans !== undefined && ans !== '');
+        isCorrect = isAnswered && (userBool === expectedBool);
+    } else if (type === 'pinpoint') {
+        const userCoords = (ans && typeof ans === 'object') ? ans : (ans ? (typeof ans === 'string' ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null) : null);
+        const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+        const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+        const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+        isAnswered = Boolean(userCoords && userCoords.x !== undefined && userCoords.y !== undefined);
+        if (isAnswered) {
+            const dx = userCoords.x - targetX;
+            const dy = userCoords.y - targetY;
+            isCorrect = Math.sqrt(dx * dx + dy * dy) <= radius;
+        }
+    } else if (type === 'range') {
+        const val = (ans !== null && ans !== undefined && ans !== '') ? parseFloat(ans) : null;
+        isAnswered = (val !== null && !isNaN(val));
+        if (isAnswered && q.correctValue !== undefined) {
+            const targetVal = parseFloat(q.correctValue);
+            const tol = parseFloat(q.tolerance) || 0;
+            isCorrect = Math.abs(val - targetVal) <= tol;
+        }
+    } else if (type === 'classification') {
+        const rawItems = q.items || [];
+        const userPlacements = (ans && typeof ans === 'object') ? ans : {};
+        isAnswered = rawItems.some(it => userPlacements[it.id]);
+        isCorrect = isAnswered && (rawItems.length > 0) && rawItems.every(it => userPlacements[it.id] === it.categoryId);
+    } else if (type === 'cloze') {
+        const { blanks: expectedBlanks } = (typeof parseClozeQuestion === 'function') ? parseClozeQuestion(q.clozeText || '') : { blanks: [] };
+        const userAnswersObj = (ans && typeof ans === 'object') ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
+        isAnswered = Object.values(userAnswersObj).some(v => v !== null && v !== undefined && String(v).trim().length > 0);
+        isCorrect = isAnswered && (expectedBlanks.length > 0) && expectedBlanks.every((expWord, bIdx) => {
+            const uWord = userAnswersObj[bIdx];
+            return uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase();
+        });
+    } else if (type === 'puzzle') {
+        const cOrder = Array.isArray(ans) ? ans : [];
+        const expOrder = q.items || [];
+        isAnswered = cOrder.length > 0;
+        isCorrect = isAnswered && (cOrder.length === expOrder.length) && cOrder.every((it, idx) => it === expOrder[idx]);
+    } else if (type === 'matching') {
+        const rawPairs = q.pairs || [];
+        const userMatchesObj = (ans && typeof ans === 'object') ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
+        isAnswered = Object.values(userMatchesObj).some(v => v && String(v).trim().length > 0);
+        isCorrect = isAnswered && (rawPairs.length > 0) && rawPairs.every(pair => {
+            const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
+            return uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
+        });
+    } else {
+        // text
+        isAnswered = Boolean(ans && String(ans).trim().length > 0);
+        isCorrect = false;
+    }
+    return { isCorrect, isAnswered };
+}
+
+function parseClozeQuestion(clozeText) {
+    if (!clozeText) return { parts: [], blanks: [] };
+    const parts = [];
+    const blanks = [];
+    const regex = /\[([^\]]+)\]/g;
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(clozeText)) !== null) {
+        parts.push(clozeText.substring(lastIndex, match.index));
+        blanks.push(match[1].trim());
+        lastIndex = regex.lastIndex;
+    }
+    parts.push(clozeText.substring(lastIndex));
+    return { parts, blanks };
+}
+
+async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decisionBool, targetBtn, commentText) {
     if (targetBtn) btnLoading(targetBtn, true);
     try {
         const isAdminUser = (actualRole === 'admin' || actualUserData?.role === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin) || (typeof isFormateurAdmin !== 'undefined' && isFormateurAdmin) || (typeof currentRole !== 'undefined' && currentRole === 'admin'));
@@ -2393,13 +2737,15 @@ async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decis
 
         const questions = await fetchModuleQuestions(moduleId);
         const updatedEval = {
+            ...curEval,
             autoSuggested: (curEval.autoSuggested !== undefined) ? curEval.autoSuggested : null,
             isCorrect: decisionBool,
             status: 'reviewed',
+            comment: (commentText !== undefined && commentText !== null) ? commentText : (curEval.comment || ''),
             gradedByUid: currentUser.uid,
             gradedByName: actualUserData?.displayName || `${actualUserData?.firstName || ''} ${actualUserData?.lastName || ''}`.trim() || currentUser.email,
             gradedByRole: isAdminUser ? 'admin' : 'formateur',
-            gradedAt: firebase.firestore.FieldValue.serverTimestamp()
+            gradedAt: new Date().toISOString()
         };
 
         const newEvals = { ...prevEvals, [questionId]: updatedEval };
@@ -2409,107 +2755,39 @@ async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decis
         let correctCount = 0;
         let pointsTotal = 0;
 
-        questions.forEach(q => {
+        const drawnIds = Array.isArray(subData.drawnQuestionIds) && subData.drawnQuestionIds.length > 0
+            ? new Set(subData.drawnQuestionIds)
+            : (subData.answers && Object.keys(subData.answers).length > 0 ? new Set(Object.keys(subData.answers)) : null);
+
+        let subQuestions = [];
+        if (drawnIds) {
+            const existingQMap = new Map((questions || []).map(q => [q.id, q]));
+            drawnIds.forEach(id => {
+                if (existingQMap.has(id)) {
+                    const q = existingQMap.get(id);
+                    if (q.type !== 'section') subQuestions.push(q);
+                } else {
+                    subQuestions.push({
+                        id: id,
+                        type: (newEvals[id] || typeof (subData.answers && subData.answers[id]) === 'string') ? 'text' : 'qcm',
+                        text: newEvals[id]?.questionText || `Question archivée (${id})`,
+                        isOrphaned: true
+                    });
+                }
+            });
+        } else {
+            subQuestions = (questions || []).filter(q => q.type !== 'section');
+        }
+
+        subQuestions.forEach(q => {
             totalScore++;
             const ans = subData.answers ? subData.answers[q.id] : null;
-            let isCorrect = false;
-            let isAnswered = false;
+            const { isCorrect: isAlgoCorrect, isAnswered } = computeQuestionAlgoCorrect(q, ans);
+            const qEv = newEvals[q.id];
+            const isManuallyEvaluated = (qEv && qEv.isCorrect !== undefined && qEv.isCorrect !== null);
+            const finalIsCorrect = isManuallyEvaluated ? (qEv.isCorrect === true) : (q.type === 'text' ? false : isAlgoCorrect);
 
-            if (q.type === 'qcm') {
-                const userIndices = Array.isArray(ans)
-                    ? ans.map(n => parseInt(n, 10))
-                    : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
-                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
-                    ? q.correctIndexes.map(n => parseInt(n, 10))
-                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
-
-                const sortedUser = [...userIndices].sort((a, b) => a - b);
-                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
-                isAnswered = sortedUser.length > 0;
-                isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
-            } else if (q.type === 'image_choice') {
-                const userIndices = Array.isArray(ans)
-                    ? ans.map(n => parseInt(n, 10))
-                    : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
-                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
-                    ? q.correctIndexes.map(n => parseInt(n, 10))
-                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
-
-                const sortedUser = [...userIndices].sort((a, b) => a - b);
-                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
-                isAnswered = sortedUser.length > 0;
-                isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
-            } else if (q.type === 'table_choice') {
-                const rows = q.tableRows || [];
-                const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
-                let allRowsCorrect = (rows.length > 0);
-                rows.forEach((row, rIdx) => {
-                    const userRow = userAnsObj[rIdx] || {};
-                    const uCol1 = !!userRow.col1;
-                    const uCol2 = !!userRow.col2;
-                    if (uCol1 || uCol2) isAnswered = true;
-                    if (uCol1 !== !!row.correctCol1 || uCol2 !== !!row.correctCol2) {
-                        allRowsCorrect = false;
-                    }
-                });
-                isCorrect = isAnswered && allRowsCorrect;
-            } else if (q.type === 'boolean') {
-                const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
-                const userBool = (ans === true || ans === 'true');
-                isAnswered = (ans !== null && ans !== undefined && ans !== '');
-                isCorrect = isAnswered && (userBool === expectedBool);
-            } else if (q.type === 'pinpoint') {
-                const userCoords = (ans && typeof ans === 'object') ? ans : (ans ? (typeof ans === 'string' ? (()=>{ try { return JSON.parse(ans); } catch(e){ return null; } })() : null) : null);
-                const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
-                const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
-                const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
-                isAnswered = Boolean(userCoords && userCoords.x !== undefined && userCoords.y !== undefined);
-                if (isAnswered) {
-                    const dx = userCoords.x - targetX;
-                    const dy = userCoords.y - targetY;
-                    isCorrect = Math.sqrt(dx * dx + dy * dy) <= radius;
-                }
-            } else if (q.type === 'range') {
-                const val = (ans !== null && ans !== undefined && ans !== '') ? parseFloat(ans) : null;
-                isAnswered = (val !== null && !isNaN(val));
-                if (isAnswered && q.correctValue !== undefined) {
-                    const targetVal = parseFloat(q.correctValue);
-                    const tol = parseFloat(q.tolerance) || 0;
-                    isCorrect = Math.abs(val - targetVal) <= tol;
-                }
-            } else if (q.type === 'classification') {
-                const rawItems = q.items || [];
-                const userPlacements = (ans && typeof ans === 'object') ? ans : {};
-                isAnswered = rawItems.some(it => userPlacements[it.id]);
-                isCorrect = isAnswered && (rawItems.length > 0) && rawItems.every(it => userPlacements[it.id] === it.categoryId);
-            } else if (q.type === 'cloze') {
-                const { blanks: expectedBlanks } = (typeof parseClozeQuestion === 'function') ? parseClozeQuestion(q.clozeText || '') : { blanks: [] };
-                const userAnswersObj = (ans && typeof ans === 'object') ? ans : {};
-                isAnswered = Object.values(userAnswersObj).some(v => v !== null && v !== undefined && String(v).trim().length > 0);
-                isCorrect = isAnswered && (expectedBlanks.length > 0) && expectedBlanks.every((expWord, bIdx) => {
-                    const uWord = userAnswersObj[bIdx];
-                    return uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase();
-                });
-            } else if (q.type === 'puzzle') {
-                const cOrder = Array.isArray(ans) ? ans : [];
-                const expOrder = q.items || [];
-                isAnswered = cOrder.length > 0;
-                isCorrect = isAnswered && (cOrder.length === expOrder.length) && cOrder.every((it, idx) => it === expOrder[idx]);
-            } else if (q.type === 'matching') {
-                const rawPairs = q.pairs || [];
-                const userMatchesObj = (ans && typeof ans === 'object') ? ans : {};
-                isAnswered = Object.values(userMatchesObj).some(v => v && String(v).trim().length > 0);
-                isCorrect = isAnswered && (rawPairs.length > 0) && rawPairs.every(pair => {
-                    const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
-                    return uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
-                });
-            } else {
-                const qEv = newEvals[q.id];
-                isAnswered = Boolean(ans && String(ans).trim().length > 0);
-                isCorrect = (qEv && qEv.isCorrect === true);
-            }
-
-            if (isCorrect) {
+            if (finalIsCorrect) {
                 correctCount++;
                 pointsTotal += 1;
             } else if (isAnswered && hasNegativePoints) {
@@ -3612,6 +3890,13 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
 
         acc.innerHTML = questions.map((q, qIdx) => {
             const userAns = answers[q.id];
+            const qEv = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : null;
+            const { isCorrect: algoCorrect, isAnswered } = computeQuestionAlgoCorrect(q, userAns);
+            const hasManualOverride = Boolean(qEv && typeof qEv.isCorrect === 'boolean');
+            const isCorrect = hasManualOverride ? qEv.isCorrect : algoCorrect;
+            const hasNegativePoints = Boolean(sub.score?.negativePointsEnabled);
+            const isGraded = Boolean(qEv && (qEv.status === 'graded' || qEv.status === 'reviewed' || qEv.gradedByName || qEv.status !== 'auto_draft' || hasManualOverride));
+
             let ansDisplay = '';
 
             if (q.type === 'qcm') {
@@ -3624,8 +3909,6 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
 
                 const sortedUser = [...userIndices].sort((a, b) => a - b);
                 const sortedExp = [...expectedIndices].sort((a, b) => a - b);
-                const isCorrect = (sortedUser.length === sortedExp.length && sortedUser.length > 0 && sortedUser.every((v, i) => v === sortedExp[i]));
-
                 const options = q.options || [];
                 const chosenTexts = sortedUser.map(idx => options[idx]).filter(Boolean);
                 const chosenDisplay = chosenTexts.length > 0 ? chosenTexts.join(', ') : 'Pas de réponse';
@@ -3640,22 +3923,14 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
             } else if (q.type === 'boolean') {
                 const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
                 const userBool = (userAns === true || userAns === 'true');
-                const isCorrect = (userAns !== null && userAns !== undefined && userBool === expectedBool);
                 ansDisplay = `
                 <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
                     <strong>Votre choix :</strong> ${userBool ? '👍 VRAI' : '👎 FAUX'}
                     <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}</span>
+                    ${!isCorrect ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Attendu : <strong>${expectedBool ? '👍 VRAI' : '👎 FAUX'}</strong>)</div>` : ''}
                 </div>`;
             } else if (q.type === 'pinpoint') {
                 const userCoords = userAns && typeof userAns === 'object' ? userAns : (userAns ? (typeof userAns === 'string' ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return null; } })() : null) : null);
-                const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
-                const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
-                const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
-                let isCorrect = false;
-                if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
-                    const dist = Math.sqrt(Math.pow(userCoords.x - targetX, 2) + Math.pow(userCoords.y - targetY, 2));
-                    isCorrect = dist <= radius;
-                }
                 ansDisplay = `
                 <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
                     <div><strong>Repère placé :</strong> ${userCoords ? `X: ${userCoords.x.toFixed(1)}%, Y: ${userCoords.y.toFixed(1)}%` : '<span style="color:var(--clr-danger)">Pas de repère</span>'} <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Dans la cible (+1 pt)' : '❌ Hors cible (0 pt)'}</span></div>
@@ -3663,32 +3938,38 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
             } else if (q.type === 'cloze') {
                 const clozeMatches = (q.clozeText || '').match(/\[([^\]]+)\]/g) || [];
                 const expectedBlanks = clozeMatches.map(m => m.replace(/^\[|\]$/g, '').trim());
-                const userAnswersObj = userAns && typeof userAns === 'object' ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
-                
-                let correctBlanksCount = 0;
-                expectedBlanks.forEach((expWord, bIdx) => {
-                    const uWord = userAnswersObj[bIdx];
-                    if (uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase()) {
-                        correctBlanksCount++;
-                    }
-                });
-                const isAllCorrect = (expectedBlanks.length > 0) && (correctBlanksCount === expectedBlanks.length);
-
-                ansDisplay = `<div style="background:#ffffff; border:1px solid ${isAllCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
-                    <div><strong>Texte à trous :</strong> <span style="font-weight:700; color:${isAllCorrect ? '#27ae60' : '#e74c3c'};">${isAllCorrect ? '✅ 100% Correct (+1 pt)' : `❌ ${correctBlanksCount}/${expectedBlanks.length} trou(s) correct(s)`}</span></div>
+                ansDisplay = `<div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                    <div><strong>Texte à trous :</strong> <span style="font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Validé (+1 pt)' : `❌ Non validé (0 pt)`}</span></div>
                 </div>`;
             } else if (q.type === 'range') {
                 const val = (userAns !== null && userAns !== undefined) ? parseFloat(userAns) : null;
-                ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Valeur choisie :</strong> <span style="font-weight:700;">${val !== null ? `${val} ${escapeHtml(q.unit || '')}` : 'Non renseigné'}</span></div>`;
+                ansDisplay = `<div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                    <strong>Valeur choisie :</strong> <span style="font-weight:700;">${val !== null ? `${val} ${escapeHtml(q.unit || '')}` : 'Non renseigné'}</span>
+                    <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact (+1 pt)' : '❌ Hors tolérance (0 pt)'}</span>
+                </div>`;
             } else if (q.type === 'puzzle') {
                 const order = Array.isArray(userAns) ? userAns : [];
-                ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Ordre proposé :</strong> <ol style="margin:4px 0 0 16px; padding:0;">${order.map(it => `<li>${escapeHtml(it)}</li>`).join('')}</ol></div>`;
-            } else {
-                const qEv = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : null;
-                const isAnswered = Boolean(userAns && String(userAns).trim().length > 0);
-                const hasNegativePoints = Boolean(sub.score?.negativePointsEnabled);
-                const isGraded = Boolean(qEv && (qEv.status === 'graded' || qEv.status === 'reviewed' || qEv.gradedByName || qEv.status !== 'auto_draft'));
-
+                ansDisplay = `<div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <strong>Ordre proposé :</strong>
+                        <span style="font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}</span>
+                    </div>
+                    <ol style="margin:4px 0 0 16px; padding:0;">${order.map(it => `<li>${escapeHtml(it)}</li>`).join('')}</ol>
+                </div>`;
+            } else if (q.type === 'matching') {
+                const rawPairs = q.pairs || [];
+                const userMatchesObj = (userAns && typeof userAns === 'object') ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
+                ansDisplay = `
+                <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <strong>Associations :</strong>
+                        <span style="font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}</span>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        ${rawPairs.map(p => `<div><span style="font-weight:600;">${escapeHtml(p.left)}</span> ➔ ${escapeHtml(userMatchesObj[p.left] || userMatchesObj[(p.left||'').trim()] || '—')}</div>`).join('')}
+                    </div>
+                </div>`;
+            } else if (q.type === 'text') {
                 let evalBadge = '';
                 if (isGraded) {
                     if (qEv.isCorrect === true) {
@@ -3731,21 +4012,6 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
                         `}
                     </div>
 
-                    ${(qEv && (qEv.comment || isGraded)) ? `
-                        <div style="margin-top:10px; padding-top:10px; padding-bottom:10px; padding-left:12px; padding-right:12px; background:rgba(52, 152, 219, 0.08); border-left:3.5px solid #3498db; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
-                            <div style="font-weight:700; color:#2980b9; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-                                <i class="bi bi-person-workspace"></i> Évaluation Formateur :
-                            </div>
-                            <div style="white-space:pre-wrap; word-break:break-word; line-height:1.5;">${qEv.comment && qEv.comment.trim() ? escapeHtml(qEv.comment.trim()) : (qEv.isCorrect ? '✅ Réponse validée par le formateur.' : '❌ Réponse non validée par le formateur.')}</div>
-                            ${(isAdminOrFormateur && (qEv.gradedByName || qEv.gradedAt)) ? `
-                                <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
-                                    <i class="bi bi-shield-check" style="color:${qEv.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)'};"></i>
-                                    <span>${qEv.isCorrect ? 'Validé' : (qEv.isCorrect === false ? 'Invalidé' : 'Évalué')} par <strong>${escapeHtml(qEv.gradedByName || 'Formateur')}</strong> (${qEv.gradedByRole === 'admin' ? 'Admin' : 'Formateur'}) le ${formatFullDate(qEv.gradedAt)}</span>
-                                </div>
-                            ` : ''}
-                        </div>
-                    ` : ''}
-
                     ${q.sampleAnswer && q.sampleAnswer.trim() ? `
                         <div style="margin-top:10px; padding:10px 12px; background:rgba(39, 174, 96, 0.08); border-left:3.5px solid #27ae60; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
                             <div style="font-weight:700; color:#27ae60; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
@@ -3755,13 +4021,34 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
                         </div>
                     ` : ''}
                 </div>`;
+            } else {
+                ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                    <strong>Votre réponse :</strong> <span style="font-weight:700;">${userAns !== null && userAns !== undefined ? escapeHtml(String(userAns)) : 'Non renseigné'}</span>
+                </div>`;
             }
+
+            // Bloc Feedback & Remarques Formateur (disponible pour TOUS les types de questions)
+            const trainerFeedbackHtml = (qEv && (qEv.comment || isGraded || qEv.gradedByName || qEv.gradedAt)) ? `
+                <div style="margin-top:10px; padding-top:10px; padding-bottom:10px; padding-left:12px; padding-right:12px; background:rgba(52, 152, 219, 0.08); border-left:3.5px solid #3498db; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
+                    <div style="font-weight:700; color:#2980b9; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                        <i class="bi bi-person-workspace"></i> Évaluation &amp; Remarque Formateur :
+                    </div>
+                    <div style="white-space:pre-wrap; word-break:break-word; line-height:1.5;">${qEv.comment && qEv.comment.trim() ? escapeHtml(qEv.comment.trim()) : (qEv.isCorrect ? '✅ Réponse validée par le formateur.' : (qEv.isCorrect === false ? '❌ Réponse invalidée par le formateur.' : 'Évalué par l\'équipe pédagogique.'))}</div>
+                    ${(qEv.gradedByName || qEv.gradedAt) ? `
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
+                            <i class="bi bi-shield-check" style="color:${qEv.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)'};"></i>
+                            <span>${qEv.isCorrect ? 'Validé' : (qEv.isCorrect === false ? 'Invalidé' : 'Évalué')} par <strong>${escapeHtml(qEv.gradedByName || 'Formateur')}</strong> (${qEv.gradedByRole === 'admin' ? 'Admin' : 'Formateur'})${qEv.gradedAt ? ` le ${formatFullDate(qEv.gradedAt)}` : ''}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            ` : '';
 
             return `
             <div style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
                 <div style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Question ${qIdx + 1} • ${q.type}</div>
                 <div style="font-size:0.88rem; font-weight:400; color:var(--clr-text); margin-top:2px;" class="es-q-rich-text">${formatQuestionRichText(q.text)}</div>
                 ${ansDisplay}
+                ${trainerFeedbackHtml}
                 ${(isAdminOrFormateur && q.trainerNote && q.trainerNote.trim()) ? `
                     <div style="margin-top:8px; font-size:0.82rem; color:var(--clr-text); background:rgba(234, 179, 8, 0.08); border-left:3.5px solid #eab308; padding:8px 12px; border-radius:4px;">
                         <strong style="color:#ca8a04; display:flex; align-items:center; gap:6px;"><i class="bi bi-person-workspace"></i> Note / Pense-bête formateur :</strong>
@@ -4551,10 +4838,37 @@ async function openAdminCandidateBilanModal(userId) {
             if (hasSubmitted) {
                 const questions = await fetchModuleQuestions(m.id);
                 const answers = sub.answers || {};
+                const evaluations = sub.evaluations || {};
+                const existingQMap = new Map((questions || []).map(q => [q.id, q]));
+                const allCandidateQIds = new Set([
+                    ...(Array.isArray(sub.drawnQuestionIds) ? sub.drawnQuestionIds : []),
+                    ...Object.keys(answers),
+                    ...Object.keys(evaluations)
+                ]);
+                const orphanQIds = Array.from(allCandidateQIds).filter(id => id && !existingQMap.has(id));
+                const orphanQuestions = orphanQIds.map(id => {
+                    const ev = evaluations[id] || {};
+                    const ans = answers[id];
+                    const isText = Boolean((ev && (ev.status || ev.autoSuggested !== undefined || ev.comment)) || (typeof ans === 'string' && ans.trim().length > 0));
+                    return {
+                        id: id,
+                        type: isText ? 'text' : (Array.isArray(ans) || typeof ans === 'number' ? 'qcm' : 'text'),
+                        text: ev.questionText || (ans ? `Question archivée / modifiée (Réf: ${id})` : `Question supprimée (${id})`),
+                        isOrphaned: true
+                    };
+                });
+                const allDisplayQuestions = [...(questions || []), ...orphanQuestions];
 
-                questionsHtml = questions.map((q, qIdx) => {
+                questionsHtml = allDisplayQuestions.map((q, qIdx) => {
                     const userAns = answers[q.id];
-                    let ansDisplay = '';
+                    const ev = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : { autoSuggested: null, isCorrect: null, status: 'auto_draft', gradedByUid: null, comment: '' };
+                    const { isCorrect: algoCorrect, isAnswered } = computeQuestionAlgoCorrect(q, userAns);
+                    const isAdminUser = (actualRole === 'admin' || actualUserData?.role === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin) || (typeof isFormateurAdmin !== 'undefined' && isFormateurAdmin) || (typeof currentRole !== 'undefined' && currentRole === 'admin'));
+                    const isLockedByAdmin = (ev.gradedByRole === 'admin' && !isAdminUser);
+                    const isTranche = (ev.status === 'reviewed' || ev.status === 'graded') && (ev.isCorrect !== null && ev.isCorrect !== undefined || !!ev.gradedByName);
+                    const currentEffectiveIsCorrect = (typeof ev.isCorrect === 'boolean') ? ev.isCorrect : algoCorrect;
+
+                    let previewHtml = '';
 
                     if (q.type === 'qcm') {
                         const userIndices = Array.isArray(userAns)
@@ -4566,141 +4880,148 @@ async function openAdminCandidateBilanModal(userId) {
 
                         const sortedUser = [...userIndices].sort((a, b) => a - b);
                         const sortedExp = [...expectedIndices].sort((a, b) => a - b);
-                        const isCorrect = (sortedUser.length === sortedExp.length && sortedUser.length > 0 && sortedUser.every((v, i) => v === sortedExp[i]));
-
                         const options = q.options || [];
                         const chosenTexts = sortedUser.map(idx => options[idx]).filter(Boolean);
                         const chosenDisplay = chosenTexts.length > 0 ? chosenTexts.join(', ') : 'Pas de réponse';
                         const expectedTexts = sortedExp.map(idx => options[idx]).filter(Boolean).join(', ');
 
-                        ansDisplay = `
-                        <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
+                        previewHtml = `
+                        <div>
                             <strong>Choix candidat :</strong> ${escapeHtml(chosenDisplay)}
-                            <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact' : '❌ Faux'}</span>
-                            ${!isCorrect && expectedTexts ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Bonne(s) réponse(s) : <strong>${escapeHtml(expectedTexts)}</strong>)</div>` : ''}
+                            ${!algoCorrect && expectedTexts ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Bonne(s) réponse(s) : <strong>${escapeHtml(expectedTexts)}</strong>)</div>` : ''}
                         </div>`;
                     } else if (q.type === 'boolean') {
                         const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
                         const userBool = (userAns === true || userAns === 'true');
-                        const isCorrect = (userAns !== null && userAns !== undefined && userBool === expectedBool);
-                        ansDisplay = `
-                        <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
-                            <strong>Choix candidat :</strong> ${userBool ? '👍 VRAI' : '👎 FAUX'}
-                            <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact' : '❌ Faux'}</span>
-                            ${!isCorrect ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Attendu : <strong>${expectedBool ? '👍 VRAI' : '👎 FAUX'}</strong>)</div>` : ''}
+                        previewHtml = `
+                        <div>
+                            <strong>Choix candidat :</strong> ${userAns !== null && userAns !== undefined ? (userBool ? '👍 VRAI' : '👎 FAUX') : '<span style="color:var(--clr-text-muted); font-style:italic;">Non renseigné</span>'}
+                            ${!algoCorrect ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:4px;">(Attendu : <strong>${expectedBool ? '👍 VRAI' : '👎 FAUX'}</strong>)</div>` : ''}
                         </div>`;
                     } else if (q.type === 'pinpoint') {
                         const userCoords = userAns && typeof userAns === 'object' ? userAns : (userAns ? (typeof userAns === 'string' ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return null; } })() : null) : null);
                         const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
                         const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
                         const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
-                        let isCorrect = false;
-                        if (userCoords && userCoords.x !== undefined && userCoords.y !== undefined) {
-                            const dist = Math.sqrt(Math.pow(userCoords.x - targetX, 2) + Math.pow(userCoords.y - targetY, 2));
-                            isCorrect = dist <= radius;
-                        }
-                        ansDisplay = `
-                        <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
-                            <div><strong>Repère candidat :</strong> ${userCoords ? `X: ${userCoords.x.toFixed(1)}%, Y: ${userCoords.y.toFixed(1)}%` : '<span style="color:var(--clr-danger)">Pas de repère</span>'} <span style="margin-left:8px; font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Dans la cible' : '❌ Hors cible'}</span></div>
+                        previewHtml = `
+                        <div>
+                            <div><strong>Repère candidat :</strong> ${userCoords ? `X: ${userCoords.x.toFixed(1)}%, Y: ${userCoords.y.toFixed(1)}%` : '<span style="color:var(--clr-danger)">Pas de repère</span>'}</div>
                             ${q.pinImage ? `
                             <div style="text-align:center; background:#181c19; padding:8px; border-radius:6px; margin-top:6px;">
                                 <div class="es-pinpoint-result-zone" style="max-width:440px; margin:0 auto;">
                                     <img src="${escapeHtml(q.pinImage)}" alt="Repère" class="es-pinpoint-result-img">
                                     <div class="es-pinpoint-target-zone es-pinpoint-target-zone--result" style="left:${targetX}%; top:${targetY}%; width:${radius * 2}%; height:${radius * 2}%;"></div>
                                     <div class="es-pinpoint-pin es-pinpoint-pin--admin" style="left:${targetX}%; top:${targetY}%;"><i class="bi bi-bullseye" style="font-size:22px; color:#2ecc71;"></i></div>
-                                    ${userCoords ? `<div class="es-pinpoint-pin ${isCorrect ? 'es-pinpoint-pin--correct' : 'es-pinpoint-pin--incorrect'}" style="left:${userCoords.x}%; top:${userCoords.y}%;"><i class="bi bi-geo-alt-fill"></i></div>` : ''}
+                                    ${userCoords ? `<div class="es-pinpoint-pin ${algoCorrect ? 'es-pinpoint-pin--correct' : 'es-pinpoint-pin--incorrect'}" style="left:${userCoords.x}%; top:${userCoords.y}%;"><i class="bi bi-geo-alt-fill"></i></div>` : ''}
                                 </div>
                             </div>` : ''}
                         </div>`;
                     } else if (q.type === 'cloze') {
-                        const clozeMatches = (q.clozeText || '').match(/\[([^\]]+)\]/g) || [];
-                        const expectedBlanks = clozeMatches.map(m => m.replace(/^\[|\]$/g, '').trim());
+                        const { blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
                         const userAnswersObj = userAns && typeof userAns === 'object' ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
-                        
-                        let correctBlanksCount = 0;
-                        expectedBlanks.forEach((expWord, bIdx) => {
-                            const uWord = userAnswersObj[bIdx];
-                            if (uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase()) {
-                                correctBlanksCount++;
-                            }
-                        });
-                        const isAllCorrect = (expectedBlanks.length > 0) && (correctBlanksCount === expectedBlanks.length);
-
-                        ansDisplay = `
-                        <div style="background:#ffffff; border:1px solid ${isAllCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
-                            <strong>Texte à trous :</strong> <span style="font-weight:700; color:${isAllCorrect ? '#27ae60' : '#e74c3c'};">${isAllCorrect ? '✅ 100% Exact (+1 pt)' : `❌ ${correctBlanksCount}/${expectedBlanks.length} trou(s) correct(s)`}</span>
+                        previewHtml = `
+                        <div>
+                            <strong>Texte à trous :</strong> ${expectedBlanks.map((exp, idx) => {
+                                const u = userAnswersObj[idx];
+                                const isOk = u && String(u).trim().toLowerCase() === String(exp).trim().toLowerCase();
+                                return `<span style="display:inline-block; margin:2px 4px; padding:2px 6px; border-radius:4px; font-size:0.8rem; background:${isOk ? 'rgba(39,174,96,0.12)' : 'rgba(231,76,60,0.12)'}; color:${isOk ? '#27ae60' : '#e74c3c'}; border:1px solid ${isOk ? '#27ae60' : '#e74c3c'};">${escapeHtml(u || '∅')} ${!isOk ? `(attendu: ${escapeHtml(exp)})` : ''}</span>`;
+                            }).join('')}
                         </div>`;
                     } else if (q.type === 'range') {
                         const val = (userAns !== null && userAns !== undefined) ? parseFloat(userAns) : null;
-                        ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Curseur :</strong> <span style="font-weight:700;">${val !== null ? `${val} ${escapeHtml(q.unit || '')}` : 'Non renseigné'}</span> (Cible : ${q.correctValue || '—'})</div>`;
+                        previewHtml = `<div><strong>Curseur candidat :</strong> <span style="font-weight:700;">${val !== null ? `${val} ${escapeHtml(q.unit || '')}` : 'Non renseigné'}</span> (Cible : ${q.correctValue || '—'} ± ${q.tolerance || 0})</div>`;
                     } else if (q.type === 'puzzle') {
                         const order = Array.isArray(userAns) ? userAns : [];
-                        ansDisplay = `<div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;"><strong>Ordre proposé :</strong> <ol style="margin:4px 0 0 16px; padding:0;">${order.map(it => `<li>${escapeHtml(it)}</li>`).join('')}</ol></div>`;
-                    } else {
-                        const ev = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : { autoSuggested: null, isCorrect: null, status: 'auto_draft', gradedByUid: null };
-                        const isAdminUser = (actualRole === 'admin' || actualUserData?.role === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin) || (typeof isFormateurAdmin !== 'undefined' && isFormateurAdmin) || (typeof currentRole !== 'undefined' && currentRole === 'admin'));
-                        const isLockedByAdmin = (ev.gradedByRole === 'admin' && !isAdminUser);
-                        const isTranche = (ev.status === 'reviewed' || ev.status === 'graded') && (!!ev.gradedByName || !!ev.gradedByUid || ev.isCorrect !== null);
-
-                        let autoDraftBadge = '';
-                        if (ev.autoSuggested === true) {
-                            autoDraftBadge = `<span class="es-badge" style="background:rgba(46, 204, 113, 0.14); color:#27ae60; font-size:0.75rem; padding:2px 8px; border-radius:12px;"><i class="bi bi-robot"></i> 1er jet algo : Vrai</span>`;
-                        } else if (ev.autoSuggested === false) {
-                            autoDraftBadge = `<span class="es-badge" style="background:rgba(231, 76, 60, 0.14); color:#e74c3c; font-size:0.75rem; padding:2px 8px; border-radius:12px;"><i class="bi bi-robot"></i> 1er jet algo : Faux</span>`;
-                        }
-
-                        let statusBadge = '';
-                        let metaChip = '';
-                        if (isTranche) {
-                            const isOk = (ev.isCorrect === true);
-                            statusBadge = `<span style="font-weight:700; color:${isOk ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.86rem;">${isOk ? '✅ Validé (Vrai)' : '❌ Invalidé (Faux)'}</span>`;
-                            metaChip = `
-                            <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
-                                <i class="bi bi-shield-check" style="color:${ev.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)'};"></i>
-                                <span>${isOk ? 'Validé' : 'Invalidé'} par <strong>${escapeHtml(ev.gradedByName || 'Équipe pédagogique')}</strong> (${ev.gradedByRole === 'admin' ? 'Admin' : 'Formateur'}) le ${formatFullDate(ev.gradedAt)}</span>
-                                ${isLockedByAdmin ? `<span style="margin-left:auto; color:var(--clr-warning, #d35400); font-weight:600;"><i class="bi bi-lock-fill"></i> Verrouillé</span>` : ''}
-                            </div>`;
-                        } else {
-                            statusBadge = `<span style="font-size:0.78rem; font-weight:600; color:#e67e22; background:rgba(243,156,18,0.12); padding:2px 8px; border-radius:12px;"><i class="bi bi-hourglass-split"></i> En attente de validation</span>`;
-                        }
-
-                        let actionButtonsHtml = '';
-                        if (!isLockedByAdmin) {
-                            actionButtonsHtml = `
-                            <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
-                                <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === true ? 'es-btn--primary' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${m.id}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="true" style="padding:4px 10px; font-size:0.78rem;">
-                                    <i class="bi bi-check-lg"></i> Vrai (Valider)
-                                </button>
-                                <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === false ? 'es-btn--danger' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${m.id}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="false" style="padding:4px 10px; font-size:0.78rem;">
-                                    <i class="bi bi-x-lg"></i> Faux (Invalider)
-                                </button>
-                                ${isAdminUser && ev.gradedByRole === 'admin' ? `<span style="font-size:0.72rem; color:var(--clr-text-muted);">(Admin : modifiable)</span>` : ''}
-                            </div>`;
-                        } else {
-                            actionButtonsHtml = `
-                            <div style="margin-top:8px; font-size:0.74rem; color:var(--clr-text-muted); background:rgba(0,0,0,0.03); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
-                                <i class="bi bi-lock-fill" style="color:var(--clr-warning);"></i> Décision validée par un administrateur (verrouillée pour les formateurs).
-                            </div>`;
-                        }
-
-                        ansDisplay = `
-                        <div style="background:#ffffff; border:1px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:6px; font-size:0.88rem; line-height:1.5; color:var(--clr-text);">
-                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <strong>Réponse rédigée :</strong>
-                                    ${autoDraftBadge}
-                                </div>
-                                <div>${statusBadge}</div>
+                        previewHtml = `<div><strong>Ordre proposé :</strong> <ol style="margin:4px 0 0 16px; padding:0;">${order.map(it => `<li>${escapeHtml(it)}</li>`).join('')}</ol></div>`;
+                    } else if (q.type === 'matching') {
+                        const rawPairs = q.pairs || [];
+                        const userMatchesObj = (userAns && typeof userAns === 'object') ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
+                        previewHtml = `
+                        <div>
+                            <strong>Associations :</strong>
+                            <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+                                ${rawPairs.map(p => {
+                                    const u = userMatchesObj[p.left] || userMatchesObj[(p.left||'').trim()];
+                                    const isPairOk = u && String(u).trim().toLowerCase() === String(p.right).trim().toLowerCase();
+                                    return `<div><span style="font-weight:600;">${escapeHtml(p.left)}</span> ➔ <span style="color:${isPairOk ? '#27ae60' : '#e74c3c'}; font-weight:700;">${escapeHtml(u || '— (Non relié)')}</span> ${!isPairOk ? `<small style="color:var(--clr-text-muted);">(Attendu: ${escapeHtml(p.right)})</small>` : ''}</div>`;
+                                }).join('')}
                             </div>
-                            <div style="white-space:pre-wrap; color:var(--clr-text); font-size:0.88rem;">${escapeHtml(userAns || 'Pas de texte rédigé.')}</div>
+                        </div>`;
+                    } else if (q.type === 'text') {
+                        previewHtml = `
+                        <div>
+                            <strong>Réponse rédigée :</strong>
+                            <div style="white-space:pre-wrap; color:var(--clr-text); font-size:0.88rem; padding:8px 12px; background:var(--clr-surface); border-radius:6px; margin-top:4px;">${escapeHtml(userAns || 'Pas de texte rédigé.')}</div>
                             ${q.hint ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); margin-top:6px;"><i class="bi bi-lightbulb"></i> Piste attendue : ${escapeHtml(q.hint)}</div>` : ''}
-                            ${metaChip}
-                            ${actionButtonsHtml}
+                        </div>`;
+                    } else {
+                        previewHtml = `<div><strong>Réponse :</strong> ${userAns !== null && userAns !== undefined ? escapeHtml(String(userAns)) : 'Non renseigné'}</div>`;
+                    }
+
+                    // Auto draft badge
+                    const autoDraftBadge = `<span class="es-badge" style="background:${algoCorrect ? 'rgba(46, 204, 113, 0.14)' : 'rgba(231, 76, 60, 0.14)'}; color:${algoCorrect ? '#27ae60' : '#e74c3c'}; font-size:0.75rem; padding:2px 8px; border-radius:12px;"><i class="bi bi-robot"></i> 1er jet algo : ${algoCorrect ? 'Vrai' : 'Faux'}</span>`;
+
+                    // Status badge
+                    let statusBadge = '';
+                    let metaChip = '';
+                    if (isTranche) {
+                        const isOk = (ev.isCorrect === true);
+                        statusBadge = `<span style="font-weight:700; color:${isOk ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.86rem;">${isOk ? '✅ Validé (Vrai)' : '❌ Invalidé (Faux)'}</span>`;
+                        metaChip = `
+                        <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
+                            <i class="bi bi-shield-check" style="color:${ev.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)'};"></i>
+                            <span>${isOk ? 'Validé' : 'Invalidé'} par <strong>${escapeHtml(ev.gradedByName || 'Équipe pédagogique')}</strong> (${ev.gradedByRole === 'admin' ? 'Admin' : 'Formateur'})${ev.gradedAt ? ` le ${formatFullDate(ev.gradedAt)}` : ''}</span>
+                            ${isLockedByAdmin ? `<span style="margin-left:auto; color:var(--clr-warning, #d35400); font-weight:600;"><i class="bi bi-lock-fill"></i> Verrouillé</span>` : ''}
+                        </div>`;
+                    } else {
+                        statusBadge = `<span style="font-size:0.78rem; font-weight:600; color:#e67e22; background:rgba(243,156,18,0.12); padding:2px 8px; border-radius:12px;"><i class="bi bi-hourglass-split"></i> En attente de validation</span>`;
+                    }
+
+                    // Action buttons
+                    let actionButtonsHtml = '';
+                    if (!isLockedByAdmin) {
+                        actionButtonsHtml = `
+                        <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:8px;">
+                            <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === true ? 'es-btn--primary' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${m.id}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="true" style="padding:4px 10px; font-size:0.78rem;">
+                                <i class="bi bi-check-lg"></i> Vrai (Valider)
+                            </button>
+                            <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === false ? 'es-btn--danger' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${m.id}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="false" style="padding:4px 10px; font-size:0.78rem;">
+                                <i class="bi bi-x-lg"></i> Faux (Invalider)
+                            </button>
+                            ${isAdminUser && ev.gradedByRole === 'admin' ? `<span style="font-size:0.72rem; color:var(--clr-text-muted);">(Admin : modifiable)</span>` : ''}
+                        </div>`;
+                    } else {
+                        actionButtonsHtml = `
+                        <div style="margin-top:8px; font-size:0.74rem; color:var(--clr-text-muted); background:rgba(0,0,0,0.03); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
+                            <i class="bi bi-lock-fill" style="color:var(--clr-warning);"></i> Décision validée par un administrateur (verrouillée pour les formateurs).
                         </div>`;
                     }
 
+                    // Comment textarea
+                    const commentFieldHtml = `
+                    <div style="margin-top:10px;">
+                        <label style="display:block; font-size:0.75rem; font-weight:700; color:var(--clr-text-muted); margin-bottom:4px;">
+                            <i class="bi bi-chat-left-text"></i> Remarque pédagogique / explication (visible par le stagiaire) :
+                        </label>
+                        <textarea class="es-input cand-eval-comment-input" id="candEvalComment_${sub.id}_${q.id}" rows="2" placeholder="Ajouter une remarque pédagogique ou explication pour le stagiaire..." style="width:100%; font-size:0.82rem; padding:6px 10px; resize:vertical; border-radius:6px;" ${isLockedByAdmin ? 'disabled' : ''}>${escapeHtml(ev.comment || '')}</textarea>
+                    </div>`;
+
+                    ansDisplay = `
+                    <div style="background:#ffffff; border:1px solid ${currentEffectiveIsCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:12px; margin-top:6px; font-size:0.88rem; line-height:1.5; color:var(--clr-text);">
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                ${autoDraftBadge}
+                            </div>
+                            <div>${statusBadge}</div>
+                        </div>
+                        ${previewHtml}
+                        ${metaChip}
+                        ${commentFieldHtml}
+                        ${actionButtonsHtml}
+                    </div>`;
+
                     return `
-                    <div style="margin-top:10px; padding-top:8px; border-top:1px dashed var(--clr-surface-3);">
+                    <div style="margin-top:10px; padding-top:8px; border-top:1px dashed var(--clr-surface-3);" class="es-bilan-q-card">
                         <div style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Q${qIdx + 1} • ${q.type}</div>
                         <div style="font-size:0.88rem; font-weight:400; color:var(--clr-text);" class="es-q-rich-text">${formatQuestionRichText(q.text)}</div>
                         ${ansDisplay}
