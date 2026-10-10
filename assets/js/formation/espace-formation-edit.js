@@ -2683,6 +2683,9 @@ function syncQuestionsFromDOM() {
             });
             if (categories.length > 0) q.categories = categories;
 
+            const drawInp = card.querySelector('.classification-draw-items-input');
+            q.drawItemsCount = (drawInp && drawInp.value !== '') ? (parseInt(drawInp.value, 10) || 0) : 0;
+
             const itemCards = card.querySelectorAll('.classification-tag-item');
             const items = [];
             itemCards.forEach(iEl => {
@@ -3142,15 +3145,30 @@ function renderQuestionsEditor() {
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <label class="es-field__label" style="margin:0; font-weight:800; color:var(--clr-text);">🏷️ 2. Étiquettes (Tags) et catégorie attendue :</label>
                             <span class="es-badge es-badge--stagiaire" style="font-size:0.75rem; font-weight:800; padding:3px 8px;">
-                                ${items.length} étiquette${items.length > 1 ? 's' : ''} à classer
+                                ${items.length} étiquette${items.length > 1 ? 's' : ''} au total
                             </span>
                         </div>
                         <div class="classification-items-wrap">${itemsListHtml}</div>
-                        ${items.length < 20 ? `
+                        ${items.length < 30 ? `
                             <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-classification-item" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
                                 <i class="bi bi-plus-circle"></i> Ajouter une étiquette
                             </button>
                         ` : ''}
+
+                        <!-- Option Tirage au sort X étiquettes parmi le lot -->
+                        <div style="margin-top:14px; padding:10px 14px; background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <i class="bi bi-dice-5-fill" style="font-size:1.3rem; color:var(--clr-accent);"></i>
+                                <div>
+                                    <div style="font-weight:700; font-size:0.85rem; color:var(--clr-text);">🎲 Tirage au sort d'étiquettes (Optionnel) :</div>
+                                    <div style="font-size:0.75rem; color:var(--clr-text-muted);">Sélectionner au hasard X étiquettes dans le lot pour le stagiaire (laisser vide pour toutes).</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <label style="font-size:0.8rem; font-weight:700; color:var(--clr-text-muted);">Nombre à piocher :</label>
+                                <input type="number" class="es-input classification-draw-items-input" data-qidx="${idx}" min="1" max="${items.length}" value="${q.drawItemsCount || ''}" placeholder="Toutes (${items.length})" style="width:115px; font-weight:700; font-size:0.85rem; padding:6px 10px; text-align:center;">
+                            </div>
+                        </div>
                     </div>
                 </div>
             `;
@@ -4730,6 +4748,16 @@ function bindQuestionsEvents() {
         });
     });
 
+    container.querySelectorAll('.classification-draw-items-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                const val = parseInt(e.target.value, 10);
+                currentEditingQuestions[qidx].drawItemsCount = (!isNaN(val) && val > 0) ? val : 0;
+            }
+        });
+    });
+
     container.querySelectorAll('.classification-item-text-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
@@ -5104,6 +5132,7 @@ document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e
                     clozeText: q.clozeText || '',
                     distractors: q.distractors || '',
                     items: q.items || (q.type === 'classification' ? [{ id: 'item_1', text: 'Besoin de sieste et rituels rassurants', categoryId: 'cat_1' }, { id: 'item_2', text: 'Jeux de règles et développement moteur', categoryId: 'cat_2' }, { id: 'item_3', text: 'Importance du groupe de pairs et pudeur', categoryId: 'cat_3' }, { id: 'item_4', text: 'Co-construction des projets et émancipation', categoryId: 'cat_4' }] : (q.type === 'puzzle' ? ['Étape 1', 'Étape 2'] : undefined)),
+                    drawItemsCount: q.drawItemsCount !== undefined ? (parseInt(q.drawItemsCount, 10) || 0) : 0,
                     pairs: q.pairs || (q.type === 'matching' ? [{ left: 'A', right: '1' }, { left: 'B', right: '2' }] : undefined),
                     hint: q.hint || '',
                     sampleAnswer: q.sampleAnswer || '',

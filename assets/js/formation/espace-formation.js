@@ -205,10 +205,21 @@ function computeQuestionAlgoCorrect(q, ans) {
             isCorrect = Math.abs(val - targetVal) <= tol;
         }
     } else if (type === 'classification') {
-        const rawItems = q.items || [];
+        const allItems = q.items || [];
         const userPlacements = (ans && typeof ans === 'object') ? ans : {};
-        isAnswered = rawItems.some(it => userPlacements[it.id]);
-        isCorrect = isAnswered && (rawItems.length > 0) && rawItems.every(it => userPlacements[it.id] === it.categoryId);
+        const placedItemIds = Object.keys(userPlacements).filter(id => userPlacements[id]);
+        const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+        const expectedCount = (drawCount > 0 && drawCount < allItems.length) ? drawCount : allItems.length;
+
+        isAnswered = placedItemIds.length > 0;
+        if (drawCount > 0 && drawCount < allItems.length) {
+            isCorrect = isAnswered && (placedItemIds.length === expectedCount) && placedItemIds.every(id => {
+                const it = allItems.find(item => item.id === id);
+                return it && userPlacements[id] === it.categoryId;
+            });
+        } else {
+            isCorrect = isAnswered && (allItems.length > 0) && allItems.every(it => userPlacements[it.id] === it.categoryId);
+        }
     } else if (type === 'cloze') {
         const { blanks: expectedBlanks } = parseClozeQuestion(q.clozeText || '');
         const userAnswersObj = (ans && typeof ans === 'object') ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});
@@ -2664,10 +2675,21 @@ function computeQuestionAlgoCorrect(q, ans) {
             isCorrect = Math.abs(val - targetVal) <= tol;
         }
     } else if (type === 'classification') {
-        const rawItems = q.items || [];
+        const allItems = q.items || [];
         const userPlacements = (ans && typeof ans === 'object') ? ans : {};
-        isAnswered = rawItems.some(it => userPlacements[it.id]);
-        isCorrect = isAnswered && (rawItems.length > 0) && rawItems.every(it => userPlacements[it.id] === it.categoryId);
+        const placedItemIds = Object.keys(userPlacements).filter(id => userPlacements[id]);
+        const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+        const expectedCount = (drawCount > 0 && drawCount < allItems.length) ? drawCount : allItems.length;
+
+        isAnswered = placedItemIds.length > 0;
+        if (drawCount > 0 && drawCount < allItems.length) {
+            isCorrect = isAnswered && (placedItemIds.length === expectedCount) && placedItemIds.every(id => {
+                const it = allItems.find(item => item.id === id);
+                return it && userPlacements[id] === it.categoryId;
+            });
+        } else {
+            isCorrect = isAnswered && (allItems.length > 0) && allItems.every(it => userPlacements[it.id] === it.categoryId);
+        }
     } else if (type === 'cloze') {
         const { blanks: expectedBlanks } = (typeof parseClozeQuestion === 'function') ? parseClozeQuestion(q.clozeText || '') : { blanks: [] };
         const userAnswersObj = (ans && typeof ans === 'object') ? ans : (ans ? (()=>{ try { return JSON.parse(ans); } catch(e){ return {}; } })() : {});

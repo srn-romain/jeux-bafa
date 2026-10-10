@@ -628,11 +628,15 @@ function parseQuizSections(questions, shouldShuffle = false) {
     let currentSec = null;
 
     questions.forEach((q, idx) => {
-        // Mélanger aléatoirement les propositions de réponses pour les stagiaires (QCM et QCM images)
+        // Mélanger aléatoirement les propositions de réponses pour les stagiaires (QCM, QCM images, Classement par catégories)
         if (q.type === 'qcm' && Array.isArray(q.options)) {
             q._shuffledOptions = shuffleArray(q.options.map((text, originalIndex) => ({ text, originalIndex })));
         } else if (q.type === 'image_choice' && Array.isArray(q.imageOptions)) {
             q._shuffledImageOptions = shuffleArray(q.imageOptions.map((opt, originalIndex) => ({ ...opt, originalIndex })));
+        } else if (q.type === 'classification' && Array.isArray(q.items)) {
+            const shuffled = shuffleArray([...q.items]);
+            const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+            q._shuffledItems = (drawCount > 0 && drawCount < shuffled.length) ? shuffled.slice(0, drawCount) : shuffled;
         }
 
         if (q.type === 'section') {
@@ -1144,10 +1148,17 @@ function renderActiveSectionPage() {
                 </div>`;
             } else if (q.type === 'classification') {
                 const categories = q.categories || [];
-                const rawItems = q.items || [];
+                if (!q._shuffledItems && Array.isArray(q.items)) {
+                    const shuffled = shuffleArray([...q.items]);
+                    const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+                    q._shuffledItems = (drawCount > 0 && drawCount < shuffled.length) ? shuffled.slice(0, drawCount) : shuffled;
+                }
+                const rawItems = q._shuffledItems || q.items || [];
                 const savedPlacements = (savedVal && typeof savedVal === 'object') ? savedVal : {};
 
                 const placedCount = Object.keys(savedPlacements).filter(itemId => savedPlacements[itemId]).length;
+                const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+                const isDrawnSubset = (drawCount > 0 && drawCount < (q.items || []).length);
 
                 const catBoxesHtml = categories.map(cat => {
                     const catItems = rawItems.filter(it => savedPlacements[it.id] === cat.id);
@@ -1197,7 +1208,7 @@ function renderActiveSectionPage() {
                         <div class="es-classification-bank-header">
                             <div class="es-classification-bank-title">
                                 <i class="bi bi-tags-fill" style="color:var(--clr-primary-dark);"></i>
-                                Étiquettes à ranger :
+                                Étiquettes à ranger ${isDrawnSubset ? `<span style="font-size:0.76rem; color:var(--clr-text-muted); font-weight:600;">(🎲 ${rawItems.length} tirées au sort sur ${q.items.length})</span>` : ''} :
                             </div>
                             <span class="es-badge es-badge--stagiaire" id="classification_status_${q.id}" style="font-size:0.75rem; padding:3px 8px;">
                                 ${placedCount} / ${rawItems.length} classée${placedCount > 1 ? 's' : ''}
@@ -1691,7 +1702,7 @@ function attachQuizInteractions(container) {
         });
     });
 
-    // Puzzle Drag & Drop
+    // Puzzle Drag & Drop (Souris & Tactile mobile)
     container.querySelectorAll('.es-puzzle-item').forEach(item => {
         item.addEventListener('dragstart', (e) => {
             item.classList.add('dragging');
@@ -1702,6 +1713,77 @@ function attachQuizInteractions(container) {
             updatePuzzleNumbers(item.parentElement);
             updateProgress();
         });
+
+        // Support tactile mobile pour puzzle
+        let startY = 0;
+        let isTouching = false;
+        let touchMoved = false;
+        let ghostEl = null;
+
+        item.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.es-puzzle-btn-move')) return;
+            if (e.touches.length > 1) return;
+            const touch = e.touches[0];
+            startY = touch.clientY;
+            isTouching = true;
+            touchMoved = false;
+        }, { passive: true });
+
+        item.addEventListener('touchmove', (e) => {
+            if (!isTouching || e.target.closest('.es-puzzle-btn-move')) return;
+            const touch = e.touches[0];
+            const dy = touch.clientY - startY;
+
+            if (!touchMoved && Math.abs(dy) > 6) {
+                touchMoved = true;
+                const rect = item.getBoundingClientRect();
+                ghostEl = item.cloneNode(true);
+                ghostEl.style.position = 'fixed';
+                ghostEl.style.left = `${rect.left}px`;
+                ghostEl.style.top = `${rect.top}px`;
+                ghostEl.style.width = `${rect.width}px`;
+                ghostEl.style.pointerEvents = 'none';
+                ghostEl.style.zIndex = '99999';
+                ghostEl.style.opacity = '0.9';
+                ghostEl.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+                ghostEl.style.transform = 'scale(1.02)';
+                document.body.appendChild(ghostEl);
+                item.classList.add('dragging');
+            }
+
+            if (touchMoved) {
+                if (e.cancelable) e.preventDefault();
+                if (ghostEl) {
+                    ghostEl.style.top = `${touch.clientY - 25}px`;
+                }
+                const list = item.parentElement;
+                if (list) {
+                    const siblings = [...list.querySelectorAll('.es-puzzle-item:not(.dragging)')];
+                    const nextSibling = siblings.find(sibling => {
+                        const box = sibling.getBoundingClientRect();
+                        return touch.clientY <= box.top + box.height / 2;
+                    });
+                    list.insertBefore(item, nextSibling);
+                }
+            }
+        }, { passive: false });
+
+        const finishPuzzleTouch = () => {
+            if (ghostEl) {
+                ghostEl.remove();
+                ghostEl = null;
+            }
+            item.classList.remove('dragging');
+            if (touchMoved && item.parentElement) {
+                updatePuzzleNumbers(item.parentElement);
+                updateProgress();
+            }
+            isTouching = false;
+            touchMoved = false;
+        };
+
+        item.addEventListener('touchend', finishPuzzleTouch);
+        item.addEventListener('touchcancel', finishPuzzleTouch);
     });
 
     container.querySelectorAll('.es-puzzle-list').forEach(list => {
@@ -1780,6 +1862,37 @@ function attachQuizInteractions(container) {
         updateProgress();
     }
 
+    function placeClozeTagInDropzone(tag, dropzone, qId) {
+        if (!tag || !dropzone) return;
+        const existingTag = dropzone.querySelector('.es-cloze-tag');
+        const bank = document.getElementById(`cloze_bank_${qId}`);
+        if (existingTag && existingTag !== tag && bank) {
+            const removeBtn = existingTag.querySelector('.es-cloze-tag-remove');
+            if (removeBtn) removeBtn.remove();
+            bank.appendChild(existingTag);
+        }
+
+        if (!tag.querySelector('.es-cloze-tag-remove')) {
+            const removeBtn = document.createElement('span');
+            removeBtn.className = 'es-cloze-tag-remove';
+            removeBtn.title = 'Retirer du trou';
+            removeBtn.innerHTML = '<i class="bi bi-x"></i>';
+            removeBtn.addEventListener('click', (ev) => {
+                ev.stopPropagation();
+                if (bank) {
+                    removeBtn.remove();
+                    bank.appendChild(tag);
+                    syncClozeValue(qId);
+                }
+            });
+            tag.appendChild(removeBtn);
+        }
+
+        dropzone.appendChild(tag);
+        tag.classList.remove('is-selected');
+        syncClozeValue(qId);
+    }
+
     container.querySelectorAll('.es-cloze-tag').forEach(tag => {
         tag.addEventListener('dragstart', (e) => {
             tag.classList.add('dragging');
@@ -1791,8 +1904,108 @@ function attachQuizInteractions(container) {
             tag.classList.remove('dragging');
         });
 
+        // Touch Drag & Drop pour mobile
+        let touchMoved = false;
+        let startX = 0, startY = 0;
+        let ghostEl = null;
+        let lastHoveredDz = null;
+
+        tag.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.es-cloze-tag-remove')) return;
+            if (e.touches.length > 1) return;
+            const touch = e.touches[0];
+            startX = touch.clientX;
+            startY = touch.clientY;
+            touchMoved = false;
+        }, { passive: true });
+
+        tag.addEventListener('touchmove', (e) => {
+            if (e.target.closest('.es-cloze-tag-remove')) return;
+            const touch = e.touches[0];
+            const dx = touch.clientX - startX;
+            const dy = touch.clientY - startY;
+
+            if (!touchMoved && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+                touchMoved = true;
+                const rect = tag.getBoundingClientRect();
+                ghostEl = tag.cloneNode(true);
+                ghostEl.style.position = 'fixed';
+                ghostEl.style.left = `${rect.left}px`;
+                ghostEl.style.top = `${rect.top}px`;
+                ghostEl.style.width = `${rect.width}px`;
+                ghostEl.style.height = `${rect.height}px`;
+                ghostEl.style.pointerEvents = 'none';
+                ghostEl.style.zIndex = '99999';
+                ghostEl.style.opacity = '0.92';
+                ghostEl.style.boxShadow = '0 8px 20px rgba(0,0,0,0.25)';
+                ghostEl.style.transform = 'scale(1.06)';
+                document.body.appendChild(ghostEl);
+                tag.classList.add('dragging');
+            }
+
+            if (touchMoved) {
+                if (e.cancelable) e.preventDefault();
+                if (ghostEl) {
+                    ghostEl.style.left = `${touch.clientX - (ghostEl.offsetWidth / 2)}px`;
+                    ghostEl.style.top = `${touch.clientY - (ghostEl.offsetHeight / 2)}px`;
+                }
+
+                const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+                const dz = elUnder ? elUnder.closest('.es-cloze-dropzone') : null;
+                if (dz !== lastHoveredDz) {
+                    if (lastHoveredDz) lastHoveredDz.classList.remove('es-cloze-dropzone--dragover');
+                    if (dz) {
+                        dz.classList.add('es-cloze-dropzone--dragover');
+                        lastHoveredDz = dz;
+                    } else {
+                        lastHoveredDz = null;
+                    }
+                }
+            }
+        }, { passive: false });
+
+        const finishClozeTouch = (e) => {
+            if (lastHoveredDz) {
+                lastHoveredDz.classList.remove('es-cloze-dropzone--dragover');
+                lastHoveredDz = null;
+            }
+            if (ghostEl) {
+                ghostEl.remove();
+                ghostEl = null;
+            }
+            tag.classList.remove('dragging');
+
+            if (touchMoved) {
+                const touch = e.changedTouches ? e.changedTouches[0] : null;
+                if (touch) {
+                    const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const qId = tag.getAttribute('data-q-id');
+                    if (elUnder) {
+                        const targetDropzone = elUnder.closest('.es-cloze-dropzone');
+                        const targetBank = elUnder.closest('.es-cloze-bank, .es-cloze-bank-container');
+
+                        if (targetDropzone && targetDropzone.getAttribute('data-q-id') === qId) {
+                            placeClozeTagInDropzone(tag, targetDropzone, qId);
+                        } else if (targetBank && tag.closest('.es-cloze-dropzone')) {
+                            const bank = document.getElementById(`cloze_bank_${qId}`);
+                            if (bank) {
+                                const removeBtn = tag.querySelector('.es-cloze-tag-remove');
+                                if (removeBtn) removeBtn.remove();
+                                bank.appendChild(tag);
+                                syncClozeValue(qId);
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        tag.addEventListener('touchend', finishClozeTouch);
+        tag.addEventListener('touchcancel', finishClozeTouch);
+
         // Click sur tag (Tap-to-place ou remise en banque)
         tag.addEventListener('click', (e) => {
+            if (touchMoved) return;
             const qId = tag.getAttribute('data-q-id');
             const isInDropzone = tag.closest('.es-cloze-dropzone');
 
@@ -1838,33 +2051,7 @@ function attachQuizInteractions(container) {
             const qId = dropzone.getAttribute('data-q-id');
             if (!tag || tag.getAttribute('data-q-id') !== qId) return;
 
-            const existingTag = dropzone.querySelector('.es-cloze-tag');
-            const bank = document.getElementById(`cloze_bank_${qId}`);
-            if (existingTag && existingTag !== tag && bank) {
-                const removeBtn = existingTag.querySelector('.es-cloze-tag-remove');
-                if (removeBtn) removeBtn.remove();
-                bank.appendChild(existingTag);
-            }
-
-            if (!tag.querySelector('.es-cloze-tag-remove')) {
-                const removeBtn = document.createElement('span');
-                removeBtn.className = 'es-cloze-tag-remove';
-                removeBtn.title = 'Retirer du trou';
-                removeBtn.innerHTML = '<i class="bi bi-x"></i>';
-                removeBtn.addEventListener('click', (ev) => {
-                    ev.stopPropagation();
-                    if (bank) {
-                        removeBtn.remove();
-                        bank.appendChild(tag);
-                        syncClozeValue(qId);
-                    }
-                });
-                tag.appendChild(removeBtn);
-            }
-
-            dropzone.appendChild(tag);
-            tag.classList.remove('is-selected');
-            syncClozeValue(qId);
+            placeClozeTagInDropzone(tag, dropzone, qId);
         });
 
         // Click sur dropzone pour déposer le tag sélectionné (Tap-to-place)
@@ -1876,33 +2063,7 @@ function attachQuizInteractions(container) {
 
             const selectedTag = wrap.querySelector('.es-cloze-bank .es-cloze-tag.is-selected');
             if (selectedTag) {
-                const bank = document.getElementById(`cloze_bank_${qId}`);
-                const existingTag = dropzone.querySelector('.es-cloze-tag');
-                if (existingTag && existingTag !== selectedTag && bank) {
-                    const removeBtn = existingTag.querySelector('.es-cloze-tag-remove');
-                    if (removeBtn) removeBtn.remove();
-                    bank.appendChild(existingTag);
-                }
-
-                if (!selectedTag.querySelector('.es-cloze-tag-remove')) {
-                    const removeBtn = document.createElement('span');
-                    removeBtn.className = 'es-cloze-tag-remove';
-                    removeBtn.title = 'Retirer du trou';
-                    removeBtn.innerHTML = '<i class="bi bi-x"></i>';
-                    removeBtn.addEventListener('click', (ev) => {
-                        ev.stopPropagation();
-                        if (bank) {
-                            removeBtn.remove();
-                            bank.appendChild(selectedTag);
-                            syncClozeValue(qId);
-                        }
-                    });
-                    selectedTag.appendChild(removeBtn);
-                }
-
-                dropzone.appendChild(selectedTag);
-                selectedTag.classList.remove('is-selected');
-                syncClozeValue(qId);
+                placeClozeTagInDropzone(selectedTag, dropzone, qId);
             }
         });
     });
@@ -2229,6 +2390,7 @@ function attachQuizInteractions(container) {
         function bindTagEvents(tagEl) {
             const itemId = tagEl.getAttribute('data-item-id');
 
+            // HTML5 Drag & Drop (ordinateurs / souris)
             tagEl.addEventListener('dragstart', (e) => {
                 e.dataTransfer.setData('text/plain', JSON.stringify({ qId, itemId }));
                 tagEl.classList.add('is-dragging');
@@ -2238,7 +2400,121 @@ function attachQuizInteractions(container) {
                 tagEl.classList.remove('is-dragging');
             });
 
+            // Touch Drag & Drop (mobiles & tablettes tactiles)
+            let touchMoved = false;
+            let startTouchX = 0;
+            let startTouchY = 0;
+            let ghostEl = null;
+            let lastHoveredZone = null;
+
+            tagEl.addEventListener('touchstart', (e) => {
+                if (e.target.closest('.es-classification-tag-remove')) return;
+                if (e.touches.length > 1) return;
+                const touch = e.touches[0];
+                startTouchX = touch.clientX;
+                startTouchY = touch.clientY;
+                touchMoved = false;
+            }, { passive: true });
+
+            tagEl.addEventListener('touchmove', (e) => {
+                if (e.target.closest('.es-classification-tag-remove')) return;
+                const touch = e.touches[0];
+                const dx = touch.clientX - startTouchX;
+                const dy = touch.clientY - startTouchY;
+
+                if (!touchMoved && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+                    touchMoved = true;
+                    const rect = tagEl.getBoundingClientRect();
+                    ghostEl = tagEl.cloneNode(true);
+                    ghostEl.classList.add('es-classification-tag-ghost');
+                    ghostEl.style.position = 'fixed';
+                    ghostEl.style.left = `${rect.left}px`;
+                    ghostEl.style.top = `${rect.top}px`;
+                    ghostEl.style.width = `${rect.width}px`;
+                    ghostEl.style.height = `${rect.height}px`;
+                    ghostEl.style.pointerEvents = 'none';
+                    ghostEl.style.zIndex = '99999';
+                    ghostEl.style.opacity = '0.92';
+                    ghostEl.style.boxShadow = '0 10px 25px rgba(0,0,0,0.25)';
+                    ghostEl.style.transform = 'scale(1.06)';
+                    ghostEl.style.transition = 'none';
+                    document.body.appendChild(ghostEl);
+
+                    tagEl.classList.add('is-dragging');
+                }
+
+                if (touchMoved) {
+                    if (e.cancelable) e.preventDefault();
+                    if (ghostEl) {
+                        ghostEl.style.left = `${touch.clientX - (ghostEl.offsetWidth / 2)}px`;
+                        ghostEl.style.top = `${touch.clientY - (ghostEl.offsetHeight / 2)}px`;
+                    }
+
+                    const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const targetZone = elUnder ? elUnder.closest('.es-classification-cat-dropzone, .es-classification-cat-card, .es-classification-bank, .es-classification-bank-card') : null;
+
+                    if (targetZone !== lastHoveredZone) {
+                        if (lastHoveredZone) {
+                            const dz = lastHoveredZone.classList.contains('es-classification-cat-dropzone') ? lastHoveredZone : lastHoveredZone.querySelector('.es-classification-cat-dropzone');
+                            const bk = lastHoveredZone.classList.contains('es-classification-bank') ? lastHoveredZone : lastHoveredZone.querySelector('.es-classification-bank');
+                            if (dz) dz.classList.remove('drag-over');
+                            if (bk) bk.classList.remove('drag-over');
+                        }
+                        if (targetZone && wrap.contains(targetZone)) {
+                            const dz = targetZone.classList.contains('es-classification-cat-dropzone') ? targetZone : targetZone.querySelector('.es-classification-cat-dropzone');
+                            const bk = targetZone.classList.contains('es-classification-bank') ? targetZone : targetZone.querySelector('.es-classification-bank');
+                            if (dz) dz.classList.add('drag-over');
+                            if (bk) bk.classList.add('drag-over');
+                            lastHoveredZone = targetZone;
+                        } else {
+                            lastHoveredZone = null;
+                        }
+                    }
+                }
+            }, { passive: false });
+
+            const finishTouchDrag = (e) => {
+                if (lastHoveredZone) {
+                    const dz = lastHoveredZone.classList.contains('es-classification-cat-dropzone') ? lastHoveredZone : lastHoveredZone.querySelector('.es-classification-cat-dropzone');
+                    const bk = lastHoveredZone.classList.contains('es-classification-bank') ? lastHoveredZone : lastHoveredZone.querySelector('.es-classification-bank');
+                    if (dz) dz.classList.remove('drag-over');
+                    if (bk) bk.classList.remove('drag-over');
+                    lastHoveredZone = null;
+                }
+                if (ghostEl) {
+                    ghostEl.remove();
+                    ghostEl = null;
+                }
+                tagEl.classList.remove('is-dragging');
+
+                if (touchMoved) {
+                    const touch = e.changedTouches ? e.changedTouches[0] : null;
+                    if (touch) {
+                        const elUnder = document.elementFromPoint(touch.clientX, touch.clientY);
+                        if (elUnder) {
+                            const catCard = elUnder.closest('.es-classification-cat-card');
+                            const dropzone = elUnder.closest('.es-classification-cat-dropzone');
+                            const bank = elUnder.closest('.es-classification-bank, .es-classification-bank-card');
+
+                            if (dropzone || catCard) {
+                                const targetCatId = (dropzone || catCard).getAttribute('data-cat-id');
+                                if (targetCatId) {
+                                    moveItemToCategory(itemId, targetCatId);
+                                }
+                            } else if (bank && wrap.contains(bank)) {
+                                moveItemToBank(itemId);
+                            }
+                        }
+                    }
+                }
+            };
+
+            tagEl.addEventListener('touchend', finishTouchDrag);
+            tagEl.addEventListener('touchcancel', finishTouchDrag);
+
+            // Click / Tap (Tap-to-place ou retrait pour mobile et ordi)
             tagEl.addEventListener('click', (e) => {
+                if (touchMoved) return;
                 if (e.target.closest('.es-classification-tag-remove')) {
                     e.stopPropagation();
                     moveItemToBank(itemId);
@@ -2389,7 +2665,7 @@ function isQuestionAnswered(q, val) {
         return (answeredRows === rows.length);
     }
     if (q.type === 'classification') {
-        const items = q.items || [];
+        const items = q._shuffledItems || q.items || [];
         if (!val || typeof val !== 'object') return false;
         const placedCount = items.filter(it => val[it.id]).length;
         return (placedCount === items.length);
@@ -2596,7 +2872,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             }
         } else if (q.type === 'classification') {
             qcmTotal++;
-            const rawItems = q.items || [];
+            const rawItems = q._shuffledItems || q.items || [];
             const userPlacements = (savedVal && typeof savedVal === 'object') ? savedVal : {};
 
             answers[q.id] = userPlacements;
@@ -3181,8 +3457,19 @@ function renderResultsScreen(submission = {}) {
                 </div>`;
             } else if (q.type === 'classification') {
                 const categories = q.categories || [];
-                const rawItems = q.items || [];
                 const userPlacements = (userAns && typeof userAns === 'object') ? userAns : {};
+                const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+
+                let rawItems = q._shuffledItems;
+                if (!rawItems || rawItems.length === 0) {
+                    if (drawCount > 0 && drawCount < (q.items || []).length) {
+                        const placedIds = Object.keys(userPlacements).filter(id => userPlacements[id]);
+                        rawItems = (q.items || []).filter(it => placedIds.includes(it.id));
+                        if (rawItems.length === 0) rawItems = (q.items || []).slice(0, drawCount);
+                    } else {
+                        rawItems = q.items || [];
+                    }
+                }
 
                 let allCorrect = (rawItems.length > 0);
                 const isAnswered = rawItems.some(it => userPlacements[it.id]);
