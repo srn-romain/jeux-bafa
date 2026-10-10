@@ -999,6 +999,8 @@ function getModuleStateSnapshot() {
         showResultsAtEnd: document.getElementById('editShowResultsAtEnd')?.checked || false,
         negativePoints: document.getElementById('editNegativePoints')?.checked || false,
         allowPreviousPage: document.getElementById('editQuizAllowPreviousPage')?.checked || false,
+        shuffleQuestions: document.getElementById('editQuizShuffleQuestions')?.checked || false,
+        drawCount: document.getElementById('editQuizDrawCount')?.value || '0',
         requirePassword: document.getElementById('editQuizRequirePassword')?.checked || false,
         password: (document.getElementById('editQuizPassword')?.value || '').trim(),
         questions: currentEditingQuestions || []
@@ -1174,6 +1176,15 @@ async function loadModuleHubData() {
                 chkAllowPrev.checked = (qConfig.allowPreviousPage !== false);
             }
 
+            const chkShuffle = document.getElementById('editQuizShuffleQuestions');
+            if (chkShuffle) {
+                chkShuffle.checked = Boolean(qConfig.shuffleQuestions === true || qConfig.shuffleQuestions === 'true' || qConfig.randomizeQuestions === true);
+            }
+
+            const drawCountVal = (qConfig.drawCount !== undefined && qConfig.drawCount !== null && parseInt(qConfig.drawCount, 10) > 0) ? qConfig.drawCount : '';
+            const inpDraw = document.getElementById('editQuizDrawCount');
+            if (inpDraw) inpDraw.value = drawCountVal;
+
             const hasPwd = Boolean(qConfig.requirePassword === true || (qConfig.password && String(qConfig.password).trim() !== ''));
             const pwdVal = qConfig.password || '';
             const chkRequirePassword = document.getElementById('editQuizRequirePassword');
@@ -1242,6 +1253,12 @@ async function loadModuleHubData() {
             }
             if (document.getElementById('editQuizAllowPreviousPage')) {
                 document.getElementById('editQuizAllowPreviousPage').checked = true;
+            }
+            if (document.getElementById('editQuizShuffleQuestions')) {
+                document.getElementById('editQuizShuffleQuestions').checked = false;
+            }
+            if (document.getElementById('editQuizDrawCount')) {
+                document.getElementById('editQuizDrawCount').value = '';
             }
 
             const chkRequirePassword = document.getElementById('editQuizRequirePassword');
@@ -1575,8 +1592,13 @@ function renderInspectionQuestions(questions, sub) {
 
     const answers = sub.answers || {};
     const evaluations = sub.evaluations || {};
+    const drawnIds = Array.isArray(sub.drawnQuestionIds) && sub.drawnQuestionIds.length > 0
+        ? new Set(sub.drawnQuestionIds)
+        : (Object.keys(answers).length > 0 ? new Set(Object.keys(answers)) : null);
 
-    container.innerHTML = questions.map((q, idx) => {
+    const questionsToDisplay = drawnIds ? questions.filter(q => q.type === 'section' || drawnIds.has(q.id)) : questions;
+
+    container.innerHTML = questionsToDisplay.map((q, idx) => {
         const ans = answers[q.id];
         const type = q.type || 'qcm';
 
@@ -1951,6 +1973,13 @@ function renderInspectionQuestions(questions, sub) {
                         ${userText ? `<div style="padding:12px 14px; background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); font-size:0.88rem; color:var(--clr-text); line-height:1.6; white-space:pre-wrap; word-break:break-word;">${escapeHtml(userText)}</div>` : `<div style="padding:12px 14px; background:var(--clr-surface); border:1.5px dashed var(--clr-surface-3); border-radius:var(--radius-sm); font-size:0.85rem; color:var(--clr-text-muted); font-style:italic; text-align:center;">Aucune réponse rédigée.</div>`}
                     </div>
 
+                    ${q.sampleAnswer ? `
+                        <div style="font-size:0.84rem; color:var(--clr-text); background:rgba(39, 174, 96, 0.08); border-left:3.5px solid #27ae60; padding:10px 14px; border-radius:4px; margin-bottom:4px;">
+                            <strong style="color:#27ae60; display:flex; align-items:center; gap:6px;"><i class="bi bi-check2-circle"></i> Proposition de correction / Réponse attendue :</strong>
+                            <div style="margin-top:4px; white-space:pre-wrap; line-height:1.5;">${escapeHtml(q.sampleAnswer)}</div>
+                        </div>
+                    ` : ''}
+
                     ${q.hint ? `
                         <div style="font-size:0.78rem; color:var(--clr-text-muted); background:var(--clr-surface-2); padding:8px 12px; border-radius:6px; border:1px solid var(--clr-surface-3);">
                             💡 <strong>Piste pédagogique :</strong> ${escapeHtml(q.hint)}
@@ -1984,6 +2013,7 @@ function renderInspectionQuestions(questions, sub) {
                     <span class="es-badge es-badge--stagiaire" style="font-size:0.68rem;">${type.toUpperCase()}</span>
                 </div>
                 <div style="font-weight:700; font-size:0.92rem; color:var(--clr-text);" class="es-q-rich-text">${formatQuestionRichText(q.text || '')}</div>
+                ${q.imageUrl ? `<div style="margin:8px 0;"><img src="${escapeHtml(q.imageUrl)}" alt="Illustration question" style="max-height:120px; max-width:100%; object-fit:contain; border-radius:6px; border:1px solid var(--clr-surface-3);" onerror="this.parentElement.style.display='none'"></div>` : ''}
                 ${contentHtml}
             </div>
         `;
@@ -2181,9 +2211,16 @@ function syncQuestionsFromDOM() {
         const imgInput = card.querySelector('.q-image-input');
         if (imgInput) q.imageUrl = imgInput.value.trim();
 
-        // Indice
+        // Obligatoire dans le tirage
+        const mandatoryCb = card.querySelector('.q-mandatory-cb');
+        if (mandatoryCb) q.isMandatory = mandatoryCb.checked;
+
+        // Indice & Proposition de corrigé
         const hintInput = card.querySelector('.q-hint-input');
         if (hintInput) q.hint = hintInput.value;
+
+        const sampleAnswerInput = card.querySelector('.q-sample-answer-input');
+        if (sampleAnswerInput) q.sampleAnswer = sampleAnswerInput.value;
 
         // Type
         const typeSelect = card.querySelector('.q-type-select');
@@ -2355,6 +2392,28 @@ function moveQuestion(fromIdx, toIdx) {
     }, 40);
 }
 
+function updateQuizDrawCountInfo() {
+    const infoEl = document.getElementById('quizDrawCountInfo');
+    const drawInput = document.getElementById('editQuizDrawCount');
+    if (!infoEl || !drawInput) return;
+
+    const regularQs = (currentEditingQuestions || []).filter(q => q.type !== 'section');
+    const totalCount = regularQs.length;
+    const mandatoryCount = regularQs.filter(q => q.isMandatory === true || q.isMandatory === 'true').length;
+    const drawVal = parseInt(drawInput.value, 10) || 0;
+
+    if (drawVal > 0 && drawVal < totalCount) {
+        infoEl.innerHTML = `<i class="bi bi-dice-5-fill"></i> ${drawVal} / ${totalCount} tirées (${mandatoryCount} obligatoire${mandatoryCount > 1 ? 's' : ''})`;
+        infoEl.style.color = 'var(--clr-accent)';
+    } else if (drawVal >= totalCount && totalCount > 0) {
+        infoEl.innerHTML = `<i class="bi bi-check-all"></i> Totalité (${totalCount} questions)`;
+        infoEl.style.color = 'var(--clr-primary)';
+    } else {
+        infoEl.innerHTML = totalCount > 0 ? `Totalité (${totalCount} questions)` : '';
+        infoEl.style.color = 'var(--clr-text-muted)';
+    }
+}
+
 function renderQuestionsEditor() {
     const container = document.getElementById('questionsContainer');
     const badgeCount = document.getElementById('badgeQuestionsTotalCount');
@@ -2370,6 +2429,8 @@ function renderQuestionsEditor() {
         }
         badgeCount.textContent = badgeStr;
     }
+
+    updateQuizDrawCountInfo();
 
     if (currentEditingQuestions.length === 0) {
         container.innerHTML = `
@@ -2841,10 +2902,22 @@ function renderQuestionsEditor() {
             `;
         } else if (type === 'text') {
             specificFields = `
-                <div style="margin-top:12px;">
+                <div style="margin-top:12px; display:flex; flex-direction:column; gap:12px;">
                     <div class="es-field">
-                        <label class="es-field__label">💡 Piste / Mots-clés attendus (pour guider la réponse et l'évaluation) :</label>
-                        <textarea class="es-input q-hint-input" data-qidx="${idx}" rows="2" placeholder="Ex: Doit mentionner la sécurité, le projet pédagogique et la déclaration SDJES...">${escapeHtml(q.hint || '')}</textarea>
+                        <label class="es-field__label" style="color:var(--clr-primary-dark); font-weight:700;">
+                            🎓 Proposition de correction / Éléments de réponse attendus :
+                        </label>
+                        <div style="font-size:0.76rem; color:var(--clr-text-muted); margin-bottom:6px;">
+                            Ce corrigé type sera affiché au stagiaire lorsqu'il consultera son résultat et ses corrections détaillées.
+                        </div>
+                        <textarea class="es-input q-sample-answer-input" data-qidx="${idx}" rows="3" placeholder="Ex: Pour valider cette question, le stagiaire doit expliquer la démarche pédagogique, assurer la sécurité physique et affective, et donner au moins deux exemples concrets...">${escapeHtml(q.sampleAnswer || '')}</textarea>
+                    </div>
+
+                    <div class="es-field">
+                        <label class="es-field__label" style="font-size:0.82rem;">
+                            💡 Piste / Indice optionnel (affiché pendant l'épreuve) :
+                        </label>
+                        <textarea class="es-input q-hint-input" data-qidx="${idx}" rows="2" placeholder="Ex: Pensez aux aspects réglementaires et aux besoins fondamentaux de l'enfant...">${escapeHtml(q.hint || '')}</textarea>
                     </div>
                 </div>
             `;
@@ -2976,7 +3049,7 @@ function renderQuestionsEditor() {
         return `
             <div class="es-qcard" data-qidx="${idx}">
                 <div class="es-qcard__header">
-                    <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         <span class="es-qcard__num">${currentQNum}</span>
                         <select class="es-select q-type-select" data-qidx="${idx}" style="font-weight:700; font-size:0.85rem; padding:6px 12px; width:auto;">
                             <option value="qcm" ${type === 'qcm' ? 'selected' : ''}>1- ☑️ QCM (Choix multiple)</option>
@@ -2991,6 +3064,11 @@ function renderQuestionsEditor() {
                             <option value="cloze" ${type === 'cloze' ? 'selected' : ''}>10- 📝 Texte à trous (Glisser-déposer)</option>
                             <option value="text" ${type === 'text' ? 'selected' : ''}>11- ✍️ Rédaction libre</option>
                         </select>
+
+                        <label class="es-mandatory-toggle" data-qidx="${idx}" style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-size:0.78rem; font-weight:700; padding:5px 10px; border-radius:6px; background:${q.isMandatory ? 'rgba(230, 126, 34, 0.15)' : 'var(--clr-surface)'}; border:1.5px solid ${q.isMandatory ? 'var(--clr-accent)' : 'var(--clr-surface-3)'}; color:${q.isMandatory ? 'var(--clr-accent)' : 'var(--clr-text-muted)'}; user-select:none; transition:all 0.2s;" title="Sera forcément incluse si tirage au sort aléatoire de question">
+                            <input type="checkbox" class="q-mandatory-cb" data-qidx="${idx}" ${q.isMandatory ? 'checked' : ''} style="width:15px; height:15px; accent-color:var(--clr-accent); cursor:pointer;">
+                            <span class="q-mandatory-label">${q.isMandatory ? '📌 Obligatoire dans le tirage' : '🎲 Aléatoire'}</span>
+                        </label>
                     </div>
                     <div style="display:flex; align-items:center; gap:4px;">
                         <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-move-q-up" data-qidx="${idx}" ${isFirst ? 'disabled' : ''} style="padding:6px 10px; ${isFirst ? 'opacity:0.3; cursor:not-allowed;' : ''}" title="${isFirst ? 'Première position' : 'Monter d\'un rang (flèche haut)'}">
@@ -3065,9 +3143,36 @@ function renderQuestionsEditor() {
                     </div>
                 </div>
 
-                <div class="es-field" style="margin-bottom:10px;">
-                    <label class="es-field__label">🖼️ Image (URL optionnelle) :</label>
-                    <input class="es-input q-image-input" type="text" data-qidx="${idx}" value="${escapeHtml(q.imageUrl || '')}" placeholder="https://..." style="font-size:0.85rem;">
+                <div class="es-field" style="margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+                        <label class="es-field__label" style="margin-bottom:0; font-weight:700;">
+                            🖼️ Image d'illustration (optionnelle) :
+                        </label>
+                        <span style="font-size:0.75rem; color:var(--clr-text-muted);">
+                            URL web ou import direct depuis votre PC
+                        </span>
+                    </div>
+
+                    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <input class="es-input q-image-input" type="text" data-qidx="${idx}" value="${escapeHtml(q.imageUrl || '')}" placeholder="Coller une URL https://... ou importer un fichier image" style="font-size:0.85rem; flex:1; min-width:200px;">
+                        
+                        <label class="es-btn es-btn--secondary es-btn--sm" style="cursor:pointer; padding:7px 12px; font-size:0.82rem; display:inline-flex; align-items:center; gap:6px; font-weight:700;" title="Importer une image depuis votre ordinateur">
+                            <i class="bi bi-upload"></i> Importer du PC
+                            <input type="file" class="q-image-file-input hidden" data-qidx="${idx}" accept="image/*">
+                        </label>
+
+                        ${q.imageUrl ? `
+                            <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-clear-q-image" data-qidx="${idx}" style="padding:7px 10px; color:var(--clr-danger);" title="Supprimer l'image">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    ${q.imageUrl ? `
+                        <div class="q-image-preview-wrap" style="margin-top:10px; position:relative; display:inline-flex; align-items:center; max-width:100%; border-radius:6px; overflow:hidden; border:1px solid var(--clr-surface-3); background:#181c19; padding:4px;">
+                            <img src="${escapeHtml(q.imageUrl)}" alt="Illustration question" style="max-height:160px; max-width:100%; object-fit:contain; border-radius:4px;" onerror="this.parentElement.style.display='none'">
+                        </div>
+                    ` : ''}
                 </div>
 
                 ${specificFields}
@@ -3138,7 +3243,7 @@ function applyPermissionsToUI() {
         }
 
         // Masquer les boutons d'actions d'édition de questions et d'images
-        document.querySelectorAll('.btn-delete-q, .btn-duplicate-q, .btn-move-q-up, .btn-move-q-down, .btn-add-option, .btn-remove-option, .btn-add-cat, .btn-remove-cat, .btn-add-item, .btn-remove-item, .btn-add-pair, .btn-remove-pair, #btnToggleBgGallery, #btnRandomBgPreset, #btnDynamicRandomBg').forEach(btn => {
+        document.querySelectorAll('.btn-delete-q, .btn-duplicate-q, .btn-move-q-up, .btn-move-q-down, .btn-add-option, .btn-remove-option, .btn-add-cat, .btn-remove-cat, .btn-add-item, .btn-remove-item, .btn-add-pair, .btn-remove-pair, .btn-clear-q-image, .q-image-file-input, #btnToggleBgGallery, #btnRandomBgPreset, #btnDynamicRandomBg').forEach(btn => {
             btn.style.display = 'none';
         });
     } else {
@@ -3151,6 +3256,25 @@ function applyPermissionsToUI() {
         if (currentEditingModuleId) {
             btnDelete?.classList.remove('hidden');
         }
+    }
+}
+
+async function processAndSetQuestionImage(qidx, file) {
+    if (!file) return;
+    if (!file.type || !file.type.startsWith('image/')) {
+        showToast("Veuillez déposer ou sélectionner un fichier image valide.", "warning");
+        return;
+    }
+    syncQuestionsFromDOM();
+    if (!currentEditingQuestions[qidx]) return;
+    try {
+        const base64 = await compressImageToBase64(file, 1200, 900, 0.82);
+        currentEditingQuestions[qidx].imageUrl = base64;
+        renderQuestionsEditor();
+        showToast("Image de la question chargée avec succès !", "success");
+    } catch (err) {
+        console.error("Erreur compression image question:", err);
+        showToast("Erreur lors du traitement de l'image.", "error");
     }
 }
 
@@ -3555,11 +3679,66 @@ function bindQuestionsEvents() {
         }
     });
 
+    container.querySelectorAll('.q-image-file-input').forEach(input => {
+        input.addEventListener('change', (e) => {
+            const idx = parseInt(input.getAttribute('data-qidx'), 10);
+            const file = e.target.files?.[0];
+            if (file) {
+                processAndSetQuestionImage(idx, file);
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-clear-q-image').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const idx = parseInt(btn.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].imageUrl = '';
+                renderQuestionsEditor();
+                showToast("Image retirée.", "info");
+            }
+        });
+    });
+
     container.querySelectorAll('.q-image-input').forEach(input => {
+        const idx = parseInt(input.getAttribute('data-qidx'), 10);
+
         input.addEventListener('input', (e) => {
-            const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
             if (currentEditingQuestions[idx]) {
                 currentEditingQuestions[idx].imageUrl = e.target.value.trim();
+                const card = input.closest('.es-qcard');
+                let prevWrap = card?.querySelector('.q-image-preview-wrap');
+                const val = e.target.value.trim();
+                if (val) {
+                    if (!prevWrap) {
+                        prevWrap = document.createElement('div');
+                        prevWrap.className = 'q-image-preview-wrap';
+                        prevWrap.style.cssText = 'margin-top:10px; position:relative; display:inline-flex; align-items:center; max-width:100%; border-radius:6px; overflow:hidden; border:1px solid var(--clr-surface-3); background:#181c19; padding:4px;';
+                        input.parentElement.insertAdjacentElement('afterend', prevWrap);
+                    }
+                    prevWrap.style.display = 'inline-flex';
+                    prevWrap.innerHTML = `<img src="${escapeHtml(val)}" alt="Illustration question" style="max-height:160px; max-width:100%; object-fit:contain; border-radius:4px;" onerror="this.parentElement.style.display='none'">`;
+                } else if (prevWrap) {
+                    prevWrap.style.display = 'none';
+                }
+            }
+        });
+
+        // Support du collage direct d'image (Ctrl+V) dans le champ URL/image
+        input.addEventListener('paste', (e) => {
+            const items = e.clipboardData?.items;
+            if (items) {
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        const file = items[i].getAsFile();
+                        if (file) {
+                            e.preventDefault();
+                            processAndSetQuestionImage(idx, file);
+                            return;
+                        }
+                    }
+                }
             }
         });
     });
@@ -3569,6 +3748,42 @@ function bindQuestionsEvents() {
             const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
             if (currentEditingQuestions[idx]) {
                 currentEditingQuestions[idx].hint = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-sample-answer-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].sampleAnswer = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-mandatory-cb').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const idx = parseInt(cb.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[idx]) {
+                currentEditingQuestions[idx].isMandatory = cb.checked;
+                const toggle = cb.closest('.es-mandatory-toggle');
+                const lbl = toggle?.querySelector('.q-mandatory-label');
+                if (cb.checked) {
+                    if (toggle) {
+                        toggle.style.background = 'rgba(230, 126, 34, 0.15)';
+                        toggle.style.borderColor = 'var(--clr-accent)';
+                        toggle.style.color = 'var(--clr-accent)';
+                    }
+                    if (lbl) lbl.textContent = '📌 Obligatoire dans le tirage';
+                } else {
+                    if (toggle) {
+                        toggle.style.background = 'var(--clr-surface)';
+                        toggle.style.borderColor = 'var(--clr-surface-3)';
+                        toggle.style.color = 'var(--clr-text-muted)';
+                    }
+                    if (lbl) lbl.textContent = '🎲 Aléatoire';
+                }
+                updateQuizDrawCountInfo();
             }
         });
     });
@@ -4504,6 +4719,8 @@ async function saveModuleData(btnEl) {
     const showResultsAtEnd = document.getElementById('editShowResultsAtEnd').checked;
     const negativePoints = document.getElementById('editNegativePoints') ? document.getElementById('editNegativePoints').checked : false;
     const allowPreviousPage = document.getElementById('editQuizAllowPreviousPage') ? document.getElementById('editQuizAllowPreviousPage').checked : true;
+    const shuffleQuestions = document.getElementById('editQuizShuffleQuestions') ? document.getElementById('editQuizShuffleQuestions').checked : false;
+    const drawCount = parseInt(document.getElementById('editQuizDrawCount')?.value, 10) || 0;
 
     const isRequirePassword = document.getElementById('editQuizRequirePassword').checked;
     const quizPassword = document.getElementById('editQuizPassword').value.trim();
@@ -4752,6 +4969,8 @@ async function saveModuleData(btnEl) {
                 showResultsAtEnd: showResultsAtEnd,
                 negativePoints: negativePoints,
                 allowPreviousPage: allowPreviousPage,
+                shuffleQuestions: shuffleQuestions,
+                drawCount: drawCount,
                 requirePassword: isRequirePassword,
                 password: isRequirePassword ? quizPassword : ''
             },
@@ -4788,7 +5007,9 @@ async function saveModuleData(btnEl) {
                 type: q.type || 'qcm',
                 text: q.text || q.title || '',
                 imageUrl: q.imageUrl || '',
-                hint: q.hint || ''
+                hint: q.hint || '',
+                sampleAnswer: q.sampleAnswer || '',
+                isMandatory: Boolean(q.isMandatory === true || q.isMandatory === 'true')
             };
 
             if (q.type === 'section') {
@@ -5040,6 +5261,8 @@ document.getElementById('editModuleBgUpload')?.addEventListener('change', async 
         showToast("Erreur lors de l'upload.", "error");
     }
 });
+
+document.getElementById('editQuizDrawCount')?.addEventListener('input', updateQuizDrawCountInfo);
 
 // Auth listener
 auth.onAuthStateChanged(async (user) => {

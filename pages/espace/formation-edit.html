@@ -832,7 +832,7 @@
                                     style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--clr-text);">
                                     <input type="checkbox" id="editShowResultsAtEnd"
                                         style="width:18px; height:18px; accent-color:var(--clr-primary);">
-                                    <span>Afficher le corrigé détaillé à la fin</span>
+                                    <span><i class="bi bi-file-earmark-check" style="color:var(--clr-primary); margin-right:4px;"></i> Afficher le corrigé détaillé à la fin</span>
                                 </label>
                             </div>
 
@@ -841,7 +841,7 @@
                                     style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--clr-text);">
                                     <input type="checkbox" id="editQuizAllowPreviousPage" checked
                                         style="width:18px; height:18px; accent-color:var(--clr-primary);">
-                                    <span>Autoriser le retour aux pages précédentes</span>
+                                    <span><i class="bi bi-arrow-left-circle" style="color:var(--clr-primary); margin-right:4px;"></i> Autoriser retour aux pages précédentes</span>
                                 </label>
                             </div>
 
@@ -850,8 +850,31 @@
                                     style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--clr-text);">
                                     <input type="checkbox" id="editNegativePoints"
                                         style="width:18px; height:18px; accent-color:var(--clr-primary);">
-                                    <span>Barème à points négatifs</span>
+                                    <span><i class="bi bi-dash-circle" style="color:var(--clr-primary); margin-right:4px;"></i> Barème à points négatifs</span>
                                 </label>
+                            </div>
+
+                            <div class="es-field" style="margin-bottom:14px;">
+                                <label
+                                    style="display:flex; align-items:center; gap:10px; cursor:pointer; font-weight:600; font-size:0.88rem; color:var(--clr-text);">
+                                    <input type="checkbox" id="editQuizShuffleQuestions"
+                                        style="width:18px; height:18px; accent-color:var(--clr-primary);">
+                                    <span><i class="bi bi-shuffle" style="color:var(--clr-primary); margin-right:4px;"></i> Ordre aléatoire des questions</span>
+                                </label>
+                            </div>
+
+                            <div class="es-field" style="margin-bottom:14px;">
+                                <label class="es-field__label" for="editQuizDrawCount" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                    <span><i class="bi bi-dice-5" style="color:var(--clr-accent); margin-right:4px;"></i> Tirage :</span>
+                                    <span id="quizDrawCountInfo" style="font-size:0.75rem; color:var(--clr-primary); font-weight:700;"></span>
+                                </label>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <input class="es-input" type="number" id="editQuizDrawCount" min="0" max="300" placeholder="0 = Toutes" style="font-size:0.88rem; font-weight:700; width:120px;">
+                                    <span style="font-size:0.82rem; color:var(--clr-text-muted);">questions par stagiaire</span>
+                                </div>
+                                <span style="display:block; font-size:0.75rem; color:var(--clr-text-muted); margin-top:4px;">
+                                    Ex: 10 questions tirées au sort parmi les 15 créées. Laissez 0 ou vide pour poser la totalité.
+                                </span>
                             </div>
 
                             <div class="es-field"

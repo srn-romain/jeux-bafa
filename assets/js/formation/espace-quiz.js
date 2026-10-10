@@ -314,7 +314,14 @@ function renderBriefingScreen() {
     // Badges / Pilules
     const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
     const sectionsCount = currentQuestions.filter(q => q.type === 'section').length;
-    let pillQText = `${regularQuestions.length} question${regularQuestions.length > 1 ? 's' : ''}`;
+    const drawCount = parseInt(qConfig.drawCount, 10) || 0;
+    const hasDraw = (drawCount > 0 && drawCount < regularQuestions.length);
+    const activeQuestionsCount = hasDraw ? drawCount : regularQuestions.length;
+
+    let pillQText = `${activeQuestionsCount} question${activeQuestionsCount > 1 ? 's' : ''}`;
+    if (hasDraw) {
+        pillQText += ` tirées au sort (sur ${regularQuestions.length})`;
+    }
     if (sectionsCount > 1) {
         pillQText += ` (${sectionsCount} pages)`;
     }
@@ -325,7 +332,7 @@ function renderBriefingScreen() {
     const timerPillText = document.getElementById('pillQuizTimerText');
     if (timerPill && timerPillText) {
         if (totalDurationSecs > 0) {
-            timerPillText.textContent = `️${formatDurationText(totalDurationSecs)} max`;
+            timerPillText.textContent = `⏱️ ${formatDurationText(totalDurationSecs)} max`;
             timerPill.className = 'es-quiz-pill es-quiz-pill--warning';
         } else {
             timerPillText.textContent = `Temps libre (sans chrono)`;
@@ -360,11 +367,46 @@ function renderBriefingScreen() {
         else pillNeg.classList.add('hidden');
     }
 
+    // Pilule Ordre Aléatoire
+    const hasShuffle = Boolean(qConfig.shuffleQuestions === true || qConfig.shuffleQuestions === 'true' || qConfig.randomizeQuestions === true);
+    const pillShuffle = document.getElementById('pillShuffleQuestions');
+    if (pillShuffle) {
+        if (hasShuffle) pillShuffle.classList.remove('hidden');
+        else pillShuffle.classList.add('hidden');
+    }
+
+    // Pilule Tirage Aléatoire
+    const pillDraw = document.getElementById('pillDrawQuestions');
+    const pillDrawText = document.getElementById('pillDrawQuestionsText');
+    if (pillDraw) {
+        if (hasDraw) {
+            if (pillDrawText) pillDrawText.textContent = `Tirage au sort (${drawCount}/${regularQuestions.length})`;
+            pillDraw.classList.remove('hidden');
+        } else {
+            pillDraw.classList.add('hidden');
+        }
+    }
+
     // Avertissement de début d'épreuve
     const warningTextEl = document.getElementById('briefingWarningText');
     if (warningTextEl) {
         const allowPrev = (qConfig.allowPreviousPage !== false);
         let warnContent = '';
+
+        if (hasDraw) {
+            const mandatoryCount = regularQuestions.filter(q => q.isMandatory === true || q.isMandatory === 'true').length;
+            let drawMsg = `<strong>Tirage au sort :</strong> Seules <strong>${drawCount} questions</strong> seront tirées au sort parmi les ${regularQuestions.length} questions créées`;
+            if (mandatoryCount > 0) {
+                drawMsg += ` (dont <strong>${mandatoryCount} question${mandatoryCount > 1 ? 's' : ''} obligatoire${mandatoryCount > 1 ? 's' : ''}</strong>).`;
+            } else {
+                drawMsg += `.`;
+            }
+            warnContent += `${drawMsg}<br>`;
+        }
+
+        if (hasShuffle) {
+            warnContent += `<strong>Ordre aléatoire des questions :</strong> Afin de garantir l'équité, les questions sont présentées dans un <strong>ordre aléatoire unique</strong> pour chaque stagiaire.<br>`;
+        }
 
         if (maxAttempts > 0) {
             warnContent += `Ce module autorise un maximum de <strong>${maxAttempts} tentative(s)</strong>.<br>`;
@@ -564,7 +606,7 @@ document.getElementById('quizUnlockPasswordInput')?.addEventListener('keydown', 
 // ----------------------------------------------------------------
 // VUE 2 : MODE QUIZ ACTIF (ÉPREUVE EN COURS)
 // ----------------------------------------------------------------
-function parseQuizSections(questions) {
+function parseQuizSections(questions, shouldShuffle = false) {
     const sections = [];
     let currentSec = null;
 
@@ -594,16 +636,21 @@ function parseQuizSections(questions) {
     });
 
     const validSections = sections.filter(s => s.questions.length > 0);
-    if (validSections.length === 0) {
-        return [{
-            id: 'sec_default_0',
-            type: 'section',
-            title: 'Épreuve',
-            description: '',
-            questions: questions.filter(q => q.type !== 'section')
-        }];
+    const finalSections = (validSections.length > 0) ? validSections : [{
+        id: 'sec_default_0',
+        type: 'section',
+        title: 'Épreuve',
+        description: '',
+        questions: questions.filter(q => q.type !== 'section')
+    }];
+
+    if (shouldShuffle) {
+        finalSections.forEach(sec => {
+            sec.questions = shuffleArray(sec.questions);
+        });
     }
-    return validSections;
+
+    return finalSections;
 }
 
 function saveCurrentPageAnswersToState() {
@@ -788,7 +835,26 @@ function startActiveQuiz() {
 
     currentSectionIndex = 0;
     userAnswersState = {};
-    quizSections = parseQuizSections(currentQuestions);
+
+    // 1. Filtrage éventuel par tirage au sort (pool & obligatoires)
+    const drawCount = parseInt(mod.quizConfig?.drawCount, 10) || 0;
+    const allRegular = currentQuestions.filter(q => q.type !== 'section');
+    let activeQuestionsPool = currentQuestions;
+
+    if (drawCount > 0 && drawCount < allRegular.length) {
+        const mandatory = allRegular.filter(q => q.isMandatory === true || q.isMandatory === 'true');
+        const nonMandatory = allRegular.filter(q => !q.isMandatory && q.isMandatory !== 'true');
+        const neededFromPool = Math.max(0, drawCount - mandatory.length);
+        const drawnNonMandatory = shuffleArray(nonMandatory).slice(0, neededFromPool);
+        const drawnSet = new Set([...mandatory, ...drawnNonMandatory].map(q => q.id));
+        activeQuestionsPool = currentQuestions.filter(q => q.type === 'section' || drawnSet.has(q.id));
+    }
+
+    const shouldShuffle = Boolean(mod.quizConfig?.shuffleQuestions === true || mod.quizConfig?.shuffleQuestions === 'true' || mod.quizConfig?.randomizeQuestions === true);
+    quizSections = parseQuizSections(activeQuestionsPool, shouldShuffle);
+
+    const totalActiveQuestions = quizSections.flatMap(s => s.questions || []).length;
+    document.getElementById('activeProgressLabel').textContent = `0 / ${totalActiveQuestions} répondues`;
 
     renderActiveSectionPage();
 
@@ -843,6 +909,7 @@ function renderActiveSectionPage() {
     const sec = quizSections[currentSectionIndex];
     const allowPrev = (currentModuleData?.quizConfig?.allowPreviousPage !== false);
     const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
+    const allActiveRegularQuestions = quizSections.flatMap(s => s.questions);
 
     // 1. Bannière de section active
     const bannerEl = document.getElementById('quizSectionActiveBanner');
@@ -875,8 +942,8 @@ function renderActiveSectionPage() {
         `;
     } else {
         container.innerHTML = sec.questions.map(q => {
-            const globalIndex = regularQuestions.findIndex(rq => rq.id === q.id);
-            const qNum = (globalIndex !== -1) ? globalIndex + 1 : 1;
+            const activeIndex = allActiveRegularQuestions.findIndex(rq => rq.id === q.id);
+            const qNum = (activeIndex !== -1) ? activeIndex + 1 : 1;
             const savedVal = userAnswersState[q.id];
 
             let inputHtml = '';
@@ -1308,7 +1375,7 @@ function renderActiveSectionPage() {
 
             return `
             <div class="es-quiz-question-box" id="q_box_${q.id}">
-                <div class="es-quiz-q-num">Question ${qNum} sur ${regularQuestions.length} • ${typeBadgeLabel}</div>
+                <div class="es-quiz-q-num">Question ${qNum} sur ${allActiveRegularQuestions.length} • ${typeBadgeLabel}</div>
                 <div class="es-quiz-q-text">${formatQuestionRichText(q.text)}</div>
                 ${imageHtml}
                 ${inputHtml}
@@ -2240,7 +2307,9 @@ function isQuestionAnswered(q, val) {
 
 function updateProgress() {
     saveCurrentPageAnswersToState();
-    const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
+    const regularQuestions = (quizSections && quizSections.length > 0)
+        ? quizSections.flatMap(s => s.questions || [])
+        : currentQuestions.filter(q => q.type !== 'section');
     if (regularQuestions.length === 0) return;
 
     let answeredCount = 0;
@@ -2280,7 +2349,9 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
 
     const warningLabel = document.getElementById('quizWarningLabel');
     const btn = document.getElementById('btnSubmitQuiz');
-    const regularQuestions = currentQuestions.filter(q => q.type !== 'section');
+    const regularQuestions = (quizSections && quizSections.length > 0)
+        ? quizSections.flatMap(s => s.questions || [])
+        : currentQuestions.filter(q => q.type !== 'section');
     const qConfig = currentModuleData?.quizConfig || {};
     const hasNegativePoints = Boolean(qConfig.negativePoints === true || qConfig.negativePoints === 'true');
 
@@ -2600,6 +2671,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             userName: actualUserData?.displayName || `${actualUserData?.firstName || ''} ${actualUserData?.lastName || ''}`.trim() || currentUser.email,
             answers: answers,
             evaluations: evaluations,
+            drawnQuestionIds: regularQuestions.map(q => q.id),
             attemptNumber: nextAttemptCount,
             attemptsCount: nextAttemptCount,
             timeExpired: autoSubmitByTimer === true,
@@ -2796,8 +2868,30 @@ function renderResultsScreen(submission = {}) {
 
     if (showResults) {
         correctionSection.classList.remove('hidden');
+
+        let questionsToRender = currentQuestions;
+        if (Array.isArray(submission?.drawnQuestionIds) && submission.drawnQuestionIds.length > 0) {
+            const drawnSet = new Set(submission.drawnQuestionIds);
+            questionsToRender = currentQuestions.filter(q => q.type === 'section' || drawnSet.has(q.id));
+        }
+
+        // Nettoyer les sections orphelines sans questions tirées
+        const cleanedQuestionsToRender = [];
+        let pendingSection = null;
+        questionsToRender.forEach(q => {
+            if (q.type === 'section') {
+                pendingSection = q;
+            } else {
+                if (pendingSection) {
+                    cleanedQuestionsToRender.push(pendingSection);
+                    pendingSection = null;
+                }
+                cleanedQuestionsToRender.push(q);
+            }
+        });
+
         let questionCounter = 0;
-        questionsList.innerHTML = currentQuestions.map(q => {
+        questionsList.innerHTML = cleanedQuestionsToRender.map(q => {
             if (q.type === 'section') {
                 return `
                 <div style="background:var(--clr-surface); border:1.5px solid var(--clr-primary); border-radius:var(--radius-md); padding:16px 20px; margin: 24px 0 12px 0;">
@@ -3274,6 +3368,14 @@ function renderResultsScreen(submission = {}) {
                     ` : `
                         <div style="margin-top:4px; font-style:italic; color:var(--clr-text-muted); text-align:center; padding:6px 0;">Aucune réponse rédigée.</div>
                     `}
+                    ${q.sampleAnswer && q.sampleAnswer.trim() ? `
+                        <div style="margin-top:10px; padding:10px 12px; background:rgba(39, 174, 96, 0.08); border-left:3.5px solid #27ae60; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
+                            <div style="font-weight:700; color:#27ae60; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                                <i class="bi bi-check2-circle"></i> Proposition de correction / Éléments attendus :
+                            </div>
+                            <div style="white-space:pre-wrap; word-break:break-word; line-height:1.5;">${escapeHtml(q.sampleAnswer.trim())}</div>
+                        </div>
+                    ` : ''}
                     ${q.hint ? `
                         <div style="margin-top:8px; padding-top:6px; border-top:1px dashed var(--clr-surface-3); font-size:0.8rem; color:#b7791f;">
                             <i class="bi bi-lightbulb-fill"></i> Piste du formateur : ${escapeHtml(q.hint)}
