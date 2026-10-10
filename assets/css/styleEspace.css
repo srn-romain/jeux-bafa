@@ -5546,9 +5546,9 @@ body.modal-open .es-topbar {
 
 .es-quiz-q-text {
   font-size: 0.98rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--clr-text);
-  line-height: 1.45;
+  line-height: 1.55;
   margin-bottom: 14px;
 }
 
@@ -8144,6 +8144,7 @@ body.modal-open .es-topbar {
 
 .es-quiz-q-text,
 .es-q-rich-text {
+  font-weight: 400;
   line-height: 1.6;
   word-break: break-word;
 }

@@ -3340,45 +3340,66 @@ function renderResultsScreen(submission = {}) {
                 </div>`;
             } else {
                 const qEval = (submission?.evaluations && submission.evaluations[q.id]) ? submission.evaluations[q.id] : null;
-                const isAnswered = Boolean(userAns && userAns.trim().length > 0);
+                const isAnswered = Boolean(userAns && String(userAns).trim().length > 0);
+                const isGraded = Boolean(qEval && (qEval.status === 'graded' || qEval.status === 'reviewed' || qEval.gradedByName || qEval.status !== 'auto_draft'));
+
                 let evalBadge = '';
-                if (qEval && qEval.status === 'reviewed') {
-                    evalBadge = qEval.isCorrect ? `
-                        <span style="font-weight:700; color:var(--clr-success); margin-left:8px; font-size:0.84rem;">
-                            <i class="bi bi-check-circle-fill"></i> Validé (+1 pt)
-                        </span>` : `
-                        <span style="font-weight:700; color:var(--clr-danger); margin-left:8px; font-size:0.84rem;">
-                            <i class="bi bi-x-circle-fill"></i> ${isAnswered && hasNegativePoints ? 'Non validé (-0.5 pt)' : 'Non validé (0 pt)'}
-                        </span>`;
+                if (isGraded) {
+                    if (qEval.isCorrect === true) {
+                        evalBadge = `
+                            <span style="font-weight:700; color:var(--clr-success); background:rgba(39,174,96,0.12); padding:2px 8px; border-radius:12px; font-size:0.82rem;">
+                                <i class="bi bi-check-circle-fill"></i> Validé (+1 pt)
+                            </span>`;
+                    } else {
+                        const negMsg = (hasNegativePoints && isAnswered) ? '-0.5 pt' : '0 pt';
+                        evalBadge = `
+                            <span style="font-weight:700; color:var(--clr-danger); background:rgba(231,76,60,0.12); padding:2px 8px; border-radius:12px; font-size:0.82rem;">
+                                <i class="bi bi-x-circle-fill"></i> Non validé (${negMsg})
+                            </span>`;
+                    }
                 } else {
                     evalBadge = `
-                        <span style="font-size:0.75rem; font-weight:600; color:#e67e22; background:rgba(243,156,18,0.12); padding:2px 8px; border-radius:12px; margin-left:8px;">
-                            <i class="bi bi-hourglass-split"></i> Transmis pour évaluation formateur
+                        <span style="font-size:0.75rem; font-weight:600; color:#e67e22; background:rgba(243,156,18,0.12); padding:2px 8px; border-radius:12px;">
+                            <i class="bi bi-hourglass-split"></i> En attente d'évaluation formateur
                         </span>`;
                 }
 
                 ansDisplay = `
                 <div style="background:#ffffff; border:1.5px solid var(--clr-surface-3); border-radius:6px; padding:12px; margin-top:8px; font-size:0.88rem; line-height:1.5; color:var(--clr-text);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
-                        <strong style="color:var(--clr-primary);"><i class="bi bi-person-check"></i> Votre réponse :</strong>
-                        ${evalBadge}
+                    ${q.hint && q.hint.trim() ? `
+                        <div style="margin-bottom:10px; padding:8px 12px; background:rgba(243, 156, 18, 0.08); border-left:3.5px solid #e67e22; border-radius:4px; font-size:0.82rem; color:var(--clr-text);">
+                            <strong style="color:#d35400; display:flex; align-items:center; gap:6px;"><i class="bi bi-lightbulb-fill"></i> Piste / Indice optionnel :</strong>
+                            <div style="margin-top:2px; line-height:1.45;">${escapeHtml(q.hint.trim())}</div>
+                        </div>
+                    ` : ''}
+
+                    <div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                            <strong style="color:var(--clr-primary);"><i class="bi bi-chat-square-text"></i> Réponse du candidat :</strong>
+                            ${evalBadge}
+                        </div>
+                        ${(userAns && String(userAns).trim()) ? `
+                            <div style="padding:10px 12px; background:var(--clr-surface); border:1px solid var(--clr-surface-3); border-radius:6px; white-space:pre-wrap; word-break:break-word; margin-top:4px;">${escapeHtml(String(userAns).trim())}</div>
+                        ` : `
+                            <div style="padding:10px 12px; background:var(--clr-surface); border:1px dashed var(--clr-surface-3); border-radius:6px; margin-top:4px; font-style:italic; color:var(--clr-text-muted); text-align:center;">Aucune réponse rédigée.</div>
+                        `}
                     </div>
-                    ${(userAns && userAns.trim()) ? `
-                        <div style="white-space:pre-wrap; word-break:break-word; margin-top:4px;">${escapeHtml(userAns.trim())}</div>
-                    ` : `
-                        <div style="margin-top:4px; font-style:italic; color:var(--clr-text-muted); text-align:center; padding:6px 0;">Aucune réponse rédigée.</div>
-                    `}
+
+                    ${(qEval && (qEval.comment || isGraded)) ? `
+                        <div style="margin-top:10px; padding:10px 12px; background:rgba(52, 152, 219, 0.08); border-left:3.5px solid #3498db; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
+                            <div style="font-weight:700; color:#2980b9; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                                <i class="bi bi-person-workspace"></i> Évaluation Formateur ${qEval.gradedByName ? `(${escapeHtml(qEval.gradedByName)})` : ''} :
+                            </div>
+                            <div style="white-space:pre-wrap; word-break:break-word; line-height:1.5;">${qEval.comment && qEval.comment.trim() ? escapeHtml(qEval.comment.trim()) : (qEval.isCorrect ? '✅ Réponse validée par le formateur.' : '❌ Réponse non validée par le formateur.')}</div>
+                        </div>
+                    ` : ''}
+
                     ${q.sampleAnswer && q.sampleAnswer.trim() ? `
                         <div style="margin-top:10px; padding:10px 12px; background:rgba(39, 174, 96, 0.08); border-left:3.5px solid #27ae60; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
                             <div style="font-weight:700; color:#27ae60; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-                                <i class="bi bi-check2-circle"></i> Proposition de correction / Éléments attendus :
+                                <i class="bi bi-check2-circle"></i> Réponse proposée / Proposition de correction :
                             </div>
                             <div style="white-space:pre-wrap; word-break:break-word; line-height:1.5;">${escapeHtml(q.sampleAnswer.trim())}</div>
-                        </div>
-                    ` : ''}
-                    ${q.hint ? `
-                        <div style="margin-top:8px; padding-top:6px; border-top:1px dashed var(--clr-surface-3); font-size:0.8rem; color:#b7791f;">
-                            <i class="bi bi-lightbulb-fill"></i> Piste du formateur : ${escapeHtml(q.hint)}
                         </div>
                     ` : ''}
                 </div>`;
@@ -3395,7 +3416,7 @@ function renderResultsScreen(submission = {}) {
             return `
             <div style="background:var(--clr-surface-2); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-md); padding:16px;">
                 <div style="font-size:0.75rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Question ${qNum} • ${typeBadgeLabel}</div>
-                <div style="font-size:0.92rem; font-weight:700; color:var(--clr-text); margin-top:2px;" class="es-q-rich-text">${formatQuestionRichText(q.text)}</div>
+                <div style="font-size:0.92rem; font-weight:400; color:var(--clr-text); margin-top:2px;" class="es-q-rich-text">${formatQuestionRichText(q.text)}</div>
                 ${imageThumb}
                 ${ansDisplay}
             </div>`;

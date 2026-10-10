@@ -2012,7 +2012,7 @@ function renderInspectionQuestions(questions, sub) {
                     <span style="font-weight:700; font-size:0.85rem; color:var(--clr-primary-xdark);">Question ${idx + 1}</span>
                     <span class="es-badge es-badge--stagiaire" style="font-size:0.68rem;">${type.toUpperCase()}</span>
                 </div>
-                <div style="font-weight:700; font-size:0.92rem; color:var(--clr-text);" class="es-q-rich-text">${formatQuestionRichText(q.text || '')}</div>
+                <div style="font-weight:400; font-size:0.92rem; color:var(--clr-text);" class="es-q-rich-text">${formatQuestionRichText(q.text || '')}</div>
                 ${q.imageUrl ? `<div style="margin:8px 0;"><img src="${escapeHtml(q.imageUrl)}" alt="Illustration question" style="max-height:120px; max-width:100%; object-fit:contain; border-radius:6px; border:1px solid var(--clr-surface-3);" onerror="this.parentElement.style.display='none'"></div>` : ''}
                 ${contentHtml}
             </div>
@@ -2049,20 +2049,156 @@ document.getElementById('btnSaveGradingChanges')?.addEventListener('click', asyn
     btnLoading(this, true);
 
     try {
-        await db.collection('formation').doc(activeInspectingSubmission.moduleId)
-            .collection('submissions').doc(activeInspectingSubmission.id)
+        const sub = activeInspectingSubmission;
+        const evals = sub.evaluations || {};
+        const answers = sub.answers || {};
+        const hasNegativePoints = Boolean(sub.score?.negativePointsEnabled);
+
+        const allQuestions = currentEditingQuestions.length > 0 ? currentEditingQuestions : await fetchModuleQuestions(sub.moduleId);
+        const drawnIds = Array.isArray(sub.drawnQuestionIds) && sub.drawnQuestionIds.length > 0
+            ? new Set(sub.drawnQuestionIds)
+            : (Object.keys(answers).length > 0 ? new Set(Object.keys(answers)) : null);
+
+        const subQuestions = drawnIds ? allQuestions.filter(q => q.type !== 'section' && drawnIds.has(q.id)) : allQuestions.filter(q => q.type !== 'section');
+
+        let totalScore = 0;
+        let correctCount = 0;
+        let pointsTotal = 0;
+
+        subQuestions.forEach(q => {
+            totalScore++;
+            const ans = answers[q.id];
+            let isCorrect = false;
+            let isAnswered = false;
+
+            if (q.type === 'qcm') {
+                const userIndices = Array.isArray(ans)
+                    ? ans.map(n => parseInt(n, 10))
+                    : (ans !== null && ans !== undefined && ans !== '' ? [parseInt(ans, 10)] : []);
+                const expectedIndices = (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                    ? q.correctIndexes.map(n => parseInt(n, 10))
+                    : [(q.correctIndex !== undefined && q.correctIndex !== null ? parseInt(q.correctIndex, 10) : 0)];
+                const sortedUser = [...userIndices].sort((a, b) => a - b);
+                const sortedExp = [...expectedIndices].sort((a, b) => a - b);
+                isAnswered = sortedUser.length > 0;
+                isCorrect = (sortedUser.length === sortedExp.length && isAnswered && sortedUser.every((v, i) => v === sortedExp[i]));
+            } else if (q.type === 'image_choice') {
+                const ansNum = (ans !== null && ans !== undefined && ans !== '') ? parseInt(ans, 10) : null;
+                const correctIdx = (q.correctIndex !== undefined && q.correctIndex !== null) ? parseInt(q.correctIndex, 10) : 0;
+                isAnswered = (ansNum !== null && !isNaN(ansNum));
+                isCorrect = isAnswered && (ansNum === correctIdx);
+            } else if (q.type === 'table_choice') {
+                const rows = q.tableRows || [];
+                const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
+                let allRowsCorrect = (rows.length > 0);
+                rows.forEach((row, rIdx) => {
+                    const userRow = userAnsObj[rIdx] || {};
+                    const uCol1 = !!userRow.col1;
+                    const uCol2 = !!userRow.col2;
+                    if (uCol1 || uCol2) isAnswered = true;
+                    if (uCol1 !== !!row.correctCol1 || uCol2 !== !!row.correctCol2) allRowsCorrect = false;
+                });
+                isCorrect = isAnswered && allRowsCorrect;
+            } else if (q.type === 'boolean') {
+                const expectedBool = (q.correctAnswer === true || q.correctAnswer === 'true');
+                const userBool = (ans === true || ans === 'true');
+                isAnswered = (ans !== null && ans !== undefined && ans !== '');
+                isCorrect = isAnswered && (userBool === expectedBool);
+            } else if (q.type === 'pinpoint') {
+                const userCoords = (ans && typeof ans === 'object') ? ans : null;
+                const targetX = (q.targetX !== undefined) ? parseFloat(q.targetX) : 50;
+                const targetY = (q.targetY !== undefined) ? parseFloat(q.targetY) : 50;
+                const radius = (q.radius !== undefined) ? parseFloat(q.radius) : 12;
+                isAnswered = Boolean(userCoords && userCoords.x !== undefined && userCoords.y !== undefined);
+                if (isAnswered) {
+                    const dx = userCoords.x - targetX;
+                    const dy = userCoords.y - targetY;
+                    isCorrect = Math.sqrt(dx * dx + dy * dy) <= radius;
+                }
+            } else if (q.type === 'range') {
+                const val = (ans !== null && ans !== undefined && ans !== '') ? parseFloat(ans) : null;
+                isAnswered = (val !== null && !isNaN(val));
+                if (isAnswered && q.correctValue !== undefined) {
+                    const targetVal = parseFloat(q.correctValue);
+                    const tol = parseFloat(q.tolerance) || 0;
+                    isCorrect = Math.abs(val - targetVal) <= tol;
+                }
+            } else if (q.type === 'classification') {
+                const rawItems = q.items || [];
+                const userPlacements = (ans && typeof ans === 'object') ? ans : {};
+                isAnswered = rawItems.some(it => userPlacements[it.id]);
+                isCorrect = isAnswered && (rawItems.length > 0) && rawItems.every(it => userPlacements[it.id] === it.categoryId);
+            } else if (q.type === 'cloze') {
+                const { blanks: expectedBlanks } = (typeof parseClozeQuestion === 'function') ? parseClozeQuestion(q.clozeText || '') : { blanks: [] };
+                const userAnswersObj = (ans && typeof ans === 'object') ? ans : {};
+                isAnswered = Object.values(userAnswersObj).some(v => v !== null && v !== undefined && String(v).trim().length > 0);
+                isCorrect = isAnswered && (expectedBlanks.length > 0) && expectedBlanks.every((expWord, bIdx) => {
+                    const uWord = userAnswersObj[bIdx];
+                    return uWord && String(uWord).trim().toLowerCase() === String(expWord).trim().toLowerCase();
+                });
+            } else if (q.type === 'puzzle') {
+                const cOrder = Array.isArray(ans) ? ans : [];
+                const expOrder = q.items || [];
+                isAnswered = cOrder.length > 0;
+                isCorrect = isAnswered && (cOrder.length === expOrder.length) && cOrder.every((it, idx) => it === expOrder[idx]);
+            } else if (q.type === 'matching') {
+                const rawPairs = q.pairs || [];
+                const userMatchesObj = (ans && typeof ans === 'object') ? ans : {};
+                isAnswered = Object.values(userMatchesObj).some(v => v && String(v).trim().length > 0);
+                isCorrect = isAnswered && (rawPairs.length > 0) && rawPairs.every(pair => {
+                    const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
+                    return uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
+                });
+            } else {
+                // Question text
+                const qEv = evals[q.id];
+                isAnswered = Boolean(ans && String(ans).trim().length > 0);
+                isCorrect = (qEv && qEv.isCorrect === true);
+            }
+
+            if (isCorrect) {
+                correctCount++;
+                pointsTotal += 1;
+            } else if (isAnswered && hasNegativePoints) {
+                pointsTotal -= 0.5;
+            }
+        });
+
+        const finalPoints = hasNegativePoints ? Math.max(0, Math.round(pointsTotal * 10) / 10) : correctCount;
+        const percent = totalScore > 0 ? Math.max(0, Math.min(100, Math.round((finalPoints / totalScore) * 100))) : 100;
+        const updatedScore = {
+            correct: correctCount,
+            points: finalPoints,
+            rawPoints: pointsTotal,
+            negativePointsEnabled: hasNegativePoints,
+            total: totalScore,
+            percent: percent
+        };
+
+        await db.collection('formation').doc(sub.moduleId)
+            .collection('submissions').doc(sub.id)
             .update({
-                evaluations: activeInspectingSubmission.evaluations || {},
+                evaluations: sub.evaluations || {},
+                score: updatedScore,
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-        const matchIdx = moduleSubmissions.findIndex(s => s.id === activeInspectingSubmission.id);
+        sub.score = updatedScore;
+
+        const matchIdx = moduleSubmissions.findIndex(s => s.id === sub.id);
         if (matchIdx !== -1) {
-            moduleSubmissions[matchIdx].evaluations = activeInspectingSubmission.evaluations;
+            moduleSubmissions[matchIdx].evaluations = sub.evaluations;
+            moduleSubmissions[matchIdx].score = updatedScore;
         }
 
+        // Invalider les caches stagiaire
+        try {
+            sessionStorage.removeItem('cached_stagiaire_subs_' + sub.userId);
+            sessionStorage.removeItem('cached_stagiaire_subs_ts_' + sub.userId);
+        } catch (cErr) {}
+
         btnLoading(this, false);
-        showToast("✅ Notes formateur enregistrées !", "success");
+        showToast("✅ Notes et score formateur enregistrés avec succès !", "success");
         updateModuleStats();
         applyModuleFiltersAndRender();
         document.getElementById('overlayReviewSubmission')?.classList.add('hidden');
