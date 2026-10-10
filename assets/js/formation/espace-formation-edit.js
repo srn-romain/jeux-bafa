@@ -2078,6 +2078,12 @@ function renderInspectionQuestions(questions, sub) {
                 <div style="font-weight:400; font-size:0.92rem; color:var(--clr-text);" class="es-q-rich-text">${formatQuestionRichText(q.text || '')}</div>
                 ${q.imageUrl ? `<div style="margin:8px 0;"><img src="${escapeHtml(q.imageUrl)}" alt="Illustration question" style="max-height:120px; max-width:100%; object-fit:contain; border-radius:6px; border:1px solid var(--clr-surface-3);" onerror="this.parentElement.style.display='none'"></div>` : ''}
                 ${contentHtml}
+                ${q.trainerNote && q.trainerNote.trim() ? `
+                    <div style="margin-top:10px; font-size:0.82rem; color:var(--clr-text); background:rgba(234, 179, 8, 0.08); border-left:3.5px solid #eab308; padding:8px 12px; border-radius:4px;">
+                        <strong style="color:#ca8a04; display:flex; align-items:center; gap:6px;"><i class="bi bi-person-workspace"></i> Note / Pense-bête formateur :</strong>
+                        <div style="margin-top:3px; white-space:pre-wrap; line-height:1.45;">${escapeHtml(q.trainerNote.trim())}</div>
+                    </div>
+                ` : ''}
             </div>
         `;
     }).join('');
@@ -2437,6 +2443,9 @@ function syncQuestionsFromDOM() {
 
         const sampleAnswerInput = card.querySelector('.q-sample-answer-input');
         if (sampleAnswerInput) q.sampleAnswer = sampleAnswerInput.value;
+
+        const trainerNoteInput = card.querySelector('.q-trainer-note-input');
+        if (trainerNoteInput && currentRole === 'admin') q.trainerNote = trainerNoteInput.value;
 
         // Type
         const typeSelect = card.querySelector('.q-type-select');
@@ -3395,6 +3404,23 @@ function renderQuestionsEditor() {
                 </div>
 
                 ${specificFields}
+
+                <!-- Champ discret : Note / Pense-bête Formateur (Modifiable par l'admin uniquement, visible admin & formateur lors de la correction) -->
+                <div class="es-field" style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--clr-surface-3);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
+                        <label class="es-field__label" style="font-size:0.78rem; font-weight:700; color:var(--clr-text-muted); margin-bottom:0; display:flex; align-items:center; gap:5px;">
+                            <i class="bi bi-person-workspace" style="color:var(--clr-primary);"></i>
+                            <span>Note / Pense-bête formateur <span style="font-weight:400; font-size:0.72rem; opacity:0.85;">(visible lors de la correction)</span></span>
+                        </label>
+                        <span class="es-badge ${currentRole === 'admin' ? 'es-badge--admin' : 'es-badge--formateur'}" style="font-size:0.65rem; padding:1px 6px;">
+                            ${currentRole === 'admin' ? '<i class="bi bi-pencil-fill"></i> Admin (Édition)' : '<i class="bi bi-lock-fill"></i> Formateur (Lecture seule)'}
+                        </span>
+                    </div>
+                    <textarea class="es-input q-trainer-note-input" data-qidx="${idx}" rows="2" 
+                        placeholder="${currentRole === 'admin' ? 'Ajouter des remarques ou critères d\'évaluation pour expliciter la réponse lors de la correction...' : 'Seul un administrateur peut modifier cette note.'}"
+                        ${currentRole !== 'admin' ? 'readonly' : ''}
+                        style="font-size:0.82rem; padding:6px 10px; ${currentRole !== 'admin' ? 'background:var(--clr-surface-2); color:var(--clr-text-muted); cursor:not-allowed;' : ''}">${escapeHtml(q.trainerNote || '')}</textarea>
+                </div>
             </div>
         `;
     }).join('');
@@ -3977,6 +4003,15 @@ function bindQuestionsEvents() {
             const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
             if (currentEditingQuestions[idx]) {
                 currentEditingQuestions[idx].sampleAnswer = e.target.value;
+            }
+        });
+    });
+
+    container.querySelectorAll('.q-trainer-note-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[idx] && currentRole === 'admin') {
+                currentEditingQuestions[idx].trainerNote = e.target.value;
             }
         });
     });
@@ -4903,6 +4938,8 @@ document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e
                     items: q.items || (q.type === 'classification' ? [{ id: 'item_1', text: 'Besoin de sieste et rituels rassurants', categoryId: 'cat_1' }, { id: 'item_2', text: 'Jeux de règles et développement moteur', categoryId: 'cat_2' }, { id: 'item_3', text: 'Importance du groupe de pairs et pudeur', categoryId: 'cat_3' }, { id: 'item_4', text: 'Co-construction des projets et émancipation', categoryId: 'cat_4' }] : (q.type === 'puzzle' ? ['Étape 1', 'Étape 2'] : undefined)),
                     pairs: q.pairs || (q.type === 'matching' ? [{ left: 'A', right: '1' }, { left: 'B', right: '2' }] : undefined),
                     hint: q.hint || '',
+                    sampleAnswer: q.sampleAnswer || '',
+                    trainerNote: q.trainerNote || '',
                     imageUrl: q.imageUrl || ''
                 }));
                 renderQuestionsEditor();
@@ -5237,6 +5274,7 @@ async function saveModuleData(btnEl) {
                 imageUrl: q.imageUrl || '',
                 hint: q.hint || '',
                 sampleAnswer: q.sampleAnswer || '',
+                trainerNote: q.trainerNote || '',
                 isMandatory: Boolean(q.isMandatory === true || q.isMandatory === 'true')
             };
 
@@ -5393,7 +5431,8 @@ document.getElementById('btnAddQuestion')?.addEventListener('click', () => {
         text: '',
         options: ['Option 1', 'Option 2'],
         correctIndex: 0,
-        hint: ''
+        hint: '',
+        trainerNote: ''
     });
     renderQuestionsEditor();
     const container = document.getElementById('questionsContainer');

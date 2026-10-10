@@ -390,6 +390,7 @@ async function saveFormationModule(moduleData, questionsList = []) {
             } else {
                 qDoc.hint = q.hint || '';
             }
+            qDoc.trainerNote = q.trainerNote || '';
 
             await qRef.set(qDoc, { merge: true });
         }
@@ -1362,6 +1363,20 @@ function renderQuestionsEditor() {
             </div>` : ''}
 
             ${typeBody}
+
+            <!-- Champ discret : Note / Pense-bête formateur -->
+            <div class="es-field" style="margin-top:12px; padding-top:10px; border-top:1px dashed var(--clr-surface-3);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <label class="es-field__label" style="font-size:0.78rem; font-weight:700; color:var(--clr-text-muted); margin-bottom:0; display:flex; align-items:center; gap:5px;">
+                        <i class="bi bi-person-workspace" style="color:var(--clr-primary);"></i> Note / Pense-bête formateur (visible lors de la correction) :
+                    </label>
+                    <span style="font-size:0.68rem; color:var(--clr-text-muted);">${(actualRole === 'admin' || currentRole === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin)) ? 'Admin (Édition)' : 'Lecture seule'}</span>
+                </div>
+                <textarea class="es-input q-trainer-note-input" data-q-idx="${qIdx}" rows="2" 
+                    placeholder="${(actualRole === 'admin' || currentRole === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin)) ? 'Ajouter des remarques ou critères pour guider la correction...' : 'Seul l\'administrateur peut modifier cette note.'}"
+                    ${(actualRole !== 'admin' && currentRole !== 'admin' && !(typeof isAnimAdmin !== 'undefined' && isAnimAdmin)) ? 'readonly' : ''}
+                    style="font-size:0.82rem; padding:6px 10px; ${(actualRole !== 'admin' && currentRole !== 'admin' && !(typeof isAnimAdmin !== 'undefined' && isAnimAdmin)) ? 'background:var(--clr-surface-2); color:var(--clr-text-muted); cursor:not-allowed;' : ''}">${escapeHtml(q.trainerNote || '')}</textarea>
+            </div>
         </div>`;
     }).join('');
 
@@ -1677,6 +1692,16 @@ function renderQuestionsEditor() {
         input.addEventListener('input', (e) => {
             const idx = parseInt(e.target.getAttribute('data-q-idx'), 10);
             if (currentEditingQuestions[idx]) currentEditingQuestions[idx].hint = e.target.value;
+        });
+    });
+
+    container.querySelectorAll('.q-trainer-note-input').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const idx = parseInt(e.target.getAttribute('data-q-idx'), 10);
+            const isAdmin = (actualRole === 'admin' || currentRole === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin));
+            if (currentEditingQuestions[idx] && isAdmin) {
+                currentEditingQuestions[idx].trainerNote = e.target.value;
+            }
         });
     });
 
@@ -3737,6 +3762,12 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
                 <div style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Question ${qIdx + 1} • ${q.type}</div>
                 <div style="font-size:0.88rem; font-weight:400; color:var(--clr-text); margin-top:2px;" class="es-q-rich-text">${formatQuestionRichText(q.text)}</div>
                 ${ansDisplay}
+                ${(isAdminOrFormateur && q.trainerNote && q.trainerNote.trim()) ? `
+                    <div style="margin-top:8px; font-size:0.82rem; color:var(--clr-text); background:rgba(234, 179, 8, 0.08); border-left:3.5px solid #eab308; padding:8px 12px; border-radius:4px;">
+                        <strong style="color:#ca8a04; display:flex; align-items:center; gap:6px;"><i class="bi bi-person-workspace"></i> Note / Pense-bête formateur :</strong>
+                        <div style="margin-top:3px; white-space:pre-wrap; line-height:1.45;">${escapeHtml(q.trainerNote.trim())}</div>
+                    </div>
+                ` : ''}
             </div>`;
         }).join('');
 
@@ -4673,6 +4704,12 @@ async function openAdminCandidateBilanModal(userId) {
                         <div style="font-size:0.72rem; font-weight:700; color:var(--clr-primary); text-transform:uppercase;">Q${qIdx + 1} • ${q.type}</div>
                         <div style="font-size:0.88rem; font-weight:400; color:var(--clr-text);" class="es-q-rich-text">${formatQuestionRichText(q.text)}</div>
                         ${ansDisplay}
+                        ${(q.trainerNote && q.trainerNote.trim()) ? `
+                            <div style="margin-top:8px; font-size:0.82rem; color:var(--clr-text); background:rgba(234, 179, 8, 0.08); border-left:3.5px solid #eab308; padding:8px 12px; border-radius:4px;">
+                                <strong style="color:#ca8a04; display:flex; align-items:center; gap:6px;"><i class="bi bi-person-workspace"></i> Note / Pense-bête formateur :</strong>
+                                <div style="margin-top:3px; white-space:pre-wrap; line-height:1.45;">${escapeHtml(q.trainerNote.trim())}</div>
+                            </div>
+                        ` : ''}
                     </div>`;
                 }).join('');
             }
