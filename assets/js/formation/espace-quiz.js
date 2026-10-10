@@ -1177,10 +1177,13 @@ function renderActiveSectionPage() {
                 const unit = q.unit || '';
                 const currentVal = (savedVal !== undefined && savedVal !== null) ? parseFloat(savedVal) : Math.round((minVal + maxVal) / 2);
 
+                const minLabelText = (q.minLabel && q.minLabel.trim()) ? `${escapeHtml(q.minLabel.trim())} (${minVal})` : `${minVal}`;
+                const maxLabelText = (q.maxLabel && q.maxLabel.trim()) ? `${escapeHtml(q.maxLabel.trim())} (${maxVal})` : `${maxVal}`;
+
                 inputHtml = `
                 <div class="es-range-wrap">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text-muted);">Ajustez le curseur horizontal :</span>
+                        <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text-muted);">Ajustez le curseur :</span>
                         <span class="es-range-display-badge" id="range_val_display_${q.id}">
                             ${currentVal} ${escapeHtml(unit)}
                         </span>
@@ -1189,8 +1192,8 @@ function renderActiveSectionPage() {
                         min="${minVal}" max="${maxVal}" step="${stepVal}" value="${currentVal}"
                         data-unit="${escapeHtml(unit)}" data-display-id="range_val_display_${q.id}">
                     <div class="es-range-labels">
-                        <span>${escapeHtml(q.minLabel || String(minVal))} (${minVal})</span>
-                        <span>${escapeHtml(q.maxLabel || String(maxVal))} (${maxVal})</span>
+                        <span>${minLabelText}</span>
+                        <span>${maxLabelText}</span>
                     </div>
                 </div>`;
             } else if (q.type === 'puzzle') {
