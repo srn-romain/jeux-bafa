@@ -2360,8 +2360,8 @@ async function gradeOpenQuestionAnswer(moduleId, submissionId, questionId, decis
         const prevEvals = subData.evaluations || {};
         const curEval = prevEvals[questionId] || {};
 
-        if (!isAdminUser && curEval.status === 'reviewed' && curEval.gradedByUid) {
-            showToast("Cette décision a déjà été tranchée et est verrouillée pour les formateurs.", "warning");
+        if (!isAdminUser && curEval.gradedByRole === 'admin') {
+            showToast("Cette décision a été validée par un administrateur et ne peut être modifiée que par un administrateur.", "warning");
             if (targetBtn) btnLoading(targetBtn, false);
             return;
         }
@@ -3556,7 +3556,7 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
     const mod = (currentFormationModulesList || []).find(m => m.id === moduleId);
     const qConfig = mod?.quizConfig || {};
     const displayMode = qConfig.resultsDisplayMode || (Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1) ? 'all' : 'none');
-    const isAdminOrFormateur = (effectiveRole === 'admin' || effectiveRole === 'formateur');
+    const isAdminOrFormateur = (actualRole === 'admin' || actualRole === 'formateur' || actualUserData?.role === 'admin' || actualUserData?.role === 'formateur');
 
     if (!isAdminOrFormateur && displayMode === 'score_only') {
         acc.innerHTML = `
@@ -3701,6 +3701,12 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
                                 <i class="bi bi-person-workspace"></i> Évaluation Formateur :
                             </div>
                             <div style="white-space:pre-wrap; word-break:break-word; line-height:1.5;">${qEv.comment && qEv.comment.trim() ? escapeHtml(qEv.comment.trim()) : (qEv.isCorrect ? '✅ Réponse validée par le formateur.' : '❌ Réponse non validée par le formateur.')}</div>
+                            ${(isAdminOrFormateur && (qEv.gradedByName || qEv.gradedAt)) ? `
+                                <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
+                                    <i class="bi bi-shield-check" style="color:${qEv.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)'};"></i>
+                                    <span>${qEv.isCorrect ? 'Validé' : (qEv.isCorrect === false ? 'Invalidé' : 'Évalué')} par <strong>${escapeHtml(qEv.gradedByName || 'Formateur')}</strong> (${qEv.gradedByRole === 'admin' ? 'Admin' : 'Formateur'}) le ${formatFullDate(qEv.gradedAt)}</span>
+                                </div>
+                            ` : ''}
                         </div>
                     ` : ''}
 
@@ -4591,7 +4597,8 @@ async function openAdminCandidateBilanModal(userId) {
                     } else {
                         const ev = (sub.evaluations && sub.evaluations[q.id]) ? sub.evaluations[q.id] : { autoSuggested: null, isCorrect: null, status: 'auto_draft', gradedByUid: null };
                         const isAdminUser = (actualRole === 'admin' || actualUserData?.role === 'admin' || (typeof isAnimAdmin !== 'undefined' && isAnimAdmin) || (typeof isFormateurAdmin !== 'undefined' && isFormateurAdmin) || (typeof currentRole !== 'undefined' && currentRole === 'admin'));
-                        const isTranche = (ev.status === 'reviewed' && !!ev.gradedByUid);
+                        const isLockedByAdmin = (ev.gradedByRole === 'admin' && !isAdminUser);
+                        const isTranche = (ev.status === 'reviewed' || ev.status === 'graded') && (!!ev.gradedByName || !!ev.gradedByUid || ev.isCorrect !== null);
 
                         let autoDraftBadge = '';
                         if (ev.autoSuggested === true) {
@@ -4606,15 +4613,17 @@ async function openAdminCandidateBilanModal(userId) {
                             const isOk = (ev.isCorrect === true);
                             statusBadge = `<span style="font-weight:700; color:${isOk ? 'var(--clr-success)' : 'var(--clr-danger)'}; font-size:0.86rem;">${isOk ? '✅ Validé (Vrai)' : '❌ Invalidé (Faux)'}</span>`;
                             metaChip = `
-                            <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3);">
-                                <i class="bi bi-shield-check" style="color:var(--clr-primary);"></i> Tranché par <strong>${escapeHtml(ev.gradedByName || 'Équipe pédagogique')}</strong> (${ev.gradedByRole || 'formateur'}) le ${formatFullDate(ev.gradedAt)}
+                            <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
+                                <i class="bi bi-shield-check" style="color:${ev.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)'};"></i>
+                                <span>${isOk ? 'Validé' : 'Invalidé'} par <strong>${escapeHtml(ev.gradedByName || 'Équipe pédagogique')}</strong> (${ev.gradedByRole === 'admin' ? 'Admin' : 'Formateur'}) le ${formatFullDate(ev.gradedAt)}</span>
+                                ${isLockedByAdmin ? `<span style="margin-left:auto; color:var(--clr-warning, #d35400); font-weight:600;"><i class="bi bi-lock-fill"></i> Verrouillé</span>` : ''}
                             </div>`;
                         } else {
                             statusBadge = `<span style="font-size:0.78rem; font-weight:600; color:#e67e22; background:rgba(243,156,18,0.12); padding:2px 8px; border-radius:12px;"><i class="bi bi-hourglass-split"></i> En attente de validation</span>`;
                         }
 
                         let actionButtonsHtml = '';
-                        if (isAdminUser || !isTranche) {
+                        if (!isLockedByAdmin) {
                             actionButtonsHtml = `
                             <div style="display:flex; align-items:center; gap:8px; margin-top:8px;">
                                 <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === true ? 'es-btn--primary' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${m.id}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="true" style="padding:4px 10px; font-size:0.78rem;">
@@ -4623,12 +4632,12 @@ async function openAdminCandidateBilanModal(userId) {
                                 <button type="button" class="es-btn es-btn--sm ${ev.isCorrect === false ? 'es-btn--danger' : 'es-btn--ghost'} btn-grade-eval" data-module-id="${m.id}" data-sub-id="${sub.id}" data-q-id="${q.id}" data-val="false" style="padding:4px 10px; font-size:0.78rem;">
                                     <i class="bi bi-x-lg"></i> Faux (Invalider)
                                 </button>
-                                ${isAdminUser && isTranche ? `<span style="font-size:0.72rem; color:var(--clr-text-muted);">(Admin : modifiable)</span>` : ''}
+                                ${isAdminUser && ev.gradedByRole === 'admin' ? `<span style="font-size:0.72rem; color:var(--clr-text-muted);">(Admin : modifiable)</span>` : ''}
                             </div>`;
                         } else {
                             actionButtonsHtml = `
-                            <div style="margin-top:8px; font-size:0.74rem; color:var(--clr-text-muted); background:rgba(0,0,0,0.03); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3);">
-                                <i class="bi bi-lock-fill" style="color:var(--clr-warning);"></i> Décision tranchée et verrouillée (seul l'administrateur peut modifier).
+                            <div style="margin-top:8px; font-size:0.74rem; color:var(--clr-text-muted); background:rgba(0,0,0,0.03); padding:4px 8px; border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
+                                <i class="bi bi-lock-fill" style="color:var(--clr-warning);"></i> Décision validée par un administrateur (verrouillée pour les formateurs).
                             </div>`;
                         }
 

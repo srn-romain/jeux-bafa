@@ -3394,6 +3394,12 @@ function renderResultsScreen(submission = {}) {
                                 <i class="bi bi-person-workspace"></i> Évaluation Formateur :
                             </div>
                             <div style="white-space:pre-wrap; word-break:break-word; line-height:1.5;">${qEval.comment && qEval.comment.trim() ? escapeHtml(qEval.comment.trim()) : (qEval.isCorrect ? '✅ Réponse validée par le formateur.' : '❌ Réponse non validée par le formateur.')}</div>
+                            ${(isAdminOrFormateur && (qEval.gradedByName || qEval.gradedAt)) ? `
+                                <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:6px; padding:4px 8px; background:rgba(0,0,0,0.04); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; gap:6px;">
+                                    <i class="bi bi-shield-check" style="color:${qEval.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)'};"></i>
+                                    <span>${qEval.isCorrect ? 'Validé' : (qEval.isCorrect === false ? 'Invalidé' : 'Évalué')} par <strong>${escapeHtml(qEval.gradedByName || 'Formateur')}</strong> (${qEval.gradedByRole === 'admin' ? 'Admin' : 'Formateur'}) le ${typeof formatFullDate === 'function' ? formatFullDate(qEval.gradedAt) : (typeof formatDate === 'function' ? formatDate(qEval.gradedAt) : (qEval.gradedAt || ''))}</span>
+                                </div>
+                            ` : ''}
                         </div>
                     ` : ''}
 

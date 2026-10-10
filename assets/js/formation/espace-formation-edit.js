@@ -1977,6 +1977,64 @@ function renderInspectionQuestions(questions, sub) {
             const userText = rawUserText.trim();
             const evalObj = evaluations[q.id] || {};
             const isAwarded = (evalObj.isCorrect === true);
+            const isAdminUser = (currentRole === 'admin' || actualUserData?.role === 'admin');
+            const isLockedByAdmin = (evalObj.gradedByRole === 'admin' && !isAdminUser);
+
+            let evalMetaHtml = '';
+            if (evalObj.gradedByName || evalObj.gradedAt) {
+                const isOk = (evalObj.isCorrect === true);
+                const actionLabel = isOk ? 'Validé' : (evalObj.isCorrect === false ? 'Invalidé' : 'Évalué');
+                const roleLabel = evalObj.gradedByRole === 'admin' ? 'Admin' : 'Formateur';
+                const roleColor = evalObj.gradedByRole === 'admin' ? 'var(--clr-warning, #f39c12)' : 'var(--clr-primary, #3498db)';
+                const dateFormatted = typeof formatDate === 'function' ? formatDate(evalObj.gradedAt) : (typeof formatFullDate === 'function' ? formatFullDate(evalObj.gradedAt) : (evalObj.gradedAt || ''));
+
+                evalMetaHtml = `
+                    <div style="font-size:0.75rem; color:var(--clr-text-muted); margin-top:8px; padding:6px 10px; background:rgba(0,0,0,0.03); border-radius:4px; border:1px solid var(--clr-surface-3); display:flex; align-items:center; flex-wrap:wrap; gap:6px;">
+                        <i class="bi bi-shield-check" style="color:${roleColor}; font-size:0.85rem;"></i>
+                        <span>${actionLabel} par <strong>${escapeHtml(evalObj.gradedByName || 'Formateur')}</strong> (${roleLabel}) le ${dateFormatted}</span>
+                        ${isLockedByAdmin ? `<span style="margin-left:auto; color:var(--clr-warning, #d35400); font-weight:600; font-size:0.74rem;"><i class="bi bi-lock-fill"></i> Verrouillé par l'Admin</span>` : ''}
+                    </div>
+                `;
+            }
+
+            let actionControlsHtml = '';
+            if (isLockedByAdmin) {
+                actionControlsHtml = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                        <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text);">
+                            👨‍🏫 Évaluation Formateur :
+                        </span>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="es-btn es-btn--sm ${isAwarded ? 'es-btn--primary' : 'es-btn--ghost'}" disabled style="font-size:0.78rem; padding:4px 10px; opacity:0.6; cursor:not-allowed;" title="Verrouillé : décision validée par l'administrateur">
+                                <i class="bi bi-check2"></i> Valider (1 pt)
+                            </button>
+                            <button type="button" class="es-btn es-btn--sm ${!isAwarded ? 'es-btn--danger' : 'es-btn--ghost'}" disabled style="font-size:0.78rem; padding:4px 10px; opacity:0.6; cursor:not-allowed;" title="Verrouillé : décision invalidée par l'administrateur">
+                                <i class="bi bi-x"></i> Refuser (0 pt)
+                            </button>
+                        </div>
+                    </div>
+                    <input type="text" class="es-input input-eval-comment" data-qid="${q.id}" value="${escapeHtml(evalObj.comment || '')}" placeholder="Commentaire du formateur..." disabled style="font-size:0.82rem; padding:6px 10px; opacity:0.7; cursor:not-allowed;" title="Verrouillé : décision prise par l'administrateur">
+                    ${evalMetaHtml}
+                `;
+            } else {
+                actionControlsHtml = `
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                        <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text);">
+                            👨‍🏫 Évaluation Formateur :
+                        </span>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="es-btn es-btn--sm btn-toggle-eval-award ${isAwarded ? 'es-btn--primary' : 'es-btn--ghost'}" data-qid="${q.id}" data-award="true" style="font-size:0.78rem; padding:4px 10px;">
+                                <i class="bi bi-check2"></i> Valider (1 pt)
+                            </button>
+                            <button type="button" class="es-btn es-btn--sm btn-toggle-eval-award ${!isAwarded ? 'es-btn--danger' : 'es-btn--ghost'}" data-qid="${q.id}" data-award="false" style="font-size:0.78rem; padding:4px 10px;">
+                                <i class="bi bi-x"></i> Refuser (0 pt)
+                            </button>
+                        </div>
+                    </div>
+                    <input type="text" class="es-input input-eval-comment" data-qid="${q.id}" value="${escapeHtml(evalObj.comment || '')}" placeholder="Commentaire du formateur..." style="font-size:0.82rem; padding:6px 10px;">
+                    ${evalMetaHtml}
+                `;
+            }
 
             contentHtml = `
                 <div style="margin-top:10px; display:flex; flex-direction:column; gap:10px;">
@@ -2001,20 +2059,7 @@ function renderInspectionQuestions(questions, sub) {
                     ` : ''}
 
                     <div style="background:var(--clr-surface-2); border:1.5px solid rgba(52, 152, 219, 0.3); border-radius:var(--radius-sm); padding:12px 14px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
-                            <span style="font-size:0.82rem; font-weight:700; color:var(--clr-text);">
-                                👨‍🏫 Évaluation Formateur :
-                            </span>
-                            <div style="display:flex; gap:8px;">
-                                <button type="button" class="es-btn es-btn--sm btn-toggle-eval-award ${isAwarded ? 'es-btn--primary' : 'es-btn--ghost'}" data-qid="${q.id}" data-award="true" style="font-size:0.78rem; padding:4px 10px;">
-                                    <i class="bi bi-check2"></i> Valider (1 pt)
-                                </button>
-                                <button type="button" class="es-btn es-btn--sm btn-toggle-eval-award ${!isAwarded ? 'es-btn--danger' : 'es-btn--ghost'}" data-qid="${q.id}" data-award="false" style="font-size:0.78rem; padding:4px 10px;">
-                                    <i class="bi bi-x"></i> Refuser (0 pt)
-                                </button>
-                            </div>
-                        </div>
-                        <input type="text" class="es-input input-eval-comment" data-qid="${q.id}" value="${escapeHtml(evalObj.comment || '')}" placeholder="Commentaire du formateur..." style="font-size:0.82rem; padding:6px 10px;">
+                        ${actionControlsHtml}
                     </div>
                 </div>
             `;
@@ -2037,11 +2082,19 @@ function renderInspectionQuestions(questions, sub) {
         btn.addEventListener('click', () => {
             const qid = btn.getAttribute('data-qid');
             const award = btn.getAttribute('data-award') === 'true';
+            const curEval = (activeInspectingSubmission.evaluations && activeInspectingSubmission.evaluations[qid]) || {};
+            const isAdminUser = (currentRole === 'admin' || actualUserData?.role === 'admin');
+            if (curEval.gradedByRole === 'admin' && !isAdminUser) {
+                showToast("Cette décision a été validée par un administrateur et ne peut être modifiée que par un administrateur.", "warning");
+                return;
+            }
             if (!activeInspectingSubmission.evaluations) activeInspectingSubmission.evaluations = {};
             if (!activeInspectingSubmission.evaluations[qid]) activeInspectingSubmission.evaluations[qid] = {};
             activeInspectingSubmission.evaluations[qid].isCorrect = award;
             activeInspectingSubmission.evaluations[qid].status = 'graded';
-            activeInspectingSubmission.evaluations[qid].gradedByName = actualUserData?.displayName || 'Formateur';
+            activeInspectingSubmission.evaluations[qid].gradedByName = actualUserData?.displayName || `${actualUserData?.firstName || ''} ${actualUserData?.lastName || ''}`.trim() || currentUser?.email || 'Formateur';
+            activeInspectingSubmission.evaluations[qid].gradedByRole = isAdminUser ? 'admin' : 'formateur';
+            activeInspectingSubmission.evaluations[qid].gradedByUid = currentUser?.uid || null;
             activeInspectingSubmission.evaluations[qid].gradedAt = new Date().toISOString();
 
             renderInspectionQuestions(questions, activeInspectingSubmission);
@@ -2051,6 +2104,9 @@ function renderInspectionQuestions(questions, sub) {
     container.querySelectorAll('.input-eval-comment').forEach(input => {
         input.addEventListener('input', (e) => {
             const qid = input.getAttribute('data-qid');
+            const curEval = (activeInspectingSubmission.evaluations && activeInspectingSubmission.evaluations[qid]) || {};
+            const isAdminUser = (currentRole === 'admin' || actualUserData?.role === 'admin');
+            if (curEval.gradedByRole === 'admin' && !isAdminUser) return;
             if (!activeInspectingSubmission.evaluations) activeInspectingSubmission.evaluations = {};
             if (!activeInspectingSubmission.evaluations[qid]) activeInspectingSubmission.evaluations[qid] = {};
             activeInspectingSubmission.evaluations[qid].comment = e.target.value;
