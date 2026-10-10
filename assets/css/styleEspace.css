@@ -567,6 +567,7 @@ textarea {
   border: 1px solid rgba(244, 180, 26, 0.25);
 }
 
+.es-badge--primary,
 .es-badge--anim {
   background: linear-gradient(135deg, var(--clr-primary), var(--clr-primary-dark));
   color: #ffffff;
@@ -624,7 +625,8 @@ textarea {
 
 .es-badge--danger,
 .es-badge--refused,
-.es-badge--banned {
+.es-badge--banned,
+.es-badge--rejected {
   background: var(--clr-danger-soft);
   color: var(--clr-danger);
   border: 1px solid rgba(231, 76, 60, 0.3);
