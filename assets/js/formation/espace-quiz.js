@@ -320,36 +320,48 @@ function renderBriefingScreen() {
 
     let pillQText = `${activeQuestionsCount} question${activeQuestionsCount > 1 ? 's' : ''}`;
     if (hasDraw) {
-        pillQText += ` tirées au sort (sur ${regularQuestions.length})`;
+        pillQText += ` (tirage sur ${regularQuestions.length})`;
     }
     if (sectionsCount > 1) {
-        pillQText += ` (${sectionsCount} pages)`;
+        pillQText += ` · ${sectionsCount} pages`;
     }
-    document.getElementById('pillQuestionsCount').innerHTML = `<i class="bi bi-list-check"></i> <span>${pillQText}</span>`;
+    const qCountTextEl = document.getElementById('pillQuestionsCountText');
+    if (qCountTextEl) {
+        qCountTextEl.textContent = pillQText;
+    } else {
+        const qCountEl = document.getElementById('pillQuestionsCount');
+        if (qCountEl) qCountEl.innerHTML = `<div class="es-quiz-spec-icon"><i class="bi bi-list-check"></i></div><div class="es-quiz-spec-content"><span class="es-quiz-spec-label">Questions</span><span class="es-quiz-spec-val" id="pillQuestionsCountText">${pillQText}</span></div>`;
+    }
     
-    // Pilule Chronomètre
+    // Carte Chronomètre
     const timerPill = document.getElementById('pillQuizTimer');
     const timerPillText = document.getElementById('pillQuizTimerText');
     if (timerPill && timerPillText) {
         if (totalDurationSecs > 0) {
-            timerPillText.textContent = `⏱️ ${formatDurationText(totalDurationSecs)} max`;
-            timerPill.className = 'es-quiz-pill es-quiz-pill--warning';
+            timerPillText.textContent = `${formatDurationText(totalDurationSecs)} max`;
+            timerPill.classList.add('es-quiz-spec-card--warning');
         } else {
             timerPillText.textContent = `Temps libre (sans chrono)`;
-            timerPill.className = 'es-quiz-pill';
+            timerPill.classList.remove('es-quiz-spec-card--warning');
         }
     }
 
+    // Carte Tentatives
     const attemptsPill = document.getElementById('pillAttempts');
     const attemptsText = document.getElementById('pillAttemptsText');
-    if (maxAttempts > 0) {
-        attemptsText.textContent = `Tentative ${Math.min(prevAttempts + 1, maxAttempts)} / ${maxAttempts}`;
-        if (isLocked) {
-            attemptsPill.className = 'es-quiz-pill es-quiz-pill--warning';
-            attemptsText.textContent = `${prevAttempts} / ${maxAttempts} tentatives utilisées`;
+    if (attemptsPill && attemptsText) {
+        if (maxAttempts > 0) {
+            attemptsText.textContent = `Tentative ${Math.min(prevAttempts + 1, maxAttempts)} / ${maxAttempts}`;
+            if (isLocked) {
+                attemptsPill.classList.add('es-quiz-spec-card--warning');
+                attemptsText.textContent = `${prevAttempts} / ${maxAttempts} tentatives utilisées`;
+            } else {
+                attemptsPill.classList.remove('es-quiz-spec-card--warning');
+            }
+        } else {
+            attemptsText.textContent = `Tentative #${prevAttempts + 1} (Illimitées)`;
+            attemptsPill.classList.remove('es-quiz-spec-card--warning');
         }
-    } else {
-        attemptsText.textContent = `Tentative #${prevAttempts + 1} (Illimitées)`;
     }
 
     const displayMode = qConfig.resultsDisplayMode || (Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1) ? 'all' : 'none');

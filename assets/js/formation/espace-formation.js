@@ -4094,7 +4094,7 @@ function renderAdminCandidatesTable() {
                         <button type="button" class="es-btn es-btn--ghost btn-download-candidate-pdf" data-user-id="${cand.uid}" title="Télécharger le bilan PDF de ce candidat" style="padding:3px 8px; font-size:0.75rem; font-weight:600; color:#e74c3c; border-color:rgba(231,76,60,0.3); background:rgba(231,76,60,0.06); border-radius:4px; display:inline-flex; align-items:center; gap:4px; flex:1; justify-content:center;">
                             <i class="bi bi-file-earmark-pdf-fill"></i> PDF
                         </button>
-                        <button type="button" class="es-btn es-btn--ghost btn-download-candidate-csv" data-user-id="${cand.uid}" title="Télécharger le bilan CSV de ce candidat" style="padding:3px 8px; font-size:0.75rem; font-weight:600; color:#198754; border-color:rgba(25,135,84,0.3); background:rgba(25,135,84,0.06); border-radius:4px; display:inline-flex; align-items:center; gap:4px; flex:1; justify-content:center;">
+                        <button type="button" class="es-btn es-btn--csv btn-download-candidate-csv" data-user-id="${cand.uid}" title="Télécharger le bilan CSV de ce candidat" style="padding:4px 8px; font-size:0.75rem; font-weight:700; display:inline-flex; align-items:center; gap:4px; flex:1; justify-content:center;">
                             <i class="bi bi-file-earmark-spreadsheet-fill"></i> CSV
                         </button>
                     </div>

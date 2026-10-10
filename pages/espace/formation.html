@@ -280,21 +280,21 @@
                         </div>
 
                         <!-- Filtres du Bilan (Tous, Complétés, À réaliser) -->
-                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                        <div class="es-bilan-controls-bar">
                             <div class="es-bilan-filters" id="bilanFilterButtons">
-                                <button type="button" class="es-bilan-filter-btn active" data-filter="all">Tous les modules <span class="es-bilan-filter-count" id="bilanFilterCountAll">0</span></button>
-                                <button type="button" class="es-bilan-filter-btn" data-filter="completed">Complétés <span class="es-bilan-filter-count" id="bilanFilterCountCompleted">0</span></button>
-                                <button type="button" class="es-bilan-filter-btn" data-filter="pending">À réaliser <span class="es-bilan-filter-count" id="bilanFilterCountPending">0</span></button>
+                                <button type="button" class="es-bilan-filter-btn active" data-filter="all"><span>Tous</span> <span class="es-bilan-filter-count" id="bilanFilterCountAll">0</span></button>
+                                <button type="button" class="es-bilan-filter-btn" data-filter="completed"><span>Complétés</span> <span class="es-bilan-filter-count" id="bilanFilterCountCompleted">0</span></button>
+                                <button type="button" class="es-bilan-filter-btn" data-filter="pending"><span>À réaliser</span> <span class="es-bilan-filter-count" id="bilanFilterCountPending">0</span></button>
                             </div>
-                            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                                <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportStagiaireBilanPdf" title="Télécharger mon bilan en PDF" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
-                                    <i class="bi bi-file-earmark-pdf-fill"></i> Télécharger mon Bilan (PDF)
+                            <div class="es-bilan-actions-group">
+                                <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportStagiaireBilanPdf" title="Télécharger mon bilan en PDF">
+                                    <i class="bi bi-file-earmark-pdf-fill"></i> <span>Bilan (PDF)</span>
                                 </button>
-                                <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnExportStagiaireBilanCsv" title="Exporter mon bilan en CSV" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
-                                    <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                                <button type="button" class="es-btn es-btn--csv es-btn--sm" id="btnExportStagiaireBilanCsv" title="Exporter mon bilan en CSV">
+                                    <i class="bi bi-file-earmark-spreadsheet-fill"></i> <span>CSV</span>
                                 </button>
-                                <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnRefreshBilan" title="Actualiser mon bilan" style="background: var(--clr-surface-2); color: var(--clr-text); border-color: var(--clr-surface-3); font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                                    <i class="bi bi-arrow-clockwise" style="color: var(--clr-primary);"></i> Actualiser
+                                <button type="button" class="es-btn es-btn--secondary es-btn--sm" id="btnRefreshBilan" title="Actualiser mon bilan">
+                                    <i class="bi bi-arrow-clockwise"></i> <span>Actualiser</span>
                                 </button>
                             </div>
                         </div>
@@ -391,7 +391,7 @@
                                 </div>
 
                                 <!-- Ligne 2: Filtres par statut -->
-                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                <div class="es-bilan-filters" style="margin-bottom:0; width:fit-content; max-width:100%;">
                                     <button type="button" class="es-bilan-filter-btn active" data-admin-candidate-filter="all">Tous <span class="es-bilan-filter-count" id="adminCandidateCountAll">0</span></button>
                                     <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="completed">Validés <span class="es-bilan-filter-count" id="adminCandidateCountCompleted">0</span></button>
                                     <button type="button" class="es-bilan-filter-btn" data-admin-candidate-filter="active">En cours <span class="es-bilan-filter-count" id="adminCandidateCountActive">0</span></button>
@@ -710,8 +710,8 @@
                     <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnExportAdminCandidatePdf" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
                         <i class="bi bi-file-earmark-pdf-fill"></i> Télécharger ce bilan (PDF)
                     </button>
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnExportAdminCandidateCsv" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
-                        <i class="bi bi-file-earmark-spreadsheet"></i> CSV
+                    <button type="button" class="es-btn es-btn--csv es-btn--sm" id="btnExportAdminCandidateCsv" style="font-weight:700; display:inline-flex; align-items:center; gap:6px;">
+                        <i class="bi bi-file-earmark-spreadsheet-fill"></i> CSV
                     </button>
                 </div>
                 <button class="es-btn es-btn--ghost" id="btnCloseAdminCandidateModal2">Fermer</button>
