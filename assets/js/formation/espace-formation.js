@@ -3448,12 +3448,6 @@ function renderStagiaireBilan() {
                         <i class="bi bi-card-checklist"></i> <span class="accordion-text">Consulter mes réponses &amp; corrigé</span> <i class="bi bi-chevron-down accordion-arrow" style="font-size:11px; margin-left:4px; transition:transform 0.2s ease;"></i>
                     </button>
                 `;
-            } else if (!showScore) {
-                actionBtnHtml = `
-                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-toggle-bilan-accordion" data-module-id="${m.id}">
-                        <i class="bi bi-eye"></i> <span class="accordion-text">Consulter ma copie transmise</span> <i class="bi bi-chevron-down accordion-arrow" style="font-size:11px; margin-left:4px; transition:transform 0.2s ease;"></i>
-                    </button>
-                `;
             }
 
             if (m.enabled) {
@@ -3557,6 +3551,16 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
     const qConfig = mod?.quizConfig || {};
     const displayMode = qConfig.resultsDisplayMode || (Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1) ? 'all' : 'none');
     const isAdminOrFormateur = (actualRole === 'admin' || actualRole === 'formateur' || actualUserData?.role === 'admin' || actualUserData?.role === 'formateur');
+
+    if (!isAdminOrFormateur && displayMode === 'none') {
+        acc.innerHTML = `
+            <div style="padding:16px 20px; text-align:center; color:var(--clr-text-muted); font-size:0.88rem; background:var(--clr-surface-2); border-radius:var(--radius-sm);">
+                <i class="bi bi-shield-lock-fill" style="color:var(--clr-primary); margin-right:6px;"></i>
+                Pour ce module, le mode corrigé différé est activé. Vos réponses ont bien été transmises au formateur.
+            </div>
+        `;
+        return;
+    }
 
     if (!isAdminOrFormateur && displayMode === 'score_only') {
         acc.innerHTML = `
