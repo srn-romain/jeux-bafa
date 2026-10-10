@@ -3696,9 +3696,9 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
                     </div>
 
                     ${(qEv && (qEv.comment || isGraded)) ? `
-                        <div style="margin-top:10px; padding:10px 12px; background:rgba(52, 152, 219, 0.08); border-left:3.5px solid #3498db; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
+                        <div style="margin-top:10px; padding-top:10px; padding-bottom:10px; padding-left:12px; padding-right:12px; background:rgba(52, 152, 219, 0.08); border-left:3.5px solid #3498db; border-radius:4px; font-size:0.84rem; color:var(--clr-text);">
                             <div style="font-weight:700; color:#2980b9; margin-bottom:4px; display:flex; align-items:center; gap:6px;">
-                                <i class="bi bi-person-workspace"></i> Évaluation Formateur ${qEv.gradedByName ? `(${escapeHtml(qEv.gradedByName)})` : ''} :
+                                <i class="bi bi-person-workspace"></i> Évaluation Formateur :
                             </div>
                             <div style="white-space:pre-wrap; word-break:break-word; line-height:1.5;">${qEv.comment && qEv.comment.trim() ? escapeHtml(qEv.comment.trim()) : (qEv.isCorrect ? '✅ Réponse validée par le formateur.' : '❌ Réponse non validée par le formateur.')}</div>
                         </div>
