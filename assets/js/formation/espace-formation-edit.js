@@ -3410,7 +3410,7 @@ function renderQuestionsEditor() {
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; flex-wrap:wrap; gap:4px;">
                         <label class="es-field__label" style="font-size:0.78rem; font-weight:700; color:var(--clr-text-muted); margin-bottom:0; display:flex; align-items:center; gap:5px;">
                             <i class="bi bi-person-workspace" style="color:var(--clr-primary);"></i>
-                            <span>Note / Pense-bête formateur <span style="font-weight:400; font-size:0.72rem; opacity:0.85;">(visible lors de la correction)</span></span>
+                            <span>Note / Pense-bête formateur</span>
                         </label>
                         <span class="es-badge ${currentRole === 'admin' ? 'es-badge--admin' : 'es-badge--formateur'}" style="font-size:0.65rem; padding:1px 6px;">
                             ${currentRole === 'admin' ? '<i class="bi bi-pencil-fill"></i> Admin (Édition)' : '<i class="bi bi-lock-fill"></i> Formateur (Lecture seule)'}
