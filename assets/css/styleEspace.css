@@ -7378,12 +7378,24 @@ body.modal-open .es-topbar {
 
 .es-bilan-filter-btn:hover .es-bilan-filter-count {
   background: rgba(0, 0, 0, 0.12);
+  color: var(--clr-text);
 }
 
 .es-bilan-filter-btn.active .es-bilan-filter-count {
-  background: rgba(255, 255, 255, 0.28);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
   font-weight: 800;
+}
+
+.es-bilan-filter-btn.active:hover {
+  background: #219653 !important;
+  border-color: #219653 !important;
+  color: #ffffff !important;
+}
+
+.es-bilan-filter-btn.active:hover .es-bilan-filter-count {
+  background: rgba(255, 255, 255, 0.38) !important;
+  color: #ffffff !important;
 }
 
 .es-bilan-actions-group {
@@ -7446,7 +7458,7 @@ body.modal-open .es-topbar {
   border-radius: var(--radius-full, 20px);
   border: 1.5px solid var(--clr-surface-3);
   background: var(--clr-surface);
-  color: var(--clr-text-muted);
+  color: var(--clr-text);
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
@@ -7454,20 +7466,27 @@ body.modal-open .es-topbar {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  user-select: none;
 }
 
 .module-filter-btn:hover {
   border-color: var(--clr-primary);
-  color: var(--clr-primary);
+  color: var(--clr-text);
   background: var(--clr-surface-2);
 }
 
 .module-filter-btn.active {
-  background: var(--clr-primary);
-  border-color: var(--clr-primary);
-  color: #ffffff;
+  background: var(--clr-primary) !important;
+  border-color: var(--clr-primary) !important;
+  color: #ffffff !important;
   font-weight: 700;
-  box-shadow: none;
+  box-shadow: 0 2px 8px rgba(39, 174, 96, 0.25);
+}
+
+.module-filter-btn.active:hover {
+  background: var(--clr-primary-dark, #1e8449) !important;
+  border-color: var(--clr-primary-dark, #1e8449) !important;
+  color: #ffffff !important;
 }
 
 .module-filter-count {
@@ -7481,20 +7500,25 @@ body.modal-open .es-topbar {
   font-size: 0.76rem;
   font-weight: 700;
   line-height: 1;
-  background: var(--clr-surface-3);
+  background: rgba(0, 0, 0, 0.08);
   color: var(--clr-text);
   transition: all var(--transition);
 }
 
 .module-filter-btn:hover .module-filter-count {
-  background: rgba(104, 159, 56, 0.15);
-  color: var(--clr-primary);
+  background: rgba(0, 0, 0, 0.14);
+  color: var(--clr-text);
 }
 
 .module-filter-btn.active .module-filter-count {
-  background: rgba(255, 255, 255, 0.28);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.28) !important;
+  color: #ffffff !important;
   font-weight: 800;
+}
+
+.module-filter-btn.active:hover .module-filter-count {
+  background: rgba(255, 255, 255, 0.38) !important;
+  color: #ffffff !important;
 }
 
 .es-bilan-modules-list {
