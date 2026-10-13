@@ -111,15 +111,25 @@ document.addEventListener('click', (e) => {
 });
 
 // Affichage standardisé et centré d'accès refusé / page introuvable
-function showGlobalAccessDenied(targetId = 'accessDenied') {
+function showGlobalAccessDenied(targetId = 'accessDenied', options = {}) {
     // Masquer les loaders et contenus des pages
-    ['pageLoader', 'adminLoader', 'coloContent', 'adminContent'].forEach(id => {
+    ['pageLoader', 'adminLoader', 'coloContent', 'adminContent', 'quizTopbar', 'quizBriefingView', 'quizActiveView', 'quizResultsView', 'moduleHubMain'].forEach(id => {
         const el = document.getElementById(id);
-        if (el) el.classList.add('hidden');
+        if (el) {
+            el.classList.add('hidden');
+            if (id === 'quizTopbar' || id === 'moduleHubMain') el.style.display = 'none';
+        }
     });
 
     const deniedContainer = document.getElementById(targetId);
     if (!deniedContainer) return;
+
+    const isFormation = window.location.pathname.includes('formation') || window.location.pathname.includes('quiz');
+    const defaultBackUrl = isFormation ? 'formation.html' : 'index.html';
+    const defaultBackText = isFormation ? 'Retourner au menu' : 'Retour';
+
+    const backUrl = (typeof options === 'object' && options?.backUrl) ? options.backUrl : (typeof options === 'string' ? options : defaultBackUrl);
+    const backText = (typeof options === 'object' && options?.backText) ? options.backText : defaultBackText;
 
     deniedContainer.className = 'es-access-wrapper';
     deniedContainer.innerHTML = `
@@ -127,8 +137,8 @@ function showGlobalAccessDenied(targetId = 'accessDenied') {
             <div class="es-access-notice__icon">🔒</div>
             <h2 class="es-access-notice__title">Page introuvable ou accès non autorisé</h2>
             <p class="es-access-notice__text">Cette page n'existe pas ou vous n'êtes pas autorisé à la voir.</p>
-            <a href="index.html" class="es-btn es-btn--primary" style="display:inline-flex;">
-                <i class="bi bi-arrow-left"></i> Retour
+            <a href="${backUrl}" class="es-btn es-btn--primary" style="display:inline-flex; align-items:center; gap:8px;">
+                <i class="bi bi-arrow-left"></i> ${backText}
             </a>
         </div>
     `;

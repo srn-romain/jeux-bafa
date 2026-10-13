@@ -5777,8 +5777,15 @@ auth.onAuthStateChanged(async (user) => {
     }
 
     if (currentRole !== 'admin' && currentRole !== 'formateur') {
-        alert("Accès réservé aux formateurs et administrateurs.");
-        window.location.replace('formation.html');
+        const hub = document.getElementById('moduleHubMain');
+        if (hub) hub.style.display = 'none';
+        const loader = document.getElementById('pageLoader');
+        if (loader) loader.classList.add('hidden');
+        if (typeof showGlobalAccessDenied === 'function') {
+            showGlobalAccessDenied('accessDenied');
+        } else {
+            window.location.replace('formation.html');
+        }
         return;
     }
 

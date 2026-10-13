@@ -200,6 +200,8 @@ function getModuleIdFromUrl() {
     return params.get('module') || params.get('id') || null;
 }
 
+let moduleRealtimeUnsub = null;
+
 async function loadQuizModule(moduleId) {
     const loader = document.getElementById('pageLoader');
     try {
@@ -209,10 +211,56 @@ async function loadQuizModule(moduleId) {
             mod = { id: docSnap.id, ...docSnap.data() };
         }
 
+        // Si non trouvé en direct, chercher dans le cache local
         if (!mod) {
-            alert("Module introuvable.");
-            window.location.href = 'formation.html';
+            try {
+                const cachedList = JSON.parse(localStorage.getItem('offline_formation_modules') || '[]');
+                mod = cachedList.find(m => m.id === moduleId) || null;
+            } catch (e) {}
+        }
+
+        // 1. Si le module n'existe pas du tout : page introuvable / accès non autorisé
+        if (!mod) {
+            showGlobalAccessDenied('accessDenied');
             return;
+        }
+
+        // Rôle effectif de l'utilisateur
+        const isAdminOrFormateur = (currentRole === 'admin' || currentRole === 'formateur' || actualUserData?.role === 'admin' || actualUserData?.role === 'formateur');
+        const isVisible = (mod.visible !== false);
+
+        // 2. CONTRÔLE DE SÉCURITÉ : MODULE MASQUÉ AUX STAGIAIRES
+        // Si le module est caché pour les stagiaires (visible === false) :
+        // Afficher le template habituel via showGlobalAccessDenied("accessDenied"),
+        // QUE LE MODULE SOIT VERROUILLÉ OU DÉVERROUILLÉ (mod.enabled === true ou mod.enabled === false).
+        if (!isAdminOrFormateur && !isVisible) {
+            showGlobalAccessDenied('accessDenied');
+            return;
+        }
+
+        // Écouteur temps réel pour réagir immédiatement si le formateur masque le module pendant la navigation
+        if (moduleRealtimeUnsub) {
+            moduleRealtimeUnsub();
+            moduleRealtimeUnsub = null;
+        }
+        try {
+            moduleRealtimeUnsub = db.collection('formation').doc(moduleId).onSnapshot((snap) => {
+                if (!snap.exists) {
+                    showGlobalAccessDenied('accessDenied');
+                    return;
+                }
+                const liveData = { id: snap.id, ...snap.data() };
+                currentModuleData = liveData;
+                const isAdminLive = (currentRole === 'admin' || currentRole === 'formateur' || actualUserData?.role === 'admin' || actualUserData?.role === 'formateur');
+                const isVisibleLive = (liveData.visible !== false);
+                if (!isAdminLive && !isVisibleLive) {
+                    showGlobalAccessDenied('accessDenied');
+                }
+            }, (snapErr) => {
+                console.warn("Module realtime listener error:", snapErr);
+            });
+        } catch (rtErr) {
+            console.warn("Could not attach module realtime listener:", rtErr);
         }
 
         // Charger les questions depuis la sous-collection Firestore
@@ -245,6 +293,10 @@ async function loadQuizModule(moduleId) {
     } catch (err) {
         if (loader) loader.classList.add('hidden');
         console.error("loadQuizModule error:", err);
+        if (err && (err.code === 'permission-denied' || String(err).includes('permission'))) {
+            showGlobalAccessDenied('accessDenied');
+            return;
+        }
         showToast("Erreur lors du chargement de l'épreuve.", "error");
     }
 }
@@ -280,8 +332,10 @@ function renderBriefingScreen() {
     const maxAttempts = parseInt(qConfig.maxAttempts, 10) || 0;
     const totalDurationSecs = getQuizTotalDurationSeconds(mod);
     const prevAttempts = userPreviousSubmissions.length;
-    const isAdminOrFormateur = (currentRole === 'admin' || currentRole === 'formateur');
-    const isLocked = !isAdminOrFormateur && (maxAttempts > 0 && prevAttempts >= maxAttempts);
+    const isAdminOrFormateur = (currentRole === 'admin' || currentRole === 'formateur' || actualUserData?.role === 'admin' || actualUserData?.role === 'formateur');
+    const isAttemptsExceeded = !isAdminOrFormateur && (maxAttempts > 0 && prevAttempts >= maxAttempts);
+    const isModuleDisabledByTrainer = !isAdminOrFormateur && (mod.enabled === false);
+    const isLocked = isAttemptsExceeded || isModuleDisabledByTrainer;
     const showResults = isAdminOrFormateur || Boolean(qConfig.showResultsAtEnd === true || qConfig.showResultsAtEnd === 'true' || qConfig.showResultsAtEnd === 1);
 
     // Bannière spéciale Admin / Formateur
@@ -512,12 +566,35 @@ function renderBriefingScreen() {
 
     if (isLocked) {
         if (warningBox) warningBox.classList.add('hidden');
-        if (lockedAlert) lockedAlert.classList.remove('hidden');
+        if (lockedAlert) {
+            lockedAlert.classList.remove('hidden');
+            if (isModuleDisabledByTrainer) {
+                lockedAlert.innerHTML = `
+                    <i class="bi bi-lock-fill" style="font-size:1.3rem;"></i>
+                    <div>
+                        <strong>Module verrouillé !</strong>
+                        <div style="font-size:0.84rem; margin-top:2px;">Ce module est actuellement verrouillé par votre formateur. Vous ne pouvez pas encore passer cette épreuve.</div>
+                    </div>
+                `;
+            } else {
+                lockedAlert.innerHTML = `
+                    <i class="bi bi-lock-fill" style="font-size:1.3rem;"></i>
+                    <div>
+                        <strong>Tentatives maximales atteintes !</strong>
+                        <div style="font-size:0.84rem; margin-top:2px;">Vous avez déjà utilisé l'ensemble des tentatives autorisées pour ce module.</div>
+                    </div>
+                `;
+            }
+        }
         if (btnStart) {
             btnStart.disabled = true;
             btnStart.style.opacity = '0.5';
             btnStart.classList.remove('hidden');
-            btnStart.innerHTML = `<i class="bi bi-lock-fill"></i> Tentatives épuisées (${prevAttempts}/${maxAttempts})`;
+            if (isModuleDisabledByTrainer) {
+                btnStart.innerHTML = `<i class="bi bi-lock-fill"></i> Module verrouillé par le formateur`;
+            } else {
+                btnStart.innerHTML = `<i class="bi bi-lock-fill"></i> Tentatives épuisées (${prevAttempts}/${maxAttempts})`;
+            }
         }
         if (showResults && userPreviousSubmissions.length > 0 && btnViewResults) {
             btnViewResults.classList.remove('hidden');
@@ -778,6 +855,19 @@ function saveCurrentPageAnswersToState() {
 }
 
 function startActiveQuiz() {
+    const mod = currentModuleData;
+    const isAdminOrFormateur = (currentRole === 'admin' || currentRole === 'formateur' || actualUserData?.role === 'admin' || actualUserData?.role === 'formateur');
+    if (!isAdminOrFormateur && mod?.visible === false) {
+        if (typeof showGlobalAccessDenied === 'function') {
+            showGlobalAccessDenied('accessDenied');
+        }
+        return;
+    }
+    if (!isAdminOrFormateur && mod?.enabled === false) {
+        showToast("Ce module est verrouillé par votre formateur.", "warning");
+        return;
+    }
+
     isQuizActive = true;
     window.addEventListener('beforeunload', handleBeforeUnload);
 
@@ -788,8 +878,6 @@ function startActiveQuiz() {
     }
     hasWarnedTenPercent = false;
     hasWarnedFivePercent = false;
-
-    const mod = currentModuleData;
     const prevAttempts = userPreviousSubmissions.length;
     const maxAttempts = parseInt(mod.quizConfig?.maxAttempts, 10) || 0;
     quizTotalSeconds = getQuizTotalDurationSeconds(mod);
@@ -2710,6 +2798,19 @@ function updateProgress() {
 async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
     if (!currentModuleData || !currentUser) return;
 
+    const isAdminOrFormateur = (currentRole === 'admin' || currentRole === 'formateur' || actualUserData?.role === 'admin' || actualUserData?.role === 'formateur');
+    if (!isAdminOrFormateur && currentModuleData?.visible === false) {
+        showToast("Ce module n'est plus accessible.", "error");
+        if (typeof showGlobalAccessDenied === 'function') {
+            showGlobalAccessDenied('accessDenied');
+        }
+        return;
+    }
+    if (!isAdminOrFormateur && currentModuleData?.enabled === false) {
+        showToast("Ce module est verrouillé par votre formateur.", "error");
+        return;
+    }
+
     // Arrêter immédiatement le compte à rebours s'il tourne
     if (quizTimerInterval) {
         clearInterval(quizTimerInterval);
@@ -3920,8 +4021,7 @@ auth.onAuthStateChanged(async (user) => {
 
     const moduleId = getModuleIdFromUrl();
     if (!moduleId) {
-        alert("Aucun module spécifié.");
-        window.location.href = 'formation.html';
+        showGlobalAccessDenied('accessDenied');
         return;
     }
 

@@ -66,6 +66,9 @@
      ======================================================== -->
     <main class="es-quiz-page-container">
 
+        <!-- Page introuvable ou accès non autorisé (généré dynamiquement par espace-auth.js) -->
+        <div id="accessDenied" class="hidden"></div>
+
         <!-- ----------------------------------------------------
          VUE 1 : BRIEFING PRÉ-QUIZ & AVERTISSEMENT SOLENNEL
          ---------------------------------------------------- -->
@@ -353,8 +356,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
     <script src="../../assets/js/firebase-config.js"></script>
-    <script src="../../assets/js/colo/espace-auth.js?v=3.6"></script>
-    <script charset="UTF-8" src="../../assets/js/formation/espace-quiz.js?v=1.3"></script>
+    <script src="../../assets/js/colo/espace-auth.js?v=3.7"></script>
+    <script charset="UTF-8" src="../../assets/js/formation/espace-quiz.js?v=1.5"></script>
 </body>
 
 </html>

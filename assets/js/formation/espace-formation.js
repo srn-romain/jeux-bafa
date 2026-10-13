@@ -800,7 +800,7 @@ async function loadFormationModules(forceRefresh = false) {
         // Filtrage pour les stagiaires : masquer totalement les modules si visible === false
         const visibleModules = modules.filter(m => {
             const isVisible = m.visible !== false;
-            if (effectiveRole === 'stagiaire' && !isVisible) {
+            if (effectiveRole !== 'admin' && effectiveRole !== 'formateur' && !isVisible) {
                 return false;
             }
             return true;
