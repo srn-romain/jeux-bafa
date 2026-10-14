@@ -74,9 +74,10 @@ const ColoFormManager = {
                                 <div class="es-cropper-ratios">
                                     <div class="es-cropper-ratios__group" id="formCropperRatioGroup">
                                         <span class="es-cropper-ratios__label"><i class="bi bi-aspect-ratio"></i> Format :</span>
-                                        <button type="button" class="es-cropper-ratio-btn active" data-ratio="1.333">4:3 Carte</button>
-                                        <button type="button" class="es-cropper-ratio-btn" data-ratio="1">1:1 Carré</button>
+                                        <button type="button" class="es-cropper-ratio-btn active" data-ratio="1.6">Carte (16:10)</button>
                                         <button type="button" class="es-cropper-ratio-btn" data-ratio="1.777">16:9</button>
+                                        <button type="button" class="es-cropper-ratio-btn" data-ratio="1.333">4:3 Photo</button>
+                                        <button type="button" class="es-cropper-ratio-btn" data-ratio="1">1:1 Carré</button>
                                         <button type="button" class="es-cropper-ratio-btn" data-ratio="3">3:1 Bannière</button>
                                         <button type="button" class="es-cropper-ratio-btn" data-ratio="free">Libre</button>
                                     </div>
@@ -92,10 +93,9 @@ const ColoFormManager = {
                                 <i class="bi bi-arrows-move"></i> <span><strong>Déplacez et ajustez le cadre</strong> ci-dessous pour choisir le rectangle affiché :</span>
                             </p>
 
-                            <div class="es-cropper-warning">
-                                <i class="bi bi-exclamation-triangle"></i>
-                                <span><strong>Attention :</strong> Le zoom et le recadrage sont définitifs après enregistrement (aucun dézoom possible ultérieurement sans re-téléverser la photo originale).</span>
-                            </div>
+                            <p class="es-cropper-hint" style="margin-top: 2px; font-size: 0.77rem; color: var(--clr-text-light);">
+                                <i class="bi bi-info-circle" style="color: var(--clr-primary);"></i> <span>L'image originale est conservée : vous pouvez modifier et ajuster le cadrage à tout moment sans perte.</span>
+                            </p>
 
                             <!-- Scène de Recadrage -->
                             <div class="es-cropper-stage-container" id="formCropperStageContainer">
@@ -372,8 +372,9 @@ const ColoFormManager = {
 
     // État du recadreur intégré & Prévisualisations
     rawBgImage: '',
+    savedCrop: null,
     sourceImg: null,
-    aspectRatio: 1.333, // 4:3 Carte par défaut
+    aspectRatio: 1.6, // Carte par défaut (16:10)
     zoom: 1.0,
     rx: 0,
     ry: 0,
@@ -388,19 +389,68 @@ const ColoFormManager = {
     activeDrag: null,
     previewMode: 'grid', // 'grid' | 'list'
 
-    setAspectRatio(ratio) {
-        this.aspectRatio = ratio === 'free' ? 'free' : parseFloat(ratio);
+    // Compresse / redimensionne l'image ENTIÈRE si elle dépasse 1600px pour garantir la limite Firestore 1 Mo
+    compressFullImage(dataUrl, callback) {
+        if (!dataUrl || !dataUrl.startsWith('data:image/')) {
+            callback(dataUrl);
+            return;
+        }
+        const img = new Image();
+        img.onload = () => {
+            const maxDim = 1600;
+            let w = img.naturalWidth || img.width;
+            let h = img.naturalHeight || img.height;
+            // Si l'image est déjà petite en dimensions et en taille base64 (< 700 Ko), la conserver
+            if (w <= maxDim && h <= maxDim && dataUrl.length < 750000) {
+                callback(dataUrl);
+                return;
+            }
+            if (w > maxDim || h > maxDim) {
+                if (w > h) {
+                    h = Math.round((h * maxDim) / w);
+                    w = maxDim;
+                } else {
+                    w = Math.round((w * maxDim) / h);
+                    h = maxDim;
+                }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(img, 0, 0, w, h);
+            const result = canvas.toDataURL('image/jpeg', 0.85);
+            callback(result);
+        };
+        img.onerror = () => callback(dataUrl);
+        img.src = dataUrl;
+    },
+
+    compressFullImageAsync(dataUrl) {
+        return new Promise((resolve) => {
+            this.compressFullImage(dataUrl, (res) => resolve(res));
+        });
+    },
+
+    syncRatioButtonsUI(ratio) {
         const ratioBtns = document.querySelectorAll('#formCropperRatioGroup .es-cropper-ratio-btn');
         ratioBtns.forEach(b => {
             const btnRatio = b.dataset.ratio;
-            if (this.aspectRatio === 'free' && btnRatio === 'free') {
+            if (ratio === 'free' && btnRatio === 'free') {
                 b.classList.add('active');
-            } else if (this.aspectRatio !== 'free' && btnRatio !== 'free' && Math.abs(parseFloat(btnRatio) - this.aspectRatio) < 0.05) {
+            } else if (ratio !== 'free' && btnRatio !== 'free' && Math.abs(parseFloat(btnRatio) - parseFloat(ratio)) < 0.05) {
                 b.classList.add('active');
             } else {
                 b.classList.remove('active');
             }
         });
+    },
+
+    setAspectRatio(ratio) {
+        this.aspectRatio = ratio === 'free' ? 'free' : parseFloat(ratio);
+        this.syncRatioButtonsUI(this.aspectRatio);
         this.resetCropBoxToRatio();
         this.updateFormCropperDOM();
     },
@@ -422,7 +472,7 @@ const ColoFormManager = {
             els.tabPreviewList?.setAttribute('aria-selected', 'false');
 
             if (userInitiated && (this.aspectRatio === 3 || this.aspectRatio === '3')) {
-                this.setAspectRatio(1.333);
+                this.setAspectRatio(1.6);
             }
         } else {
             els.slideGrid.style.display = 'none';
@@ -435,7 +485,7 @@ const ColoFormManager = {
             els.tabPreviewList?.setAttribute('aria-selected', 'true');
             els.tabPreviewGrid?.setAttribute('aria-selected', 'false');
 
-            if (userInitiated && Math.abs(this.aspectRatio - 1.333) < 0.05) {
+            if (userInitiated && Math.abs(this.aspectRatio - 1.6) < 0.05) {
                 this.setAspectRatio(3.0);
             }
         }
@@ -488,7 +538,10 @@ const ColoFormManager = {
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 reader.onload = () => {
-                    this.loadFormCropperImage(reader.result);
+                    this.compressFullImage(reader.result, (compressed) => {
+                        this.savedCrop = null;
+                        this.loadFormCropperImage(compressed, null, false);
+                    });
                 };
                 reader.onerror = () => showToast("Erreur de lecture de l'image.", "error");
             });
@@ -498,6 +551,7 @@ const ColoFormManager = {
         if (els.removeBgBtn) {
             els.removeBgBtn.addEventListener('click', () => {
                 this.rawBgImage = '';
+                this.savedCrop = null;
                 this.sourceImg = null;
                 if (els.bgInput) els.bgInput.value = '';
                 if (els.bgBase64) els.bgBase64.value = '';
@@ -665,26 +719,50 @@ const ColoFormManager = {
     },
 
     // Charge une image dans le recadreur intégré
-    loadFormCropperImage(src) {
+    loadFormCropperImage(src, savedCrop = null, isExisting = true) {
         const els = this.getElements();
         if (!src) {
             this.sourceImg = null;
             this.rawBgImage = '';
+            this.savedCrop = null;
             if (els.bgCropperSection) els.bgCropperSection.classList.add('hidden');
             return;
         }
 
         this.rawBgImage = src;
+        this.savedCrop = savedCrop;
         const img = new Image();
         img.onload = () => {
             this.sourceImg = img;
             this.imgNaturalW = img.naturalWidth || img.width;
             this.imgNaturalH = img.naturalHeight || img.height;
-            this.zoom = 1.0;
-            if (els.zoomSlider) els.zoomSlider.value = 1.0;
 
             if (els.cropperImg) els.cropperImg.src = src;
             if (els.bgCropperSection) els.bgCropperSection.classList.remove('hidden');
+
+            // 1. Restaurer fidèlement le cadrage sauvegardé sans réappliquer de rognage destructif
+            if (savedCrop && typeof savedCrop.rw === 'number' && typeof savedCrop.rh === 'number') {
+                this.rx = Math.max(0, Math.min(1, savedCrop.rx ?? 0));
+                this.ry = Math.max(0, Math.min(1, savedCrop.ry ?? 0));
+                this.rw = Math.max(0.01, Math.min(1 - this.rx, savedCrop.rw ?? 1));
+                this.rh = Math.max(0.01, Math.min(1 - this.ry, savedCrop.rh ?? 1));
+                this.zoom = Math.max(1, Math.min(3, savedCrop.zoom || 1.0));
+                if (savedCrop.aspectRatio !== undefined) {
+                    this.aspectRatio = savedCrop.aspectRatio === 'free' ? 'free' : parseFloat(savedCrop.aspectRatio);
+                } else {
+                    this.aspectRatio = (this.previewMode === 'list') ? 3.0 : 1.6;
+                }
+                this.syncRatioButtonsUI(this.aspectRatio);
+            } else {
+                // Pas de cadrage enregistré : initialisation initiale propre
+                this.zoom = 1.0;
+                this.aspectRatio = (this.previewMode === 'list') ? 3.0 : 1.6;
+                this.syncRatioButtonsUI(this.aspectRatio);
+                // Si l'image existe déjà sans métadonnées, on prend le plein cadre pour ne pas rogner 10%
+                this.resetCropBoxToRatio(isExisting);
+            }
+
+            if (els.zoomSlider) els.zoomSlider.value = this.zoom;
 
             const nomVal = els.nom?.value?.trim() || "Nom de l'espace";
             if (els.previewName) els.previewName.textContent = nomVal;
@@ -704,7 +782,6 @@ const ColoFormManager = {
 
             requestAnimationFrame(() => {
                 this.recalculateFormStage();
-                this.resetCropBoxToRatio();
                 this.updateFormCropperDOM();
             });
         };
@@ -742,8 +819,8 @@ const ColoFormManager = {
     // Réinitialise le cadre selon le ratio
     resetCropBoxToRatio(maximize = false) {
         if (this.aspectRatio === 'free') {
-            this.rw = maximize ? 0.98 : 0.88;
-            this.rh = maximize ? 0.98 : 0.88;
+            this.rw = maximize ? 1.0 : 0.88;
+            this.rh = maximize ? 1.0 : 0.88;
             this.rx = (1 - this.rw) / 2;
             this.ry = (1 - this.rh) / 2;
             return;
@@ -753,17 +830,17 @@ const ColoFormManager = {
         const imgAspect = this.dispW / this.dispH;
 
         if (imgAspect > targetRatio) {
-            this.rh = maximize ? 0.98 : 0.90;
+            this.rh = maximize ? 1.0 : 0.90;
             this.rw = (this.rh * this.dispH * targetRatio) / this.dispW;
-            if (this.rw > 0.98) {
-                this.rw = 0.98;
+            if (this.rw > 1.0) {
+                this.rw = 1.0;
                 this.rh = (this.rw * this.dispW) / (targetRatio * this.dispH);
             }
         } else {
-            this.rw = maximize ? 0.98 : 0.90;
+            this.rw = maximize ? 1.0 : 0.90;
             this.rh = (this.rw * this.dispW) / (targetRatio * this.dispH);
-            if (this.rh > 0.98) {
-                this.rh = 0.98;
+            if (this.rh > 1.0) {
+                this.rh = 1.0;
                 this.rw = (this.rh * this.dispH * targetRatio) / this.dispW;
             }
         }
@@ -847,11 +924,11 @@ const ColoFormManager = {
             this.drawCoverImage(ctx, this.sourceImg, sx, sy, sw, sh, els.previewCanvas.width, els.previewCanvas.height);
         }
 
-        // 2. Aperçu Format Carte (Grille carrée)
+        // 2. Aperçu Format Carte (Grille)
         if (els.previewCanvasGrid) {
             const cardRectGrid = els.previewCanvasGrid.parentElement?.getBoundingClientRect();
-            const wGrid = (cardRectGrid && cardRectGrid.width > 0) ? cardRectGrid.width : 340;
-            const hGrid = (cardRectGrid && cardRectGrid.height > 0) ? cardRectGrid.height : 255;
+            const wGrid = (cardRectGrid && cardRectGrid.width > 0) ? cardRectGrid.width : 360;
+            const hGrid = (cardRectGrid && cardRectGrid.height > 0) ? cardRectGrid.height : 225;
 
             els.previewCanvasGrid.width = Math.round(wGrid * dpr);
             els.previewCanvasGrid.height = Math.round(hGrid * dpr);
@@ -1093,16 +1170,24 @@ const ColoFormManager = {
             els.previewOrgText.textContent = colo?.organisme || 'Organisme';
         }
 
-        this.setPreviewMode('grid');
+        // Déterminer le format de prévisualisation par défaut calqué sur l'écran d'accueil d'espace colo
+        let homeViewMode = 'grid';
+        if (typeof currentViewMode !== 'undefined' && currentViewMode) {
+            homeViewMode = (currentViewMode === 'list') ? 'list' : 'grid';
+        } else {
+            homeViewMode = (localStorage.getItem('dashboard_colos_view') === 'list') ? 'list' : 'grid';
+        }
+        this.setPreviewMode(homeViewMode, false);
 
         openModal('overlayColoForm');
 
         // Charger l'image dans le recadreur intégré si présente
         if (colo?.bgImage) {
-            this.loadFormCropperImage(colo.bgImage);
+            this.loadFormCropperImage(colo.bgImage, colo.bgCrop || null, true);
         } else {
             this.sourceImg = null;
             this.rawBgImage = '';
+            this.savedCrop = null;
             if (els.bgCropperSection) els.bgCropperSection.classList.add('hidden');
         }
     },
@@ -1321,10 +1406,31 @@ const ColoFormManager = {
         els.errorWrap.classList.add('hidden');
         btnLoading(btn, true);
 
-        // Obtenir le recadrage final
-        let finalBgImage = '';
-        if (this.sourceImg) {
-            finalBgImage = this.getFinalCroppedBase64() || this.rawBgImage || '';
+        // Conserver TOUJOURS l'image originale entière dans bgImage et enregistrer le cadrage dans bgCrop et bgCropped
+        let finalBgImage = this.rawBgImage || '';
+        let bgCropData = null;
+        let finalCroppedBg = '';
+
+        if (finalBgImage) {
+            if (finalBgImage.length > 750000) {
+                finalBgImage = await this.compressFullImageAsync(finalBgImage);
+                this.rawBgImage = finalBgImage;
+            }
+
+            if (this.sourceImg) {
+                bgCropData = {
+                    rx: Math.max(0, Math.min(1, Math.round(this.rx * 10000) / 10000)),
+                    ry: Math.max(0, Math.min(1, Math.round(this.ry * 10000) / 10000)),
+                    rw: Math.max(0.01, Math.min(1, Math.round(this.rw * 10000) / 10000)),
+                    rh: Math.max(0.01, Math.min(1, Math.round(this.rh * 10000) / 10000)),
+                    zoom: Math.round((this.zoom || 1) * 100) / 100,
+                    aspectRatio: this.aspectRatio,
+                    previewMode: this.previewMode
+                };
+                finalCroppedBg = this.getFinalCroppedBase64() || '';
+            } else if (this.savedCrop) {
+                bgCropData = this.savedCrop;
+            }
         }
 
         const data = {
@@ -1336,11 +1442,19 @@ const ColoFormManager = {
             ppId: els.ppId?.value.trim() || '',
             isFormation: els.isFormation?.checked || false,
             bgImage: finalBgImage,
+            bgCropped: finalCroppedBg || finalBgImage,
             emoji: els.emoji?.value.trim() || '🏕️',
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
         const idVal = els.id?.value;
+
+        if (bgCropData) {
+            data.bgCrop = bgCropData;
+        } else if (idVal) {
+            data.bgCrop = firebase.firestore.FieldValue.delete();
+            data.bgCropped = firebase.firestore.FieldValue.delete();
+        }
 
         try {
             if (idVal) {

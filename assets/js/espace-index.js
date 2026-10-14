@@ -896,10 +896,17 @@ function buildColoCard(colo, accessStatus, nbParticipants, nbAnims, role) {
     if (accessStatus === 'approved' || accessStatus === 'admin') card.classList.add('es-colo-card--approved');
     if (accessStatus === 'none' || accessStatus === 'refused') card.classList.add('es-colo-card--locked');
 
-    if (colo.bgImage) {
-        card.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.65) 100%), url('${colo.bgImage}')`;
+    const bgUrl = colo.bgCropped || colo.bgImage;
+    if (bgUrl) {
+        card.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.65) 100%), url('${bgUrl}')`;
         card.style.backgroundSize = 'cover';
-        card.style.backgroundPosition = 'center';
+        if (!colo.bgCropped && colo.bgCrop && typeof colo.bgCrop.rx === 'number' && typeof colo.bgCrop.rw === 'number') {
+            const posX = Math.max(0, Math.min(100, Math.round((colo.bgCrop.rx + colo.bgCrop.rw / 2) * 100)));
+            const posY = Math.max(0, Math.min(100, Math.round((colo.bgCrop.ry + colo.bgCrop.rh / 2) * 100)));
+            card.style.backgroundPosition = `${posX}% ${posY}%`;
+        } else {
+            card.style.backgroundPosition = 'center';
+        }
     }
 
     const emoji = colo.emoji || '🏕️';
@@ -1065,10 +1072,17 @@ function buildColoAdminHorizontalCard(colo, accessStatus, nbParticipants, nbAnim
     div.dataset.type = colo.isFormation ? 'formation' : 'colo';
     div.dataset.year = colo.dateDebut ? colo.dateDebut.split('-')[0] : 'none';
 
-    if (colo.bgImage) {
-        div.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.7) 100%), url('${colo.bgImage}')`;
+    const bgUrl = colo.bgCropped || colo.bgImage;
+    if (bgUrl) {
+        div.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.7) 100%), url('${bgUrl}')`;
         div.style.backgroundSize = 'cover';
-        div.style.backgroundPosition = 'center';
+        if (!colo.bgCropped && colo.bgCrop && typeof colo.bgCrop.rx === 'number' && typeof colo.bgCrop.rw === 'number') {
+            const posX = Math.max(0, Math.min(100, Math.round((colo.bgCrop.rx + colo.bgCrop.rw / 2) * 100)));
+            const posY = Math.max(0, Math.min(100, Math.round((colo.bgCrop.ry + colo.bgCrop.rh / 2) * 100)));
+            div.style.backgroundPosition = `${posX}% ${posY}%`;
+        } else {
+            div.style.backgroundPosition = 'center';
+        }
     }
 
     const dateStr = (colo.dateDebut && colo.dateFin)

@@ -1282,10 +1282,17 @@ function buildColoAdminCard(colo) {
     div.className = 'es-colo-admin-card';
     div.dataset.type = colo.isFormation ? 'formation' : 'colo';
 
-    if (colo.bgImage) {
-        div.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.65) 100%), url('${colo.bgImage}')`;
+    const bgUrl = colo.bgCropped || colo.bgImage;
+    if (bgUrl) {
+        div.style.backgroundImage = `linear-gradient(to bottom, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.65) 100%), url('${bgUrl}')`;
         div.style.backgroundSize = 'cover';
-        div.style.backgroundPosition = 'center';
+        if (!colo.bgCropped && colo.bgCrop && typeof colo.bgCrop.rx === 'number' && typeof colo.bgCrop.rw === 'number') {
+            const posX = Math.max(0, Math.min(100, Math.round((colo.bgCrop.rx + colo.bgCrop.rw / 2) * 100)));
+            const posY = Math.max(0, Math.min(100, Math.round((colo.bgCrop.ry + colo.bgCrop.rh / 2) * 100)));
+            div.style.backgroundPosition = `${posX}% ${posY}%`;
+        } else {
+            div.style.backgroundPosition = 'center';
+        }
     }
 
     const dateStr = (colo.dateDebut && colo.dateFin)

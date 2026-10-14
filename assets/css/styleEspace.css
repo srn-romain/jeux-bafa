@@ -5079,8 +5079,8 @@ body.modal-open .es-topbar {
 .es-cropper-preview-grid-card {
   position: relative;
   width: 100%;
-  max-width: 340px;
-  height: 255px;
+  max-width: 360px;
+  height: 225px;
   margin: 0 auto;
   border-radius: var(--radius-lg);
   overflow: hidden;
