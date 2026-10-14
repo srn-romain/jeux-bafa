@@ -844,6 +844,8 @@ function saveCurrentPageAnswersToState() {
                 } catch(e) {
                     userAnswersState[q.id] = {};
                 }
+            } else {
+                userAnswersState[q.id] = {};
             }
         } else {
             const txt = form.querySelector(`textarea[name="question_${q.id}"]`);
@@ -1400,16 +1402,13 @@ function renderActiveSectionPage() {
 
                 // Dédoublonnage des correspondances droites pour autoriser plusieurs éléments gauches vers un même élément droit
                 const rightSet = new Set();
-                const rightItemsList = [];
+                const rightOptionsList = [];
 
-                rawPairs.forEach((p, idx) => {
+                rawPairs.forEach(p => {
                     const rText = (p.right || '').trim();
                     if (rText && !rightSet.has(rText.toLowerCase())) {
                         rightSet.add(rText.toLowerCase());
-                        rightItemsList.push({
-                            id: `r_${q.id}_${rightItemsList.length}`,
-                            text: rText
-                        });
+                        rightOptionsList.push(rText);
                     }
                 });
 
@@ -1424,58 +1423,69 @@ function renderActiveSectionPage() {
                 distractors.forEach(dText => {
                     if (dText && !rightSet.has(dText.toLowerCase())) {
                         rightSet.add(dText.toLowerCase());
-                        rightItemsList.push({
-                            id: `r_${q.id}_${rightItemsList.length}`,
-                            text: dText,
-                            isDistractor: true
-                        });
+                        rightOptionsList.push(dText);
                     }
                 });
 
-                const rightItems = shuffleArray(rightItemsList);
+                // Conserver l'ordre mélangé de manière stable pour la session du quiz
+                if (!q._shuffledDropdownOptions) {
+                    q._shuffledDropdownOptions = shuffleArray([...rightOptionsList]);
+                }
+                const dropdownOptions = q._shuffledDropdownOptions;
                 const savedMatches = (savedVal && typeof savedVal === 'object') ? savedVal : {};
+
+                const answeredCount = leftItems.filter(item => {
+                    const val = savedMatches[item.text] || savedMatches[(item.text || '').trim()];
+                    return val && String(val).trim().length > 0;
+                }).length;
 
                 inputHtml = `
                 <div class="es-matching-wrap" id="matching_wrap_${q.id}" data-q-id="${q.id}">
-                    <input type="hidden" name="question_${q.id}" id="matching_input_${q.id}" class="quiz-track-input" data-pairs-count="${leftItems.length}" value="${escapeHtml(JSON.stringify(savedMatches))}">
+                    <input type="hidden" name="question_${q.id}" id="matching_input_${q.id}" class="quiz-track-input" data-pairs-count="${leftItems.length}" value="${escapeHtml(answeredCount > 0 ? JSON.stringify(savedMatches) : '')}">
                     
                     <div class="es-matching-instructions">
-                        <i class="bi bi-info-circle-fill" style="color:var(--clr-primary);"></i>
-                        <span>Cliquez sur un élément à gauche, puis cliquez sur son correspondant à droite pour les relier.</span>
+                        <i class="bi bi-info-circle-fill" style="color:var(--clr-primary); font-size:1.15rem; flex-shrink:0;"></i>
+                        <span>Pour chaque affirmation ci-dessous, sélectionnez la colonne ou réponse associée dans la liste déroulante :</span>
                     </div>
 
-                    <div class="es-matching-grid">
-                        <div class="es-matching-col es-matching-col--left">
-                            <div class="es-matching-col-header"><i class="bi bi-list-columns-reverse"></i> Colonne de gauche</div>
-                            <div class="es-matching-list es-matching-list--left" data-q-id="${q.id}">
-                                ${leftItems.map(item => `
-                                    <div class="es-matching-item es-matching-item--left" id="${item.id}" data-q-id="${q.id}" data-side="left" data-item-text="${escapeHtml(item.text)}">
-                                        <span class="es-matching-item-num"><i class="bi bi-circle"></i></span>
-                                        <span class="es-matching-item-text">${escapeHtml(item.text)}</span>
-                                        <span class="es-matching-link-badge hidden" title="Relié"></span>
+                    <div class="es-matching-rows" data-q-id="${q.id}">
+                        ${leftItems.map((item, idx) => {
+                            const currentVal = (savedMatches[item.text] || savedMatches[(item.text || '').trim()] || '').trim();
+                            const isAnswered = currentVal.length > 0;
+                            return `
+                                <div class="es-matching-row ${isAnswered ? 'es-matching-row--answered' : ''}" id="matching_row_${q.id}_${idx}" data-item-text="${escapeHtml(item.text)}">
+                                    <div class="es-matching-left">
+                                        <span class="es-matching-row-num">${idx + 1}</span>
+                                        <div class="es-matching-affirmation">${escapeHtml(item.text)}</div>
                                     </div>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <div class="es-matching-col es-matching-col--right">
-                            <div class="es-matching-col-header"><i class="bi bi-list-columns"></i> Colonne de droite</div>
-                            <div class="es-matching-list es-matching-list--right" data-q-id="${q.id}">
-                                ${rightItems.map(item => `
-                                    <div class="es-matching-item es-matching-item--right" id="${item.id}" data-q-id="${q.id}" data-side="right" data-item-text="${escapeHtml(item.text)}">
-                                        <span class="es-matching-item-num"><i class="bi bi-circle"></i></span>
-                                        <span class="es-matching-item-text">${escapeHtml(item.text)}</span>
-                                        <span class="es-matching-link-badge hidden" title="Relié"></span>
+                                    <div class="es-matching-arrow" aria-hidden="true" title="Correspond à">
+                                        <i class="bi bi-arrow-right"></i>
                                     </div>
-                                `).join('')}
-                            </div>
-                        </div>
+                                    <div class="es-matching-right">
+                                        <div class="es-matching-select-wrap">
+                                            <select class="es-matching-select quiz-track-input ${isAnswered ? 'es-matching-select--filled' : ''}" id="matching_select_${q.id}_${idx}" data-q-id="${q.id}" data-item-text="${escapeHtml(item.text)}" aria-label="Correspondance pour ${escapeHtml(item.text)}">
+                                                <option value="" ${!isAnswered ? 'selected' : ''}>-- Choisir une correspondance --</option>
+                                                ${dropdownOptions.map(opt => `
+                                                    <option value="${escapeHtml(opt)}" ${currentVal.toLowerCase() === opt.toLowerCase() ? 'selected' : ''}>${escapeHtml(opt)}</option>
+                                                `).join('')}
+                                            </select>
+                                            <i class="bi bi-chevron-down es-matching-chevron" aria-hidden="true"></i>
+                                        </div>
+                                        <button type="button" class="es-matching-clear-btn" data-q-id="${q.id}" title="Effacer ce choix (laisser vide)" aria-label="Effacer ce choix">
+                                            <i class="bi bi-x-circle-fill"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
 
                     <div class="es-matching-status-bar" id="matching_status_bar_${q.id}">
-                        <span class="es-matching-count-badge" id="matching_count_${q.id}">0 / ${leftItems.length} reliés</span>
-                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-reset-matching" data-q-id="${q.id}" style="font-size:0.76rem; padding:3px 8px;">
-                            <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser les liaisons
+                        <span class="es-matching-count-badge" id="matching_count_${q.id}">
+                            ${answeredCount} / ${leftItems.length} association${leftItems.length > 1 ? 's' : ''} renseignée${answeredCount > 1 ? 's' : ''}
+                        </span>
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-reset-matching" data-q-id="${q.id}" style="font-size:0.76rem; padding:4px 10px;">
+                            <i class="bi bi-arrow-counterclockwise"></i> Tout réinitialiser
                         </button>
                     </div>
                 </div>`;
@@ -1553,7 +1563,7 @@ function renderActiveSectionPage() {
             else if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
             else if (q.type === 'boolean') typeBadgeLabel = 'Vrai / Faux';
             else if (q.type === 'puzzle') typeBadgeLabel = 'Puzzle / Ordonnancement';
-            else if (q.type === 'matching') typeBadgeLabel = '🔗 Relier les colonnes';
+            else if (q.type === 'matching') typeBadgeLabel = '🔗 Association (Listes déroulantes)';
             else if (q.type === 'text') typeBadgeLabel = 'Réponse rédigée';
 
             return `
@@ -2183,14 +2193,13 @@ function attachQuizInteractions(container) {
         });
     });
 
-    // Interaction du type Matching (Relier les colonnes)
+    // Interaction du type Matching (Affirmations avec listes déroulantes)
     container.querySelectorAll('.es-matching-wrap').forEach(wrap => {
         const qId = wrap.getAttribute('data-q-id');
         const input = document.getElementById(`matching_input_${qId}`);
         const countBadge = document.getElementById(`matching_count_${qId}`);
         const resetBtn = wrap.querySelector('.btn-reset-matching');
         
-        let selectedLeftEl = null;
         let userMatches = {}; // { leftText: rightText }
 
         if (input && input.value) {
@@ -2201,138 +2210,80 @@ function attachQuizInteractions(container) {
             }
         }
 
-        const MATCHING_PALETTE = [
-            { bg: 'rgba(52, 152, 219, 0.12)', border: '#3498db', text: '#2980b9' },
-            { bg: 'rgba(155, 89, 182, 0.12)', border: '#9b59b6', text: '#8e44ad' },
-            { bg: 'rgba(230, 126, 34, 0.12)', border: '#e67e22', text: '#d35400' },
-            { bg: 'rgba(39, 174, 96, 0.12)', border: '#27ae60', text: '#229954' },
-            { bg: 'rgba(26, 188, 156, 0.12)', border: '#1abc9c', text: '#16a085' },
-            { bg: 'rgba(231, 76, 60, 0.12)', border: '#e74c3c', text: '#c0392b' },
-            { bg: 'rgba(241, 196, 15, 0.14)', border: '#f39c12', text: '#b7791f' },
-            { bg: 'rgba(52, 73, 94, 0.12)', border: '#34495e', text: '#2c3e50' },
-        ];
-
         function syncMatchingUI() {
-            const leftItems = wrap.querySelectorAll('.es-matching-item--left');
-            const rightItems = wrap.querySelectorAll('.es-matching-item--right');
+            const rows = wrap.querySelectorAll('.es-matching-row');
+            let answeredCount = 0;
 
-            // Mise à jour de la colonne de gauche
-            leftItems.forEach((item, idx) => {
-                const lText = item.getAttribute('data-item-text');
-                const matchedRight = userMatches[lText];
-                const badge = item.querySelector('.es-matching-link-badge');
-                const icon = item.querySelector('.es-matching-item-num i');
+            rows.forEach(row => {
+                const lText = (row.getAttribute('data-item-text') || '').trim();
+                const select = row.querySelector('.es-matching-select');
+                const val = (userMatches[lText] || '').trim();
 
-                if (matchedRight) {
-                    const color = MATCHING_PALETTE[idx % MATCHING_PALETTE.length];
-                    item.classList.add('es-matching-item--connected');
-                    item.style.backgroundColor = color.bg;
-                    item.style.borderColor = color.border;
-                    if (badge) {
-                        badge.classList.remove('hidden');
-                        badge.textContent = `➔ ${matchedRight}`;
-                        badge.style.backgroundColor = color.border;
-                        badge.style.color = '#ffffff';
-                    }
-                    if (icon) icon.className = 'bi bi-check-circle-fill';
+                if (select && select.value !== val) {
+                    select.value = val;
+                }
+
+                if (val.length > 0) {
+                    answeredCount++;
+                    row.classList.add('es-matching-row--answered');
+                    if (select) select.classList.add('es-matching-select--filled');
                 } else {
-                    item.classList.remove('es-matching-item--connected');
-                    item.style.backgroundColor = '';
-                    item.style.borderColor = '';
-                    if (badge) badge.classList.add('hidden');
-                    if (icon) icon.className = 'bi bi-circle';
+                    row.classList.remove('es-matching-row--answered');
+                    if (select) select.classList.remove('es-matching-select--filled');
                 }
             });
 
-            // Mise à jour de la colonne de droite (support N vers 1)
-            rightItems.forEach((item, rIdx) => {
-                const rText = (item.getAttribute('data-item-text') || '').trim();
-                const connectedLeftEntries = Object.keys(userMatches).filter(k => (userMatches[k] || '').trim().toLowerCase() === rText.toLowerCase());
-                const badge = item.querySelector('.es-matching-link-badge');
-                const icon = item.querySelector('.es-matching-item-num i');
-
-                if (connectedLeftEntries.length > 0) {
-                    item.classList.add('es-matching-item--connected');
-                    if (connectedLeftEntries.length === 1) {
-                        const leftIdx = Array.from(leftItems).findIndex(el => el.getAttribute('data-item-text') === connectedLeftEntries[0]);
-                        const color = MATCHING_PALETTE[(leftIdx >= 0 ? leftIdx : rIdx) % MATCHING_PALETTE.length];
-                        item.style.backgroundColor = color.bg;
-                        item.style.borderColor = color.border;
-                        if (badge) {
-                            badge.classList.remove('hidden');
-                            badge.textContent = `🔗 1 liaison`;
-                            badge.style.backgroundColor = color.border;
-                            badge.style.color = '#ffffff';
-                        }
-                    } else {
-                        item.style.backgroundColor = 'rgba(52, 152, 219, 0.15)';
-                        item.style.borderColor = 'var(--clr-primary)';
-                        if (badge) {
-                            badge.classList.remove('hidden');
-                            badge.textContent = `🔗 ${connectedLeftEntries.length} liaisons`;
-                            badge.style.backgroundColor = 'var(--clr-primary)';
-                            badge.style.color = '#ffffff';
-                        }
-                    }
-                    if (icon) icon.className = 'bi bi-check-circle-fill';
-                } else {
-                    item.classList.remove('es-matching-item--connected');
-                    item.style.backgroundColor = '';
-                    item.style.borderColor = '';
-                    if (badge) badge.classList.add('hidden');
-                    if (icon) icon.className = 'bi bi-circle';
-                }
-            });
-
-            const totalPairs = parseInt(input.getAttribute('data-pairs-count'), 10) || leftItems.length;
-            const connectedCount = Object.keys(userMatches).filter(k => userMatches[k]).length;
+            const totalPairs = parseInt(input.getAttribute('data-pairs-count'), 10) || rows.length;
             if (countBadge) {
-                countBadge.textContent = `${connectedCount} / ${totalPairs} élément${totalPairs > 1 ? 's' : ''} relié${connectedCount > 1 ? 's' : ''}`;
+                countBadge.textContent = `${answeredCount} / ${totalPairs} association${totalPairs > 1 ? 's' : ''} renseignée${answeredCount > 1 ? 's' : ''}`;
             }
 
-            input.value = connectedCount > 0 ? JSON.stringify(userMatches) : '';
+            if (input) {
+                input.value = answeredCount > 0 ? JSON.stringify(userMatches) : '';
+            }
+
+            userAnswersState[qId] = answeredCount > 0 ? { ...userMatches } : {};
+
             updateProgress();
         }
 
-        wrap.querySelectorAll('.es-matching-item--left').forEach(item => {
-            item.addEventListener('click', () => {
-                if (selectedLeftEl === item) {
-                    item.classList.remove('es-matching-item--selected');
-                    selectedLeftEl = null;
+        // Écoute des changements sur chaque select
+        wrap.querySelectorAll('.es-matching-select').forEach(sel => {
+            sel.addEventListener('change', () => {
+                const lText = (sel.getAttribute('data-item-text') || '').trim();
+                const selectedVal = (sel.value || '').trim();
+
+                if (selectedVal.length > 0) {
+                    userMatches[lText] = selectedVal;
                 } else {
-                    wrap.querySelectorAll('.es-matching-item--left').forEach(el => el.classList.remove('es-matching-item--selected'));
-                    item.classList.add('es-matching-item--selected');
-                    selectedLeftEl = item;
+                    delete userMatches[lText];
                 }
+                syncMatchingUI();
             });
         });
 
-        wrap.querySelectorAll('.es-matching-item--right').forEach(item => {
-            item.addEventListener('click', () => {
-                const rText = item.getAttribute('data-item-text');
-                if (selectedLeftEl) {
-                    const lText = selectedLeftEl.getAttribute('data-item-text');
-                    // Si on clique sur la même correspondance déjà attribuée à cet élément, on la délie
-                    if (userMatches[lText] === rText) {
-                        delete userMatches[lText];
-                    } else {
-                        // Relier l'élément gauche à cet élément droit
-                        userMatches[lText] = rText;
-                    }
-                    selectedLeftEl.classList.remove('es-matching-item--selected');
-                    selectedLeftEl = null;
+        // Bouton individuel d'effacement pour chaque ligne (remettre à vide / rien)
+        wrap.querySelectorAll('.es-matching-clear-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const row = btn.closest('.es-matching-row');
+                if (row) {
+                    const lText = (row.getAttribute('data-item-text') || '').trim();
+                    const sel = row.querySelector('.es-matching-select');
+                    if (sel) sel.value = '';
+                    delete userMatches[lText];
                     syncMatchingUI();
                 }
             });
         });
 
+        // Bouton tout réinitialiser (remet tous les select sur "")
         if (resetBtn) {
             resetBtn.addEventListener('click', () => {
                 userMatches = {};
-                if (selectedLeftEl) {
-                    selectedLeftEl.classList.remove('es-matching-item--selected');
-                    selectedLeftEl = null;
-                }
+                wrap.querySelectorAll('.es-matching-select').forEach(sel => {
+                    sel.value = '';
+                });
                 syncMatchingUI();
             });
         }
@@ -3827,17 +3778,17 @@ function renderResultsScreen(submission = {}) {
                             const isPairCorrect = uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
                             
                             return `
-                                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:8px 12px; border-radius:6px; font-size:0.85rem; background:var(--clr-surface-2); border:1px solid ${isPairCorrect ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:8px 12px; border-radius:6px; font-size:0.85rem; background:var(--clr-surface-2); border:1px solid ${isPairCorrect ? 'var(--clr-success)' : (uRight ? 'var(--clr-danger)' : 'var(--clr-surface-3)')};">
                                     <div style="display:flex; align-items:center; gap:8px;">
                                         <span style="font-weight:700; color:var(--clr-text);">${escapeHtml(pair.left)}</span>
                                         <i class="bi bi-arrow-right" style="color:var(--clr-text-muted);"></i>
                                         <span style="font-weight:600; color:${uRight ? (isPairCorrect ? 'var(--clr-success)' : 'var(--clr-danger)') : 'var(--clr-text-muted)'};">
-                                            ${escapeHtml(uRight || '— (Non relié)')}
+                                            ${escapeHtml(uRight || '— (Aucun choix / Laissé vide)')}
                                         </span>
                                     </div>
                                     ${isPairCorrect ? 
                                         '<span style="color:var(--clr-success); font-weight:700; font-size:0.8rem;"><i class="bi bi-check-circle-fill"></i> Correct</span>' : 
-                                        `<span style="color:var(--clr-danger); font-size:0.75rem; font-weight:600;"><i class="bi bi-x-circle-fill"></i> Attendu : ${escapeHtml(pair.right)}</span>`
+                                        `<span style="color:${uRight ? 'var(--clr-danger)' : 'var(--clr-text-muted)'}; font-size:0.75rem; font-weight:600;"><i class="bi bi-${uRight ? 'x-circle-fill' : 'dash-circle'}"></i> Attendu : ${escapeHtml(pair.right)}</span>`
                                     }
                                 </div>
                             `;
@@ -3925,7 +3876,7 @@ function renderResultsScreen(submission = {}) {
             else if (q.type === 'range') typeBadgeLabel = 'Curseur horizontal';
             else if (q.type === 'boolean') typeBadgeLabel = 'Vrai / Faux';
             else if (q.type === 'puzzle') typeBadgeLabel = 'Puzzle / Ordonnancement';
-            else if (q.type === 'matching') typeBadgeLabel = '🔗 Relier les colonnes';
+            else if (q.type === 'matching') typeBadgeLabel = '🔗 Association (Listes déroulantes)';
             else if (q.type === 'text') typeBadgeLabel = 'Rédaction';
 
             return `

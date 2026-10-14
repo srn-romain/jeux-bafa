@@ -4848,7 +4848,7 @@ async function openAdminCandidateBilanModal(userId) {
                                 ${rawPairs.map(p => {
                                     const u = userMatchesObj[p.left] || userMatchesObj[(p.left||'').trim()];
                                     const isPairOk = u && String(u).trim().toLowerCase() === String(p.right).trim().toLowerCase();
-                                    return `<div><span style="font-weight:600;">${escapeHtml(p.left)}</span> ➔ <span style="color:${isPairOk ? '#27ae60' : '#e74c3c'}; font-weight:700;">${escapeHtml(u || '— (Non relié)')}</span> ${!isPairOk ? `<small style="color:var(--clr-text-muted);">(Attendu: ${escapeHtml(p.right)})</small>` : ''}</div>`;
+                                    return `<div><span style="font-weight:600;">${escapeHtml(p.left)}</span> ➔ <span style="color:${isPairOk ? '#27ae60' : (u ? '#e74c3c' : 'var(--clr-text-muted)')}; font-weight:700;">${escapeHtml(u || '— (Aucun choix / Laissé vide)')}</span> ${!isPairOk ? `<small style="color:var(--clr-text-muted);">(Attendu: ${escapeHtml(p.right)})</small>` : ''}</div>`;
                                 }).join('')}
                             </div>
                         </div>`;

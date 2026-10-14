@@ -3449,9 +3449,9 @@ function renderQuestionsEditor() {
 
             specificFields = `
                 <div style="margin-top:12px;">
-                    <label class="es-field__label">Paires à relier (Colonne de gauche ➔ Colonne de droite) :</label>
+                    <label class="es-field__label">Paires d'association (Affirmation à gauche ➔ Réponse déroulante à droite) :</label>
                     <div style="font-size:0.78rem; color:var(--clr-text-muted); margin-bottom:8px; line-height:1.45;">
-                        💡 <strong>Flexibilité d'association (N vers 1) :</strong> Vous pouvez attribuer la <em>même correspondance à droite</em> à plusieurs éléments de gauche différents (ex: « Chien » ➔ « Mammifère », « Chat » ➔ « Mammifère »). L'élément n'apparaîtra qu'une seule fois dans la colonne de droite du quiz.
+                        💡 <strong>Flexibilité d'association (N vers 1) :</strong> Vous pouvez attribuer la <em>même correspondance à droite</em> à plusieurs éléments de gauche différents (ex: « Chien » ➔ « Mammifère », « Chat » ➔ « Mammifère »). L'option n'apparaîtra qu'une seule fois dans la liste déroulante du quiz.
                     </div>
                     <div class="matching-pairs-wrap">${pairsHtml}</div>
                     ${pairs.length < 12 ? `
@@ -3462,10 +3462,10 @@ function renderQuestionsEditor() {
 
                     <div style="margin-top:14px; padding:12px 14px; background:var(--clr-surface-2); border:1px dashed var(--clr-surface-3); border-radius:var(--radius-sm);">
                         <label class="es-field__label" style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:0.84rem;">
-                            <i class="bi bi-shuffle" style="color:var(--clr-warning);"></i> Options pièges / distracteurs à droite (facultatif) :
+                            <i class="bi bi-shuffle" style="color:var(--clr-warning);"></i> Options pièges / distracteurs dans les listes (facultatif) :
                         </label>
                         <div style="font-size:0.76rem; color:var(--clr-text-muted); margin-bottom:8px; line-height:1.4;">
-                            Ajoutez des options supplémentaires qui apparaîtront dans la colonne de droite mais ne devront être reliées à aucun élément de gauche (séparées par des virgules).
+                            Ajoutez des options supplémentaires qui apparaîtront dans la liste déroulante mais ne correspondront à aucune affirmation (séparées par des virgules).
                         </div>
                         <input class="es-input matching-distractors-input" type="text" data-qidx="${idx}" value="${escapeHtml(rightDistractorsVal)}" placeholder="Ex: Poisson, Reptile (séparés par des virgules)" style="font-size:0.88rem; padding:8px 12px; background:var(--clr-surface);">
                     </div>
@@ -3486,7 +3486,7 @@ function renderQuestionsEditor() {
                             <option value="boolean" ${type === 'boolean' ? 'selected' : ''}>5- ⚖️ Vrai / Faux</option>
                             <option value="pinpoint" ${type === 'pinpoint' ? 'selected' : ''}>6- 📍 Repère sur image (Pin)</option>
                             <option value="range" ${type === 'range' ? 'selected' : ''}>7- 📏 Curseur horizontal (Slider)</option>
-                            <option value="matching" ${type === 'matching' ? 'selected' : ''}>8- 🔗 Relier les colonnes (Association)</option>
+                            <option value="matching" ${type === 'matching' ? 'selected' : ''}>8- 🔗 Association (Listes déroulantes)</option>
                             <option value="puzzle" ${type === 'puzzle' ? 'selected' : ''}>9- 🧩 Puzzle chronologique</option>
                             <option value="cloze" ${type === 'cloze' ? 'selected' : ''}>10- 📝 Texte à trous (Glisser-déposer)</option>
                             <option value="text" ${type === 'text' ? 'selected' : ''}>11- ✍️ Rédaction libre</option>
