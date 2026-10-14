@@ -138,20 +138,70 @@ const ColoFormManager = {
                                 </div>
                             </div>
 
-                            <!-- Mini aperçu en temps réel de la carte Admin -->
+                            <!-- Mini aperçu en temps réel de la carte Admin (Double format avec onglets Liste / Carte) -->
                             <div class="es-cropper-preview-section">
                                 <div class="es-cropper-preview-header">
-                                    <i class="bi bi-eye"></i> Aperçu direct sur la carte Admin :
+                                    <div class="es-cropper-preview-header-label">
+                                        <i class="bi bi-eye"></i> <span class="es-cropper-preview-title-text">Aperçu direct sur la carte Admin :</span>
+                                    </div>
+                                    <div class="es-cropper-preview-tabs" role="tablist">
+                                        <button type="button" class="es-cropper-preview-tab active" id="tabPreviewList" role="tab" aria-selected="true" title="Format Liste">
+                                            <i class="bi bi-view-list"></i> Liste
+                                        </button>
+                                        <button type="button" class="es-cropper-preview-tab" id="tabPreviewGrid" role="tab" aria-selected="false" title="Format Carte">
+                                            <i class="bi bi-grid-fill"></i> Carte
+                                        </button>
+                                    </div>
                                 </div>
-                                <div class="es-cropper-preview-card" id="formCropperPreviewCard">
-                                    <canvas id="formCropperPreviewCanvas" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></canvas>
-                                    <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.68) 100%); z-index: 2;"></div>
-                                    <div class="es-cropper-preview-card-content">
-                                        <div class="es-cropper-preview-title">
-                                            <span class="es-cropper-preview-emoji-wrap" id="formCropperPreviewEmoji">🏕️</span>
-                                            <div>
-                                                <div id="formCropperPreviewName" style="line-height:1.2;">Nom de l'espace</div>
-                                                <div class="es-cropper-preview-subtitle" id="formCropperPreviewDates">Séjour actif</div>
+
+                                <div class="es-cropper-preview-carousel" id="formCropperPreviewCarousel">
+                                    <!-- 1. Format Liste (Horizontal) -->
+                                    <div class="es-cropper-preview-slide active" id="formCropperSlideList">
+                                        <div class="es-cropper-preview-card" id="formCropperPreviewCard">
+                                            <canvas id="formCropperPreviewCanvas" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></canvas>
+                                            <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.68) 100%); z-index: 2;"></div>
+                                            <div class="es-cropper-preview-card-content">
+                                                <div class="es-cropper-preview-title">
+                                                    <span class="es-cropper-preview-emoji-wrap" id="formCropperPreviewEmoji">🏕️</span>
+                                                    <div style="min-width: 0;">
+                                                        <div id="formCropperPreviewName" style="line-height:1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nom de l'espace</div>
+                                                        <div class="es-cropper-preview-subtitle" id="formCropperPreviewDates">Séjour actif</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. Format Carte (Grille carrée) -->
+                                    <div class="es-cropper-preview-slide" id="formCropperSlideGrid" style="display: none;">
+                                        <div class="es-cropper-preview-grid-card" id="formCropperPreviewCardGrid">
+                                            <canvas id="formCropperPreviewCanvasGrid" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></canvas>
+                                            <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.72) 100%); z-index: 2;"></div>
+                                            <div class="es-cropper-preview-grid-content">
+                                                <div class="es-cropper-preview-grid-header">
+                                                    <div style="min-width: 0;">
+                                                        <div class="es-cropper-preview-grid-title">
+                                                            <span class="es-cropper-preview-emoji-wrap" id="formCropperPreviewEmojiGrid" style="width: 36px; height: 36px; font-size: 18px; border-radius: 10px;">🏕️</span>
+                                                            <span id="formCropperPreviewNameGrid" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;">Nom de l'espace</span>
+                                                        </div>
+                                                        <div class="es-cropper-preview-subtitle" id="formCropperPreviewDatesGrid" style="margin-left: 46px; margin-top: 2px;">Séjour actif</div>
+                                                    </div>
+                                                    <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                                                        <span class="es-card-action-btn es-card-action-btn--sm" style="pointer-events: none; opacity: 0.9; width: 28px; height: 28px; font-size: 0.78rem;"><i class="bi bi-pencil"></i></span>
+                                                    </div>
+                                                </div>
+                                                <div style="margin-top: auto; margin-bottom: 12px;">
+                                                    <div class="es-cropper-preview-grid-stats">
+                                                        <span><i class="bi bi-people" style="color: var(--clr-primary);"></i> 24 jeunes</span>
+                                                        <span><i class="bi bi-calendar3" style="color: var(--clr-primary);"></i> 12 jours</span>
+                                                    </div>
+                                                </div>
+                                                <div class="es-cropper-preview-grid-footer">
+                                                    <div id="formCropperPreviewOrgGrid" style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%;">
+                                                        <i class="bi bi-building" style="color: var(--clr-primary);"></i> <span id="formCropperPreviewOrgText">Organisme</span>
+                                                    </div>
+                                                    <span class="es-badge es-badge--approved" style="font-size: 0.68rem; padding: 3px 8px;"><i class="bi bi-check-circle"></i> Accès admin</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -297,20 +347,30 @@ const ColoFormManager = {
             errorMsg: document.getElementById('coloFormErrorMsg'),
             overlay: document.getElementById('overlayColoForm'),
 
-            // Éléments du Recadreur Intégré
+            // Éléments du Recadreur Intégré & Prévisualisations
             cropperStageContainer: document.getElementById('formCropperStageContainer'),
             cropperStage: document.getElementById('formCropperStage'),
             cropperImg: document.getElementById('formCropperImg'),
             cropperBox: document.getElementById('formCropperBox'),
             zoomSlider: document.getElementById('formCropperZoomSlider'),
             previewCanvas: document.getElementById('formCropperPreviewCanvas'),
+            previewCanvasGrid: document.getElementById('formCropperPreviewCanvasGrid'),
             previewEmoji: document.getElementById('formCropperPreviewEmoji'),
+            previewEmojiGrid: document.getElementById('formCropperPreviewEmojiGrid'),
             previewName: document.getElementById('formCropperPreviewName'),
-            previewDates: document.getElementById('formCropperPreviewDates')
+            previewNameGrid: document.getElementById('formCropperPreviewNameGrid'),
+            previewDates: document.getElementById('formCropperPreviewDates'),
+            previewDatesGrid: document.getElementById('formCropperPreviewDatesGrid'),
+            previewOrgText: document.getElementById('formCropperPreviewOrgText'),
+            slideList: document.getElementById('formCropperSlideList'),
+            slideGrid: document.getElementById('formCropperSlideGrid'),
+            tabPreviewList: document.getElementById('tabPreviewList'),
+            tabPreviewGrid: document.getElementById('tabPreviewGrid'),
+            previewCarousel: document.getElementById('formCropperPreviewCarousel')
         };
     },
 
-    // État du recadreur intégré
+    // État du recadreur intégré & Prévisualisations
     rawBgImage: '',
     sourceImg: null,
     aspectRatio: 3.0, // 3:1 par défaut
@@ -326,6 +386,43 @@ const ColoFormManager = {
     imgLeft: 0,
     imgTop: 0,
     activeDrag: null,
+    previewMode: 'list', // 'list' | 'grid'
+
+    setPreviewMode(mode) {
+        this.previewMode = mode;
+        const els = this.getElements();
+        if (!els.slideList || !els.slideGrid) return;
+
+        if (mode === 'grid') {
+            els.slideList.style.display = 'none';
+            els.slideList.classList.remove('active');
+            els.slideGrid.style.display = 'block';
+            els.slideGrid.classList.add('active');
+
+            if (els.tabPreviewGrid) els.tabPreviewGrid.classList.add('active');
+            if (els.tabPreviewList) els.tabPreviewList.classList.remove('active');
+            els.tabPreviewGrid?.setAttribute('aria-selected', 'true');
+            els.tabPreviewList?.setAttribute('aria-selected', 'false');
+        } else {
+            els.slideGrid.style.display = 'none';
+            els.slideGrid.classList.remove('active');
+            els.slideList.style.display = 'block';
+            els.slideList.classList.add('active');
+
+            if (els.tabPreviewList) els.tabPreviewList.classList.add('active');
+            if (els.tabPreviewGrid) els.tabPreviewGrid.classList.remove('active');
+            els.tabPreviewList?.setAttribute('aria-selected', 'true');
+            els.tabPreviewGrid?.setAttribute('aria-selected', 'false');
+        }
+
+        requestAnimationFrame(() => {
+            this.updateFormPreviewCanvas();
+        });
+    },
+
+    togglePreviewMode() {
+        this.setPreviewMode(this.previewMode === 'list' ? 'grid' : 'list');
+    },
 
     // Initialisation et injection dynamique du formulaire HTML
     init(modeOrSaveSuccess, maybeSaveSuccess) {
@@ -383,25 +480,44 @@ const ColoFormManager = {
             });
         }
 
-        // Synchroniser le nom et les dates sur l'aperçu en direct
+        // Synchroniser le nom, les dates et l'organisme sur les aperçus en direct (Liste et Carte)
         const updateCardMeta = () => {
-            if (els.previewName) els.previewName.textContent = els.nom?.value?.trim() || "Nom de l'espace";
-            if (els.previewDates) {
-                const dDeb = els.dateDebut?.value;
-                const dFin = els.dateFin?.value;
-                if (dDeb && dFin) {
-                    els.previewDates.textContent = `${dDeb} → ${dFin}`;
-                } else if (dDeb) {
-                    els.previewDates.textContent = `Dès le ${dDeb}`;
-                } else {
-                    els.previewDates.textContent = 'Séjour actif';
-                }
+            const nomVal = els.nom?.value?.trim() || "Nom de l'espace";
+            if (els.previewName) els.previewName.textContent = nomVal;
+            if (els.previewNameGrid) els.previewNameGrid.textContent = nomVal;
+
+            let datesText = 'Séjour actif';
+            const dDeb = els.dateDebut?.value;
+            const dFin = els.dateFin?.value;
+            if (dDeb && dFin) {
+                datesText = `${dDeb} → ${dFin}`;
+            } else if (dDeb) {
+                datesText = `Dès le ${dDeb}`;
             }
+            if (els.previewDates) els.previewDates.textContent = datesText;
+            if (els.previewDatesGrid) els.previewDatesGrid.textContent = datesText;
+
+            // Organisme
+            let orgText = 'Organisme';
+            if (els.organisme?.value === 'Autre') {
+                orgText = els.organismeAutre?.value?.trim() || 'Autre organisme';
+            } else if (els.organisme?.value) {
+                orgText = els.organisme.value.trim();
+            }
+            if (els.previewOrgText) els.previewOrgText.textContent = orgText;
         };
 
         if (els.nom) els.nom.addEventListener('input', updateCardMeta);
         if (els.dateDebut) els.dateDebut.addEventListener('change', updateCardMeta);
         if (els.dateFin) els.dateFin.addEventListener('change', updateCardMeta);
+        if (els.organisme) {
+            els.organisme.addEventListener('input', updateCardMeta);
+            els.organisme.addEventListener('change', updateCardMeta);
+        }
+        if (els.organismeAutre) {
+            els.organismeAutre.addEventListener('input', updateCardMeta);
+            els.organismeAutre.addEventListener('change', updateCardMeta);
+        }
 
         // 6. Bouton Enregistrer
         const saveBtn = document.getElementById('btnSaveColoForm');
@@ -494,6 +610,38 @@ const ColoFormManager = {
                 this.updateFormCropperDOM();
             }
         });
+
+        // Onglets de prévisualisation (Format Liste / Format Carte)
+        els.tabPreviewList?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.setPreviewMode('list');
+        });
+        els.tabPreviewGrid?.addEventListener('click', (e) => {
+            e.preventDefault();
+            this.setPreviewMode('grid');
+        });
+
+        // Détection swipe tactile sur mobile
+        if (els.previewCarousel) {
+            let touchStartX = 0;
+            let touchStartY = 0;
+            els.previewCarousel.addEventListener('touchstart', (e) => {
+                if (e.touches && e.touches.length === 1) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+
+            els.previewCarousel.addEventListener('touchend', (e) => {
+                if (e.changedTouches && e.changedTouches.length === 1) {
+                    const diffX = e.changedTouches[0].clientX - touchStartX;
+                    const diffY = e.changedTouches[0].clientY - touchStartY;
+                    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY)) {
+                        this.setPreviewMode(diffX < 0 ? 'grid' : 'list');
+                    }
+                }
+            }, { passive: true });
+        }
     },
 
     // Charge une image dans le recadreur intégré
@@ -518,12 +666,21 @@ const ColoFormManager = {
             if (els.cropperImg) els.cropperImg.src = src;
             if (els.bgCropperSection) els.bgCropperSection.classList.remove('hidden');
 
-            if (els.previewName && els.nom) {
-                els.previewName.textContent = els.nom.value.trim() || "Nom de l'espace";
+            const nomVal = els.nom?.value?.trim() || "Nom de l'espace";
+            if (els.previewName) els.previewName.textContent = nomVal;
+            if (els.previewNameGrid) els.previewNameGrid.textContent = nomVal;
+
+            const emojiVal = els.emoji?.value || '🏕️';
+            if (els.previewEmoji) els.previewEmoji.textContent = emojiVal;
+            if (els.previewEmojiGrid) els.previewEmojiGrid.textContent = emojiVal;
+
+            let orgText = 'Organisme';
+            if (els.organisme?.value === 'Autre') {
+                orgText = els.organismeAutre?.value?.trim() || 'Autre organisme';
+            } else if (els.organisme?.value) {
+                orgText = els.organisme.value.trim();
             }
-            if (els.previewEmoji && els.emoji) {
-                els.previewEmoji.textContent = els.emoji.value || '🏕️';
-            }
+            if (els.previewOrgText) els.previewOrgText.textContent = orgText;
 
             requestAnimationFrame(() => {
                 this.recalculateFormStage();
@@ -613,10 +770,10 @@ const ColoFormManager = {
         this.updateFormPreviewCanvas();
     },
 
-    // Dessine la portion cadrée dans le canvas de la mini carte
+    // Dessine la portion cadrée dans les canvas d'aperçu (Format Liste et Format Carte)
     updateFormPreviewCanvas() {
         const els = this.getElements();
-        if (!els.previewCanvas || !this.sourceImg) return;
+        if (!this.sourceImg) return;
 
         const sx = Math.max(0, this.rx * this.imgNaturalW);
         const sy = Math.max(0, this.ry * this.imgNaturalH);
@@ -625,17 +782,43 @@ const ColoFormManager = {
 
         if (sw <= 0 || sh <= 0) return;
 
-        const cardRect = els.previewCanvas.parentElement?.getBoundingClientRect() || { width: 340, height: 75 };
-        els.previewCanvas.width = Math.round(cardRect.width * (window.devicePixelRatio || 1)) || 400;
-        els.previewCanvas.height = Math.round(cardRect.height * (window.devicePixelRatio || 1)) || 80;
+        const dpr = window.devicePixelRatio || 1;
 
-        const ctx = els.previewCanvas.getContext('2d');
-        if (!ctx) return;
+        // 1. Aperçu Format Liste (Horizontal)
+        if (els.previewCanvas) {
+            const cardRect = els.previewCanvas.parentElement?.getBoundingClientRect();
+            const w = (cardRect && cardRect.width > 0) ? cardRect.width : 340;
+            const h = (cardRect && cardRect.height > 0) ? cardRect.height : 86;
 
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.clearRect(0, 0, els.previewCanvas.width, els.previewCanvas.height);
-        ctx.drawImage(this.sourceImg, sx, sy, sw, sh, 0, 0, els.previewCanvas.width, els.previewCanvas.height);
+            els.previewCanvas.width = Math.round(w * dpr);
+            els.previewCanvas.height = Math.round(h * dpr);
+
+            const ctx = els.previewCanvas.getContext('2d');
+            if (ctx) {
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.clearRect(0, 0, els.previewCanvas.width, els.previewCanvas.height);
+                ctx.drawImage(this.sourceImg, sx, sy, sw, sh, 0, 0, els.previewCanvas.width, els.previewCanvas.height);
+            }
+        }
+
+        // 2. Aperçu Format Carte (Grille)
+        if (els.previewCanvasGrid) {
+            const cardRectGrid = els.previewCanvasGrid.parentElement?.getBoundingClientRect();
+            const wGrid = (cardRectGrid && cardRectGrid.width > 0) ? cardRectGrid.width : 340;
+            const hGrid = (cardRectGrid && cardRectGrid.height > 0) ? cardRectGrid.height : 250;
+
+            els.previewCanvasGrid.width = Math.round(wGrid * dpr);
+            els.previewCanvasGrid.height = Math.round(hGrid * dpr);
+
+            const ctxGrid = els.previewCanvasGrid.getContext('2d');
+            if (ctxGrid) {
+                ctxGrid.imageSmoothingEnabled = true;
+                ctxGrid.imageSmoothingQuality = 'high';
+                ctxGrid.clearRect(0, 0, els.previewCanvasGrid.width, els.previewCanvasGrid.height);
+                ctxGrid.drawImage(this.sourceImg, sx, sy, sw, sh, 0, 0, els.previewCanvasGrid.width, els.previewCanvasGrid.height);
+            }
+        }
     },
 
     // Gestion PointerDown (déplacement ou redimensionnement du cadre)
@@ -850,17 +1033,27 @@ const ColoFormManager = {
         if (formTitle) formTitle.textContent = colo ? 'Modifier un espace' : 'Nouvelle espace';
         if (els.errorWrap) els.errorWrap.classList.add('hidden');
         
-        if (els.previewName) els.previewName.textContent = colo?.nom || "Nom de l'espace";
+        const nomVal = colo?.nom || "Nom de l'espace";
+        if (els.previewName) els.previewName.textContent = nomVal;
+        if (els.previewNameGrid) els.previewNameGrid.textContent = nomVal;
+
         if (els.previewEmoji) els.previewEmoji.textContent = currentEmoji;
-        if (els.previewDates) {
-            if (colo?.dateDebut && colo?.dateFin) {
-                els.previewDates.textContent = `${colo.dateDebut} → ${colo.dateFin}`;
-            } else if (colo?.dateDebut) {
-                els.previewDates.textContent = `Dès le ${colo.dateDebut}`;
-            } else {
-                els.previewDates.textContent = 'Séjour actif';
-            }
+        if (els.previewEmojiGrid) els.previewEmojiGrid.textContent = currentEmoji;
+
+        let datesVal = 'Séjour actif';
+        if (colo?.dateDebut && colo?.dateFin) {
+            datesVal = `${colo.dateDebut} → ${colo.dateFin}`;
+        } else if (colo?.dateDebut) {
+            datesVal = `Dès le ${colo.dateDebut}`;
         }
+        if (els.previewDates) els.previewDates.textContent = datesVal;
+        if (els.previewDatesGrid) els.previewDatesGrid.textContent = datesVal;
+
+        if (els.previewOrgText) {
+            els.previewOrgText.textContent = colo?.organisme || 'Organisme';
+        }
+
+        this.setPreviewMode('list');
 
         openModal('overlayColoForm');
 
@@ -891,6 +1084,9 @@ const ColoFormManager = {
         }
         if (els.previewEmoji) {
             els.previewEmoji.textContent = emoji;
+        }
+        if (els.previewEmojiGrid) {
+            els.previewEmojiGrid.textContent = emoji;
         }
     },
 
