@@ -1690,11 +1690,17 @@ function computeQuestionAlgoCorrect(q, ans) {
     } else if (type === 'matching') {
         const rawPairs = q.pairs || [];
         const userMatchesObj = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
-        isAnswered = Object.values(userMatchesObj).some(v => v && String(v).trim().length > 0);
-        isCorrect = isAnswered && (rawPairs.length > 0) && rawPairs.every(pair => {
-            const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
-            return uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
+        const answeredLeftKeys = Object.keys(userMatchesObj).filter(k => userMatchesObj[k] && String(userMatchesObj[k]).trim().length > 0);
+        const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+        const isDrawnSubset = (drawCount > 0 && drawCount < rawPairs.length);
+        const expectedCount = isDrawnSubset ? drawCount : rawPairs.length;
+
+        isAnswered = answeredLeftKeys.length > 0;
+        const allAnsweredCorrect = isAnswered && answeredLeftKeys.every(leftKey => {
+            const pair = rawPairs.find(p => (p.left || '').trim().toLowerCase() === leftKey.trim().toLowerCase());
+            return pair && String(userMatchesObj[leftKey]).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
         });
+        isCorrect = allAnsweredCorrect && (answeredLeftKeys.length === expectedCount);
     } else {
         // text
         isAnswered = Boolean(ans && String(ans).trim().length > 0);
@@ -2116,23 +2122,29 @@ function renderInspectionQuestions(questions, sub) {
                 </div>
             `;
         } else if (type === 'matching') {
-            const pairs = q.pairs || [];
+            const allPairs = q.pairs || [];
             const userMatches = (ans && typeof ans === 'object') ? ans : {};
+            const answeredLeftSet = new Set(Object.keys(userMatches).map(k => k.trim().toLowerCase()));
+            const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+            const isDrawnSubset = (drawCount > 0 && drawCount < allPairs.length);
+            const pairs = (isDrawnSubset && answeredLeftSet.size > 0)
+                ? allPairs.filter(p => answeredLeftSet.has((p.left || '').trim().toLowerCase()))
+                : allPairs;
 
             const matchesHtml = pairs.map((pair, pIdx) => {
                 const userRight = userMatches[pair.left] || userMatches[(pair.left || '').trim()];
                 const isMatchedCorrectly = userRight && (userRight.trim().toLowerCase() === (pair.right || '').trim().toLowerCase());
 
                 return `
-                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:8px 12px; border-radius:var(--radius-sm); font-size:0.85rem; background:var(--clr-surface); border:1px solid ${isMatchedCorrectly ? 'var(--clr-success)' : 'var(--clr-danger)'};">
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; padding:8px 12px; border-radius:var(--radius-sm); font-size:0.85rem; background:var(--clr-surface); border:1px solid ${isMatchedCorrectly ? 'var(--clr-success)' : (userRight ? 'var(--clr-danger)' : 'var(--clr-surface-3)')};">
                         <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:200px;">
                             <span style="font-weight:700; color:var(--clr-primary-dark);">${escapeHtml(pair.left)}</span>
                             <i class="bi bi-arrow-right" style="color:var(--clr-text-muted);"></i>
-                            <span style="font-weight:600; color:${userRight ? 'var(--clr-text)' : 'var(--clr-danger)'};">${escapeHtml(userRight || '— (Non relié)')}</span>
+                            <span style="font-weight:600; color:${userRight ? (isMatchedCorrectly ? 'var(--clr-success)' : 'var(--clr-danger)') : 'var(--clr-text-muted)'};">${escapeHtml(userRight || '— (Aucun choix / Laissé vide)')}</span>
                         </div>
                         ${isMatchedCorrectly ?
                             '<span style="color:var(--clr-success); font-weight:700; font-size:0.8rem;"><i class="bi bi-check-circle-fill"></i> Correct</span>' :
-                            `<span style="color:var(--clr-danger); font-size:0.75rem; font-weight:600;"><i class="bi bi-x-circle-fill"></i> Attendu : <strong>${escapeHtml(pair.right)}</strong></span>`
+                            `<span style="color:${userRight ? 'var(--clr-danger)' : 'var(--clr-text-muted)'}; font-size:0.75rem; font-weight:600;"><i class="bi bi-${userRight ? 'x-circle-fill' : 'dash-circle'}"></i> Attendu : <strong>${escapeHtml(pair.right)}</strong></span>`
                         }
                     </div>
                 `;
@@ -2155,6 +2167,7 @@ function renderInspectionQuestions(questions, sub) {
 
             contentHtml = `
                 <div style="display:flex; flex-direction:column; gap:6px; margin-top:10px;">
+                    ${isDrawnSubset ? `<div style="font-size:0.78rem; color:var(--clr-text-muted); font-weight:600;"><i class="bi bi-dice-5"></i> Tirage au sort : ${pairs.length} associations sur ${allPairs.length}</div>` : ''}
                     ${matchesHtml || '<div style="font-size:0.82rem; color:var(--clr-text-muted);">Aucune association définie.</div>'}
                     ${distractorsHtml}
                 </div>
@@ -2772,6 +2785,8 @@ function syncQuestionsFromDOM() {
             if (distInp) {
                 q.rightDistractors = distInp.value;
             }
+            const drawInp = card.querySelector('.question-draw-items-input, .classification-draw-items-input, .matching-draw-items-input');
+            q.drawItemsCount = (drawInp && drawInp.value !== '') ? (parseInt(drawInp.value, 10) || 0) : 0;
         }
     });
 }
@@ -2821,6 +2836,26 @@ function updateQuizDrawCountInfo() {
         infoEl.innerHTML = totalCount > 0 ? `Totalité (${totalCount} questions)` : '';
         infoEl.style.color = 'var(--clr-text-muted)';
     }
+}
+
+function renderDrawItemsCountOptionHtml(idx, drawCount, totalCount, label = "d'étiquettes", subtitle = null) {
+    const defaultSubtitle = `Sélectionner au hasard X ${label.replace(/^d'/, '')} dans le lot pour le stagiaire (laisser vide pour toutes).`;
+    return `
+        <!-- Option Tirage au sort X éléments parmi le lot -->
+        <div style="margin-top:14px; padding:10px 14px; background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <i class="bi bi-dice-5-fill" style="font-size:1.3rem; color:var(--clr-accent);"></i>
+                <div>
+                    <div style="font-weight:700; font-size:0.85rem; color:var(--clr-text);">🎲 Tirage au sort ${label} (Optionnel) :</div>
+                    <div style="font-size:0.75rem; color:var(--clr-text-muted);">${subtitle || defaultSubtitle}</div>
+                </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+                <label style="font-size:0.8rem; font-weight:700; color:var(--clr-text-muted);">Nombre à piocher :</label>
+                <input type="number" class="es-input question-draw-items-input classification-draw-items-input matching-draw-items-input" data-qidx="${idx}" min="1" max="${totalCount}" value="${drawCount || ''}" placeholder="Toutes (${totalCount})" style="width:115px; font-weight:700; font-size:0.85rem; padding:6px 10px; text-align:center;">
+            </div>
+        </div>
+    `;
 }
 
 function renderQuestionsEditor() {
@@ -3168,20 +3203,7 @@ function renderQuestionsEditor() {
                             </button>
                         ` : ''}
 
-                        <!-- Option Tirage au sort X étiquettes parmi le lot -->
-                        <div style="margin-top:14px; padding:10px 14px; background:var(--clr-surface); border:1.5px solid var(--clr-surface-3); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <i class="bi bi-dice-5-fill" style="font-size:1.3rem; color:var(--clr-accent);"></i>
-                                <div>
-                                    <div style="font-weight:700; font-size:0.85rem; color:var(--clr-text);">🎲 Tirage au sort d'étiquettes (Optionnel) :</div>
-                                    <div style="font-size:0.75rem; color:var(--clr-text-muted);">Sélectionner au hasard X étiquettes dans le lot pour le stagiaire (laisser vide pour toutes).</div>
-                                </div>
-                            </div>
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <label style="font-size:0.8rem; font-weight:700; color:var(--clr-text-muted);">Nombre à piocher :</label>
-                                <input type="number" class="es-input classification-draw-items-input" data-qidx="${idx}" min="1" max="${items.length}" value="${q.drawItemsCount || ''}" placeholder="Toutes (${items.length})" style="width:115px; font-weight:700; font-size:0.85rem; padding:6px 10px; text-align:center;">
-                            </div>
-                        </div>
+                        ${renderDrawItemsCountOptionHtml(idx, q.drawItemsCount, items.length, "d'étiquettes")}
                     </div>
                 </div>
             `;
@@ -3469,6 +3491,8 @@ function renderQuestionsEditor() {
                         </div>
                         <input class="es-input matching-distractors-input" type="text" data-qidx="${idx}" value="${escapeHtml(rightDistractorsVal)}" placeholder="Ex: Poisson, Reptile (séparés par des virgules)" style="font-size:0.88rem; padding:8px 12px; background:var(--clr-surface);">
                     </div>
+
+                    ${renderDrawItemsCountOptionHtml(idx, q.drawItemsCount, pairs.length, "d'associations")}
                 </div>
             `;
         }
@@ -4761,7 +4785,7 @@ function bindQuestionsEvents() {
         });
     });
 
-    container.querySelectorAll('.classification-draw-items-input').forEach(input => {
+    container.querySelectorAll('.question-draw-items-input, .classification-draw-items-input, .matching-draw-items-input').forEach(input => {
         input.addEventListener('input', (e) => {
             const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
             if (currentEditingQuestions[qidx]) {
@@ -5539,6 +5563,7 @@ async function saveModuleData(btnEl) {
             } else if (q.type === 'matching') {
                 qData.pairs = q.pairs || [];
                 qData.rightDistractors = q.rightDistractors || '';
+                qData.drawItemsCount = (q.drawItemsCount !== undefined && q.drawItemsCount !== null) ? (parseInt(q.drawItemsCount, 10) || 0) : 0;
             }
 
             batch.set(qRef, qData);

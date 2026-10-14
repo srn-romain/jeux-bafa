@@ -714,6 +714,10 @@ function parseQuizSections(questions, shouldShuffle = false) {
             const shuffled = shuffleArray([...q.items]);
             const drawCount = parseInt(q.drawItemsCount, 10) || 0;
             q._shuffledItems = (drawCount > 0 && drawCount < shuffled.length) ? shuffled.slice(0, drawCount) : shuffled;
+        } else if (q.type === 'matching' && Array.isArray(q.pairs)) {
+            const shuffled = shuffleArray([...q.pairs]);
+            const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+            q._shuffledPairs = (drawCount > 0 && drawCount < shuffled.length) ? shuffled.slice(0, drawCount) : shuffled;
         }
 
         if (q.type === 'section') {
@@ -1393,7 +1397,16 @@ function renderActiveSectionPage() {
                     </div>
                 </div>`;
             } else if (q.type === 'matching') {
-                const rawPairs = q.pairs || [];
+                const allPairs = q.pairs || [];
+                if (!q._shuffledPairs && Array.isArray(q.pairs)) {
+                    const shuffled = shuffleArray([...q.pairs]);
+                    const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+                    q._shuffledPairs = (drawCount > 0 && drawCount < shuffled.length) ? shuffled.slice(0, drawCount) : shuffled;
+                }
+                const rawPairs = q._shuffledPairs || allPairs;
+                const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+                const isDrawnSubset = (drawCount > 0 && drawCount < allPairs.length);
+
                 const leftItems = rawPairs.map((p, idx) => ({
                     id: `l_${q.id}_${idx}`,
                     text: (p.left || '').trim(),
@@ -1401,10 +1414,11 @@ function renderActiveSectionPage() {
                 })).filter(it => it.text.length > 0);
 
                 // Dédoublonnage des correspondances droites pour autoriser plusieurs éléments gauches vers un même élément droit
+                // IMPORTANT : on inclut l'ensemble des paires définies (allPairs) + distracteurs pour les choix déroulants
                 const rightSet = new Set();
                 const rightOptionsList = [];
 
-                rawPairs.forEach(p => {
+                allPairs.forEach(p => {
                     const rText = (p.right || '').trim();
                     if (rText && !rightSet.has(rText.toLowerCase())) {
                         rightSet.add(rText.toLowerCase());
@@ -1445,7 +1459,7 @@ function renderActiveSectionPage() {
                     
                     <div class="es-matching-instructions">
                         <i class="bi bi-info-circle-fill" style="color:var(--clr-primary); font-size:1.15rem; flex-shrink:0;"></i>
-                        <span>Pour chaque affirmation ci-dessous, sélectionnez la colonne ou réponse associée dans la liste déroulante :</span>
+                        <span>Pour chaque affirmation ci-dessous, sélectionnez la colonne ou réponse associée dans la liste déroulante${isDrawnSubset ? ` <span style="font-size:0.78rem; color:var(--clr-text-muted); font-weight:600;">(🎲 ${rawPairs.length} tirées au sort sur ${allPairs.length})</span>` : ''} :</span>
                     </div>
 
                     <div class="es-matching-rows" data-q-id="${q.id}">
@@ -2689,7 +2703,8 @@ function isQuestionAnswered(q, val) {
     }
     if (q.type === 'matching') {
         if (!val || typeof val !== 'object') return false;
-        const leftPairs = (q.pairs || []).map(p => (p.left || '').trim()).filter(Boolean);
+        const activePairs = q._shuffledPairs || q.pairs || [];
+        const leftPairs = activePairs.map(p => (p.left || '').trim()).filter(Boolean);
         const totalPairs = leftPairs.length || 1;
         const filled = leftPairs.filter(leftText => val[leftText] && String(val[leftText]).trim().length > 0).length;
         return filled >= totalPairs;
@@ -2989,7 +3004,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
             }
         } else if (q.type === 'matching') {
             qcmTotal++;
-            const rawPairs = q.pairs || [];
+            const rawPairs = q._shuffledPairs || q.pairs || [];
             const userMatchesObj = (savedVal && typeof savedVal === 'object') ? savedVal : {};
 
             answers[q.id] = userMatchesObj;
@@ -3746,7 +3761,10 @@ function renderResultsScreen(submission = {}) {
                     ` : ''}
                 </div>`;
             } else if (q.type === 'matching') {
-                const rawPairs = q.pairs || [];
+                const allPairs = q.pairs || [];
+                const rawPairs = q._shuffledPairs || allPairs;
+                const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+                const isDrawnSubset = (drawCount > 0 && drawCount < allPairs.length);
                 const userMatchesObj = userAns && typeof userAns === 'object' ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
                 
                 let correctCount = 0;
@@ -3766,6 +3784,7 @@ function renderResultsScreen(submission = {}) {
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:10px;">
                         <div style="font-size:0.85rem; font-weight:700; color:var(--clr-text);">
                             Résultat : <span style="color:var(--clr-primary-dark); font-weight:800;">${correctCount} / ${rawPairs.length} association${rawPairs.length > 1 ? 's' : ''} correcte${rawPairs.length > 1 ? 's' : ''}</span>
+                            ${isDrawnSubset ? `<span style="font-size:0.75rem; color:var(--clr-text-muted); font-weight:600; margin-left:6px;">(🎲 ${rawPairs.length} tirées au sort sur ${allPairs.length})</span>` : ''}
                         </div>
                         <span>
                             ${getScoreBadge(isAllCorrect, isAnswered)}

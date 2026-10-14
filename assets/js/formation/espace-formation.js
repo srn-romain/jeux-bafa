@@ -236,11 +236,18 @@ function computeQuestionAlgoCorrect(q, ans) {
     } else if (type === 'matching') {
         const rawPairs = q.pairs || [];
         const userMatchesObj = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
-        isAnswered = Object.values(userMatchesObj).some(v => v && String(v).trim().length > 0);
-        isCorrect = isAnswered && (rawPairs.length > 0) && rawPairs.every(pair => {
-            const uRight = userMatchesObj[pair.left] || userMatchesObj[(pair.left || '').trim()];
-            return uRight && String(uRight).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
+        const answeredLeftKeys = Object.keys(userMatchesObj).filter(k => userMatchesObj[k] && String(userMatchesObj[k]).trim().length > 0);
+        const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+        const isDrawnSubset = (drawCount > 0 && drawCount < rawPairs.length);
+        const expectedCount = isDrawnSubset ? drawCount : rawPairs.length;
+
+        isAnswered = answeredLeftKeys.length > 0;
+        const allAnsweredCorrect = isAnswered && answeredLeftKeys.every(leftKey => {
+            const pair = rawPairs.find(p => p.left === leftKey || (p.left || '').trim() === leftKey.trim());
+            if (!pair) return false;
+            return String(userMatchesObj[leftKey]).trim().toLowerCase() === String(pair.right).trim().toLowerCase();
         });
+        isCorrect = allAnsweredCorrect && (answeredLeftKeys.length === expectedCount);
     } else {
         // text
         isAnswered = Boolean(ans && String(ans).trim().length > 0);
@@ -634,6 +641,7 @@ async function saveFormationModule(moduleData, questionsList = []) {
             } else if (q.type === 'matching') {
                 qDoc.pairs = q.pairs || [];
                 qDoc.rightDistractors = q.rightDistractors || '';
+                qDoc.drawItemsCount = (q.drawItemsCount !== undefined && q.drawItemsCount !== null) ? (parseInt(q.drawItemsCount, 10) || 0) : 0;
             } else if (q.type === 'cloze') {
                 qDoc.clozeText = q.clozeText || '';
                 qDoc.distractors = Array.isArray(q.distractors) ? q.distractors : [];
@@ -3864,14 +3872,22 @@ async function toggleBilanModuleAccordion(moduleId, btn) {
             } else if (q.type === 'matching') {
                 const rawPairs = q.pairs || [];
                 const userMatchesObj = (userAns && typeof userAns === 'object') ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
+                const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+                const isDrawnSubset = (drawCount > 0 && drawCount < rawPairs.length);
+                const displayedPairs = isDrawnSubset
+                    ? (rawPairs.filter(p => Object.prototype.hasOwnProperty.call(userMatchesObj, p.left) || Object.prototype.hasOwnProperty.call(userMatchesObj, (p.left||'').trim())).length > 0
+                        ? rawPairs.filter(p => Object.prototype.hasOwnProperty.call(userMatchesObj, p.left) || Object.prototype.hasOwnProperty.call(userMatchesObj, (p.left||'').trim()))
+                        : rawPairs.slice(0, drawCount))
+                    : rawPairs;
                 ansDisplay = `
                 <div style="background:#ffffff; border:1px solid ${isCorrect ? '#27ae60' : '#e74c3c'}; border-radius:6px; padding:10px 12px; margin-top:6px; font-size:0.86rem;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                         <strong>Associations :</strong>
                         <span style="font-weight:700; color:${isCorrect ? '#27ae60' : '#e74c3c'};">${isCorrect ? '✅ Exact (+1 pt)' : '❌ Incorrect (0 pt)'}</span>
                     </div>
+                    ${isDrawnSubset ? `<div style="margin-bottom:6px;"><span class="es-badge" style="background:rgba(52, 152, 219, 0.15); color:#2980b9; font-size:0.75rem; padding:2px 6px;"><i class="bi bi-shuffle"></i> Tirage au sort : ${displayedPairs.length} sur ${rawPairs.length}</span></div>` : ''}
                     <div style="display:flex; flex-direction:column; gap:4px;">
-                        ${rawPairs.map(p => `<div><span style="font-weight:600;">${escapeHtml(p.left)}</span> ➔ ${escapeHtml(userMatchesObj[p.left] || userMatchesObj[(p.left||'').trim()] || '—')}</div>`).join('')}
+                        ${displayedPairs.map(p => `<div><span style="font-weight:600;">${escapeHtml(p.left)}</span> ➔ ${escapeHtml(userMatchesObj[p.left] || userMatchesObj[(p.left||'').trim()] || '—')}</div>`).join('')}
                     </div>
                 </div>`;
             } else if (q.type === 'text') {
@@ -4841,11 +4857,21 @@ async function openAdminCandidateBilanModal(userId) {
                     } else if (q.type === 'matching') {
                         const rawPairs = q.pairs || [];
                         const userMatchesObj = (userAns && typeof userAns === 'object') ? userAns : (userAns ? (()=>{ try { return JSON.parse(userAns); } catch(e){ return {}; } })() : {});
+                        const drawCount = parseInt(q.drawItemsCount, 10) || 0;
+                        const isDrawnSubset = (drawCount > 0 && drawCount < rawPairs.length);
+                        const displayedPairs = isDrawnSubset
+                            ? (rawPairs.filter(p => Object.prototype.hasOwnProperty.call(userMatchesObj, p.left) || Object.prototype.hasOwnProperty.call(userMatchesObj, (p.left||'').trim())).length > 0
+                                ? rawPairs.filter(p => Object.prototype.hasOwnProperty.call(userMatchesObj, p.left) || Object.prototype.hasOwnProperty.call(userMatchesObj, (p.left||'').trim()))
+                                : rawPairs.slice(0, drawCount))
+                            : rawPairs;
                         previewHtml = `
                         <div>
-                            <strong>Associations :</strong>
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                <strong>Associations :</strong>
+                                ${isDrawnSubset ? `<span class="es-badge" style="background:rgba(52, 152, 219, 0.15); color:#2980b9; font-size:0.75rem; padding:2px 6px;"><i class="bi bi-shuffle"></i> Tirage au sort : ${displayedPairs.length} sur ${rawPairs.length}</span>` : ''}
+                            </div>
                             <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
-                                ${rawPairs.map(p => {
+                                ${displayedPairs.map(p => {
                                     const u = userMatchesObj[p.left] || userMatchesObj[(p.left||'').trim()];
                                     const isPairOk = u && String(u).trim().toLowerCase() === String(p.right).trim().toLowerCase();
                                     return `<div><span style="font-weight:600;">${escapeHtml(p.left)}</span> ➔ <span style="color:${isPairOk ? '#27ae60' : (u ? '#e74c3c' : 'var(--clr-text-muted)')}; font-weight:700;">${escapeHtml(u || '— (Aucun choix / Laissé vide)')}</span> ${!isPairOk ? `<small style="color:var(--clr-text-muted);">(Attendu: ${escapeHtml(p.right)})</small>` : ''}</div>`;
