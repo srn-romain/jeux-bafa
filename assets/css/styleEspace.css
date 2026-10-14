@@ -5080,7 +5080,7 @@ body.modal-open .es-topbar {
   position: relative;
   width: 100%;
   max-width: 340px;
-  height: 250px;
+  height: 255px;
   margin: 0 auto;
   border-radius: var(--radius-lg);
   overflow: hidden;

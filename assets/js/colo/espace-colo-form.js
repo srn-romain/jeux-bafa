@@ -74,10 +74,10 @@ const ColoFormManager = {
                                 <div class="es-cropper-ratios">
                                     <div class="es-cropper-ratios__group" id="formCropperRatioGroup">
                                         <span class="es-cropper-ratios__label"><i class="bi bi-aspect-ratio"></i> Format :</span>
-                                        <button type="button" class="es-cropper-ratio-btn active" data-ratio="3">3:1 Bannière</button>
-                                        <button type="button" class="es-cropper-ratio-btn" data-ratio="2.333">21:9</button>
+                                        <button type="button" class="es-cropper-ratio-btn active" data-ratio="1.333">4:3 Carte</button>
+                                        <button type="button" class="es-cropper-ratio-btn" data-ratio="1">1:1 Carré</button>
                                         <button type="button" class="es-cropper-ratio-btn" data-ratio="1.777">16:9</button>
-                                        <button type="button" class="es-cropper-ratio-btn" data-ratio="1.5">3:2</button>
+                                        <button type="button" class="es-cropper-ratio-btn" data-ratio="3">3:1 Bannière</button>
                                         <button type="button" class="es-cropper-ratio-btn" data-ratio="free">Libre</button>
                                     </div>
                                 </div>
@@ -145,10 +145,10 @@ const ColoFormManager = {
                                         <i class="bi bi-eye"></i> <span class="es-cropper-preview-title-text">Aperçu direct sur la carte Admin :</span>
                                     </div>
                                     <div class="es-cropper-preview-tabs" role="tablist">
-                                        <button type="button" class="es-cropper-preview-tab active" id="tabPreviewList" role="tab" aria-selected="true" title="Format Liste">
+                                        <button type="button" class="es-cropper-preview-tab" id="tabPreviewList" role="tab" aria-selected="false" title="Format Liste">
                                             <i class="bi bi-view-list"></i> Liste
                                         </button>
-                                        <button type="button" class="es-cropper-preview-tab" id="tabPreviewGrid" role="tab" aria-selected="false" title="Format Carte">
+                                        <button type="button" class="es-cropper-preview-tab active" id="tabPreviewGrid" role="tab" aria-selected="true" title="Format Carte">
                                             <i class="bi bi-grid-fill"></i> Carte
                                         </button>
                                     </div>
@@ -156,10 +156,10 @@ const ColoFormManager = {
 
                                 <div class="es-cropper-preview-carousel" id="formCropperPreviewCarousel">
                                     <!-- 1. Format Liste (Horizontal) -->
-                                    <div class="es-cropper-preview-slide active" id="formCropperSlideList">
+                                    <div class="es-cropper-preview-slide" id="formCropperSlideList" style="display: none;">
                                         <div class="es-cropper-preview-card" id="formCropperPreviewCard">
                                             <canvas id="formCropperPreviewCanvas" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></canvas>
-                                            <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.68) 100%); z-index: 2;"></div>
+                                            <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.65) 100%); z-index: 2; pointer-events: none;"></div>
                                             <div class="es-cropper-preview-card-content">
                                                 <div class="es-cropper-preview-title">
                                                     <span class="es-cropper-preview-emoji-wrap" id="formCropperPreviewEmoji">🏕️</span>
@@ -173,10 +173,10 @@ const ColoFormManager = {
                                     </div>
 
                                     <!-- 2. Format Carte (Grille carrée) -->
-                                    <div class="es-cropper-preview-slide" id="formCropperSlideGrid" style="display: none;">
+                                    <div class="es-cropper-preview-slide active" id="formCropperSlideGrid">
                                         <div class="es-cropper-preview-grid-card" id="formCropperPreviewCardGrid">
                                             <canvas id="formCropperPreviewCanvasGrid" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1;"></canvas>
-                                            <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.72) 100%); z-index: 2;"></div>
+                                            <div style="position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.65) 100%); z-index: 2; pointer-events: none;"></div>
                                             <div class="es-cropper-preview-grid-content">
                                                 <div class="es-cropper-preview-grid-header">
                                                     <div style="min-width: 0;">
@@ -373,7 +373,7 @@ const ColoFormManager = {
     // État du recadreur intégré & Prévisualisations
     rawBgImage: '',
     sourceImg: null,
-    aspectRatio: 3.0, // 3:1 par défaut
+    aspectRatio: 1.333, // 4:3 Carte par défaut
     zoom: 1.0,
     rx: 0,
     ry: 0,
@@ -386,9 +386,26 @@ const ColoFormManager = {
     imgLeft: 0,
     imgTop: 0,
     activeDrag: null,
-    previewMode: 'list', // 'list' | 'grid'
+    previewMode: 'grid', // 'grid' | 'list'
 
-    setPreviewMode(mode) {
+    setAspectRatio(ratio) {
+        this.aspectRatio = ratio === 'free' ? 'free' : parseFloat(ratio);
+        const ratioBtns = document.querySelectorAll('#formCropperRatioGroup .es-cropper-ratio-btn');
+        ratioBtns.forEach(b => {
+            const btnRatio = b.dataset.ratio;
+            if (this.aspectRatio === 'free' && btnRatio === 'free') {
+                b.classList.add('active');
+            } else if (this.aspectRatio !== 'free' && btnRatio !== 'free' && Math.abs(parseFloat(btnRatio) - this.aspectRatio) < 0.05) {
+                b.classList.add('active');
+            } else {
+                b.classList.remove('active');
+            }
+        });
+        this.resetCropBoxToRatio();
+        this.updateFormCropperDOM();
+    },
+
+    setPreviewMode(mode, userInitiated = false) {
         this.previewMode = mode;
         const els = this.getElements();
         if (!els.slideList || !els.slideGrid) return;
@@ -403,6 +420,10 @@ const ColoFormManager = {
             if (els.tabPreviewList) els.tabPreviewList.classList.remove('active');
             els.tabPreviewGrid?.setAttribute('aria-selected', 'true');
             els.tabPreviewList?.setAttribute('aria-selected', 'false');
+
+            if (userInitiated && (this.aspectRatio === 3 || this.aspectRatio === '3')) {
+                this.setAspectRatio(1.333);
+            }
         } else {
             els.slideGrid.style.display = 'none';
             els.slideGrid.classList.remove('active');
@@ -413,6 +434,10 @@ const ColoFormManager = {
             if (els.tabPreviewGrid) els.tabPreviewGrid.classList.remove('active');
             els.tabPreviewList?.setAttribute('aria-selected', 'true');
             els.tabPreviewGrid?.setAttribute('aria-selected', 'false');
+
+            if (userInitiated && Math.abs(this.aspectRatio - 1.333) < 0.05) {
+                this.setAspectRatio(3.0);
+            }
         }
 
         requestAnimationFrame(() => {
@@ -421,7 +446,7 @@ const ColoFormManager = {
     },
 
     togglePreviewMode() {
-        this.setPreviewMode(this.previewMode === 'list' ? 'grid' : 'list');
+        this.setPreviewMode(this.previewMode === 'list' ? 'grid' : 'list', true);
     },
 
     // Initialisation et injection dynamique du formulaire HTML
@@ -540,12 +565,7 @@ const ColoFormManager = {
         const ratioBtns = document.querySelectorAll('#formCropperRatioGroup .es-cropper-ratio-btn');
         ratioBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                ratioBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const raw = btn.dataset.ratio;
-                this.aspectRatio = raw === 'free' ? 'free' : parseFloat(raw);
-                this.resetCropBoxToRatio();
-                this.updateFormCropperDOM();
+                this.setAspectRatio(btn.dataset.ratio);
             });
         });
 
@@ -614,11 +634,11 @@ const ColoFormManager = {
         // Onglets de prévisualisation (Format Liste / Format Carte)
         els.tabPreviewList?.addEventListener('click', (e) => {
             e.preventDefault();
-            this.setPreviewMode('list');
+            this.setPreviewMode('list', true);
         });
         els.tabPreviewGrid?.addEventListener('click', (e) => {
             e.preventDefault();
-            this.setPreviewMode('grid');
+            this.setPreviewMode('grid', true);
         });
 
         // Détection swipe tactile sur mobile
@@ -770,6 +790,36 @@ const ColoFormManager = {
         this.updateFormPreviewCanvas();
     },
 
+    // Dessine l'image avec rognage centré (équivalent background-size: cover; background-position: center) sans aucune déformation
+    drawCoverImage(ctx, img, sx, sy, sw, sh, destW, destH) {
+        if (!ctx || !img || sw <= 0 || sh <= 0 || destW <= 0 || destH <= 0) return;
+
+        const cropRatio = sw / sh;
+        const destRatio = destW / destH;
+
+        let srcX = sx;
+        let srcY = sy;
+        let srcW = sw;
+        let srcH = sh;
+
+        if (cropRatio > destRatio) {
+            // L'image découpée est plus large que la carte :
+            // on conserve toute la hauteur et on centre horizontalement sans déformer
+            srcW = sh * destRatio;
+            srcX = sx + (sw - srcW) / 2;
+        } else if (cropRatio < destRatio) {
+            // L'image découpée est plus haute que la carte :
+            // on conserve toute la largeur et on centre verticalement sans déformer
+            srcH = sw / destRatio;
+            srcY = sy + (sh - srcH) / 2;
+        }
+
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.clearRect(0, 0, destW, destH);
+        ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, destW, destH);
+    },
+
     // Dessine la portion cadrée dans les canvas d'aperçu (Format Liste et Format Carte)
     updateFormPreviewCanvas() {
         const els = this.getElements();
@@ -787,37 +837,27 @@ const ColoFormManager = {
         // 1. Aperçu Format Liste (Horizontal)
         if (els.previewCanvas) {
             const cardRect = els.previewCanvas.parentElement?.getBoundingClientRect();
-            const w = (cardRect && cardRect.width > 0) ? cardRect.width : 340;
+            const w = (cardRect && cardRect.width > 0) ? cardRect.width : 500;
             const h = (cardRect && cardRect.height > 0) ? cardRect.height : 86;
 
             els.previewCanvas.width = Math.round(w * dpr);
             els.previewCanvas.height = Math.round(h * dpr);
 
             const ctx = els.previewCanvas.getContext('2d');
-            if (ctx) {
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = 'high';
-                ctx.clearRect(0, 0, els.previewCanvas.width, els.previewCanvas.height);
-                ctx.drawImage(this.sourceImg, sx, sy, sw, sh, 0, 0, els.previewCanvas.width, els.previewCanvas.height);
-            }
+            this.drawCoverImage(ctx, this.sourceImg, sx, sy, sw, sh, els.previewCanvas.width, els.previewCanvas.height);
         }
 
-        // 2. Aperçu Format Carte (Grille)
+        // 2. Aperçu Format Carte (Grille carrée)
         if (els.previewCanvasGrid) {
             const cardRectGrid = els.previewCanvasGrid.parentElement?.getBoundingClientRect();
             const wGrid = (cardRectGrid && cardRectGrid.width > 0) ? cardRectGrid.width : 340;
-            const hGrid = (cardRectGrid && cardRectGrid.height > 0) ? cardRectGrid.height : 250;
+            const hGrid = (cardRectGrid && cardRectGrid.height > 0) ? cardRectGrid.height : 255;
 
             els.previewCanvasGrid.width = Math.round(wGrid * dpr);
             els.previewCanvasGrid.height = Math.round(hGrid * dpr);
 
             const ctxGrid = els.previewCanvasGrid.getContext('2d');
-            if (ctxGrid) {
-                ctxGrid.imageSmoothingEnabled = true;
-                ctxGrid.imageSmoothingQuality = 'high';
-                ctxGrid.clearRect(0, 0, els.previewCanvasGrid.width, els.previewCanvasGrid.height);
-                ctxGrid.drawImage(this.sourceImg, sx, sy, sw, sh, 0, 0, els.previewCanvasGrid.width, els.previewCanvasGrid.height);
-            }
+            this.drawCoverImage(ctxGrid, this.sourceImg, sx, sy, sw, sh, els.previewCanvasGrid.width, els.previewCanvasGrid.height);
         }
     },
 
@@ -1053,7 +1093,7 @@ const ColoFormManager = {
             els.previewOrgText.textContent = colo?.organisme || 'Organisme';
         }
 
-        this.setPreviewMode('list');
+        this.setPreviewMode('grid');
 
         openModal('overlayColoForm');
 

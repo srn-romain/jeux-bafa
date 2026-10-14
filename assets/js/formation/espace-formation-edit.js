@@ -2981,11 +2981,9 @@ function renderQuestionsEditor() {
                 <div style="margin-top:12px;">
                     <label class="es-field__label">Options de réponse (Cochez la ou les bonnes réponses) :</label>
                     <div class="qcm-options-wrap">${optionsHtml}</div>
-                    ${options.length < 6 ? `
-                        <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-option" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
-                            <i class="bi bi-plus"></i> Ajouter une option
-                        </button>
-                    ` : ''}
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-option" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
+                        <i class="bi bi-plus"></i> Ajouter une option
+                    </button>
                 </div>
             `;
         } else if (type === 'image_choice') {
