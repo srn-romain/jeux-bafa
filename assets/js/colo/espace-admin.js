@@ -1991,6 +1991,33 @@ document.getElementById('btnFinishGroupsAdmin')?.addEventListener('click', () =>
 
 let editingAdminGroupId = null;
 
+function copyGroupIdToClipboardAdmin(id, btn) {
+    if (!id) return;
+    navigator.clipboard.writeText(id).then(() => {
+        if (typeof showToast === 'function') {
+            showToast("ID copié !", "success");
+        }
+        if (btn) {
+            const icon = btn.querySelector('i');
+            const originalTitle = btn.getAttribute('title') || "Copier l'id";
+            if (icon) {
+                icon.className = 'bi bi-check2 text-success';
+            }
+            btn.setAttribute('title', 'ID copié !');
+            setTimeout(() => {
+                if (icon) icon.className = 'bi bi-clipboard';
+                btn.setAttribute('title', originalTitle);
+            }, 2000);
+        }
+    }).catch(err => {
+        console.error('Erreur lors de la copie de l\'ID:', err);
+        if (typeof showToast === 'function') {
+            showToast("Impossible de copier l'ID.", "error");
+        }
+    });
+}
+window.copyGroupIdToClipboardAdmin = copyGroupIdToClipboardAdmin;
+
 function renderGroupsNameListAdmin() {
     const listEl = document.getElementById('groupsNameListAdmin');
     if (!listEl) return;
@@ -2003,16 +2030,30 @@ function renderGroupsNameListAdmin() {
     listEl.innerHTML = currentAdminGroups.map(g => {
         if (g.id === editingAdminGroupId) {
             return `
-            <div class="es-anim-item" style="padding: 8px 12px; display:flex; gap:8px;">
-                <input type="text" id="editGroupInputAdmin_${g.id}" class="es-input" style="flex:1; padding:4px 8px; font-size:0.9rem;" value="${escapeHtml(g.name)}" onkeydown="if(event.key==='Enter') saveEditedAdminGroupName('${g.id}')">
-                <button class="es-btn es-btn--primary es-btn--sm" onclick="saveEditedAdminGroupName('${g.id}')" title="Enregistrer"><i class="bi bi-check-lg"></i></button>
-                <button class="es-btn es-btn--secondary es-btn--sm" onclick="cancelEditAdminGroupName()" title="Annuler"><i class="bi bi-x-lg"></i></button>
+            <div class="es-anim-item" style="padding: 8px 12px; display:flex; flex-direction:column; gap:6px;">
+                <div style="display:flex; gap:8px; width:100%;">
+                    <input type="text" id="editGroupInputAdmin_${g.id}" class="es-input" style="flex:1; padding:4px 8px; font-size:0.9rem;" value="${escapeHtml(g.name)}" onkeydown="if(event.key==='Enter') saveEditedAdminGroupName('${g.id}')">
+                    <button class="es-btn es-btn--primary es-btn--sm" onclick="saveEditedAdminGroupName('${g.id}')" title="Enregistrer"><i class="bi bi-check-lg"></i></button>
+                    <button class="es-btn es-btn--secondary es-btn--sm" onclick="cancelEditAdminGroupName()" title="Annuler"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <div style="display:flex; align-items:center; gap:6px; font-size:0.75rem; color:var(--clr-text-muted);">
+                    <span style="font-family:monospace; font-size:0.72rem; opacity:0.85; user-select:all;">ID : ${escapeHtml(g.id)}</span>
+                    <button type="button" class="es-btn es-btn--ghost es-btn--sm" style="padding:1px 5px; font-size:0.75rem; line-height:1; color:var(--clr-text-muted); border-color:transparent;" title="Copier l'id" onclick="copyGroupIdToClipboardAdmin('${escapeHtml(g.id)}', this)" aria-label="Copier l'id">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                </div>
             </div>`;
         } else {
             return `
             <div class="es-anim-item" style="padding: 8px 12px;">
                 <div class="es-anim-item__info">
                     <div class="es-anim-item__name" style="font-size:0.9rem;">${escapeHtml(g.name)}</div>
+                    <div style="display:flex; align-items:center; gap:6px; margin-top:3px; font-size:0.75rem; color:var(--clr-text-muted);">
+                        <span style="font-family:monospace; font-size:0.72rem; opacity:0.85; user-select:all;">ID : ${escapeHtml(g.id)}</span>
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" style="padding:1px 5px; font-size:0.75rem; line-height:1; color:var(--clr-text-muted); border-color:transparent;" title="Copier l'id" onclick="copyGroupIdToClipboardAdmin('${escapeHtml(g.id)}', this)" aria-label="Copier l'id">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
                 </div>
                 <div style="display:flex;gap:4px;">
                     <button class="es-btn es-btn--secondary es-btn--sm" onclick="setEditingAdminGroupId('${g.id}')" title="Modifier">

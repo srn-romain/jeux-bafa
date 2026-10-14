@@ -1484,10 +1484,10 @@ function renderActiveSectionPage() {
                                                 `).join('')}
                                             </select>
                                             <i class="bi bi-chevron-down es-matching-chevron" aria-hidden="true"></i>
+                                            <button type="button" class="es-matching-clear-btn" data-q-id="${q.id}" title="Effacer ce choix (laisser vide)" aria-label="Effacer ce choix">
+                                                <i class="bi bi-x-circle-fill"></i>
+                                            </button>
                                         </div>
-                                        <button type="button" class="es-matching-clear-btn" data-q-id="${q.id}" title="Effacer ce choix (laisser vide)" aria-label="Effacer ce choix">
-                                            <i class="bi bi-x-circle-fill"></i>
-                                        </button>
                                     </div>
                                 </div>
                             `;

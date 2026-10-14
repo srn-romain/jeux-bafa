@@ -6181,7 +6181,7 @@ body.modal-open .es-topbar {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  padding: 9px 34px 9px 12px;
+  padding: 9px 52px 9px 14px;
   font-size: 0.88rem;
   font-weight: 600;
   color: var(--clr-text);
@@ -6223,20 +6223,25 @@ body.modal-open .es-topbar {
 }
 
 .es-matching-clear-btn {
+  position: absolute;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
   border: none;
   background: transparent;
   cursor: pointer;
   color: var(--clr-text-muted);
-  padding: 4px;
+  padding: 3px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   transition: color 0.2s, background 0.2s, opacity 0.2s, transform 0.2s;
   opacity: 0;
   pointer-events: none;
-  flex-shrink: 0;
+  line-height: 1;
 }
 
 .es-matching-row--answered .es-matching-clear-btn {
@@ -6247,7 +6252,7 @@ body.modal-open .es-topbar {
 .es-matching-clear-btn:hover {
   color: var(--clr-danger);
   background: var(--clr-danger-soft);
-  transform: scale(1.1);
+  transform: translateY(-50%) scale(1.15);
 }
 
 .es-matching-status-bar {
@@ -6298,19 +6303,19 @@ body.modal-open .es-topbar {
     justify-content: center;
     display: flex;
     align-items: center;
-    gap: 8px;
   }
   .es-matching-select-wrap {
     width: 100%;
     max-width: 380px;
     margin: 0 auto;
+    position: relative;
   }
   .es-matching-select {
     text-align: center;
     text-align-last: center;
     -moz-text-align-last: center;
-    padding-left: 32px;
-    padding-right: 32px;
+    padding-left: 52px;
+    padding-right: 52px;
   }
   .es-matching-select option {
     text-align: center;
