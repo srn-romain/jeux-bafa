@@ -3680,7 +3680,7 @@ function applyPermissionsToUI() {
     const btnAddQ = document.getElementById('btnAddQuestion');
     const btnAddSec = document.getElementById('btnAddSection');
     const btnShuffle = document.getElementById('btnShuffleAllQuestions');
-    const importWrap = document.getElementById('btnImportQuestionsJson')?.parentElement;
+    const importButtons = document.querySelectorAll('.btn-open-import-modal, #btnOpenImportQuestionsModal');
 
     if (isReadOnly) {
         btnSaveHeader?.classList.add('hidden');
@@ -3689,7 +3689,7 @@ function applyPermissionsToUI() {
         btnAddQ?.classList.add('hidden');
         btnAddSec?.classList.add('hidden');
         btnShuffle?.classList.add('hidden');
-        if (importWrap) importWrap.style.display = 'none';
+        importButtons.forEach(btn => btn.style.display = 'none');
 
         // Désactiver tous les formulaires dans l'onglet éditeur
         const form = document.getElementById('moduleEditForm');
@@ -3718,7 +3718,7 @@ function applyPermissionsToUI() {
         btnAddQ?.classList.remove('hidden');
         btnAddSec?.classList.remove('hidden');
         btnShuffle?.classList.remove('hidden');
-        if (importWrap) importWrap.style.display = '';
+        importButtons.forEach(btn => btn.style.display = '');
         if (currentEditingModuleId) {
             btnDelete?.classList.remove('hidden');
         }
@@ -5129,64 +5129,379 @@ document.getElementById('btnExportQuestionsJson')?.addEventListener('click', () 
     showToast("Export JSON téléchargé !", "success");
 });
 
-document.getElementById('btnImportQuestionsJson')?.addEventListener('change', (e) => {
-    const file = e.target.files[0];
+// ----------------------------------------------------------------
+// GESTION MODALE IMPORT QUESTIONS JSON (FICHIER PC OU TEXTE DIRECT)
+// ----------------------------------------------------------------
+let importModalActiveTab = 'file';
+let importModalParsedFileQuestions = null;
+
+function normalizeImportedQuestions(rawArray) {
+    if (!Array.isArray(rawArray)) return [];
+    return rawArray.map((q, idx) => {
+        const type = q.type || 'qcm';
+        const isSection = (type === 'section');
+        return {
+            id: q.id || ((isSection ? 'sec_' : 'q_') + Date.now() + '_' + Math.random().toString(36).substr(2, 5) + '_' + idx),
+            type: type,
+            title: q.title || (isSection ? q.text : undefined),
+            description: q.description || '',
+            text: q.text || q.title || '',
+            options: q.options || (type === 'qcm' ? ['Option 1', 'Option 2'] : undefined),
+            imageOptions: q.imageOptions || (type === 'image_choice' ? [{ imageUrl: '', label: 'Option 1' }, { imageUrl: '', label: 'Option 2' }] : undefined),
+            tableRows: q.tableRows || (type === 'table_choice' ? [{ text: 'Affirmation 1...', correctCol1: true, correctCol2: false }, { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }] : undefined),
+            categories: q.categories || (type === 'classification' ? [{ id: 'cat_1', title: 'Petite enfance (3 - 5 ans)' }, { id: 'cat_2', title: 'Enfance (6 - 11 ans)' }, { id: 'cat_3', title: 'Préadolescence (12 - 14 ans)' }, { id: 'cat_4', title: 'Adolescence (15 - 17 ans)' }] : undefined),
+            col1Label: q.col1Label || 'VRAI',
+            col2Label: q.col2Label || 'FAUX',
+            correctIndex: q.correctIndex !== undefined ? q.correctIndex : 0,
+            correctIndexes: (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
+                ? q.correctIndexes.map(n => parseInt(n, 10)).filter(n => !isNaN(n))
+                : (q.correctIndex !== undefined ? [parseInt(q.correctIndex, 10)] : [0]),
+            correctAnswer: (q.correctAnswer !== undefined) ? (q.correctAnswer === true || q.correctAnswer === 'true') : true,
+            pinImage: q.pinImage || '',
+            targetX: q.targetX !== undefined ? parseFloat(q.targetX) : 50,
+            targetY: q.targetY !== undefined ? parseFloat(q.targetY) : 50,
+            radius: q.radius !== undefined ? parseFloat(q.radius) : 10,
+            targetLabel: q.targetLabel || '',
+            min: q.min !== undefined ? parseFloat(q.min) : 0,
+            max: q.max !== undefined ? parseFloat(q.max) : 100,
+            step: q.step !== undefined ? parseFloat(q.step) : 1,
+            unit: q.unit || '',
+            minLabel: q.minLabel || '',
+            maxLabel: q.maxLabel || '',
+            correctValue: q.correctValue !== undefined ? parseFloat(q.correctValue) : 50,
+            tolerance: q.tolerance !== undefined ? parseFloat(q.tolerance) : 0,
+            clozeText: q.clozeText || '',
+            distractors: typeof q.distractors === 'string' ? q.distractors : (Array.isArray(q.distractors) ? q.distractors.join(', ') : ''),
+            items: q.items || (type === 'classification' ? [{ id: 'item_1', text: 'Besoin de sieste et rituels rassurants', categoryId: 'cat_1' }, { id: 'item_2', text: 'Jeux de règles et développement moteur', categoryId: 'cat_2' }, { id: 'item_3', text: 'Importance du groupe de pairs et pudeur', categoryId: 'cat_3' }, { id: 'item_4', text: 'Co-construction des projets et émancipation', categoryId: 'cat_4' }] : (type === 'puzzle' ? ['Étape 1', 'Étape 2'] : undefined)),
+            drawItemsCount: q.drawItemsCount !== undefined ? (parseInt(q.drawItemsCount, 10) || 0) : 0,
+            pairs: q.pairs || (type === 'matching' ? [{ left: 'A', right: '1' }, { left: 'B', right: '2' }] : undefined),
+            rightDistractors: typeof q.rightDistractors === 'string' ? q.rightDistractors : (Array.isArray(q.rightDistractors) ? q.rightDistractors.join(', ') : ''),
+            hint: q.hint || '',
+            sampleAnswer: q.sampleAnswer || '',
+            trainerNote: q.trainerNote || '',
+            imageUrl: q.imageUrl || '',
+            isMandatory: !!q.isMandatory
+        };
+    });
+}
+
+function showImportModalError(msg) {
+    const alertBox = document.getElementById('importQuestionsModalError');
+    const alertMsg = document.getElementById('importQuestionsModalErrorMsg');
+    if (alertBox && alertMsg) {
+        alertMsg.textContent = msg;
+        alertBox.classList.remove('hidden');
+    }
+}
+
+function hideImportModalError() {
+    const alertBox = document.getElementById('importQuestionsModalError');
+    if (alertBox) alertBox.classList.add('hidden');
+}
+
+function updateImportTextCounter() {
+    const textarea = document.getElementById('importQuestionsJsonTextarea');
+    const counterBadge = document.getElementById('importJsonTextCount');
+    if (!textarea || !counterBadge) return;
+
+    const val = textarea.value.trim();
+    if (!val) {
+        counterBadge.textContent = '0 élément';
+        counterBadge.className = 'es-badge es-badge--info';
+        return;
+    }
+
+    try {
+        const parsed = JSON.parse(val);
+        const count = Array.isArray(parsed) ? parsed.length : (parsed && typeof parsed === 'object' ? 1 : 0);
+        if (count > 0) {
+            counterBadge.textContent = `${count} élément${count > 1 ? 's' : ''} détecté${count > 1 ? 's' : ''} ✓`;
+            counterBadge.className = 'es-badge es-badge--approved';
+            hideImportModalError();
+        } else {
+            counterBadge.textContent = 'Structure invalide';
+            counterBadge.className = 'es-badge es-badge--warning';
+        }
+    } catch (e) {
+        counterBadge.textContent = 'JSON incomplet';
+        counterBadge.className = 'es-badge es-badge--stagiaire';
+    }
+}
+
+function switchImportTab(tabKey) {
+    importModalActiveTab = tabKey;
+    const btnFile = document.getElementById('tabBtnImportFile');
+    const btnText = document.getElementById('tabBtnImportText');
+    const contentFile = document.getElementById('tabContentImportFile');
+    const contentText = document.getElementById('tabContentImportText');
+
+    if (tabKey === 'file') {
+        btnFile?.classList.add('active');
+        btnFile?.style.setProperty('background', 'var(--clr-primary)');
+        btnFile?.style.setProperty('color', 'var(--clr-bg-deep, #14281d)');
+        btnText?.classList.remove('active');
+        btnText?.style.setProperty('background', 'transparent');
+        btnText?.style.setProperty('color', 'var(--clr-text-muted)');
+
+        contentFile?.classList.remove('hidden');
+        contentText?.classList.add('hidden');
+    } else {
+        btnText?.classList.add('active');
+        btnText?.style.setProperty('background', 'var(--clr-primary)');
+        btnText?.style.setProperty('color', 'var(--clr-bg-deep, #14281d)');
+        btnFile?.classList.remove('active');
+        btnFile?.style.setProperty('background', 'transparent');
+        btnFile?.style.setProperty('color', 'var(--clr-text-muted)');
+
+        contentText?.classList.remove('hidden');
+        contentFile?.classList.add('hidden');
+
+        const textarea = document.getElementById('importQuestionsJsonTextarea');
+        if (textarea) textarea.focus();
+        updateImportTextCounter();
+    }
+    hideImportModalError();
+}
+
+function handleSelectedJsonFile(file) {
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith('.json') && file.type && !file.type.includes('json')) {
+        showImportModalError("Format non supporté. Veuillez sélectionner un fichier portant l'extension .json.");
+        return;
+    }
+
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = (e) => {
         try {
-            const parsed = JSON.parse(event.target.result);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-                currentEditingQuestions = parsed.map((q, idx) => ({
-                    id: q.id || ((q.type === 'section' ? 'sec_' : 'q_') + Date.now() + '_' + idx),
-                    type: q.type || 'qcm',
-                    title: q.title || (q.type === 'section' ? q.text : undefined),
-                    description: q.description || '',
-                    text: q.text || q.title || '',
-                    options: q.options || (q.type === 'qcm' ? ['Option 1', 'Option 2'] : undefined),
-                    imageOptions: q.imageOptions || (q.type === 'image_choice' ? [{ imageUrl: '', label: 'Option 1' }, { imageUrl: '', label: 'Option 2' }] : undefined),
-                    tableRows: q.tableRows || (q.type === 'table_choice' ? [{ text: 'Affirmation 1...', correctCol1: true, correctCol2: false }, { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }] : undefined),
-                    categories: q.categories || (q.type === 'classification' ? [{ id: 'cat_1', title: 'Petite enfance (3 - 5 ans)' }, { id: 'cat_2', title: 'Enfance (6 - 11 ans)' }, { id: 'cat_3', title: 'Préadolescence (12 - 14 ans)' }, { id: 'cat_4', title: 'Adolescence (15 - 17 ans)' }] : undefined),
-                    col1Label: q.col1Label || 'VRAI',
-                    col2Label: q.col2Label || 'FAUX',
-                    correctIndex: q.correctIndex !== undefined ? q.correctIndex : 0,
-                    correctAnswer: q.correctAnswer !== undefined ? q.correctAnswer : true,
-                    pinImage: q.pinImage || '',
-                    targetX: q.targetX !== undefined ? q.targetX : 50,
-                    targetY: q.targetY !== undefined ? q.targetY : 50,
-                    radius: q.radius !== undefined ? q.radius : 10,
-                    targetLabel: q.targetLabel || '',
-                    min: q.min !== undefined ? q.min : 0,
-                    max: q.max !== undefined ? q.max : 100,
-                    step: q.step !== undefined ? q.step : 1,
-                    unit: q.unit || '',
-                    minLabel: q.minLabel || '',
-                    maxLabel: q.maxLabel || '',
-                    correctValue: q.correctValue !== undefined ? q.correctValue : 50,
-                    tolerance: q.tolerance !== undefined ? q.tolerance : 0,
-                    clozeText: q.clozeText || '',
-                    distractors: q.distractors || '',
-                    items: q.items || (q.type === 'classification' ? [{ id: 'item_1', text: 'Besoin de sieste et rituels rassurants', categoryId: 'cat_1' }, { id: 'item_2', text: 'Jeux de règles et développement moteur', categoryId: 'cat_2' }, { id: 'item_3', text: 'Importance du groupe de pairs et pudeur', categoryId: 'cat_3' }, { id: 'item_4', text: 'Co-construction des projets et émancipation', categoryId: 'cat_4' }] : (q.type === 'puzzle' ? ['Étape 1', 'Étape 2'] : undefined)),
-                    drawItemsCount: q.drawItemsCount !== undefined ? (parseInt(q.drawItemsCount, 10) || 0) : 0,
-                    pairs: q.pairs || (q.type === 'matching' ? [{ left: 'A', right: '1' }, { left: 'B', right: '2' }] : undefined),
-                    hint: q.hint || '',
-                    sampleAnswer: q.sampleAnswer || '',
-                    trainerNote: q.trainerNote || '',
-                    imageUrl: q.imageUrl || ''
-                }));
-                renderQuestionsEditor();
-                showToast(`🎉 ${currentEditingQuestions.length} éléments importés !`, "success");
-            } else {
-                showToast("Fichier JSON invalide.", "error");
+            const parsed = JSON.parse(e.target.result);
+            const rawArray = Array.isArray(parsed) ? parsed : (parsed && typeof parsed === 'object' ? [parsed] : null);
+            if (!rawArray || rawArray.length === 0) {
+                showImportModalError("Le fichier JSON est vide ou n'est pas un tableau de questions.");
+                return;
             }
+
+            importModalParsedFileQuestions = normalizeImportedQuestions(rawArray);
+
+            const fileBadge = document.getElementById('importFileInfoBadge');
+            const fileNameEl = document.getElementById('importFileName');
+            const fileMetaEl = document.getElementById('importFileMeta');
+
+            if (fileNameEl) fileNameEl.textContent = file.name;
+            if (fileMetaEl) {
+                const sizeKb = Math.round(file.size / 1024) || 1;
+                fileMetaEl.textContent = `${sizeKb} Ko • ${importModalParsedFileQuestions.length} élément(s) prêt(s) à être importé(s)`;
+            }
+
+            if (fileBadge) fileBadge.classList.remove('hidden');
+            hideImportModalError();
         } catch (err) {
-            console.error("JSON parse error:", err);
-            showToast("Erreur lors de la lecture du JSON.", "error");
+            showImportModalError("Erreur lors de la lecture du fichier JSON : " + err.message);
+            importModalParsedFileQuestions = null;
         }
     };
+    reader.onerror = () => {
+        showImportModalError("Impossible de lire ce fichier.");
+        importModalParsedFileQuestions = null;
+    };
     reader.readAsText(file);
-    e.target.value = '';
-});
+}
+
+function openImportQuestionsModal() {
+    const overlay = document.getElementById('overlayImportQuestionsModal');
+    if (!overlay) return;
+
+    hideImportModalError();
+
+    // Reset file tab
+    importModalParsedFileQuestions = null;
+    const fileInput = document.getElementById('btnImportQuestionsJson');
+    if (fileInput) fileInput.value = '';
+    const fileBadge = document.getElementById('importFileInfoBadge');
+    if (fileBadge) fileBadge.classList.add('hidden');
+
+    // Default mode: replace if no questions currently, otherwise append
+    const appendRadio = document.getElementById('importModeAppend');
+    const replaceRadio = document.getElementById('importModeReplace');
+    if (currentEditingQuestions.length === 0) {
+        if (replaceRadio) replaceRadio.checked = true;
+    } else {
+        if (appendRadio) appendRadio.checked = true;
+    }
+
+    // Set tab to active
+    switchImportTab(importModalActiveTab || 'file');
+
+    overlay.classList.remove('hidden');
+}
+
+function closeImportQuestionsModal() {
+    const overlay = document.getElementById('overlayImportQuestionsModal');
+    if (overlay) overlay.classList.add('hidden');
+    hideImportModalError();
+}
+
+function executeImportQuestions() {
+    hideImportModalError();
+    let questionsToImport = [];
+
+    if (importModalActiveTab === 'file') {
+        if (!importModalParsedFileQuestions || importModalParsedFileQuestions.length === 0) {
+            showImportModalError("Veuillez d'abord glisser ou sélectionner un fichier JSON valide.");
+            return;
+        }
+        questionsToImport = importModalParsedFileQuestions;
+    } else {
+        const textarea = document.getElementById('importQuestionsJsonTextarea');
+        const rawText = textarea ? textarea.value.trim() : '';
+        if (!rawText) {
+            showImportModalError("Veuillez coller votre code JSON dans le champ texte ci-dessus.");
+            return;
+        }
+
+        try {
+            const parsed = JSON.parse(rawText);
+            const rawArray = Array.isArray(parsed) ? parsed : (parsed && typeof parsed === 'object' ? [parsed] : null);
+            if (!rawArray || rawArray.length === 0) {
+                showImportModalError("Le texte JSON ne contient aucune question ou section.");
+                return;
+            }
+            questionsToImport = normalizeImportedQuestions(rawArray);
+        } catch (err) {
+            showImportModalError("Erreur de syntaxe JSON : " + err.message);
+            return;
+        }
+    }
+
+    if (questionsToImport.length === 0) {
+        showImportModalError("Aucune question valide n'a pu être extraite.");
+        return;
+    }
+
+    // Mode d'insertion : Remplacement ou Ajout
+    const replaceRadio = document.getElementById('importModeReplace');
+    const isReplace = replaceRadio && replaceRadio.checked;
+
+    if (isReplace) {
+        currentEditingQuestions = questionsToImport;
+    } else {
+        currentEditingQuestions = [...currentEditingQuestions, ...questionsToImport];
+    }
+
+    renderQuestionsEditor();
+    closeImportQuestionsModal();
+    showToast(`🎉 ${questionsToImport.length} élément${questionsToImport.length > 1 ? 's' : ''} ${isReplace ? 'remplacé(s)' : 'ajouté(s)'} avec succès !`, "success");
+}
+
+// Initialisation des écouteurs pour la modale d'importation
+function initImportQuestionsModalListeners() {
+    // Boutons d'ouverture (haut et bas de page)
+    document.querySelectorAll('.btn-open-import-modal, #btnOpenImportQuestionsModal').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            openImportQuestionsModal();
+        });
+    });
+
+    // Fermeture
+    document.getElementById('btnCloseImportQuestionsModal')?.addEventListener('click', closeImportQuestionsModal);
+    document.getElementById('btnCancelImportModal')?.addEventListener('click', closeImportQuestionsModal);
+    document.getElementById('overlayImportQuestionsModal')?.addEventListener('click', (e) => {
+        if (e.target.id === 'overlayImportQuestionsModal') {
+            closeImportQuestionsModal();
+        }
+    });
+    window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const overlay = document.getElementById('overlayImportQuestionsModal');
+            if (overlay && !overlay.classList.contains('hidden')) {
+                closeImportQuestionsModal();
+            }
+        }
+    });
+
+    // Onglets
+    document.getElementById('tabBtnImportFile')?.addEventListener('click', () => switchImportTab('file'));
+    document.getElementById('tabBtnImportText')?.addEventListener('click', () => switchImportTab('text'));
+
+    // Dropzone & Fichier
+    const dropzone = document.getElementById('fileDropzoneImport');
+    const fileInput = document.getElementById('btnImportQuestionsJson');
+
+    dropzone?.addEventListener('click', () => {
+        fileInput?.click();
+    });
+
+    dropzone?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput?.click();
+        }
+    });
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone?.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.style.borderColor = 'var(--clr-primary-dark)';
+            dropzone.style.background = 'rgba(166, 216, 102, 0.15)';
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone?.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.style.borderColor = 'var(--clr-primary)';
+            dropzone.style.background = 'var(--clr-surface-2)';
+        }, false);
+    });
+
+    dropzone?.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const file = dt?.files?.[0];
+        if (file) {
+            handleSelectedJsonFile(file);
+        }
+    });
+
+    fileInput?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            handleSelectedJsonFile(file);
+        }
+        e.target.value = '';
+    });
+
+    // Retirer fichier sélectionné
+    document.getElementById('btnRemoveImportedFile')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        importModalParsedFileQuestions = null;
+        const fileBadge = document.getElementById('importFileInfoBadge');
+        if (fileBadge) fileBadge.classList.add('hidden');
+        if (fileInput) fileInput.value = '';
+        hideImportModalError();
+    });
+
+    // Champ texte direct
+    const jsonTextarea = document.getElementById('importQuestionsJsonTextarea');
+    jsonTextarea?.addEventListener('input', updateImportTextCounter);
+
+    // Bouton effacer le texte
+    document.getElementById('btnClearImportJsonText')?.addEventListener('click', () => {
+        if (jsonTextarea) {
+            jsonTextarea.value = '';
+            updateImportTextCounter();
+            jsonTextarea.focus();
+        }
+        hideImportModalError();
+    });
+
+    // Bouton de confirmation finale
+    document.getElementById('btnConfirmImportModal')?.addEventListener('click', executeImportQuestions);
+}
+
+// Lancement automatique des écouteurs
+initImportQuestionsModalListeners();
 
 // ----------------------------------------------------------------
 // ENREGISTREMENT DU MODULE DANS FIRESTORE

@@ -1060,11 +1060,10 @@
                             </div>
 
                             <div style="display:flex; align-items:center; gap:8px;">
-                                <label class="es-btn es-btn--ghost es-btn--sm" style="cursor:pointer;"
-                                    title="Importer un fichier JSON de questions">
+                                <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-open-import-modal"
+                                    id="btnOpenImportQuestionsModal" title="Importer des questions (Fichier JSON ou Saisie texte)">
                                     <i class="bi bi-file-earmark-arrow-up"></i> Import JSON
-                                    <input type="file" id="btnImportQuestionsJson" accept=".json" style="display:none;">
-                                </label>
+                                </button>
                                 <button type="button" class="es-btn es-btn--ghost es-btn--sm"
                                     id="btnExportQuestionsJson" title="Exporter les questions en JSON">
                                     <i class="bi bi-file-earmark-arrow-down"></i> Export JSON
@@ -1085,6 +1084,10 @@
                             <button type="button" class="es-btn es-btn--ghost" id="btnAddSectionHeader"
                                 style="font-weight:700; padding:12px 22px; border:1.5px dashed var(--clr-primary-dark); color:var(--clr-primary-dark); background:rgba(166, 216, 102, 0.08);">
                                 <i class="bi bi-bookmark-plus-fill"></i> Ajouter une section / page
+                            </button>
+                            <button type="button" class="es-btn es-btn--ghost btn-open-import-modal"
+                                style="font-weight:700; padding:12px 18px;" title="Importer des questions (Fichier JSON ou Saisie texte)">
+                                <i class="bi bi-file-earmark-arrow-up"></i> Importer des questions (JSON)
                             </button>
                         </div>
 
@@ -1261,6 +1264,126 @@
                 </div>
                 <button type="button" class="es-btn es-btn--primary" id="btnSaveGradingChanges">
                     <i class="bi bi-check2-circle"></i> Enregistrer les notes formateur
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================
+     MODAL : IMPORT DE QUESTIONS JSON (FICHIER PC OU TEXTE DIRECT)
+     ======================================================== -->
+    <div class="es-overlay hidden" id="overlayImportQuestionsModal" role="dialog" aria-modal="true" style="z-index:9998;">
+        <div class="es-modal" style="max-width:560px; width:100%; border-radius:var(--radius-lg); box-shadow:0 20px 40px rgba(0,0,0,0.45);">
+            <div class="es-modal__header" style="border-bottom:1.5px solid var(--clr-surface-3); padding:18px 22px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:38px; height:38px; border-radius:10px; background:rgba(166, 216, 102, 0.16); color:var(--clr-primary); display:flex; align-items:center; justify-content:center; font-size:1.25rem; flex-shrink:0;">
+                        <i class="bi bi-file-earmark-arrow-up-fill"></i>
+                    </div>
+                    <div>
+                        <h2 class="es-modal__title" style="font-size:1.1rem; margin:0; color:var(--clr-text);">Importer des questions</h2>
+                        <p style="font-size:0.78rem; color:var(--clr-text-muted); margin:2px 0 0 0;">Fichier JSON ou saisie directe du code</p>
+                    </div>
+                </div>
+                <button type="button" class="es-modal__close" id="btnCloseImportQuestionsModal" title="Fermer"><i class="bi bi-x"></i></button>
+            </div>
+
+            <div class="es-modal__body" style="padding:20px 22px;">
+                <!-- Onglets de sélection du mode d'import -->
+                <div style="display:flex; gap:6px; background:var(--clr-surface-2); padding:4px; border-radius:var(--radius-md); border:1px solid var(--clr-surface-3); margin-bottom:18px;">
+                    <button type="button" class="es-tabs__btn active" id="tabBtnImportFile" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border:none; border-radius:var(--radius-sm); font-size:0.86rem; font-weight:700; cursor:pointer; transition:all 0.2s; background:var(--clr-primary); color:var(--clr-bg-deep, #14281d);">
+                        <i class="bi bi-hdd-fill"></i>
+                        <span>Depuis le PC (.json)</span>
+                    </button>
+                    <button type="button" class="es-tabs__btn" id="tabBtnImportText" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border:none; border-radius:var(--radius-sm); font-size:0.86rem; font-weight:700; cursor:pointer; transition:all 0.2s; background:transparent; color:var(--clr-text-muted);">
+                        <i class="bi bi-code-square"></i>
+                        <span>Coller le code JSON</span>
+                    </button>
+                </div>
+
+                <!-- Onglet 1 : Fichier depuis le PC -->
+                <div id="tabContentImportFile">
+                    <div id="fileDropzoneImport" tabindex="0" style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:28px 16px; background:var(--clr-surface-2); border:2px dashed var(--clr-primary); border-radius:var(--radius-md); cursor:pointer; text-align:center; transition:all 0.2s; outline:none;">
+                        <input type="file" id="btnImportQuestionsJson" accept=".json" style="display:none;">
+                        <div style="width:48px; height:48px; border-radius:50%; background:rgba(166, 216, 102, 0.15); color:var(--clr-primary); display:flex; align-items:center; justify-content:center; font-size:1.6rem; margin-bottom:10px;">
+                            <i class="bi bi-cloud-arrow-up-fill"></i>
+                        </div>
+                        <div style="font-weight:700; font-size:0.95rem; color:var(--clr-text); margin-bottom:4px;">
+                            Glissez-déposez votre fichier .json ici
+                        </div>
+                        <div style="font-size:0.8rem; color:var(--clr-text-muted); margin-bottom:12px;">
+                            ou cliquez pour parcourir les dossiers de votre ordinateur
+                        </div>
+                        <span class="es-btn es-btn--secondary es-btn--sm" style="pointer-events:none; font-weight:700;">
+                            <i class="bi bi-folder2-open"></i> Parcourir...
+                        </span>
+                    </div>
+
+                    <!-- Badge aperçu fichier sélectionné -->
+                    <div id="importFileInfoBadge" class="hidden" style="margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--clr-surface); border:1.5px solid var(--clr-primary); border-radius:var(--radius-sm); padding:10px 14px;">
+                        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                            <i class="bi bi-file-earmark-check-fill" style="font-size:1.4rem; color:var(--clr-primary); flex-shrink:0;"></i>
+                            <div style="min-width:0;">
+                                <div id="importFileName" style="font-weight:700; font-size:0.88rem; color:var(--clr-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">questions.json</div>
+                                <div id="importFileMeta" style="font-size:0.75rem; color:var(--clr-text-muted);">0 élément détecté</div>
+                            </div>
+                        </div>
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnRemoveImportedFile" style="color:var(--clr-danger); padding:4px 8px;" title="Retirer ce fichier">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Onglet 2 : Coller le code JSON directement -->
+                <div id="tabContentImportText" class="hidden">
+                    <div class="es-field" style="margin-bottom:8px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <label class="es-field__label" for="importQuestionsJsonTextarea" style="font-weight:700; margin-bottom:0; font-size:0.85rem;">
+                                <i class="bi bi-braces" style="color:var(--clr-primary);"></i> Coller le code JSON dans ce champ :
+                            </label>
+                            <span id="importJsonTextCount" class="es-badge es-badge--info" style="font-size:0.75rem; font-weight:700;">0 élément</span>
+                        </div>
+                        <textarea id="importQuestionsJsonTextarea" class="es-input" rows="8"
+                            placeholder='[&#10;  {&#10;    "type": "qcm",&#10;    "text": "Énoncé de votre question...",&#10;    "options": ["Option 1", "Option 2"],&#10;    "correctIndexes": [0]&#10;  }&#10;]'
+                            style="font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:0.82rem; line-height:1.45; resize:vertical; background:var(--clr-surface-2); border-color:var(--clr-surface-3); width:100%; box-sizing:border-box;"></textarea>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.76rem; color:var(--clr-text-muted);">
+                        <span>💡 Vous pouvez coller un tableau <code>[...]</code> ou un seul objet <code>{...}</code>.</span>
+                        <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnClearImportJsonText" style="font-size:0.75rem; padding:2px 8px;">
+                            <i class="bi bi-trash"></i> Effacer
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Message d'erreur éventuel -->
+                <div id="importQuestionsModalError" class="es-alert es-alert--danger hidden" style="margin-top:14px; padding:10px 14px; font-size:0.82rem; border-radius:var(--radius-sm); display:flex; align-items:center; gap:8px;">
+                    <i class="bi bi-exclamation-octagon-fill" style="color:#e74c3c; font-size:1.1rem; flex-shrink:0;"></i>
+                    <span id="importQuestionsModalErrorMsg"></span>
+                </div>
+
+                <!-- Mode d'insertion : Ajouter vs Remplacer -->
+                <div style="margin-top:14px; padding:12px; background:var(--clr-surface-2); border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm);">
+                    <label class="es-field__label" style="font-size:0.78rem; font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+                        <i class="bi bi-gear-fill" style="color:var(--clr-primary);"></i> Mode d'application :
+                    </label>
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--clr-text);">
+                            <input type="radio" name="importInsertMode" id="importModeAppend" value="append" checked style="accent-color:var(--clr-primary); width:17px; height:17px; cursor:pointer;">
+                            <span><strong>Ajouter à la suite</strong> des questions existantes</span>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.84rem; font-weight:600; color:var(--clr-text);">
+                            <input type="radio" name="importInsertMode" id="importModeReplace" value="replace" style="accent-color:var(--clr-primary); width:17px; height:17px; cursor:pointer;">
+                            <span><strong>Remplacer</strong> toutes les questions de ce module</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="es-modal__footer" style="display:flex; justify-content:space-between; align-items:center; border-top:1.5px solid var(--clr-surface-3); padding:14px 22px;">
+                <button type="button" class="es-btn es-btn--ghost es-btn--sm" id="btnCancelImportModal">
+                    Annuler
+                </button>
+                <button type="button" class="es-btn es-btn--primary es-btn--sm" id="btnConfirmImportModal" style="font-weight:700; padding:8px 18px;">
+                    <i class="bi bi-check2-circle"></i> Valider l'importation
                 </button>
             </div>
         </div>
