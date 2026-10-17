@@ -52,7 +52,7 @@ function injectNavbar() {
     <nav class="navbar">
         <div class="navbar-container">
             <a href="${basePath}index.html" class="navbar-brand">
-                <span>🏕️ BAFA & BAFD</span>
+                <span>BAFA & BAFD</span>
             </a>
 
             <div class="navbar-links">

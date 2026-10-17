@@ -116,27 +116,31 @@
       color: var(--text-color, #ffffff);
     }
 
-    /* Palette respectée à la lettre : #EAEF9D, #C1D95F, #80B156, #498428, #33692B
-       Alternance optimale garantissant l'absence de couleur identique parmi les 4 voisins et diagonales */
-    .c01 { --bg: #EAEF9D; --text-color: #1e3818; }
-    .c02 { --bg: #C1D95F; --text-color: #1e3818; }
-    .c03 { --bg: #80B156; --text-color: #ffffff; }
-    .c04 { --bg: #498428; --text-color: #ffffff; }
+    .theme-accent {
+      color: var(--theme-primary, #3E838C);
+      transition: color 0.25s ease;
+    }
 
-    .c05 { --bg: #498428; --text-color: #ffffff; }
-    .c06 { --bg: #33692B; --text-color: #ffffff; }
-    .c07 { --bg: #EAEF9D; --text-color: #1e3818; }
-    .c08 { --bg: #C1D95F; --text-color: #1e3818; }
+    /* Fallback par défaut (remplacé dynamiquement par le tirage au sort au chargement) */
+    .c01 { --bg: #3E838C; --text-color: #ffffff; }
+    .c02 { --bg: #72BFA9; --text-color: #163128; }
+    .c03 { --bg: #A4B83B; --text-color: #1f2908; }
+    .c04 { --bg: #E5C453; --text-color: #2c2308; }
 
-    .c09 { --bg: #C1D95F; --text-color: #1e3818; }
-    .c10 { --bg: #80B156; --text-color: #ffffff; }
-    .c11 { --bg: #498428; --text-color: #ffffff; }
-    .c12 { --bg: #33692B; --text-color: #ffffff; }
+    .c05 { --bg: #E5C453; --text-color: #2c2308; }
+    .c06 { --bg: #5473A8; --text-color: #ffffff; }
+    .c07 { --bg: #3E838C; --text-color: #ffffff; }
+    .c08 { --bg: #72BFA9; --text-color: #163128; }
 
-    .c13 { --bg: #33692B; --text-color: #ffffff; }
-    .c14 { --bg: #EAEF9D; --text-color: #1e3818; }
-    .c15 { --bg: #C1D95F; --text-color: #1e3818; }
-    .c16 { --bg: #80B156; --text-color: #ffffff; }
+    .c09 { --bg: #72BFA9; --text-color: #163128; }
+    .c10 { --bg: #A4B83B; --text-color: #1f2908; }
+    .c11 { --bg: #E5C453; --text-color: #2c2308; }
+    .c12 { --bg: #5473A8; --text-color: #ffffff; }
+
+    .c13 { --bg: #5473A8; --text-color: #ffffff; }
+    .c14 { --bg: #3E838C; --text-color: #ffffff; }
+    .c15 { --bg: #72BFA9; --text-color: #163128; }
+    .c16 { --bg: #A4B83B; --text-color: #1f2908; }
 
     /* =====================================================
        BOUTON ESPACE ANIMATEUR — discret, dans le panneau
@@ -661,6 +665,115 @@
       }
     }
   </style>
+
+  <script>
+    /* =====================================================
+       TIRAGE AU SORT DU PACKAGE DE COULEURS AU CHARGEMENT
+       ===================================================== */
+    (function () {
+      var PALETTES = [
+        {
+          name: "Fraîcheur & Soleil",
+          primary: "#3E838C",
+          colors: [
+            { bg: "#3E838C", text: "#ffffff" },
+            { bg: "#72BFA9", text: "#163128" },
+            { bg: "#A4B83B", text: "#1f2908" },
+            { bg: "#E5C453", text: "#2c2308" },
+            { bg: "#5473A8", text: "#ffffff" }
+          ]
+        },
+        {
+          name: "Grand Air & Rétro Scout",
+          primary: "#2A9D8F",
+          colors: [
+            { bg: "#2A9D8F", text: "#ffffff" },
+            { bg: "#76B093", text: "#13281e" },
+            { bg: "#E9C46A", text: "#2b2207" },
+            { bg: "#8AB17D", text: "#1a2a16" },
+            { bg: "#264653", text: "#ffffff" }
+          ]
+        },
+        {
+          name: "Végétal & Miel",
+          primary: "#3B6939",
+          colors: [
+            { bg: "#3B6939", text: "#ffffff" },
+            { bg: "#72A265", text: "#ffffff" },
+            { bg: "#B2C968", text: "#1c260b" },
+            { bg: "#E8C965", text: "#2b2308" },
+            { bg: "#5E8299", text: "#ffffff" }
+          ]
+        },
+        {
+          name: "Pastel Scandinave",
+          primary: "#4A9090",
+          colors: [
+            { bg: "#4A9090", text: "#ffffff" },
+            { bg: "#8FD1B8", text: "#142921" },
+            { bg: "#CAD452", text: "#222909" },
+            { bg: "#F2DF79", text: "#2e2908" },
+            { bg: "#7B96D4", text: "#ffffff" }
+          ]
+        },
+        {
+          name: "Terre & Ciel",
+          primary: "#2F7E79",
+          colors: [
+            { bg: "#2F7E79", text: "#ffffff" },
+            { bg: "#5FA382", text: "#ffffff" },
+            { bg: "#88AC4B", text: "#ffffff" },
+            { bg: "#DFA146", text: "#ffffff" },
+            { bg: "#4A6984", text: "#ffffff" }
+          ]
+        },
+        {
+          name: "Sarcelle & Menthe",
+          primary: "#5BA7A7",
+          colors: [
+            { bg: "#5BA7A7", text: "#ffffff" },
+            { bg: "#97D7C6", text: "#163129" },
+            { bg: "#BAC94A", text: "#1f2908" },
+            { bg: "#E2D46B", text: "#2b2308" },
+            { bg: "#6C8CBF", text: "#ffffff" }
+          ]
+        }
+      ];
+
+      // Matrice 4x4 garantissant strictement 0 voisin direct ni diagonale identique
+      var PATTERN = [0, 1, 2, 3, 3, 4, 0, 1, 1, 2, 3, 4, 4, 0, 1, 2];
+
+      var lastIdx = -1;
+      try {
+        var stored = sessionStorage.getItem('last_bafa_palette_idx');
+        if (stored !== null) lastIdx = parseInt(stored, 10);
+      } catch (e) {}
+
+      var pool = [];
+      for (var i = 0; i < PALETTES.length; i++) {
+        if (i !== lastIdx) pool.push(i);
+      }
+      var chosenIdx = pool[Math.floor(Math.random() * pool.length)];
+      try {
+        sessionStorage.setItem('last_bafa_palette_idx', chosenIdx);
+      } catch (e) {}
+
+      var p = PALETTES[chosenIdx];
+      var css = ':root { --theme-primary: ' + p.primary + '; }\n';
+      for (var j = 0; j < 16; j++) {
+        var col = p.colors[PATTERN[j]];
+        var num = (j + 1 < 10 ? '0' : '') + (j + 1);
+        css += '.c' + num + ' { --bg: ' + col.bg + ' !important; --text-color: ' + col.text + ' !important; }\n';
+      }
+
+      var styleTag = document.createElement('style');
+      styleTag.id = 'dynamic-palette-style';
+      styleTag.textContent = css;
+      document.head.appendChild(styleTag);
+
+      console.log('%c🎨 Palette tirée au sort : ' + p.name, 'color: ' + p.primary + '; font-weight: bold; font-size: 12px;');
+    })();
+  </script>
 </head>
 
 <body>
@@ -821,7 +934,7 @@
   <div id="rgpd-modal" class="modalspe">
     <div class="modal__contentspe">
       <button class="modal__closespe">&times;</button>
-      <h2 style="font-family: 'Inter', sans-serif; font-weight: 700; color: #2c3e50; margin-bottom: 20px;"><i class="bi bi-shield-check" style="color: #498428; margin-right: 8px;"></i>Politique de Confidentialité &amp; RGPD</h2>
+      <h2 style="font-family: 'Inter', sans-serif; font-weight: 700; color: #2c3e50; margin-bottom: 20px;"><i class="bi bi-shield-check theme-accent" style="margin-right: 8px;"></i>Politique de Confidentialité &amp; RGPD</h2>
       
       <div style="font-family: 'Inter', sans-serif; color: #4a5568; line-height: 1.6; font-size: 0.9rem; text-align: left;">
         <p style="margin-bottom: 15px;">
