@@ -78,13 +78,13 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 7px;
+      gap: 8px;
       padding: 20px 10px 16px;
       border-radius: 12px;
       text-decoration: none;
-      color: #fff;
+      color: var(--text-color, #ffffff);
       background: var(--bg);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
       transition: transform .17s, box-shadow .17s, filter .17s;
       position: relative;
       cursor: pointer;
@@ -92,17 +92,20 @@
 
     .cat-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.20);
-      filter: brightness(1.07);
+      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.18);
+      filter: brightness(1.05);
       text-decoration: none;
-      color: #fff;
+      color: var(--text-color, #ffffff);
     }
 
-
-
+    .cat-card__icon,
     .cat-card__emoji {
       font-size: 1.85rem;
       line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-color, #ffffff);
     }
 
     .cat-card__title {
@@ -110,87 +113,30 @@
       font-weight: 700;
       text-align: center;
       line-height: 1.3;
+      color: var(--text-color, #ffffff);
     }
 
-    /* Couleurs de fond par card (Optimisées pour texte BLANC) */
-    .c01 {
-      --bg: #c0392b;
-    }
+    /* Palette respectée à la lettre : #EAEF9D, #C1D95F, #80B156, #498428, #33692B
+       Alternance optimale garantissant l'absence de couleur identique parmi les 4 voisins et diagonales */
+    .c01 { --bg: #EAEF9D; --text-color: #1e3818; }
+    .c02 { --bg: #C1D95F; --text-color: #1e3818; }
+    .c03 { --bg: #80B156; --text-color: #ffffff; }
+    .c04 { --bg: #498428; --text-color: #ffffff; }
 
-    /* Rouge Corail profond */
-    .c02 {
-      --bg: #2980b9;
-    }
+    .c05 { --bg: #498428; --text-color: #ffffff; }
+    .c06 { --bg: #33692B; --text-color: #ffffff; }
+    .c07 { --bg: #EAEF9D; --text-color: #1e3818; }
+    .c08 { --bg: #C1D95F; --text-color: #1e3818; }
 
-    /* Bleu Bel-Air */
-    .c03 {
-      --bg: #8e44ad;
-    }
+    .c09 { --bg: #C1D95F; --text-color: #1e3818; }
+    .c10 { --bg: #80B156; --text-color: #ffffff; }
+    .c11 { --bg: #498428; --text-color: #ffffff; }
+    .c12 { --bg: #33692B; --text-color: #ffffff; }
 
-    /* Améthyste */
-    .c04 {
-      --bg: #d35400;
-    }
-
-    /* Orange Citrouille (plus sombre que le jaune) */
-    .c05 {
-      --bg: #27ae60;
-    }
-
-    /* Vert Néphrite */
-    .c06 {
-      --bg: #16a085;
-    }
-
-    /* Turquoise sombre */
-    .c07 {
-      --bg: #2c3e50;
-    }
-
-    /* Bleu Nuit / Ardoise */
-    .c08 {
-      --bg: #795548;
-    }
-
-    /* Terre d'ombre (Brun) */
-    .c09 {
-      --bg: #065f46;
-    }
-
-    /* Vert Forêt */
-    .c10 {
-      --bg: #a93226;
-    }
-
-    /* Rouge Brique */
-    .c11 {
-      --bg: #927b12;
-    }
-
-    /* Moutarde sombre (lisible en blanc) */
-    .c12 {
-      --bg: #0e7490;
-    }
-
-    /* Bleu Océan */
-    .c13 {
-      --bg: #6c3483;
-    }
-
-    /* Prune */
-    .c14 {
-      --bg: #1f618d;
-    }
-
-    /* Bleu Cobalt */
-    .c15 {
-      --bg: #873600;
-    }
-
-    /* Sienne brûlée */
-    .c16 {
-      --bg: #145a32;
-    }
+    .c13 { --bg: #33692B; --text-color: #ffffff; }
+    .c14 { --bg: #EAEF9D; --text-color: #1e3818; }
+    .c15 { --bg: #C1D95F; --text-color: #1e3818; }
+    .c16 { --bg: #80B156; --text-color: #ffffff; }
 
     /* =====================================================
        BOUTON ESPACE ANIMATEUR — discret, dans le panneau
@@ -292,6 +238,7 @@
         padding: 16px 8px 12px;
       }
 
+      .cat-card__icon,
       .cat-card__emoji {
         font-size: 1.6rem;
       }
@@ -724,7 +671,7 @@
   <div class="home-wrapper">
 
     <div class="home-hero">
-      <h1>🏕️ BAFA &amp; BAFD</h1>
+      <h1>BAFA &amp; BAFD</h1>
       <p>Toutes vos ressources d'animation classées par thèmes. Cliquez sur une catégorie pour en savoir davantage !</p>
     </div>
 
@@ -745,82 +692,82 @@
     <main class="categories-grid">
 
       <a href="pages/presentation.html" class="cat-card c01">
-        <span class="cat-card__emoji">🤝</span>
+        <i class="cat-card__icon bi bi-people-fill"></i>
         <span class="cat-card__title">Jeux présentation</span>
       </a>
 
       <a href="pages/semaine.html" class="cat-card c02">
-        <span class="cat-card__emoji">📅</span>
+        <i class="cat-card__icon bi bi-calendar-event-fill"></i>
         <span class="cat-card__title">Jeux fil rouge</span>
       </a>
 
       <a href="pages/conversation.html" class="cat-card c03">
-        <span class="cat-card__emoji">🗣️</span>
+        <i class="cat-card__icon bi bi-chat-quote-fill"></i>
         <span class="cat-card__title">Conversations &amp; débats</span>
       </a>
 
       <a href="pages/animateur.html" class="cat-card c04">
-        <span class="cat-card__emoji">🧢</span>
+        <i class="cat-card__icon bi bi-person-badge-fill"></i>
         <span class="cat-card__title">Jeux entre animateurs</span>
       </a>
 
       <a href="pages/quotidien.html" class="cat-card c05">
-        <span class="cat-card__emoji">🏠</span>
+        <i class="cat-card__icon bi bi-house-door-fill"></i>
         <span class="cat-card__title">Vie quotidienne</span>
       </a>
 
       <a href="pages/activites.html" class="cat-card c06">
-        <span class="cat-card__emoji">⚽</span>
+        <i class="cat-card__icon bi bi-trophy-fill"></i>
         <span class="cat-card__title">Activités</span>
       </a>
 
       <a href="pages/veillees.html" class="cat-card c07">
-        <span class="cat-card__emoji">🌙</span>
+        <i class="cat-card__icon bi bi-moon-stars-fill"></i>
         <span class="cat-card__title">Veillées</span>
       </a>
 
       <a href="pages/manuels.html" class="cat-card c08">
-        <span class="cat-card__emoji">✂️</span>
+        <i class="cat-card__icon bi bi-scissors"></i>
         <span class="cat-card__title">Activités manuelles</span>
       </a>
 
       <a href="pages/calme.html" class="cat-card c09">
-        <span class="cat-card__emoji">🧘</span>
+        <i class="cat-card__icon bi bi-flower1"></i>
         <span class="cat-card__title">Retour au calme</span>
       </a>
 
       <a href="pages/gage.html" class="cat-card c10">
-        <span class="cat-card__emoji">🚫</span>
+        <i class="cat-card__icon bi bi-dice-5-fill"></i>
         <span class="cat-card__title">Idées de gages</span>
       </a>
 
       <a href="pages/regles.html" class="cat-card c11">
-        <span class="cat-card__emoji">📜</span>
+        <i class="cat-card__icon bi bi-clipboard-check-fill"></i>
         <span class="cat-card__title">Règles de vie</span>
       </a>
 
       <a href="pages/musique.html" class="cat-card c12">
-        <span class="cat-card__emoji">🎶</span>
+        <i class="cat-card__icon bi bi-music-note-beamed"></i>
         <span class="cat-card__title">Musiques de colo</span>
       </a>
 
       <a href="pages/nourriture.html" class="cat-card c13">
-        <span class="cat-card__emoji">🍽️</span>
+        <i class="cat-card__icon bi bi-egg-fried"></i>
         <span class="cat-card__title">Nourriture en camp</span>
       </a>
 
       <a href="pages/direction.html" class="cat-card c14">
-        <span class="cat-card__emoji">💼</span>
+        <i class="cat-card__icon bi bi-briefcase-fill"></i>
         <span class="cat-card__title">Mémo direction</span>
       </a>
 
       <a href="pages/reglementation.html" class="cat-card c15">
-        <span class="cat-card__emoji">⚖️</span>
+        <i class="cat-card__icon bi bi-shield-check"></i>
         <span class="cat-card__title">Mémo réglementation</span>
       </a>
 
       <a href="pages/formation.html" class="cat-card c16">
-        <span class="cat-card__emoji">🎓</span>
+        <i class="cat-card__icon bi bi-mortarboard-fill"></i>
         <span class="cat-card__title">Mémo formation</span>
       </a>
 
@@ -874,7 +821,7 @@
   <div id="rgpd-modal" class="modalspe">
     <div class="modal__contentspe">
       <button class="modal__closespe">&times;</button>
-      <h2 style="font-family: 'Inter', sans-serif; font-weight: 700; color: #2c3e50; margin-bottom: 20px;">🛡️ Politique de Confidentialité & RGPD</h2>
+      <h2 style="font-family: 'Inter', sans-serif; font-weight: 700; color: #2c3e50; margin-bottom: 20px;"><i class="bi bi-shield-check" style="color: #498428; margin-right: 8px;"></i>Politique de Confidentialité &amp; RGPD</h2>
       
       <div style="font-family: 'Inter', sans-serif; color: #4a5568; line-height: 1.6; font-size: 0.9rem; text-align: left;">
         <p style="margin-bottom: 15px;">
