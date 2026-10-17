@@ -223,6 +223,20 @@
                         </div>
                     </div>
 
+                    <!-- Barre de Recherche des Modules (Admin & Formateurs uniquement) -->
+                    <div id="formationModuleSearchWrap" class="hidden" style="margin: 16px 0 20px 0; width: 100%;">
+                        <div style="width: 100%; position: relative;">
+                            <i class="bi bi-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--clr-text-muted); font-size: 0.95rem; pointer-events: none;"></i>
+                            <input type="text" id="inputFormationModuleSearch" class="es-input" placeholder="Rechercher un module (titre, numéro, description...)" style="padding-left: 42px; padding-right: 120px; width: 100%; border-radius: var(--radius-md);">
+                            <div style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 8px;">
+                                <span id="formationModuleSearchCount" style="font-size: 0.8rem; font-weight: 700; color: var(--clr-text-muted);"></span>
+                                <button type="button" id="btnClearFormationModuleSearch" class="hidden" style="background: none; border: none; color: var(--clr-text-muted); cursor: pointer; padding: 2px 4px; font-size: 0.95rem; display: flex; align-items: center;" title="Effacer la recherche">
+                                    <i class="bi bi-x-circle-fill"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Loader Formation -->
                     <div class="es-loader" id="formationLoader">
                         <div class="es-spinner"></div>

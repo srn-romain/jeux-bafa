@@ -1627,12 +1627,17 @@ function computeQuestionAlgoCorrect(q, ans) {
         const rows = q.tableRows || [];
         const userAnsObj = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
         let allRowsCorrect = (rows.length > 0);
+        const hasCol3 = !!(q.hasCol3 || q.col3Label);
         rows.forEach((row, rIdx) => {
             const userRow = userAnsObj[rIdx] || {};
             const uCol1 = !!userRow.col1;
             const uCol2 = !!userRow.col2;
-            if (uCol1 || uCol2) isAnswered = true;
-            if (uCol1 !== !!row.correctCol1 || uCol2 !== !!row.correctCol2) allRowsCorrect = false;
+            const uCol3 = hasCol3 ? !!userRow.col3 : false;
+            if (uCol1 || uCol2 || (hasCol3 && uCol3)) isAnswered = true;
+            const expCol1 = !!row.correctCol1;
+            const expCol2 = !!row.correctCol2;
+            const expCol3 = hasCol3 ? !!row.correctCol3 : false;
+            if (uCol1 !== expCol1 || uCol2 !== expCol2 || (hasCol3 && uCol3 !== expCol3)) allRowsCorrect = false;
         });
         isCorrect = isAnswered && allRowsCorrect;
     } else if (type === 'boolean') {
@@ -1905,6 +1910,8 @@ function renderInspectionQuestions(questions, sub) {
         } else if (type === 'table_choice') {
             const col1 = q.col1Label || 'VRAI';
             const col2 = q.col2Label || 'FAUX';
+            const hasCol3 = !!(q.hasCol3 || q.col3Label);
+            const col3 = q.col3Label || 'PEUT-ÊTRE';
             const rows = q.tableRows || [];
             const userAnsObj = (ans && typeof ans === 'object') ? ans : {};
 
@@ -1912,9 +1919,11 @@ function renderInspectionQuestions(questions, sub) {
                 const userRow = userAnsObj[rIdx] || {};
                 const uCol1 = !!userRow.col1;
                 const uCol2 = !!userRow.col2;
+                const uCol3 = hasCol3 ? !!userRow.col3 : false;
                 const expCol1 = !!row.correctCol1;
                 const expCol2 = !!row.correctCol2;
-                const isRowCorrect = (uCol1 === expCol1 && uCol2 === expCol2);
+                const expCol3 = hasCol3 ? !!row.correctCol3 : false;
+                const isRowCorrect = (uCol1 === expCol1 && uCol2 === expCol2 && (!hasCol3 || uCol3 === expCol3));
 
                 const getCellState = (uSelected, expSelected) => {
                     if (uSelected && expSelected) {
@@ -1929,6 +1938,7 @@ function renderInspectionQuestions(questions, sub) {
 
                 const cell1 = getCellState(uCol1, expCol1);
                 const cell2 = getCellState(uCol2, expCol2);
+                const cell3 = hasCol3 ? getCellState(uCol3, expCol3) : null;
 
                 return `
                     <tr style="border-bottom:1px solid var(--clr-surface-3); ${isRowCorrect ? '' : 'background:rgba(231,76,60,0.03);'}">
@@ -1942,18 +1952,24 @@ function renderInspectionQuestions(questions, sub) {
                         <td style="text-align:center; padding:8px; ${cell2.style}">
                             ${cell2.icon}
                         </td>
+                        ${hasCol3 ? `
+                        <td style="text-align:center; padding:8px; ${cell3.style}">
+                            ${cell3.icon}
+                        </td>
+                        ` : ''}
                     </tr>
                 `;
             }).join('');
 
             contentHtml = `
-                <div style="margin-top:10px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); overflow:hidden;">
+                <div style="margin-top:10px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); overflow-x:auto;">
                     <table style="width:100%; border-collapse:collapse;">
                         <thead>
                             <tr style="background:var(--clr-surface-2); border-bottom:2px solid var(--clr-surface-3);">
                                 <th style="padding:10px 14px; font-size:0.8rem; font-weight:800; text-align:left;">Affirmation</th>
                                 <th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col1)}</th>
                                 <th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col2)}</th>
+                                ${hasCol3 ? `<th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col3)}</th>` : ''}
                             </tr>
                         </thead>
                         <tbody>
@@ -2680,8 +2696,17 @@ function syncQuestionsFromDOM() {
         } else if (q.type === 'table_choice') {
             const col1Inp = card.querySelector('.q-tablechoice-col1-label');
             const col2Inp = card.querySelector('.q-tablechoice-col2-label');
+            const col3Inp = card.querySelector('.q-tablechoice-col3-label');
+            const hasCol3 = !!card.querySelector('.q-tablechoice-col3-wrap');
+
             q.col1Label = col1Inp ? col1Inp.value.trim() : (q.col1Label || 'VRAI');
             q.col2Label = col2Inp ? col2Inp.value.trim() : (q.col2Label || 'FAUX');
+            q.hasCol3 = hasCol3;
+            if (hasCol3) {
+                q.col3Label = col3Inp ? col3Inp.value.trim() : (q.col3Label || 'PEUT-ÊTRE');
+            } else {
+                delete q.col3Label;
+            }
 
             const rowCards = card.querySelectorAll('.table-choice-row-item');
             const rows = [];
@@ -2689,10 +2714,12 @@ function syncQuestionsFromDOM() {
                 const textInp = rowEl.querySelector('.table-choice-row-text');
                 const col1Cb = rowEl.querySelector('.table-choice-cb-col1');
                 const col2Cb = rowEl.querySelector('.table-choice-cb-col2');
+                const col3Cb = rowEl.querySelector('.table-choice-cb-col3');
                 rows.push({
                     text: textInp ? textInp.value : '',
                     correctCol1: col1Cb ? col1Cb.checked : false,
-                    correctCol2: col2Cb ? col2Cb.checked : false
+                    correctCol2: col2Cb ? col2Cb.checked : false,
+                    correctCol3: (hasCol3 && col3Cb) ? col3Cb.checked : false
                 });
             });
             if (rows.length > 0) q.tableRows = rows;
@@ -3057,21 +3084,26 @@ function renderQuestionsEditor() {
                 </div>
             `;
         } else if (type === 'table_choice') {
+            const hasCol3 = !!(q.hasCol3 || q.col3Label);
             const col1 = q.col1Label || 'VRAI';
             const col2 = q.col2Label || 'FAUX';
+            const col3 = q.col3Label || 'PEUT-ÊTRE';
             const rows = q.tableRows && q.tableRows.length > 0 ? q.tableRows : [
-                { text: 'Affirmation 1...', correctCol1: true, correctCol2: false },
-                { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }
+                { text: 'Affirmation 1...', correctCol1: true, correctCol2: false, correctCol3: false },
+                { text: 'Affirmation 2...', correctCol1: false, correctCol2: true, correctCol3: false }
             ];
 
-            const hasMulti = rows.some(r => r.correctCol1 && r.correctCol2);
+            const hasMulti = rows.some(r => {
+                let cnt = (r.correctCol1 ? 1 : 0) + (r.correctCol2 ? 1 : 0) + (hasCol3 && r.correctCol3 ? 1 : 0);
+                return cnt > 1;
+            });
 
             const rowsHtml = rows.map((row, rIdx) => `
-                <div class="table-choice-row-item" data-qidx="${idx}" data-ridx="${rIdx}" style="display:flex; align-items:center; gap:10px; background:var(--clr-surface); padding:10px 12px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); margin-bottom:8px;">
+                <div class="table-choice-row-item" data-qidx="${idx}" data-ridx="${rIdx}" style="display:flex; align-items:center; gap:10px; background:var(--clr-surface); padding:10px 12px; border:1px solid var(--clr-surface-3); border-radius:var(--radius-sm); margin-bottom:8px; flex-wrap:wrap;">
                     <span style="font-weight:800; color:var(--clr-text-muted); font-size:0.85rem; min-width:24px;">${rIdx + 1}.</span>
-                    <input class="es-input table-choice-row-text" type="text" data-qidx="${idx}" data-ridx="${rIdx}" value="${escapeHtml(row.text || '')}" placeholder="Énoncé de l'affirmation ${rIdx + 1}" required style="flex:1; font-size:0.88rem; padding:8px 12px;">
+                    <input class="es-input table-choice-row-text" type="text" data-qidx="${idx}" data-ridx="${rIdx}" value="${escapeHtml(row.text || '')}" placeholder="Énoncé de l'affirmation ${rIdx + 1}" required style="flex:1; min-width:200px; font-size:0.88rem; padding:8px 12px;">
                     
-                    <div style="display:flex; align-items:center; gap:12px; padding:0 8px;">
+                    <div style="display:flex; align-items:center; gap:12px; padding:0 8px; flex-wrap:wrap;">
                         <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.82rem; font-weight:700;" title="Cocher si '${escapeHtml(col1)}' est une bonne réponse">
                             <input type="checkbox" class="table-choice-cb-col1" data-qidx="${idx}" data-ridx="${rIdx}" ${row.correctCol1 ? 'checked' : ''} style="accent-color:var(--clr-primary); width:18px; height:18px; cursor:pointer;">
                             <span class="col1-preview-text" style="color:var(--clr-primary-dark);">${escapeHtml(col1 || 'Col 1')}</span>
@@ -3080,6 +3112,12 @@ function renderQuestionsEditor() {
                             <input type="checkbox" class="table-choice-cb-col2" data-qidx="${idx}" data-ridx="${rIdx}" ${row.correctCol2 ? 'checked' : ''} style="accent-color:var(--clr-primary); width:18px; height:18px; cursor:pointer;">
                             <span class="col2-preview-text" style="color:var(--clr-primary-dark);">${escapeHtml(col2 || 'Col 2')}</span>
                         </label>
+                        ${hasCol3 ? `
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; font-size:0.82rem; font-weight:700;" title="Cocher si '${escapeHtml(col3)}' est une bonne réponse">
+                            <input type="checkbox" class="table-choice-cb-col3" data-qidx="${idx}" data-ridx="${rIdx}" ${row.correctCol3 ? 'checked' : ''} style="accent-color:var(--clr-primary); width:18px; height:18px; cursor:pointer;">
+                            <span class="col3-preview-text" style="color:var(--clr-primary-dark);">${escapeHtml(col3 || 'Col 3')}</span>
+                        </label>
+                        ` : ''}
                     </div>
 
                     ${rows.length > 2 ? `
@@ -3092,18 +3130,40 @@ function renderQuestionsEditor() {
 
             specificFields = `
                 <div style="margin-top:12px;">
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; background:var(--clr-surface-2); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--clr-surface-3);">
-                        <div>
-                            <label class="es-field__label" style="font-size:0.8rem; margin-bottom:4px;">🏷️ Intitulé Colonne 1 :</label>
-                            <input class="es-input q-tablechoice-col1-label" type="text" data-qidx="${idx}" value="${escapeHtml(col1)}" placeholder="Ex: VRAI, OUI, Autorisé..." style="font-weight:700; font-size:0.85rem; padding:6px 10px;">
-                        </div>
-                        <div>
-                            <label class="es-field__label" style="font-size:0.8rem; margin-bottom:4px;">🏷️ Intitulé Colonne 2 :</label>
-                            <input class="es-input q-tablechoice-col2-label" type="text" data-qidx="${idx}" value="${escapeHtml(col2)}" placeholder="Ex: FAUX, NON, Interdit..." style="font-weight:700; font-size:0.85rem; padding:6px 10px;">
+                    <div style="background:var(--clr-surface-2); padding:12px; border-radius:var(--radius-sm); border:1px solid var(--clr-surface-3); margin-bottom:12px;">
+                        <div style="display:grid; grid-template-columns:${hasCol3 ? 'repeat(auto-fit, minmax(180px, 1fr))' : '1fr 1fr'}; gap:12px;">
+                            <div>
+                                <div style="display:flex; align-items:center; margin-bottom:4px; height:20px;">
+                                    <label class="es-field__label" style="font-size:0.8rem; margin:0;">🏷️ Intitulé Colonne 1 :</label>
+                                </div>
+                                <input class="es-input q-tablechoice-col1-label" type="text" data-qidx="${idx}" value="${escapeHtml(col1)}" placeholder="Ex: VRAI, OUI, Autorisé..." style="font-weight:700; font-size:0.85rem; padding:6px 10px;">
+                            </div>
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; height:20px;">
+                                    <label class="es-field__label" style="font-size:0.8rem; margin:0;">🏷️ Intitulé Colonne 2 :</label>
+                                    ${!hasCol3 ? `
+                                    <button type="button" class="btn-add-tablechoice-col3" data-qidx="${idx}" style="background:rgba(39, 174, 96, 0.12); border:1px solid rgba(39, 174, 96, 0.35); color:var(--clr-primary-dark); border-radius:4px; width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:0.78rem; font-weight:800; padding:0; transition:all 0.15s ease;" title="Ajouter une 3e colonne (ex: Peut-être)">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                    ` : ''}
+                                </div>
+                                <input class="es-input q-tablechoice-col2-label" type="text" data-qidx="${idx}" value="${escapeHtml(col2)}" placeholder="Ex: FAUX, NON, Interdit..." style="font-weight:700; font-size:0.85rem; padding:6px 10px;">
+                            </div>
+                            ${hasCol3 ? `
+                            <div class="q-tablechoice-col3-wrap">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; height:20px;">
+                                    <label class="es-field__label" style="font-size:0.8rem; margin:0;">🏷️ Intitulé Colonne 3 :</label>
+                                    <button type="button" class="btn-remove-tablechoice-col3" data-qidx="${idx}" style="background:rgba(231, 76, 60, 0.1); border:1px solid rgba(231, 76, 60, 0.25); color:var(--clr-danger); border-radius:4px; height:20px; padding:0 6px; font-size:0.72rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:3px;" title="Supprimer la 3e colonne">
+                                        <i class="bi bi-trash"></i> Retirer
+                                    </button>
+                                </div>
+                                <input class="es-input q-tablechoice-col3-label" type="text" data-qidx="${idx}" value="${escapeHtml(col3)}" placeholder="Ex: PEUT-ÊTRE, INDÉTERMINÉ..." style="font-weight:700; font-size:0.85rem; padding:6px 10px;">
+                            </div>
+                            ` : ''}
                         </div>
                     </div>
 
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
                         <label class="es-field__label" style="margin:0;">Lignes d'affirmations & Réponses attendues :</label>
                         <span class="es-badge ${hasMulti ? 'es-badge--warning' : 'es-badge--approved'}" style="font-size:0.75rem; font-weight:800; padding:4px 8px;">
                             <i class="bi ${hasMulti ? 'bi-check2-square' : 'bi-ui-radios'}"></i>
@@ -3503,7 +3563,7 @@ function renderQuestionsEditor() {
                         <select class="es-select q-type-select" data-qidx="${idx}" style="font-weight:700; font-size:0.85rem; padding:6px 12px; width:auto;">
                             <option value="qcm" ${type === 'qcm' ? 'selected' : ''}>1- ☑️ QCM (Choix multiple)</option>
                             <option value="image_choice" ${type === 'image_choice' ? 'selected' : ''}>2- 🖼️ QCM Choix d'images</option>
-                            <option value="table_choice" ${type === 'table_choice' ? 'selected' : ''}>3- 📋 Tableau à 2 colonnes (Affirmations)</option>
+                            <option value="table_choice" ${type === 'table_choice' ? 'selected' : ''}>3- 📋 Tableau à 2 ou 3 colonnes (Affirmations)</option>
                             <option value="classification" ${type === 'classification' ? 'selected' : ''}>4- 🗂️ Classement par catégories (Glisser-déposer de tags)</option>
                             <option value="boolean" ${type === 'boolean' ? 'selected' : ''}>5- ⚖️ Vrai / Faux</option>
                             <option value="pinpoint" ${type === 'pinpoint' ? 'selected' : ''}>6- 📍 Repère sur image (Pin)</option>
@@ -3818,9 +3878,11 @@ function bindQuestionsEvents() {
             } else if (newType === 'table_choice' && (!currentEditingQuestions[idx].tableRows || currentEditingQuestions[idx].tableRows.length === 0)) {
                 currentEditingQuestions[idx].col1Label = 'VRAI';
                 currentEditingQuestions[idx].col2Label = 'FAUX';
+                currentEditingQuestions[idx].hasCol3 = false;
+                currentEditingQuestions[idx].col3Label = '';
                 currentEditingQuestions[idx].tableRows = [
-                    { text: 'Affirmation 1...', correctCol1: true, correctCol2: false },
-                    { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }
+                    { text: 'Affirmation 1...', correctCol1: true, correctCol2: false, correctCol3: false },
+                    { text: 'Affirmation 2...', correctCol1: false, correctCol2: true, correctCol3: false }
                 ];
             } else if (newType === 'classification' && (!currentEditingQuestions[idx].categories || currentEditingQuestions[idx].categories.length === 0)) {
                 if (!currentEditingQuestions[idx].text) {
@@ -4702,6 +4764,55 @@ function bindQuestionsEvents() {
         });
     });
 
+    container.querySelectorAll('.q-tablechoice-col3-label').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].col3Label = e.target.value;
+                const card = input.closest('.es-qcard');
+                if (card) {
+                    card.querySelectorAll('.col3-preview-text').forEach(el => el.textContent = e.target.value || 'Col 3');
+                }
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-add-tablechoice-col3').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].hasCol3 = true;
+                if (!currentEditingQuestions[qidx].col3Label) {
+                    currentEditingQuestions[qidx].col3Label = 'PEUT-ÊTRE';
+                }
+                (currentEditingQuestions[qidx].tableRows || []).forEach(r => {
+                    if (r.correctCol3 === undefined) r.correctCol3 = false;
+                });
+                renderQuestionsEditor();
+            }
+        });
+    });
+
+    container.querySelectorAll('.btn-remove-tablechoice-col3').forEach(btn => {
+        btn.addEventListener('click', () => {
+            syncQuestionsFromDOM();
+            const qidx = parseInt(btn.getAttribute('data-qidx'), 10);
+            if (currentEditingQuestions[qidx]) {
+                currentEditingQuestions[qidx].hasCol3 = false;
+                currentEditingQuestions[qidx].col3Label = '';
+                // Réajuster les réponses : supprimer la col3 et si une ligne n'a ni col1 ni col2 cochée, cocher col1 par défaut
+                (currentEditingQuestions[qidx].tableRows || []).forEach(r => {
+                    r.correctCol3 = false;
+                    if (!r.correctCol1 && !r.correctCol2) {
+                        r.correctCol1 = true;
+                    }
+                });
+                renderQuestionsEditor();
+            }
+        });
+    });
+
     container.querySelectorAll('.table-choice-row-text').forEach(input => {
         input.addEventListener('input', (e) => {
             const qidx = parseInt(e.target.getAttribute('data-qidx'), 10);
@@ -4736,6 +4847,18 @@ function bindQuestionsEvents() {
         });
     });
 
+    container.querySelectorAll('.table-choice-cb-col3').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+            const qidx = parseInt(cb.getAttribute('data-qidx'), 10);
+            const ridx = parseInt(cb.getAttribute('data-ridx'), 10);
+            if (currentEditingQuestions[qidx] && currentEditingQuestions[qidx].tableRows && currentEditingQuestions[qidx].tableRows[ridx]) {
+                currentEditingQuestions[qidx].tableRows[ridx].correctCol3 = cb.checked;
+                syncQuestionsFromDOM();
+                renderQuestionsEditor();
+            }
+        });
+    });
+
     container.querySelectorAll('.btn-add-tablechoice-row').forEach(btn => {
         btn.addEventListener('click', () => {
             syncQuestionsFromDOM();
@@ -4745,7 +4868,8 @@ function bindQuestionsEvents() {
                 currentEditingQuestions[qidx].tableRows.push({
                     text: `Affirmation ${currentEditingQuestions[qidx].tableRows.length + 1}...`,
                     correctCol1: true,
-                    correctCol2: false
+                    correctCol2: false,
+                    correctCol3: false
                 });
                 renderQuestionsEditor();
             }
@@ -5148,10 +5272,12 @@ function normalizeImportedQuestions(rawArray) {
             text: q.text || q.title || '',
             options: q.options || (type === 'qcm' ? ['Option 1', 'Option 2'] : undefined),
             imageOptions: q.imageOptions || (type === 'image_choice' ? [{ imageUrl: '', label: 'Option 1' }, { imageUrl: '', label: 'Option 2' }] : undefined),
-            tableRows: q.tableRows || (type === 'table_choice' ? [{ text: 'Affirmation 1...', correctCol1: true, correctCol2: false }, { text: 'Affirmation 2...', correctCol1: false, correctCol2: true }] : undefined),
+            tableRows: q.tableRows || (type === 'table_choice' ? [{ text: 'Affirmation 1...', correctCol1: true, correctCol2: false, correctCol3: false }, { text: 'Affirmation 2...', correctCol1: false, correctCol2: true, correctCol3: false }] : undefined),
             categories: q.categories || (type === 'classification' ? [{ id: 'cat_1', title: 'Petite enfance (3 - 5 ans)' }, { id: 'cat_2', title: 'Enfance (6 - 11 ans)' }, { id: 'cat_3', title: 'Préadolescence (12 - 14 ans)' }, { id: 'cat_4', title: 'Adolescence (15 - 17 ans)' }] : undefined),
             col1Label: q.col1Label || 'VRAI',
             col2Label: q.col2Label || 'FAUX',
+            hasCol3: !!(q.hasCol3 || q.col3Label),
+            col3Label: q.col3Label || '',
             correctIndex: q.correctIndex !== undefined ? q.correctIndex : 0,
             correctIndexes: (Array.isArray(q.correctIndexes) && q.correctIndexes.length > 0)
                 ? q.correctIndexes.map(n => parseInt(n, 10)).filter(n => !isNaN(n))
@@ -5626,9 +5752,10 @@ async function saveModuleData(btnEl) {
                 }
             }
         } else if (q.type === 'table_choice') {
+            const hasCol3 = !!(q.hasCol3 || q.col3Label);
             if (!q.tableRows || q.tableRows.length < 2) {
                 if (errorAlert && errorMsg) {
-                    errorMsg.textContent = `La question ${qNum} (Tableau à 2 colonnes) doit comporter au moins 2 affirmations.`;
+                    errorMsg.textContent = `La question ${qNum} (Tableau d'affirmations) doit comporter au moins 2 affirmations.`;
                     errorAlert.classList.remove('hidden');
                 }
                 return;
@@ -5637,14 +5764,16 @@ async function saveModuleData(btnEl) {
                 const row = q.tableRows[j];
                 if (!row || !row.text || !row.text.trim()) {
                     if (errorAlert && errorMsg) {
-                        errorMsg.textContent = `L'affirmation ${j + 1} de la question ${qNum} (Tableau à 2 colonnes) est vide.`;
+                        errorMsg.textContent = `L'affirmation ${j + 1} de la question ${qNum} (Tableau d'affirmations) est vide.`;
                         errorAlert.classList.remove('hidden');
                     }
                     return;
                 }
-                if (!row.correctCol1 && !row.correctCol2) {
+                if (!row.correctCol1 && !row.correctCol2 && (!hasCol3 || !row.correctCol3)) {
                     if (errorAlert && errorMsg) {
-                        errorMsg.textContent = `L'affirmation ${j + 1} de la question ${qNum} doit avoir au moins une réponse cochée (${q.col1Label || 'Col 1'} ou ${q.col2Label || 'Col 2'}).`;
+                        const labels = [q.col1Label || 'Col 1', q.col2Label || 'Col 2'];
+                        if (hasCol3) labels.push(q.col3Label || 'Col 3');
+                        errorMsg.textContent = `L'affirmation ${j + 1} de la question ${qNum} doit avoir au moins une réponse cochée (${labels.join(', ')}).`;
                         errorAlert.classList.remove('hidden');
                     }
                     return;
@@ -5844,9 +5973,21 @@ async function saveModuleData(btnEl) {
                 qData.correctIndexes = cIdxs;
                 qData.correctIndex = cIdxs[0];
             } else if (q.type === 'table_choice') {
+                const hasCol3 = !!(q.hasCol3 || q.col3Label);
                 qData.col1Label = q.col1Label || 'VRAI';
                 qData.col2Label = q.col2Label || 'FAUX';
-                qData.tableRows = q.tableRows || [];
+                qData.hasCol3 = hasCol3;
+                if (hasCol3) {
+                    qData.col3Label = q.col3Label || 'PEUT-ÊTRE';
+                } else {
+                    qData.col3Label = '';
+                }
+                qData.tableRows = (q.tableRows || []).map(r => ({
+                    text: r.text || '',
+                    correctCol1: !!r.correctCol1,
+                    correctCol2: !!r.correctCol2,
+                    ...(hasCol3 ? { correctCol3: !!r.correctCol3 } : { correctCol3: false })
+                }));
             } else if (q.type === 'classification') {
                 qData.categories = q.categories || [];
                 qData.items = q.items || [];

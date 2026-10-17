@@ -808,16 +808,22 @@ function saveCurrentPageAnswersToState() {
             }
         } else if (q.type === 'table_choice') {
             const rows = q.tableRows || [];
-            const isMulti = rows.some(r => r.correctCol1 && r.correctCol2);
+            const hasCol3 = !!(q.hasCol3 || q.col3Label);
+            const isMulti = rows.some(r => {
+                let cnt = (r.correctCol1 ? 1 : 0) + (r.correctCol2 ? 1 : 0) + (hasCol3 && r.correctCol3 ? 1 : 0);
+                return cnt > 1;
+            });
             const ansObj = (userAnswersState[q.id] && typeof userAnswersState[q.id] === 'object') ? userAnswersState[q.id] : {};
             rows.forEach((r, rIdx) => {
                 if (isMulti) {
                     const c1 = form.querySelector(`input[name="q_${q.id}_r_${rIdx}_c1"]`);
                     const c2 = form.querySelector(`input[name="q_${q.id}_r_${rIdx}_c2"]`);
-                    if (c1 || c2) {
+                    const c3 = hasCol3 ? form.querySelector(`input[name="q_${q.id}_r_${rIdx}_c3"]`) : null;
+                    if (c1 || c2 || c3) {
                         ansObj[rIdx] = {
                             col1: c1 ? c1.checked : false,
-                            col2: c2 ? c2.checked : false
+                            col2: c2 ? c2.checked : false,
+                            ...(hasCol3 ? { col3: c3 ? c3.checked : false } : {})
                         };
                     }
                 } else {
@@ -825,7 +831,8 @@ function saveCurrentPageAnswersToState() {
                     if (sel) {
                         ansObj[rIdx] = {
                             col1: sel.value === 'col1',
-                            col2: sel.value === 'col2'
+                            col2: sel.value === 'col2',
+                            ...(hasCol3 ? { col3: sel.value === 'col3' } : {})
                         };
                     }
                 }
@@ -1170,14 +1177,20 @@ function renderActiveSectionPage() {
             } else if (q.type === 'table_choice') {
                 const col1 = q.col1Label || 'VRAI';
                 const col2 = q.col2Label || 'FAUX';
+                const hasCol3 = !!(q.hasCol3 || q.col3Label);
+                const col3 = q.col3Label || 'PEUT-ÊTRE';
                 const rows = q.tableRows || [];
                 const savedAns = (savedVal && typeof savedVal === 'object') ? savedVal : {};
-                const isMulti = rows.some(r => r.correctCol1 && r.correctCol2);
+                const isMulti = rows.some(r => {
+                    let cnt = (r.correctCol1 ? 1 : 0) + (r.correctCol2 ? 1 : 0) + (hasCol3 && r.correctCol3 ? 1 : 0);
+                    return cnt > 1;
+                });
 
                 const tableRowsHtml = rows.map((row, rIdx) => {
                     const userRow = savedAns[rIdx] || {};
                     const isCol1Selected = !!userRow.col1;
                     const isCol2Selected = !!userRow.col2;
+                    const isCol3Selected = hasCol3 ? !!userRow.col3 : false;
 
                     return `
                     <tr class="es-table-choice-tr" data-q-id="${q.id}" data-ridx="${rIdx}">
@@ -1207,6 +1220,19 @@ function renderActiveSectionPage() {
                                 `}
                             </label>
                         </td>
+                        ${hasCol3 ? `
+                        <td class="es-table-choice-td-choice">
+                            <label class="es-table-choice-cell-btn ${isMulti ? 'is-checkbox' : 'is-radio'} ${isCol3Selected ? 'selected' : ''}" title="${escapeHtml(col3)}">
+                                ${isMulti ? `
+                                    <input type="checkbox" name="q_${q.id}_r_${rIdx}_c3" value="col3" class="quiz-track-input table-choice-input" data-q-id="${q.id}" data-ridx="${rIdx}" data-col="col3" ${isCol3Selected ? 'checked' : ''} style="position:absolute; opacity:0; pointer-events:none;">
+                                    <i class="bi ${isCol3Selected ? 'bi-check-square-fill' : 'bi-square'}"></i>
+                                ` : `
+                                    <input type="radio" name="q_${q.id}_r_${rIdx}" value="col3" class="quiz-track-input table-choice-input" data-q-id="${q.id}" data-ridx="${rIdx}" data-col="col3" ${isCol3Selected ? 'checked' : ''} style="position:absolute; opacity:0; pointer-events:none;">
+                                    <i class="bi ${isCol3Selected ? 'bi-circle-fill' : 'bi-circle'}"></i>
+                                `}
+                            </label>
+                        </td>
+                        ` : ''}
                     </tr>
                     `;
                 }).join('');
@@ -1219,6 +1245,7 @@ function renderActiveSectionPage() {
                                 <th>Affirmations</th>
                                 <th class="col-head-center"><span class="es-col-badge">${escapeHtml(col1)}</span></th>
                                 <th class="col-head-center"><span class="es-col-badge">${escapeHtml(col2)}</span></th>
+                                ${hasCol3 ? `<th class="col-head-center"><span class="es-col-badge">${escapeHtml(col3)}</span></th>` : ''}
                             </tr>
                         </thead>
                         <tbody>
@@ -1711,7 +1738,7 @@ function attachQuizInteractions(container) {
             const isRadio = input.type === 'radio';
 
             if (!userAnswersState[qId]) userAnswersState[qId] = {};
-            if (!userAnswersState[qId][rIdx]) userAnswersState[qId][rIdx] = { col1: false, col2: false };
+            if (!userAnswersState[qId][rIdx]) userAnswersState[qId][rIdx] = { col1: false, col2: false, col3: false };
 
             const tr = btn.closest('.es-table-choice-tr');
 
@@ -1719,7 +1746,8 @@ function attachQuizInteractions(container) {
                 input.checked = true;
                 userAnswersState[qId][rIdx] = {
                     col1: (col === 'col1'),
-                    col2: (col === 'col2')
+                    col2: (col === 'col2'),
+                    col3: (col === 'col3')
                 };
                 if (tr) {
                     tr.querySelectorAll('.es-table-choice-cell-btn').forEach(b => {
@@ -2712,9 +2740,10 @@ function isQuestionAnswered(q, val) {
     if (q.type === 'table_choice') {
         const rows = q.tableRows || [];
         if (!val || typeof val !== 'object') return false;
+        const hasCol3 = !!(q.hasCol3 || q.col3Label);
         const answeredRows = rows.filter((r, rIdx) => {
             const rowAns = val[rIdx];
-            return rowAns && (rowAns.col1 || rowAns.col2);
+            return rowAns && (rowAns.col1 || rowAns.col2 || (hasCol3 && rowAns.col3));
         }).length;
         return (answeredRows === rows.length);
     }
@@ -2856,6 +2885,7 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
         } else if (q.type === 'table_choice') {
             qcmTotal++;
             const rows = q.tableRows || [];
+            const hasCol3 = !!(q.hasCol3 || q.col3Label);
             const userAnsObj = (savedVal && typeof savedVal === 'object') ? savedVal : {};
             answers[q.id] = userAnsObj;
 
@@ -2866,10 +2896,12 @@ async function submitQuizAnswers({ autoSubmitByTimer = false } = {}) {
                 const userRow = userAnsObj[rIdx] || {};
                 const uCol1 = !!userRow.col1;
                 const uCol2 = !!userRow.col2;
-                if (uCol1 || uCol2) hasAnyAnswer = true;
+                const uCol3 = hasCol3 ? !!userRow.col3 : false;
+                if (uCol1 || uCol2 || (hasCol3 && uCol3)) hasAnyAnswer = true;
                 const expCol1 = !!row.correctCol1;
                 const expCol2 = !!row.correctCol2;
-                if (uCol1 !== expCol1 || uCol2 !== expCol2) {
+                const expCol3 = hasCol3 ? !!row.correctCol3 : false;
+                if (uCol1 !== expCol1 || uCol2 !== expCol2 || (hasCol3 && uCol3 !== expCol3)) {
                     allRowsCorrect = false;
                 }
             });
@@ -3454,6 +3486,8 @@ function renderResultsScreen(submission = {}) {
             } else if (q.type === 'table_choice') {
                 const col1 = q.col1Label || 'VRAI';
                 const col2 = q.col2Label || 'FAUX';
+                const hasCol3 = !!(q.hasCol3 || q.col3Label);
+                const col3 = q.col3Label || 'PEUT-ÊTRE';
                 const rows = q.tableRows || [];
                 const userAnsObj = (userAns && typeof userAns === 'object') ? userAns : {};
 
@@ -3463,10 +3497,12 @@ function renderResultsScreen(submission = {}) {
                     const userRow = userAnsObj[rIdx] || {};
                     const uCol1 = !!userRow.col1;
                     const uCol2 = !!userRow.col2;
-                    if (uCol1 || uCol2) isAnswered = true;
+                    const uCol3 = hasCol3 ? !!userRow.col3 : false;
+                    if (uCol1 || uCol2 || (hasCol3 && uCol3)) isAnswered = true;
                     const expCol1 = !!row.correctCol1;
                     const expCol2 = !!row.correctCol2;
-                    const isRowCorrect = (uCol1 === expCol1 && uCol2 === expCol2);
+                    const expCol3 = hasCol3 ? !!row.correctCol3 : false;
+                    const isRowCorrect = (uCol1 === expCol1 && uCol2 === expCol2 && (!hasCol3 || uCol3 === expCol3));
                     if (!isRowCorrect) allCorrect = false;
 
                     const getCellState = (uSelected, expSelected) => {
@@ -3482,6 +3518,7 @@ function renderResultsScreen(submission = {}) {
 
                     const cell1 = getCellState(uCol1, expCol1);
                     const cell2 = getCellState(uCol2, expCol2);
+                    const cell3 = hasCol3 ? getCellState(uCol3, expCol3) : null;
 
                     return `
                         <tr style="border-bottom:1px solid #eee; ${isRowCorrect ? '' : 'background:rgba(231,76,60,0.03);'}">
@@ -3495,6 +3532,11 @@ function renderResultsScreen(submission = {}) {
                             <td style="text-align:center; padding:8px; ${cell2.style}">
                                 ${cell2.icon}
                             </td>
+                            ${hasCol3 ? `
+                            <td style="text-align:center; padding:8px; ${cell3.style}">
+                                ${cell3.icon}
+                            </td>
+                            ` : ''}
                         </tr>
                     `;
                 }).join('');
@@ -3507,13 +3549,14 @@ function renderResultsScreen(submission = {}) {
                             ${getScoreBadge(allCorrect, isAnswered)}
                         </span>
                     </div>
-                    <div style="border:1px solid #e2e8f0; border-radius:6px; overflow:hidden; margin-top:8px;">
+                    <div style="border:1px solid #e2e8f0; border-radius:6px; overflow-x:auto; margin-top:8px;">
                         <table style="width:100%; border-collapse:collapse; text-align:left;">
                             <thead>
                                 <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
                                     <th style="padding:10px 14px; font-size:0.8rem; font-weight:800;">Affirmations</th>
                                     <th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col1)}</th>
                                     <th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col2)}</th>
+                                    ${hasCol3 ? `<th style="padding:10px; font-size:0.8rem; font-weight:800; text-align:center; width:110px;">${escapeHtml(col3)}</th>` : ''}
                                 </tr>
                             </thead>
                             <tbody>

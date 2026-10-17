@@ -173,12 +173,17 @@ function computeQuestionAlgoCorrect(q, ans) {
         const rows = q.tableRows || [];
         const userAnsObj = (parsedAns && typeof parsedAns === 'object') ? parsedAns : {};
         let allRowsCorrect = (rows.length > 0);
+        const hasCol3 = !!(q.hasCol3 || q.col3Label);
         rows.forEach((row, rIdx) => {
             const userRow = userAnsObj[rIdx] || {};
             const uCol1 = !!userRow.col1;
             const uCol2 = !!userRow.col2;
-            if (uCol1 || uCol2) isAnswered = true;
-            if (uCol1 !== !!row.correctCol1 || uCol2 !== !!row.correctCol2) allRowsCorrect = false;
+            const uCol3 = hasCol3 ? !!userRow.col3 : false;
+            if (uCol1 || uCol2 || (hasCol3 && uCol3)) isAnswered = true;
+            const expCol1 = !!row.correctCol1;
+            const expCol2 = !!row.correctCol2;
+            const expCol3 = hasCol3 ? !!row.correctCol3 : false;
+            if (uCol1 !== expCol1 || uCol2 !== expCol2 || (hasCol3 && uCol3 !== expCol3)) allRowsCorrect = false;
         });
         isCorrect = isAnswered && allRowsCorrect;
     } else if (type === 'boolean') {
@@ -697,6 +702,111 @@ async function deleteFormationModule(moduleId) {
 }
 
 // ----------------------------------------------------------------
+// RECHERCHE ET FILTRE DES MODULES (ADMIN & FORMATEURS)
+// ----------------------------------------------------------------
+function normalizeModuleSearchText(str) {
+    if (!str) return '';
+    return str.toString()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+}
+
+function filterFormationModulesGrid(query = '') {
+    const q = normalizeModuleSearchText(query);
+    const grid = document.getElementById('formationModulesGrid');
+    if (!grid) return;
+    const cards = grid.querySelectorAll('.es-formation-card');
+    let visibleCount = 0;
+
+    cards.forEach(card => {
+        if (!q) {
+            card.classList.remove('hidden');
+            visibleCount++;
+            return;
+        }
+
+        const title = normalizeModuleSearchText(card.querySelector('.es-formation-title')?.textContent || '');
+        const num = normalizeModuleSearchText(card.querySelector('.es-formation-num')?.textContent || '');
+        const desc = normalizeModuleSearchText(card.querySelector('.es-formation-desc')?.textContent || '');
+
+        const match = title.includes(q) || num.includes(q) || desc.includes(q);
+        if (match) {
+            card.classList.remove('hidden');
+            visibleCount++;
+        } else {
+            card.classList.add('hidden');
+        }
+    });
+
+    let emptyMsg = grid.querySelector('.es-search-empty-msg');
+    if (q && visibleCount === 0) {
+        if (!emptyMsg) {
+            emptyMsg = document.createElement('div');
+            emptyMsg.className = 'es-search-empty-msg es-empty';
+            emptyMsg.style.cssText = 'grid-column: 1 / -1; padding: 40px 20px; text-align: center;';
+            grid.appendChild(emptyMsg);
+        }
+        const safeQuery = typeof escapeHtml === 'function' ? escapeHtml(query.trim()) : query.trim();
+        emptyMsg.innerHTML = `
+            <div class="es-empty__icon">🔍</div>
+            <div class="es-empty__title">Aucun module correspondant</div>
+            <p class="es-empty__text">Aucun module ne correspond à « <strong>${safeQuery}</strong> ».</p>
+        `;
+        emptyMsg.classList.remove('hidden');
+    } else if (emptyMsg) {
+        emptyMsg.classList.add('hidden');
+    }
+
+    const clearBtn = document.getElementById('btnClearFormationModuleSearch');
+    if (clearBtn) {
+        clearBtn.classList.toggle('hidden', !query.trim());
+    }
+
+    const countEl = document.getElementById('formationModuleSearchCount');
+    if (countEl) {
+        if (q) {
+            countEl.textContent = `${visibleCount} module${visibleCount > 1 ? 's' : ''} trouvé${visibleCount > 1 ? 's' : ''}`;
+        } else {
+            countEl.textContent = '';
+        }
+    }
+}
+
+function clearFormationModuleSearch() {
+    const searchInp = document.getElementById('inputFormationModuleSearch');
+    if (searchInp && searchInp.value) {
+        searchInp.value = '';
+        filterFormationModulesGrid('');
+    }
+}
+
+let _formationModuleSearchInitialized = false;
+function initFormationModuleSearch() {
+    if (_formationModuleSearchInitialized) return;
+    _formationModuleSearchInitialized = true;
+
+    const input = document.getElementById('inputFormationModuleSearch');
+    const clearBtn = document.getElementById('btnClearFormationModuleSearch');
+
+    input?.addEventListener('input', (e) => {
+        filterFormationModulesGrid(e.target.value);
+    });
+
+    clearBtn?.addEventListener('click', () => {
+        clearFormationModuleSearch();
+        input?.focus();
+    });
+
+    input?.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            clearFormationModuleSearch();
+        }
+    });
+}
+
+// ----------------------------------------------------------------
 // CHARGEMENT DE L'AFFICHAGE DES MODULES
 // ----------------------------------------------------------------
 async function loadFormationModules(forceRefresh = false) {
@@ -732,6 +842,16 @@ async function loadFormationModules(forceRefresh = false) {
     }
 
     const effectiveRole = (actualRole === 'admin' && isSimulatedStagiaireRole) ? 'stagiaire' : actualRole;
+
+    // Barre de recherche de module : affichée uniquement pour admin et formateurs réels
+    const searchWrap = document.getElementById('formationModuleSearchWrap');
+    const isAdminOrFormateur = (actualRole === 'admin' || actualRole === 'formateur') && effectiveRole !== 'stagiaire';
+    if (isAdminOrFormateur) {
+        searchWrap?.classList.remove('hidden');
+    } else {
+        searchWrap?.classList.add('hidden');
+        clearFormationModuleSearch();
+    }
 
     try {
         const modules = await getFormationModulesList(forceRefresh);
@@ -957,6 +1077,20 @@ async function loadFormationModules(forceRefresh = false) {
 
         if (grid) grid.classList.remove('hidden');
 
+        // Initialisation de la barre de recherche et réapplication du filtre
+        initFormationModuleSearch();
+        const currentSearchVal = document.getElementById('inputFormationModuleSearch')?.value || '';
+        if (currentSearchVal) {
+            filterFormationModulesGrid(currentSearchVal);
+        }
+
+        // Vider la recherche en arrière-plan au clic dans n'importe quel module
+        grid.querySelectorAll('.es-formation-card').forEach(card => {
+            card.addEventListener('click', () => {
+                clearFormationModuleSearch();
+            });
+        });
+
         // Listeners cartes
         grid.querySelectorAll('.es-formation-card[data-is-manageable="true"]').forEach(card => {
             card.addEventListener('click', (e) => {
@@ -1057,6 +1191,7 @@ async function loadFormationModules(forceRefresh = false) {
 // NAVIGATION : QUIZ STAGIAIRE (PAGE DÉDIÉE)
 // ----------------------------------------------------------------
 function openFormationQuiz(moduleId) {
+    clearFormationModuleSearch();
     if (!moduleId) return;
     window.location.href = `quiz.html?module=${encodeURIComponent(moduleId)}`;
 }
@@ -1065,6 +1200,7 @@ function openFormationQuiz(moduleId) {
 // REDIRECTION : CRÉER / MODIFIER UN MODULE & QUIZ (ADMIN)
 // ----------------------------------------------------------------
 function openFormationModuleEdit(moduleId = null) {
+    clearFormationModuleSearch();
     if (moduleId) {
         window.location.href = `formation-edit.html?id=${encodeURIComponent(moduleId)}`;
     } else {
@@ -2609,6 +2745,7 @@ document.getElementById('checkFormationRoleToggle')?.addEventListener('change', 
 // MODAL : RÉSULTATS DES STAGIAIRES (ADMIN)
 // ----------------------------------------------------------------
 async function openFormationResultsModal(moduleId) {
+    clearFormationModuleSearch();
     switchFormationTab('bilan');
     const effectiveRole = (actualRole === 'admin' && isSimulatedStagiaireRole) ? 'stagiaire' : actualRole;
     if (effectiveRole === 'admin' || effectiveRole === 'formateur') {
@@ -5656,6 +5793,7 @@ function initPromoModalEvents() {
 // REDIRECTION ÉDITION / GESTION DU MODULE (PAGE DÉDIÉE)
 // ----------------------------------------------------------------
 function openAddQuestionFormateur(moduleId) {
+    clearFormationModuleSearch();
     if (moduleId) {
         window.location.href = `formation-edit.html?id=${encodeURIComponent(moduleId)}`;
     } else {

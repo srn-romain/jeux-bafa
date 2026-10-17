@@ -8568,7 +8568,7 @@ body.modal-open .es-topbar {
 }
 
 /* ================================================================
-   TABLE CHOICE (Grille d'affirmations à 2 colonnes / Vrai-Faux / Oui-Non)
+   TABLE CHOICE (Grille d'affirmations à 2 ou 3 colonnes / Vrai-Faux / Oui-Non)
    ================================================================ */
 .es-table-choice-wrap {
   width: 100%;
@@ -8576,7 +8576,7 @@ body.modal-open .es-topbar {
   background: var(--clr-surface);
   border: 1.5px solid var(--clr-surface-3);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow-x: auto;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
 }
 
