@@ -3173,11 +3173,9 @@ function renderQuestionsEditor() {
 
                     <div class="table-choice-rows-wrap">${rowsHtml}</div>
 
-                    ${rows.length < 12 ? `
                         <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-tablechoice-row" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
                             <i class="bi bi-plus-circle"></i> Ajouter une affirmation
                         </button>
-                    ` : ''}
                 </div>
             `;
         } else if (type === 'classification') {
@@ -3534,11 +3532,9 @@ function renderQuestionsEditor() {
                         💡 <strong>Flexibilité d'association (N vers 1) :</strong> Vous pouvez attribuer la <em>même correspondance à droite</em> à plusieurs éléments de gauche différents (ex: « Chien » ➔ « Mammifère », « Chat » ➔ « Mammifère »). L'option n'apparaîtra qu'une seule fois dans la liste déroulante du quiz.
                     </div>
                     <div class="matching-pairs-wrap">${pairsHtml}</div>
-                    ${pairs.length < 12 ? `
                         <button type="button" class="es-btn es-btn--ghost es-btn--sm btn-add-matching-pair" data-qidx="${idx}" style="margin-top:4px; font-size:0.82rem;">
                             <i class="bi bi-plus"></i> Ajouter une paire
                         </button>
-                    ` : ''}
 
                     <div style="margin-top:14px; padding:12px 14px; background:var(--clr-surface-2); border:1px dashed var(--clr-surface-3); border-radius:var(--radius-sm);">
                         <label class="es-field__label" style="display:flex; align-items:center; gap:6px; margin-bottom:4px; font-size:0.84rem;">
