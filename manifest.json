@@ -8,13 +8,13 @@
   "theme_color": "#2c63ff",
   "icons": [
     {
-      "src": "/jeux-bafa/public/images/favicon.webp",
+      "src": "/favicon.webp",
       "sizes": "192x192",
       "type": "image/webp",
       "purpose": "any maskable"
     },
     {
-      "src": "/jeux-bafa/public/images/favicon.webp",
+      "src": "/favicon.webp",
       "sizes": "512x512",
       "type": "image/webp",
       "purpose": "any maskable"
