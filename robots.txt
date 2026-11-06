@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://srn-romain.github.io/jeux-bafa/sitemap.xml
