@@ -2,101 +2,101 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <!-- Accueil & Global -->
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/</loc>
+    <loc>https://repertoirecolo.web.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/index.html</loc>
+    <loc>https://repertoirecolo.web.app/index.html</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <!-- Login Espace Anim -->
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/espace/index.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/espace/index.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Ressources (Pages publiques) -->
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/activites.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/activites.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/animateur.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/animateur.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/nourriture.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/nourriture.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/calme.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/calme.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/conversation.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/conversation.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/direction.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/direction.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/formation.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/formation.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/gage.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/gage.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/manuels.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/manuels.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/musique.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/musique.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/presentation.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/presentation.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/quotidien.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/quotidien.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/reglementation.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/reglementation.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/regles.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/regles.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/semaine.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/semaine.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://srn-romain.github.io/jeux-bafa/pages/veillees.html</loc>
+    <loc>https://repertoirecolo.web.app/pages/veillees.html</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>

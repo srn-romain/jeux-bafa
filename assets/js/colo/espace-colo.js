@@ -1904,7 +1904,7 @@ document.getElementById('btnExportPdf')?.addEventListener('click', () => {
         doc.setDrawColor(41, 128, 185);
         doc.line(cursorX, textY + 0.8, cursorX + linkWidth, textY + 0.8);
         // Lien cliquable
-        doc.link(cursorX, textY - 3, linkWidth, 4, { url: "https://srn-romain.github.io/jeux-bafa/" });
+        doc.link(cursorX, textY - 3, linkWidth, 4, { url: "https://repertoirecolo.web.app/" });
 
         cursorX += linkWidth;
         doc.setTextColor(100);

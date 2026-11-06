@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://srn-romain.github.io/jeux-bafa/sitemap.xml
+Sitemap: https://repertoirecolo.web.app/sitemap.xml
