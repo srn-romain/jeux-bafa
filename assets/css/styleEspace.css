@@ -2728,6 +2728,7 @@ body.modal-open .es-topbar {
   flex-direction: column;
   gap: 12px;
   font-size: 0.9rem;
+  text-align: center;
 }
 
 .es-spinner {
